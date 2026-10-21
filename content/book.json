@@ -1,6 +1,11 @@
 {
   "title": "جزوه کوبرنتیز",
   "tagline": "کوبرنتیز از صفر تا production",
+  "editing": {
+    "enabled": true,
+    "repo": "alirezaakb/k8s-farsi",
+    "branch": "main"
+  },
   "parts": {
     "ch1": "بخش اول: یک ماشین با k3s",
     "ch9": "بخش دوم: چند Node",

@@ -41,5 +41,5 @@ export function readBook() {
   const dangling = [...referenced].filter((id) => !(id in idPage) && id !== 'main');
 
   const stats = [...(read('home.html').match(/<ul class="meta">([\s\S]*?)<\/ul>/)?.[1] ?? '').matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => text(m[1]));
-  return { title: meta.title, tagline: meta.tagline, chapters, idPage, stats, dangling };
+  return { title: meta.title, tagline: meta.tagline, editing: meta.editing ?? { enabled: false }, chapters, idPage, stats, dangling };
 }

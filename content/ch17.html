@@ -1897,7 +1897,7 @@ kubectl get pods -A -o=custom-columns='DATA:metadata.*'
 <ol>
 <li>از double quote برای نقل‌قول متن داخل عبارات JSONPath استفاده کنید.</li>
 <li>از عملگرهای <code>range</code>،‏ <code>end</code> برای پیمایش (iterate) لیست‌ها استفاده کنید.</li>
-<li>از اندیس‌های منفی slice برای حرکت رو به عقب در یک لیست استفاده کنید. اندیس‌های منفی دور لیست «wrap around» نمی‌شوند و تا زمانی معتبرند که <code>(-index + listLength) &ge; 0</code>.</li>
+<li>از اندیس‌های منفی slice برای حرکت رو به عقب در یک لیست استفاده کنید. اندیس‌های منفی دور لیست «wrap around» نمی‌شوند و تا زمانی معتبرند که <code>(-index + listLength) ≥ 0</code>.</li>
 </ol>
 <div class="note"><b>نکته</b>
 <ul><li>عملگر <code>‎$‎</code> اختیاری است چون عبارت به‌طور پیش‌فرض همیشه از root object آغاز می‌شود.</li>

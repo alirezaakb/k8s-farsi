@@ -5,7 +5,8 @@ const modules = import.meta.glob('/content/*.html', { query: '?raw', import: 'de
 
 export function loadPage(page) {
   const load = modules[`/content/${page}.html`];
-  return load ? load() : Promise.reject(new Error(`no content for ${page}`));
+  // the files are LF in git; a Windows checkout may give CRLF, which would not match what GitHub holds
+  return load ? load().then((t) => t.split('\r\n').join('\n')) : Promise.reject(new Error(`no content for ${page}`));
 }
 
 /**

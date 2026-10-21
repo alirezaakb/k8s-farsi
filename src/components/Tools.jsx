@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import notesUi from '../legacy/notes-ui.html?raw';
+import { editingOnThisDevice, editor, useEditor } from '../lib/editor.js';
 
 // ---- reading preferences (kept on <html> as data-* so the CSS can use them, and in localStorage)
 const DEF = { fs: '0', lh: 'normal', align: 'justify', width: 'narrow' };
@@ -118,6 +119,19 @@ export const NotesUI = memo(function NotesUI() {
   return <div dangerouslySetInnerHTML={{ __html: notesUi }} />;
 });
 
+// switches in-place text editing on and off (only on devices where it was enabled, see lib/editor.js)
+function EditButton() {
+  const { active } = useEditor();
+  if (!editingOnThisDevice()) return null;
+  return (
+    <button type="button" className="tbtn" id="ed-btn" aria-pressed={active} aria-label="ویرایش متن" title="ویرایش متن همین صفحه"
+      onClick={() => editor.set({ active: !active })}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+      <span>{active ? 'پایان ویرایش' : 'ویرایش متن'}</span>
+    </button>
+  );
+}
+
 export function Tools() {
   const [away, setAway] = useState(false);
   const bar = useRef(null);
@@ -143,6 +157,7 @@ export function Tools() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
         <span>جستجو</span>
       </button>
+      <EditButton />
       <NotesButton />
       <ReadingSettings />
       <ThemeButton />

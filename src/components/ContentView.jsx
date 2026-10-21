@@ -11,7 +11,7 @@ import { initNotes } from '../legacy/notes.js';
 import widgets from '../widgets/index.js';
 
 // parts of a page the editor must not change: buttons, drawings, images, the label bar of code blocks
-const FIXED = '.code .lbl, button, svg, img, input, figure .plate';
+const FIXED = '.code .lbl, button, svg, img, input, figure .plate, [data-widget]';
 
 function setEditable(root, on) {
   if (on) {

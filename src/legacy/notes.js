@@ -24,7 +24,7 @@ export function initNotes(){
   function badge(){var b=btn.querySelector('.nt-badge'),n=data.items.length;b.hidden=!n;b.textContent=n>99?'۹۹+':fa(n);}
 
   /* ---------- text model of a chapter ---------- */
-  var SKIP='svg,script,style,textarea,input,button,.hl-ui';
+  var SKIP='svg,script,style,textarea,input,button,.hl-ui,[data-widget]';
   function ctx(sec){
     var w=document.createTreeWalker(sec,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT,{acceptNode:function(n){
       if(n.nodeType===1) return n.matches(SKIP)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_SKIP;
@@ -115,7 +115,7 @@ export function initNotes(){
     if(!sel||!sel.rangeCount||sel.isCollapsed) return null;
     var r=sel.getRangeAt(0),a=r.startContainer,b=r.endContainer;
     var ea=a.nodeType===1?a:a.parentElement,eb=b.nodeType===1?b:b.parentElement;
-    if(!ea||!eb||ea.closest('.hl-ui')) return null;
+    if(!ea||!eb||ea.closest('.hl-ui,[data-widget]')||eb.closest('[data-widget]')) return null;
     var sec=ea.closest('section.ch');
     if(!sec||eb.closest('section.ch')!==sec) return null;
     var c=ctx(sec),s=offsetOf(c,a,r.startOffset),e=offsetOf(c,b,r.endOffset);

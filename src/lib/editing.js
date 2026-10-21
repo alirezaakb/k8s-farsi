@@ -29,6 +29,7 @@ export function serializeContent(root, page) {
     c.querySelectorAll('.pl-day.done').forEach((e) => e.classList.remove('done'));
     c.querySelectorAll('.pl-wdone').forEach((e) => { e.textContent = ''; });
   }
+  c.querySelectorAll('[data-widget]').forEach((e) => { e.textContent = ''; }); // components are rendered, not content
   c.normalize();
   const out = unprepare(c.innerHTML);
   return out.endsWith('\n') ? out : out + '\n';

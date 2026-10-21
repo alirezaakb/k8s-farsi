@@ -120,6 +120,8 @@ kubectl exec -it deploy/frontend -n prod -- curl -s http://shop-api/healthz
     <li><b>توزیع بار در Serviceها</b>: حذف Pod خراب از فهرست مقصدهای (endpoint) Service.</li>
   </ul>
   <p>اجزایی که این کارها را انجام می‌دهند kubelet،‏ controllerهای مربوط به Deployment و ReplicaSet و StatefulSet و DaemonSet و controller مربوط به PersistentVolume هستند. البته محدودیت‌هایی هم هست: خرابی storage ممکن است بازیابی دستی لازم داشته باشد،‏ و کوبرنتیز فقط می‌تواند container را دوباره راه بیندازد؛‏ باگ خودِ برنامه را باید خودتان رفع کنید.</p>
+  <p>شکل زیر دو خرابی را مرحله‌به‌مرحله نشان می‌دهد: حذف یک Pod و از کار افتادن container. دکمه‌ی «بعدی» را بزنید و ببینید در هر مرحله چه کسی کاری می‌کند.</p>
+  <div data-widget="SelfHealing"></div>
   <div class="deep"><b>توضیح تکمیلی: هر جمله‌ی مستندات،‏ کدام سازوکار؟</b>
     <p>چهار جمله‌ی تعریف رسمی را دقیقاً به چهار سازوکار نگاشت کنید (این جدول در مصاحبه خیلی به کار می‌آید):</p>
     <div class="tbl"><table><thead><tr><th>جمله‌ی مستندات</th><th>سازوکار</th><th>چه کسی انجامش می‌دهد</th></tr></thead><tbody>

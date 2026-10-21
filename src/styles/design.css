@@ -283,3 +283,18 @@ h3 small,h4 small{font-size:max(.72em,.8125rem)}
 #sr-box .pagefind-ui__result-nested{border:0}
 #sr-box .pagefind-ui__button{border:0;border-radius:0;background:var(--sunk);color:var(--ink)}
 #sr-wrap{background:rgba(8,16,20,.6)}
+
+/* ---- 13. review fixes: stats breathe, the footer is a footer ------------------------------ */
+.about .meta{grid-template-columns:repeat(3,minmax(0,1fr));gap:48px 40px}
+.about .meta b{font-size:clamp(2.6rem,1rem + 3.6vw,4.75rem);line-height:1.05;white-space:nowrap}
+@media (max-width:600px){.about .meta{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px 20px}}
+.site-foot{margin-top:0;padding-block:40px 36px;gap:20px}
+svg.foot-word{width:min(100%,360px);margin:8px 0 0;fill:var(--ground)}
+.about,.roadmap,.plan,.pathway{padding-block:clamp(72px,8vw,112px)}
+.site-foot{padding-bottom:72px}
+.pw-side{align-self:start;position:sticky;top:80px}
+.pw-legend{margin-top:20px}
+@media (max-width:920px){.pw-side{position:static}}
+.pl-items{columns:2;column-gap:48px}
+.pl-items li{break-inside:avoid}
+@media (max-width:820px){.pl-items{columns:1}}

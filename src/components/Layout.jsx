@@ -17,8 +17,8 @@ export function Footer() {
         <Link to="/sources">منابع</Link>
         <span>بر پایه‌ی مستندات رسمی kubernetes.io</span>
       </div>
-      <svg className="foot-word" viewBox="0 0 760 150" aria-hidden="true" focusable="false">
-        <text x="380" y="118" textAnchor="middle" fontSize="130" fontWeight="900" textLength="740" lengthAdjust="spacingAndGlyphs">{SITE_NAME}</text>
+      <svg className="foot-word" viewBox="0 0 330 64" role="img" aria-label={SITE_NAME}>
+        <text x="165" y="48" textAnchor="middle" fontSize="52" fontWeight="900">{SITE_NAME}</text>
       </svg>
     </footer>
   );

@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.search-src/
+__pycache__/

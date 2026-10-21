@@ -1,0 +1,69 @@
+/* ===== multi-page site additions (appended after the jozve stylesheet) ===== */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* breadcrumb above the chapter */
+.crumbs{max-width:1150px;margin:64px auto 22px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;
+  font-size:.84rem;color:var(--ink-2);line-height:1.6}
+.crumbs a{color:var(--accent-ink);text-decoration:none}
+.crumbs a:hover{text-decoration:underline}
+.crumbs i{font-style:normal;opacity:.5}
+@media (max-width:600px){.crumbs{margin-top:58px}}
+
+/* sidebar: home link and the open chapter's outline */
+.toc .toc-home{display:block;margin:0 0 10px;padding:5px 8px;border-radius:6px;font-weight:700;text-decoration:none;color:var(--accent-ink)}
+.toc .toc-home:hover{background:var(--sunk)}
+.toc li.part ~ li.part{margin-top:4px}
+.toc li.cur>a{background:var(--accent-soft);color:var(--accent-ink);font-weight:700}
+.toc ol.sub{margin:4px 0 8px;padding:0;padding-inline-start:2.2em;border-inline-start:2px solid var(--line);margin-inline-start:1.1em;gap:0}
+.toc ol.sub a{display:block;padding:3px 10px;font-size:.82rem;line-height:1.55;font-weight:400;border-radius:4px}
+.toc ol.sub a.on{background:var(--sunk);color:var(--accent-ink);font-weight:700}
+.toc-mobile li.cur>a{font-weight:700}
+.toc-mobile a{color:var(--accent-ink)}
+
+/* previous / next chapter */
+.pager{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:6px 0 36px}
+.pager a{display:grid;gap:2px;padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+  color:var(--ink);text-decoration:none;min-width:0}
+.pager a:hover{border-color:var(--accent);background:var(--accent-soft)}
+.pager small{font-size:.78rem;color:var(--ink-2)}
+.pager span{font-weight:700;line-height:1.7;overflow-wrap:anywhere}
+.pager .next{grid-column:2;text-align:end}
+.pager .prev{grid-column:1}
+@media (max-width:600px){.pager{grid-template-columns:1fr}.pager .next,.pager .prev{grid-column:1}}
+
+/* footer */
+.site-foot{max-width:1150px;margin:8px auto 0;padding:18px 0 8px;border-top:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.84rem;color:var(--ink-2)}
+.site-foot a{color:var(--accent-ink)}
+
+/* home: call to action under the cover */
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px}
+.cta a{display:inline-block;padding:10px 20px;border-radius:12px;font-weight:700;text-decoration:none;
+  border:1px solid var(--accent);color:var(--accent-ink);background:var(--surface)}
+.cta a.go{background:var(--accent);color:#fff}
+.cta a:hover{filter:brightness(1.07)}
+
+/* the chapter page is one chapter long: no off-screen skipping, no separator under it */
+section.ch{border-bottom:0;margin-bottom:24px}
+
+/* search dialog (Pagefind) */
+#sr-wrap{position:fixed;inset:0;z-index:100;background:rgba(8,13,24,.55);display:flex;justify-content:center;align-items:flex-start;padding:max(56px,8vh) 12px 12px}
+#sr-wrap[hidden]{display:none}
+#sr-dlg{width:min(720px,100%);max-height:calc(100vh - 80px);overflow:auto;background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+#sr-dlg h2{font-size:.95rem;margin:0 0 10px;font-weight:800}
+#sr-box{direction:rtl;text-align:start;
+  --pagefind-ui-scale:.95;--pagefind-ui-primary:var(--accent);--pagefind-ui-text:var(--ink);--pagefind-ui-background:var(--surface);
+  --pagefind-ui-border:var(--line);--pagefind-ui-tag:var(--sunk);--pagefind-ui-border-width:1px;--pagefind-ui-border-radius:10px;
+  --pagefind-ui-font:"Vazirmatn",Tahoma,sans-serif}
+#sr-box .pagefind-ui__result-link{color:var(--accent-ink)}
+#sr-box mark{background:var(--warn-soft);color:var(--ink)}
+#sr-box .pagefind-ui__result-excerpt,#sr-box .pagefind-ui__result-title{text-align:start;direction:rtl}
+#sr-box .pagefind-ui__search-input{font-family:inherit}
+.sr-hint{font-size:.78rem;color:var(--ink-2);margin:10px 0 0}
+.sr-hint kbd{font-family:inherit;border:1px solid var(--line);border-radius:4px;padding:0 5px;background:var(--sunk)}
+@media print{#sr-wrap,#sr-btn{display:none!important}}
+#sr-box .pagefind-ui__search-clear{right:auto;left:calc(52px * var(--pagefind-ui-scale));color:var(--ink);background:var(--sunk);border-radius:6px;padding:0 10px}
+
+/* loading text while the HTML of a page is fetched */
+.load-msg{max-width:46rem;margin:40px auto;text-align:center;color:var(--ink-2)}

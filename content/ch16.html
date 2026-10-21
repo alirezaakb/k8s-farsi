@@ -1,0 +1,1314 @@
+<section class="ch" id="ch16">
+  <div class="ch-head"><span class="ch-num">۱۶</span><h2>پروژه‌ی جامع Production</h2></div>
+  <p class="ch-sub">ترکیب همه‌ی فصل‌ها؛‏ الهام‌گرفته از آموزش‌های <a href="https://kubernetes.io/docs/tutorials/stateless-application/guestbook/">Guestbook</a> و <a href="https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/">WordPress + MySQL</a> در مستندات</p>
+
+  <p>این فصل برخلاف فصل‌های قبلی یک concept تازه معرفی نمی‌کند؛‏ بلکه دو تمرین رسمی و شناخته‌شده‌ی مستندات کوبرنتیز را از ابتدا تا انتها،‏ با تمام manifestها و دستورات،‏ دنبال می‌کند و در هر قدم نشان می‌دهد که کدام مفهوم از کدام فصل قبلی در حال استفاده است. هدف این است که تصویری end-to-end از یک برنامه‌ی چندلایه (multi-tier) روی کوبرنتیز به دست بیاورید: از Pod و container (فصل ۲ و ۳) تا Deployment و ReplicaSet (فصل ۴)،‏ از Service و load balancing (فصل ۵) تا PersistentVolume و PersistentVolumeClaim (فصل ۷)،‏ از Secret و ConfigMap (فصل ۶) تا نکات امنیتی (فصل ۱۴)،‏ و در آزمایش عملی پایانی،‏ autoscaling (فصل ۱۰) و مفاهیم اضافه بر مستندات رسمی.</p>
+
+  <div class="deep"><b>توضیح تکمیلی: نقشه‌ی این فصل</b>
+    <p>فصل به دو بخش اصلی تقسیم می‌شود که هر دو مستقیماً از مستندات رسمی کوبرنتیز گرفته شده‌اند:</p>
+    <ul>
+      <li><b>Guestbook</b> (stateless application): یک برنامه‌ی چندلایه‌ی ساده شامل یک Redis leader،‏ دو Redis follower و چند replica از یک frontend به زبان PHP. این tutorial هیچ Volumeای ندارد و صرفاً Deployment و Service را نشان می‌دهد؛‏ بنابراین بهترین نقطه‌ی شروع برای مرور فصل ۴ (Deployment/ReplicaSet) و فصل ۵ (Services) است.</li>
+      <li><b>WordPress + MySQL با PersistentVolume</b> (stateful application): یک برنامه‌ی دو‌لایه (WordPress + MySQL) که برخلاف Guestbook،‏ داده را persist می‌کند. این tutorial،‏ PersistentVolumeClaim (فصل ۷)،‏ Secret برای رمز عبور (فصل ۶) و کار با Kustomize را معرفی می‌کند.</li>
+    </ul>
+    <p>در پایان،‏ یک <b>آزمایش عملی سرتاسری (خارج از مستندات رسمی)</b> پروژه‌ی WordPress را با HorizontalPodAutoscaler،‏ NetworkPolicy،‏ PodDisruptionBudget،‏ resource requests/limits و probeها به یک پیکربندی نزدیک‌تر به production ارتقا می‌دهد.</p>
+    <p>مانند مستندات رسمی،‏ این پروژه‌ها <b>آماده‌ی production نیستند</b> (خود مستندات Guestbook می‌گوید «not production ready» و مستندات WordPress می‌گوید «not suitable for production use cases»)؛‏ هدف آموزش pattern طراحی چندلایه است،‏ نه ارائه‌ی یک reference architecture کامل. برای WordPress در production واقعی،‏ مستندات به <a href="https://github.com/bitnami/charts/tree/master/bitnami/wordpress">WordPress Helm Chart</a> ارجاع می‌دهند.</p>
+  </div>
+
+  <div class="story"><b>ماجرای این فصل: تمرین کامل پیش از روز انتشار</b><p>پیش از انتقال نهایی فروشگاه شاپیفای از cluster قدیمی k3s به cluster جدید production که در فصل ۱۳ با kubeadm ساخته شد،‏ تیم پلتفرم یک تمرین کامل (game day) برگزار می‌کند و همه‌ی آموخته‌هایش را روی دو برنامه‌ی نمونه‌ی شناخته‌شده‌ی مستندات می‌آزماید: یک برنامه‌ی چندلایه‌ی stateless و یک برنامه با پایگاه‌داده و storage ماندگار.</p><p><b>راه‌حل را در این بخش‌ها می‌سازید:</b></p><ul><li><a href="#ch16-guestbook-intro">Guestbook</a></li><li><a href="#ch16-wp-intro">WordPress و MySQL</a></li><li><a href="#ch16-lab-intro">آزمایش سرتاسری</a></li><li><a href="#ch16-solved">حل مسئله‌ی شاپیفای</a></li></ul></div>
+
+  <h3 id="ch16-guestbook-intro">بخش اول: Guestbook — یک برنامه‌ی stateless چندلایه</h3>
+  <figure><div class="plate"><svg viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="معماری Guestbook: frontend و Redis leader و followerها" style="max-width:100%;height:auto;display:block"><defs><marker id="c16f1-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"/></marker><marker id="c16f1-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"/></marker><marker id="c16f1-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"/></marker><marker id="c16f1-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a94ab"/></marker></defs><rect x="640" y="120" width="106" height="56" rx="8" fill="#f2f4f8" stroke="#8a94ab" stroke-width="1.5"/><text x="734" y="144" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">مرورگر</text><text x="652" y="164" font-family="JetBrains Mono, ui-monospace, monospace" font-size="8.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">port-forward / LB</text><rect x="450" y="70" width="160" height="40" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"/><text x="530" y="95" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="middle">Service: frontend</text><rect x="450" y="124" width="160" height="132" rx="8" fill="#ffffff" stroke="#326ce5" stroke-width="1.5" stroke-dasharray="5 4"/><text x="600" y="144" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="700" fill="#326ce5" direction="rtl" text-anchor="start">Deployment به نام frontend</text><rect x="462" y="154" width="136" height="30" rx="6" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"/><text x="530.0" y="173" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="middle">php-redis</text><rect x="462" y="186" width="136" height="30" rx="6" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"/><text x="530.0" y="205" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="middle">php-redis</text><rect x="462" y="218" width="136" height="30" rx="6" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"/><text x="530.0" y="237" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="middle">php-redis</text><line x1="638" y1="148" x2="614" y2="100" stroke="#8a94ab" stroke-width="1.6" marker-end="url(#c16f1-k)"/><rect x="206" y="30" width="200" height="40" rx="8" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"/><text x="306" y="55" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#b26b00" direction="ltr" text-anchor="middle">Service: redis-leader</text><rect x="246" y="84" width="120" height="30" rx="6" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"/><text x="306.0" y="103" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#b26b00" direction="ltr" text-anchor="middle">leader (1)</text><text x="400" y="132" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="700" fill="#b26b00" direction="rtl" text-anchor="start">نوشتن</text><rect x="206" y="170" width="200" height="40" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"/><text x="306" y="195" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#12806f" direction="ltr" text-anchor="middle">Service: redis-follower</text><rect x="216" y="224" width="84" height="30" rx="6" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"/><text x="258.0" y="243" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#12806f" direction="ltr" text-anchor="middle">follower</text><rect x="312" y="224" width="84" height="30" rx="6" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"/><text x="354.0" y="243" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#12806f" direction="ltr" text-anchor="middle">follower</text><text x="400" y="160" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">خواندن</text><path d="M448,160 C420,160 420,50 410,50" fill="none" stroke="#b26b00" stroke-width="1.6" marker-end="url(#c16f1-o)"/><path d="M448,200 C430,200 430,190 410,190" fill="none" stroke="#12806f" stroke-width="1.6" marker-end="url(#c16f1-g)"/><path d="M260,222 C200,180 200,110 244,100" fill="none" stroke="#8a94ab" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c16f1-k)"/><text x="196" y="160" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">replication</text><text x="196" y="178" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">از leader</text><text x="746" y="300" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">همه‌ی Serviceها از نوع ClusterIP هستند و با DNS پیدا می‌شوند؛ هیچ PersistentVolumeی در کار نیست.</text><text x="746" y="320" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">کد PHP تصمیم می‌گیرد کدام Service: نوشتن به leader و خواندن از followerها.</text></svg></div><figcaption><b>شکل ۱۶-۱.</b> <span style="flex:1 1 0;min-width:0">معماری Guestbook:‏ frontend نوشتن را به Service به نام redis-leader و خواندن را به Service به نام redis-follower می‌فرستد؛‏ followerها از leader تکثیر می‌کنند و داده فقط در memory است.</span></figcaption></figure>
+  <p>این tutorial نشان می‌دهد چگونه یک برنامه‌ی وب چندلایه (multi-tier)،‏ ساده و <i>not production ready</i>،‏ را با استفاده از کوبرنتیز و <a href="https://www.docker.com/">Docker</a> بسازید و deploy کنید. این مثال شامل componentهای زیر است:</p>
+  <ul>
+    <li>یک instance تکی از <a href="https://www.redis.io/">Redis</a> برای ذخیره‌ی ورودی‌های guestbook</li>
+    <li>چند instance از frontend وب</li>
+  </ul>
+
+  <h4>اهداف <small>(Objectives)</small></h4>
+  <ul>
+    <li>راه‌اندازی یک Redis leader.</li>
+    <li>راه‌اندازی دو Redis follower.</li>
+    <li>راه‌اندازی frontend مربوط به guestbook.</li>
+    <li>Expose و مشاهده‌ی Service مربوط به Frontend.</li>
+    <li>پاک‌سازی (Clean up).</li>
+  </ul>
+
+  <div class="deep"><b>توضیح تکمیلی: چرا Redis leader/follower؟</b>
+    <p>Guestbook از یک الگوی معماری کلاسیک استفاده می‌کند: یک instance Redis که هم read و هم write را قبول می‌کند (<b>leader</b>) و چند instance Redis که فقط از leader replicate می‌کنند و فقط به درخواست‌های read پاسخ می‌دهند (<b>follower</b>). این جداسازی باعث می‌شود بار خواندن (که معمولاً حجم بیشتری دارد) بین چند Pod پخش شود،‏ در حالی که نوشتن همچنان روی یک منبع واحد (leader) متمرکز است تا سازگاری داده (consistency) حفظ شود. در دنیای واقعی این pattern را در پایگاه‌داده‌هایی مثل MySQL (primary/replica)،‏ PostgreSQL و همین Redis می‌بینید. توجه کنید که این معماری خودش <i>highly available</i> نیست: اگر Pod مربوط به leader از بین برود،‏ Deployment یک Pod جدید می‌سازد (self-healing،‏ فصل ۴) اما داده‌ی in-memory آن از دست می‌رود،‏ چون هیچ PersistentVolumeای در این تمرین وجود ندارد.</p>
+  </div>
+
+  <h3 id="ch16-redis-db">راه‌اندازی پایگاه‌داده‌ی Redis <small>(Start up the Redis Database)</small></h3>
+  <p>برنامه‌ی guestbook از Redis برای ذخیره‌ی داده‌های خود استفاده می‌کند.</p>
+
+  <h4 id="ch16-redis-leader-deploy">ساختن Deployment برای Redis <small>(Creating the Redis Deployment)</small></h4>
+  <p>فایل manifest زیر،‏ یک Deployment controller را مشخص می‌کند که یک Redis Pod تک‌replica اجرا می‌کند.</p>
+
+  <div class="code"><div class="lbl"><span>application/guestbook/redis-leader-deployment.yaml</span><button type="button">کپی</button></div><pre class="yaml"># SOURCE: https://cloud.google.com/kubernetes-engine/docs/tutorials/guestbook
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-leader
+  labels:
+    app: redis
+    role: leader
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: leader
+        tier: backend
+    spec:
+      containers:
+      - name: leader
+        image: "registry.k8s.io/redis@sha256:cb111d1bd870a6a471385a4a69ad17469d326e9dd91e0e455350cacf36e1b3ee"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 6379
+</pre></div>
+
+  <ol>
+    <li>یک ترمینال در پوشه‌ای که manifest fileها را دانلود کرده‌اید باز کنید.</li>
+    <li>Redis Deployment را از فایل <code>redis-leader-deployment.yaml</code> apply کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/application/guestbook/redis-leader-deployment.yaml
+</pre></div>
+    </li>
+    <li>فهرست Podها را بررسی کنید تا مطمئن شوید Redis Pod در حال اجراست:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                           READY   STATUS    RESTARTS   AGE
+redis-leader-fb76b4755-xjr2n   1/1     Running   0          13s
+</pre></div>
+    </li>
+    <li>برای مشاهده‌ی logهای Redis leader Pod،‏ دستور زیر را اجرا کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl logs -f deployment/redis-leader
+</pre></div>
+    </li>
+  </ol>
+
+  <div class="deep"><b>توضیح تکمیلی: هر field این Deployment چه می‌کند</b>
+    <p>این manifest دقیقاً همان الگوی Deployment است که در فصل ۴ دیدید؛‏ در اینجا کاربرد هر field در متن این پروژه را مرور می‌کنیم:</p>
+    <div class="tbl"><table><thead><tr><th>field</th><th>مقدار</th><th>توضیح در متن Guestbook</th></tr></thead><tbody>
+      <tr><td><code>spec.replicas</code></td><td>1</td><td>Redis leader باید تک‌instance باشد؛‏ چون تنها یک کپی از داده باید نوشتنی باشد. اگر این عدد بیشتر از ۱ بود،‏ چند Pod مستقل با state جداگانه ساخته می‌شد که با هم sync نمی‌شوند (Redis خودش replication را انجام نمی‌دهد مگر با پیکربندی صریح در سطح container).</td></tr>
+      <tr><td><code>spec.selector.matchLabels</code></td><td><code>app: redis</code></td><td>ReplicaSet زیرین را به Podهایی که label <code>app: redis</code> دارند متصل می‌کند. توجه کنید این selector فقط <code>app: redis</code> است،‏ نه ترکیب کامل labelهای template (که شامل <code>role: leader</code> و <code>tier: backend</code> هم هست)؛‏ این یعنی از نظر API این selector به‌تنهایی همه‌ی Podهای Redis (چه leader چه follower) را می‌تواند match کند اگر labelهای دیگر یکسان تعریف نشوند — در عمل template این Deployment فقط Pod با <code>role: leader</code> می‌سازد،‏ پس تداخلی رخ نمی‌دهد. دلیلش این است که ReplicaSet هر Deployment علاوه بر selector اصلی،‏ label به نام <code>pod-template-hash</code> را هم در selector خود دارد و هر Pod فقط یک ownerReference با <code>controller: true</code> دارد. با این حال مستندات Deployment صریحاً می‌گوید selectorهای همپوشان نسازید؛‏ در تمرین‌های پایان فصل به آن برمی‌گردیم.</td></tr>
+      <tr><td><code>image</code></td><td><code>registry.k8s.io/redis@sha256:...</code></td><td>image با <b>digest</b> pin شده است،‏ نه با tag. این یک best practice برای reproducibility است (فصل ۲): تضمین می‌کند که همیشه دقیقاً همان bit-for-bit image pull شود،‏ صرف‌نظر از اینکه tag دوباره push شده باشد یا نه.</td></tr>
+      <tr><td><code>resources.requests</code></td><td><code>cpu: 100m</code>, <code>memory: 100Mi</code></td><td>فقط <b>request</b> تعریف شده،‏ بدون <b>limit</b>. این یعنی scheduler تضمین می‌کند حداقل این مقدار resource برای Pod وجود دارد،‏ اما container می‌تواند بیشتر از آن هم مصرف کند (تا سقف ظرفیت Node یا تا وقتی throttle/OOM شود). این یک تصمیم آموزشی ساده‌شده است؛‏ در آزمایش عملی پایان فصل limit هم اضافه می‌کنیم.</td></tr>
+    </tbody></table></div>
+  </div>
+
+  <h4 id="ch16-redis-leader-svc">ساختن Service برای Redis leader <small>(Creating the Redis leader Service)</small></h4>
+  <p>برنامه‌ی guestbook باید با Redis برای نوشتن داده‌های خود ارتباط برقرار کند. باید یک <a href="#ch5">Service</a> apply کنید تا ترافیک را به Redis Pod proxy کند. یک Service یک policy برای دسترسی به Podها تعریف می‌کند.</p>
+
+  <div class="code"><div class="lbl"><span>application/guestbook/redis-leader-service.yaml</span><button type="button">کپی</button></div><pre class="yaml"># SOURCE: https://cloud.google.com/kubernetes-engine/docs/tutorials/guestbook
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-leader
+  labels:
+    app: redis
+    role: leader
+    tier: backend
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
+    role: leader
+    tier: backend
+</pre></div>
+
+  <ol>
+    <li>Redis Service را از فایل زیر یعنی <code>redis-leader-service.yaml</code> apply کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/application/guestbook/redis-leader-service.yaml
+</pre></div>
+    </li>
+    <li>فهرست Serviceها را بررسی کنید تا مطمئن شوید Redis Service در حال اجراست:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get service
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+kubernetes     ClusterIP   10.96.0.1      &lt;none&gt;        443/TCP    3d19h
+redis-leader   ClusterIP   10.103.78.24   &lt;none&gt;        6379/TCP   16s
+</pre></div>
+    </li>
+  </ol>
+  <p>این manifest یک Service با نام <code>redis-leader</code> می‌سازد با مجموعه‌ای از labelها (جفت کلید-مقدار روی اشیا برای گروه‌بندی و انتخاب) که با labelهای تعریف‌شده‌ی قبلی مطابقت دارند،‏ بنابراین Service ترافیک شبکه را به Redis Pod هدایت می‌کند.</p>
+
+  <div class="deep"><b>توضیح تکمیلی: چرا این Service به‌جای <code>type</code> صریح از <code>ClusterIP</code> پیش‌فرض استفاده می‌کند</b>
+    <p>در فصل ۵ دیدید که وقتی <code>spec.type</code> نوشته نشود،‏ مقدار پیش‌فرض <code>ClusterIP</code> است — یعنی یک IP داخلی که فقط از درون cluster قابل دسترسی است. برای Redis leader این دقیقاً رفتار درست است: نیازی نیست Redis از بیرون cluster در دسترس باشد؛‏ فقط Podهای frontend (که خودشان داخل cluster اجرا می‌شوند) باید بتوانند با نام <code>redis-leader</code> به آن وصل شوند. این نام از طریق DNS داخلی cluster (که در فصل ۵ توضیح داده شد) resolve می‌شود،‏ بدون نیاز به دانستن IP واقعی Pod. restart شدن container آن IP را عوض نمی‌کند،‏ اما هر بار که Pod جایگزین شود (مثلاً پس از حذف یا evict شدن)،‏ Pod تازه IP دیگری می‌گیرد.</p>
+    <p>نکته‌ی مهم دیگر این است که <code>selector</code> این Service شامل هر سه label یعنی <code>app: redis</code>،‏ <code>role: leader</code> و <code>tier: backend</code> است،‏ برخلاف selector خود Deployment که فقط <code>app: redis</code> بود. این یعنی اگر بعداً یک Deployment دیگر با <code>role: follower</code> اضافه شود (که دقیقاً در بخش بعدی همین اتفاق می‌افتد)،‏ این Service همچنان فقط Podهای leader را انتخاب می‌کند،‏ نه followerها؛‏ چون selector سطح Service محدودتر و دقیق‌تر تعریف شده است.</p>
+  </div>
+
+  <h3 id="ch16-redis-followers">راه‌اندازی Redis followerها <small>(Set up Redis followers)</small></h3>
+  <p>اگرچه Redis leader یک Pod تکی است،‏ می‌توانید با اضافه‌کردن چند Redis follower (یا replica) آن را highly available کنید و به حجم ترافیک پاسخ دهید.</p>
+
+  <div class="code"><div class="lbl"><span>application/guestbook/redis-follower-deployment.yaml</span><button type="button">کپی</button></div><pre class="yaml"># SOURCE: https://cloud.google.com/kubernetes-engine/docs/tutorials/guestbook
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-follower
+  labels:
+    app: redis
+    role: follower
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: follower
+        tier: backend
+    spec:
+      containers:
+      - name: follower
+        image: us-docker.pkg.dev/google-samples/containers/gke/gb-redis-follower:v2
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 6379
+</pre></div>
+
+  <ol>
+    <li>Redis Deployment را از فایل <code>redis-follower-deployment.yaml</code> apply کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/application/guestbook/redis-follower-deployment.yaml
+</pre></div>
+    </li>
+    <li>با بررسی فهرست Podها مطمئن شوید دو replica Redis follower در حال اجرا هستند:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                             READY   STATUS    RESTARTS   AGE
+redis-follower-dddfbdcc9-82sfr   1/1     Running   0          37s
+redis-follower-dddfbdcc9-qrt5k   1/1     Running   0          38s
+redis-leader-fb76b4755-xjr2n     1/1     Running   0          11m
+</pre></div>
+    </li>
+  </ol>
+
+  <div class="warn"><b>هشدار</b><p>توجه کنید که <code>selector.matchLabels</code> این Deployment هم دقیقاً مثل Deployment مربوط به leader فقط <code>app: redis</code> است،‏ یعنی selector دو Deployment همپوشان است. مستندات Deployment هشدار می‌دهد که controllerهایی با selector همپوشان با هم «دعوا» می‌کنند و درست رفتار نمی‌کنند. اینجا مشکلی پیش نمی‌آید،‏ چون Deployment controller فقط ReplicaSetهایی را مدیریت می‌کند که ownerReference آن‌ها به خودش اشاره دارد و selector هر ReplicaSet،‏ label به نام <code>pod-template-hash</code> را هم دارد؛‏ پس هیچ ReplicaSetی Pod دیگری را تصاحب نمی‌کند. با این حال ابزارهایی که فقط selector را نگاه می‌کنند (مثل <code>kubectl get pods -l app=redis</code> یا یک PodDisruptionBudget با همین selector) هر دو گروه را با هم می‌بینند. یک best practice امن‌تر این است که selector هر Deployment شامل همان labelهای متمایزکننده (مثل <code>role</code>) هم باشد تا از تداخل احتمالی جلوگیری شود.</p></div>
+
+  <h4 id="ch16-redis-follower-svc">ساختن Service برای followerها <small>(Creating the Redis follower service)</small></h4>
+  <p>برنامه‌ی guestbook باید برای خواندن داده با Redis followerها ارتباط برقرار کند. برای اینکه Redis followerها discoverable شوند،‏ باید یک <a href="#ch5">Service</a> دیگر راه‌اندازی کنید.</p>
+
+  <div class="code"><div class="lbl"><span>application/guestbook/redis-follower-service.yaml</span><button type="button">کپی</button></div><pre class="yaml"># SOURCE: https://cloud.google.com/kubernetes-engine/docs/tutorials/guestbook
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-follower
+  labels:
+    app: redis
+    role: follower
+    tier: backend
+spec:
+  ports:
+    # the port that this service should serve on
+  - port: 6379
+  selector:
+    app: redis
+    role: follower
+    tier: backend
+</pre></div>
+
+  <ol>
+    <li>Redis Service را از فایل زیر یعنی <code>redis-follower-service.yaml</code> apply کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/application/guestbook/redis-follower-service.yaml
+</pre></div>
+    </li>
+    <li>فهرست Serviceها را بررسی کنید تا مطمئن شوید Redis Service در حال اجراست:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get service
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+kubernetes       ClusterIP   10.96.0.1       &lt;none&gt;        443/TCP    3d19h
+redis-follower   ClusterIP   10.110.162.42   &lt;none&gt;        6379/TCP   9s
+redis-leader     ClusterIP   10.103.78.24    &lt;none&gt;        6379/TCP   6m10s
+</pre></div>
+    </li>
+  </ol>
+  <p>این manifest یک Service با نام <code>redis-follower</code> می‌سازد با مجموعه‌ای از labelها که با labelهای تعریف‌شده‌ی قبلی مطابقت دارند،‏ بنابراین Service ترافیک شبکه را به Redis Pod هدایت می‌کند.</p>
+
+  <div class="deep"><b>توضیح تکمیلی: چرا یک Service جدا برای followerها؟</b>
+    <p>چون هر Service با selector خودش دقیقاً یک مجموعه ثابت از Podها را هدف می‌گیرد (فصل ۵)،‏ نمی‌توان یک Service واحد ساخت که هم به leader و هم به followerها ترافیک بفرستد و در عین حال بین «نوشتن» و «خواندن» تمایز قائل شود؛‏ این تمایز باید در سطح application (کد PHP frontend) انجام شود: کد frontend،‏ آدرس <code>redis-leader</code> را برای write و آدرس <code>redis-follower</code> را برای read استفاده می‌کند. Service مربوط به follower به‌طور خودکار بین دو Pod follower load balance می‌کند (رفتار پیش‌فرض kube-proxy،‏ فصل ۵)،‏ بنابراین بار خواندن بین آن‌ها تقسیم می‌شود.</p>
+  </div>
+  <h3 id="ch16-frontend">راه‌اندازی و expose کردن frontend <small>(Set up and Expose the Guestbook Frontend)</small></h3>
+  <p>حالا که storage مربوط به Redis برای guestbook شما راه‌اندازی و در حال اجراست،‏ وب‌سرورهای guestbook را شروع کنید. مانند Redis followerها،‏ frontend هم با استفاده از یک Deployment deploy می‌شود.</p>
+  <p>برنامه‌ی guestbook از یک frontend به زبان PHP استفاده می‌کند. این frontend به‌گونه‌ای پیکربندی شده که با Service مربوط به Redis follower یا leader ارتباط برقرار کند،‏ بسته به اینکه درخواست یک read باشد یا یک write.‏ frontend یک JSON interface را expose می‌کند،‏ و یک رابط کاربری مبتنی بر jQuery-Ajax ارائه می‌کند.</p>
+
+  <h4 id="ch16-frontend-deploy">ساختن Deployment برای frontend <small>(Creating the Guestbook Frontend Deployment)</small></h4>
+
+  <div class="code"><div class="lbl"><span>application/guestbook/frontend-deployment.yaml</span><button type="button">کپی</button></div><pre class="yaml"># SOURCE: https://cloud.google.com/kubernetes-engine/docs/tutorials/guestbook
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+        app: guestbook
+        tier: frontend
+  template:
+    metadata:
+      labels:
+        app: guestbook
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+        env:
+        - name: GET_HOSTS_FROM
+          value: "dns"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 80
+</pre></div>
+
+  <ol>
+    <li>frontend Deployment را از فایل <code>frontend-deployment.yaml</code> apply کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/application/guestbook/frontend-deployment.yaml
+</pre></div>
+    </li>
+    <li>فهرست Podها را بررسی کنید تا مطمئن شوید سه replica frontend در حال اجرا هستند. مستندات این دستور را به شکل <code>-l app=guestbook -l tier=frontend</code> نوشته است؛‏ در kubectl اگر <code>-l</code> را تکرار کنید فقط آخرین مقدار به کار می‌رود،‏ پس شرط‌ها را با کاما در یک selector بنویسید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l app=guestbook,tier=frontend
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                        READY   STATUS    RESTARTS   AGE
+frontend-85595f5bf9-5tqhb   1/1     Running   0          47s
+frontend-85595f5bf9-qbzwm   1/1     Running   0          47s
+frontend-85595f5bf9-zchwc   1/1     Running   0          47s
+</pre></div>
+    </li>
+  </ol>
+
+  <div class="deep"><b>توضیح تکمیلی: <code>replicas: 3</code> و متغیر <code>GET_HOSTS_FROM</code></b>
+    <p>برخلاف دو Deployment مربوط به Redis که هرکدام یک <code>role</code> ثابت (leader یا follower) داشتند،‏ frontend یک workload کاملاً <b>stateless</b> است: هر سه replica کاملاً یکسان هستند و هیچ‌کدام state محلی مهمی ندارند (تمام state واقعی در Redis نگه‌داری می‌شود). به همین دلیل replicas می‌تواند هر عددی باشد بدون آنکه نگران sync شدن بین replicaها باشیم — این دقیقاً تعریف یک Deployment ایده‌آل از دید فصل ۴ است: هر replica باید قابل جایگزینی (interchangeable) و بدون state محلی حیاتی باشد.</p>
+    <p>environment variable <code>GET_HOSTS_FROM: "dns"</code> به کد PHP می‌گوید که آدرس Redis leader و follower را از طریق DNS داخلی cluster (یعنی نام Service مثل <code>redis-leader</code> و <code>redis-follower</code>) resolve کند،‏ نه از طریق environment variableها که کوبرنتیز به‌طور خودکار برای Serviceهای موجود هنگام start شدن Pod تزریق می‌کند. این روش پایدارتر است،‏ چون تزریق خودکار environment variable فقط برای Serviceهایی کار می‌کند که <i>پیش از</i> ساخته‌شدن Pod وجود داشته باشند،‏ در حالی که DNS در هر لحظه از عمر Pod قابل query شدن است (به فصل ۵،‏ بخش Service discovery مراجعه کنید).</p>
+  </div>
+
+  <h4 id="ch16-frontend-svc">ساختن Service برای frontend <small>(Creating the Frontend Service)</small></h4>
+  <p>Serviceهای مربوط به <code>Redis</code> که apply کردید تنها از درون cluster کوبرنتیز قابل دسترسی هستند،‏ چون نوع پیش‌فرض یک Service،‏ <a href="https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types">ClusterIP</a> است. <code>ClusterIP</code> یک آدرس IP واحد برای مجموعه Podهایی که Service به آن‌ها اشاره می‌کند فراهم می‌کند. این آدرس IP فقط از درون cluster قابل دسترسی است.</p>
+  <p>اگر می‌خواهید مهمانان بتوانند به guestbook شما دسترسی داشته باشند،‏ باید Service مربوط به frontend را به‌گونه‌ای پیکربندی کنید که از بیرون قابل مشاهده باشد،‏ تا یک client بتواند Service را از بیرون cluster کوبرنتیز درخواست کند. با این حال یک کاربر کوبرنتیز می‌تواند از <code>kubectl port-forward</code> برای دسترسی به service استفاده کند حتی اگر از یک <code>ClusterIP</code> استفاده کند.</p>
+  <p>برخی cloud providerها،‏ مثل Google Compute Engine یا Google Kubernetes Engine،‏ از external load balancerها پشتیبانی می‌کنند. اگر cloud provider شما از load balancer پشتیبانی می‌کند و می‌خواهید از آن استفاده کنید،‏ خط <code>type: LoadBalancer</code> را از حالت comment خارج کنید.</p>
+
+  <div class="code"><div class="lbl"><span>application/guestbook/frontend-service.yaml</span><button type="button">کپی</button></div><pre class="yaml"># SOURCE: https://cloud.google.com/kubernetes-engine/docs/tutorials/guestbook
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  # if your cluster supports it, uncomment the following to automatically create
+  # an external load-balanced IP for the frontend service.
+  # type: LoadBalancer
+  #type: LoadBalancer
+  ports:
+    # the port that this service should serve on
+  - port: 80
+  selector:
+    app: guestbook
+    tier: frontend
+</pre></div>
+
+  <ol>
+    <li>frontend Service را از فایل <code>frontend-service.yaml</code> apply کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/application/guestbook/frontend-service.yaml
+</pre></div>
+    </li>
+    <li>فهرست Serviceها را بررسی کنید تا مطمئن شوید frontend Service در حال اجراست:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get services
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+frontend         ClusterIP   10.97.28.230    &lt;none&gt;        80/TCP     19s
+kubernetes       ClusterIP   10.96.0.1       &lt;none&gt;        443/TCP    3d19h
+redis-follower   ClusterIP   10.110.162.42   &lt;none&gt;        6379/TCP   5m48s
+redis-leader     ClusterIP   10.103.78.24    &lt;none&gt;        6379/TCP   11m
+</pre></div>
+    </li>
+  </ol>
+
+  <h4 id="ch16-frontend-portforward">دیدن frontend با <code>kubectl port-forward</code> <small>(Viewing the Frontend Service via kubectl port-forward)</small></h4>
+  <ol>
+    <li>دستور زیر را اجرا کنید تا port <code>‎8080‎</code> روی ماشین local خود را به port <code>‎80‎</code> روی service،‏ forward کنید.
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl port-forward svc/frontend 8080:80
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">Forwarding from 127.0.0.1:8080 -&gt; 80
+Forwarding from [::1]:8080 -&gt; 80
+</pre></div>
+    </li>
+    <li>صفحه‌ی <a href="http://localhost:8080">http://localhost:8080</a> را در مرورگر خود بارگذاری کنید تا guestbook خود را ببینید.</li>
+  </ol>
+
+  <h4 id="ch16-frontend-lb">دیدن frontend با <code>LoadBalancer</code> <small>(Viewing the Frontend Service via LoadBalancer)</small></h4>
+  <p>اگر manifest <code>frontend-service.yaml</code> را با <code>type: LoadBalancer</code> deploy کرده باشید،‏ باید آدرس IP را برای مشاهده‌ی Guestbook خود پیدا کنید.</p>
+  <ol>
+    <li>دستور زیر را اجرا کنید تا آدرس IP مربوط به frontend Service را بگیرید.
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get service frontend
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME       TYPE           CLUSTER-IP      EXTERNAL-IP        PORT(S)        AGE
+frontend   LoadBalancer   10.51.242.136   109.197.92.229     80:32372/TCP   1m
+</pre></div>
+    </li>
+    <li>آدرس IP بیرونی را کپی کنید و صفحه را در مرورگر بارگذاری کنید تا guestbook خود را ببینید.</li>
+  </ol>
+  <p>سعی کنید چند ورودی guestbook اضافه کنید،‏ با تایپ یک پیام و کلیک روی Submit. پیامی که تایپ کرده‌اید در frontend ظاهر می‌شود. این پیام نشان می‌دهد که داده با موفقیت از طریق Serviceهایی که قبلاً ساختید به Redis اضافه شده است.</p>
+
+  <div class="deep"><b>توضیح تکمیلی: مسیر کامل یک درخواست در Guestbook</b>
+    <p>وقتی از مرورگر روی Submit کلیک می‌کنید،‏ این مسیر طی می‌شود:</p>
+    <ol>
+      <li>مرورگر یک HTTP request به Service <code>frontend</code> می‌فرستد (روی port ۸۰،‏ یا از طریق <code>kubectl port-forward</code> یا از طریق IP بیرونی LoadBalancer).</li>
+      <li>kube-proxy (فصل ۵) این ترافیک را با ruleهای iptables یا nftables به یکی از سه Pod frontend (یا بیشتر،‏ پس از scale) می‌فرستد؛‏ انتخاب Pod تصادفی است و session affinity پیش‌فرض ندارد.</li>
+      <li>کد PHP داخل آن Pod،‏ چون این یک عملیات write است،‏ به نام <code>redis-leader</code> وصل می‌شود. این نام از طریق CoreDNS داخل cluster به ClusterIP مربوط به Service <code>redis-leader</code> resolve می‌شود.</li>
+      <li>Service <code>redis-leader</code> ترافیک را به تنها Pod backend خودش (که <code>role: leader</code> دارد) هدایت می‌کند و پیام در Redis نوشته می‌شود.</li>
+      <li>برای خواندن پیام‌های قبلی (رندر صفحه)،‏ کد PHP به‌جای آن به <code>redis-follower</code> وصل می‌شود،‏ که ترافیک را بین دو Pod follower پخش می‌کند.</li>
+    </ol>
+    <p>این مثال به‌خوبی نشان می‌دهد چرا Service abstraction (فصل ۵) مهم است: کد frontend هرگز IP واقعی هیچ Podای را نمی‌داند و نیازی هم به دانستن آن ندارد؛‏ حتی اگر Redis leader Pod در اثر یک node failure از بین برود و Deployment یک Pod جدید با IP متفاوت بسازد،‏ نام <code>redis-leader</code> بدون تغییر به IP جدید resolve می‌شود.</p>
+  </div>
+
+  <h3 id="ch16-scale">scale کردن frontend <small>(Scale the Web Frontend)</small></h3>
+  <p>می‌توانید scale up یا scale down کنید،‏ چون سرورهای شما به‌صورت یک Service که از یک Deployment controller استفاده می‌کند تعریف شده‌اند.</p>
+  <ol>
+    <li>دستور زیر را اجرا کنید تا تعداد frontend Podها را scale up کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl scale deployment frontend --replicas=5
+</pre></div>
+    </li>
+    <li>فهرست Podها را بررسی کنید تا تعداد frontend Podهای در حال اجرا را تأیید کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                             READY   STATUS    RESTARTS   AGE
+frontend-85595f5bf9-5df5m        1/1     Running   0          83s
+frontend-85595f5bf9-7zmg5        1/1     Running   0          83s
+frontend-85595f5bf9-cpskg        1/1     Running   0          15m
+frontend-85595f5bf9-l2l54        1/1     Running   0          14m
+frontend-85595f5bf9-l9c8z        1/1     Running   0          14m
+redis-follower-dddfbdcc9-82sfr   1/1     Running   0          97m
+redis-follower-dddfbdcc9-qrt5k   1/1     Running   0          97m
+redis-leader-fb76b4755-xjr2n     1/1     Running   0          108m
+</pre></div>
+    </li>
+    <li>دستور زیر را اجرا کنید تا تعداد frontend Podها را scale down کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl scale deployment frontend --replicas=2
+</pre></div>
+    </li>
+    <li>فهرست Podها را بررسی کنید تا تعداد frontend Podهای در حال اجرا را تأیید کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                             READY   STATUS    RESTARTS   AGE
+frontend-85595f5bf9-cpskg        1/1     Running   0          16m
+frontend-85595f5bf9-l9c8z        1/1     Running   0          15m
+redis-follower-dddfbdcc9-82sfr   1/1     Running   0          98m
+redis-follower-dddfbdcc9-qrt5k   1/1     Running   0          98m
+redis-leader-fb76b4755-xjr2n     1/1     Running   0          109m
+</pre></div>
+    </li>
+  </ol>
+
+  <div class="deep"><b>توضیح تکمیلی: چرا Service نیازی به تغییر ندارد؟</b>
+    <p>در طول scale up و scale down،‏ هیچ کدام از manifestهای Service (فصل ۵) تغییر نکردند. چون selector Service <code>frontend</code> ثابت است (<code>app: guestbook</code>, <code>tier: frontend</code>)،‏ Service به‌طور خودکار endpoint list خودش را با هر Pod جدید یا حذف‌شده به‌روزرسانی می‌کند (از طریق EndpointSlice controller). این دقیقاً مزیت جدا کردن identity شبکه (Service) از تعداد و identity واقعی Podها است — scale کردن یک عملیات کاملاً شفاف برای مصرف‌کننده‌های Service است.</p>
+  </div>
+
+  <h3 id="ch16-guestbook-cleanup">پاک‌سازی Guestbook <small>(Cleaning up Guestbook)</small></h3>
+  <p>حذف Deploymentها و Serviceها همچنین هر Pod در حال اجرا را حذف می‌کند. از labelها برای حذف چند resource با یک دستور استفاده کنید.</p>
+  <ol>
+    <li>دستورات زیر را اجرا کنید تا همه‌ی Podها،‏ Deploymentها و Serviceها حذف شوند (kubectl در v1.37 پس از deleted،‏ namespace را هم چاپ می‌کند).
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete deployment -l app=redis
+kubectl delete service -l app=redis
+kubectl delete deployment frontend
+kubectl delete service frontend
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">deployment.apps "redis-follower" deleted from default namespace
+deployment.apps "redis-leader" deleted from default namespace
+service "redis-follower" deleted from default namespace
+service "redis-leader" deleted from default namespace
+deployment.apps "frontend" deleted from default namespace
+service "frontend" deleted from default namespace
+</pre></div>
+    </li>
+    <li>فهرست Podها را بررسی کنید تا مطمئن شوید هیچ Podای در حال اجرا نیست:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">No resources found in default namespace.
+</pre></div>
+    </li>
+  </ol>
+  <p class="next">مطالب مرتبط در مستندات رسمی: تکمیل <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/">Kubernetes Basics Interactive Tutorials</a>،‏ مطالعه‌ی بیشتر درباره‌ی <a href="https://kubernetes.io/docs/tutorials/services/connect-applications-service/">connecting applications with services</a>،‏ مطالعه‌ی بیشتر درباره‌ی <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#using-labels-effectively">using labels effectively</a>،‏ و تمرین <a href="https://kubernetes.io/docs/tutorials/stateless-application/canary-deployment/">Deploy a Canary Release</a> برای یادگیری تست ایمن نسخه‌های جدید در production.</p>
+
+  <div class="note"><b>نکته</b><p>توجه کنید که خود مستندات،‏ Guestbook را با عبارت صریح <i>«not production ready»</i> معرفی می‌کند. مشکلات اصلی این pattern برای production عبارت‌اند از: نبود PersistentVolume برای Redis (با از دست رفتن Pod،‏ داده از بین می‌رود)،‏ نبود authentication (تشخیص هویت درخواست‌دهنده) روی Redis،‏ نبود resource limits،‏ نبود liveness/readiness probe،‏ و نبود HTTPS/Ingress برای frontend. بخش دوم این فصل (WordPress) گام اول را برای رفع مشکل اول (persistence) نشان می‌دهد،‏ و آزمایش عملی پایانی چند مورد دیگر را (خارج از مستندات رسمی) اضافه می‌کند.</p></div>
+  <h3 id="ch16-wp-intro">بخش دوم: WordPress + MySQL با PersistentVolume</h3>
+  <figure><div class="plate"><svg viewBox="0 0 760 340" width="760" height="340" role="img" aria-label="معماری WordPress و MySQL با PVC و Secret" style="max-width:100%;height:auto;display:block"><defs><marker id="c16f2-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"/></marker><marker id="c16f2-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"/></marker><marker id="c16f2-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"/></marker><marker id="c16f2-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a94ab"/></marker><marker id="c16f2-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"/></marker></defs><rect x="640" y="40" width="106" height="56" rx="8" fill="#f2f4f8" stroke="#8a94ab" stroke-width="1.5"/><text x="734" y="64" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">کاربر</text><text x="652" y="84" font-family="JetBrains Mono, ui-monospace, monospace" font-size="8.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">minikube service</text><rect x="420" y="30" width="190" height="40" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"/><text x="515" y="55" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="middle">Service: wordpress (LB)</text><rect x="420" y="84" width="190" height="70" rx="8" fill="#ffffff" stroke="#326ce5" stroke-width="1.5" stroke-dasharray="5 4"/><text x="600" y="104" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="700" fill="#326ce5" direction="rtl" text-anchor="start">Deployment با Recreate</text><rect x="440" y="114" width="150" height="30" rx="6" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"/><text x="515.0" y="133" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="middle">wordpress (1)</text><line x1="638" y1="68" x2="614" y2="52" stroke="#8a94ab" stroke-width="1.6" marker-end="url(#c16f2-k)"/><rect x="150" y="30" width="210" height="40" rx="8" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"/><text x="255" y="55" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="700" fill="#b26b00" direction="ltr" text-anchor="middle">Service: wordpress-mysql</text><text x="355" y="84" font-family="Vazirmatn, Tahoma, sans-serif" font-size="10" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">headless: clusterIP: None</text><rect x="150" y="94" width="210" height="60" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5" stroke-dasharray="5 4"/><rect x="180" y="112" width="150" height="30" rx="6" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"/><text x="255.0" y="131" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#b26b00" direction="ltr" text-anchor="middle">mysql (1)</text><line x1="418" y1="128" x2="364" y2="60" stroke="#b26b00" stroke-width="1.6" marker-end="url(#c16f2-o)"/><text x="402" y="104" font-family="Vazirmatn, Tahoma, sans-serif" font-size="10" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">3306</text><rect x="440" y="186" width="150" height="46" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"/><text x="515" y="206" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#12806f" direction="ltr" text-anchor="middle">PVC wp-pv-claim</text><text x="515" y="223" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">RWO 20Gi</text><rect x="180" y="186" width="150" height="46" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"/><text x="255" y="206" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#12806f" direction="ltr" text-anchor="middle">PVC mysql-pv-claim</text><text x="255" y="223" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">RWO 20Gi</text><line x1="515" y1="156" x2="515" y2="182" stroke="#12806f" stroke-width="1.6" marker-end="url(#c16f2-g)"/><line x1="255" y1="156" x2="255" y2="182" stroke="#12806f" stroke-width="1.6" marker-end="url(#c16f2-g)"/><rect x="14" y="100" width="120" height="52" rx="8" fill="#fbe5e3" stroke="#b83227" stroke-width="1.5"/><text x="74" y="122" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#b83227" direction="ltr" text-anchor="middle">Secret</text><text x="74" y="140" font-family="JetBrains Mono, ui-monospace, monospace" font-size="8" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">mysql-pass-&lt;hash&gt;</text><line x1="136" y1="126" x2="176" y2="126" stroke="#b83227" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c16f2-r)"/><path d="M74,154 C80,180 400,180 436,140" fill="none" stroke="#b83227" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c16f2-r)"/><text x="746" y="268" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">هر دو Pod تک‌replica هستند و Volume از نوع RWO دارند؛ برای همین strategy برابر Recreate است.</text><text x="746" y="290" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">آزمایش پایانی: PVC تازه‌ی RWX و RollingUpdate و HPA برای WordPress؛</text><text x="746" y="310" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">probe و resources برای هر دو؛ PodDisruptionBudget؛ و NetworkPolicy که 3306 را فقط به Podهای frontend باز می‌کند.</text></svg></div><figcaption><b>شکل ۱۶-۲.</b> <span style="flex:1 1 0;min-width:0">معماری WordPress و MySQL: هر کدام یک Deployment تک‌replica با PVC از نوع RWO؛‏ رمز از Secretی می‌آید که Kustomize با hash در نام می‌سازد،‏ و MySQL پشت یک headless Service است.</span></figcaption></figure>
+  <p>این tutorial نشان می‌دهد چگونه یک سایت WordPress و یک پایگاه‌داده MySQL را با استفاده از Minikube deploy کنید. هر دو برنامه از PersistentVolumeها و PersistentVolumeClaimها برای ذخیره‌ی داده استفاده می‌کنند.</p>
+  <p>یک <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">PersistentVolume</a> (PV) قطعه‌ای از storage در cluster است که یا به‌صورت دستی توسط یک administrator provision شده،‏ یا به‌صورت پویا توسط کوبرنتیز با استفاده از یک <a href="https://kubernetes.io/docs/concepts/storage/storage-classes">StorageClass</a> provision شده است. یک <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims">PersistentVolumeClaim</a> (PVC) درخواستی برای storage توسط یک کاربر است که می‌تواند با یک PV برآورده شود. PersistentVolumeها و PersistentVolumeClaimها مستقل از lifecycle یک Pod هستند و داده را در طول restart،‏ reschedule و حتی delete شدن Podها حفظ می‌کنند.</p>
+  <div class="warn"><b>هشدار</b><p>این deployment برای use caseهای production مناسب نیست،‏ چون از Pod تک‌instance برای WordPress و MySQL استفاده می‌کند. برای deploy کردن WordPress در production،‏ استفاده از <a href="https://github.com/bitnami/charts/tree/master/bitnami/wordpress">WordPress Helm Chart</a> را در نظر بگیرید.</p></div>
+  <p>فایل‌های ارائه‌شده در این tutorial از GA Deployment APIها استفاده می‌کنند و مختص کوبرنتیز نسخه‌ی ۱.۹ و بالاتر هستند. اگر می‌خواهید این tutorial را با نسخه‌ی قدیمی‌تر کوبرنتیز استفاده کنید،‏ لطفا API version را به‌درستی update کنید،‏ یا به نسخه‌های قدیمی‌تر همین tutorial مراجعه کنید.</p>
+
+  <h4>اهداف <small>(Objectives)</small></h4>
+  <ul>
+    <li>ساخت PersistentVolumeClaim و PersistentVolume</li>
+    <li>ساخت یک <code>kustomization.yaml</code> با
+      <ul>
+        <li>یک Secret generator</li>
+        <li>پیکربندی‌های resource مربوط به MySQL</li>
+        <li>پیکربندی‌های resource مربوط به WordPress</li>
+      </ul>
+    </li>
+    <li>Apply کردن پوشه‌ی kustomization با <code>kubectl apply -k ./</code></li>
+    <li>پاک‌سازی (Clean up)</li>
+  </ul>
+
+  <h4>پیش از شروع <small>(Before you begin)</small></h4>
+  <p>مثال این صفحه با <code>kubectl</code> نسخه‌ی ۱.۲۷ و بالاتر کار می‌کند.</p>
+  <p>فایل‌های پیکربندی زیر را دانلود کنید:</p>
+  <ol>
+    <li><a href="https://kubernetes.io/examples/application/wordpress/mysql-deployment.yaml">mysql-deployment.yaml</a></li>
+    <li><a href="https://kubernetes.io/examples/application/wordpress/wordpress-deployment.yaml">wordpress-deployment.yaml</a></li>
+  </ol>
+
+  <h3 id="ch16-wp-pvc">ساختن PersistentVolumeClaim و PersistentVolume <small>(Create PersistentVolumeClaims and PersistentVolumes)</small></h3>
+  <p>MySQL و WordPress هرکدام به یک PersistentVolume برای ذخیره‌ی داده نیاز دارند. PersistentVolumeClaim مربوط به آن‌ها در مرحله‌ی deployment ساخته می‌شود.</p>
+  <p>بسیاری از محیط‌های cluster یک StorageClass پیش‌فرض نصب‌شده دارند. وقتی یک StorageClass در PersistentVolumeClaim مشخص نشود،‏ از StorageClass پیش‌فرض cluster به‌جای آن استفاده می‌شود.</p>
+  <p>وقتی یک PersistentVolumeClaim ساخته می‌شود،‏ یک PersistentVolume به‌صورت پویا بر اساس پیکربندی StorageClass provision می‌شود.</p>
+  <div class="note"><b>نکته</b><p>در clusterهای local،‏ StorageClass پیش‌فرض از provisioner با نام <code>hostPath</code> استفاده می‌کند. Volumeهای <code>hostPath</code> فقط برای development و testing مناسب هستند. با Volumeهای <code>hostPath</code>،‏ داده‌ی شما در مسیر <code>/tmp</code> روی Nodeی که Pod روی آن schedule شده زندگی می‌کند و بین Nodeها جابه‌جا نمی‌شود. اگر یک Pod از بین برود و روی Node دیگری در cluster schedule شود،‏ یا Node reboot شود،‏ داده از دست می‌رود.</p></div>
+  <p>اگر در حال بالا آوردن یک cluster هستید که نیاز به استفاده از provisioner با نام <code>hostPath</code> دارد،‏ flag با نام <code>--enable-hostpath-provisioner</code> باید در component با نام <code>controller-manager</code> تنظیم شود.</p>
+  <p>اگر یک cluster کوبرنتیز در حال اجرا روی Google Kubernetes Engine دارید،‏ لطفا <a href="https://cloud.google.com/kubernetes-engine/docs/tutorials/persistent-disk">این راهنما</a> را دنبال کنید.</p>
+
+  <div class="deep"><b>توضیح تکمیلی: چرا این‌جا PVC مستقیماً در همین manifest ساخته می‌شود،‏ اما PV نه؟</b>
+    <p>این یکی از تفاوت‌های اصلی این پروژه با Guestbook است. در فصل ۷ دیدید که کوبرنتیز دو مدل provisioning دارد: <b>static provisioning</b> (یک administrator از قبل چند PV می‌سازد) و <b>dynamic provisioning</b> (یک StorageClass به‌صورت خودکار وقتی یک PVC ساخته می‌شود،‏ یک PV متناظر می‌سازد). این tutorial از مدل دوم استفاده می‌کند: تنها چیزی که در manifestها می‌بینید یک <code>PersistentVolumeClaim</code> است؛‏ هیچ object از نوع <code>PersistentVolume</code> یا <code>StorageClass</code> صریحاً نوشته نشده،‏ چون فرض بر این است که cluster (مثلاً Minikube) از قبل یک StorageClass پیش‌فرض دارد. وقتی PVC ساخته می‌شود،‏ provisioner همان StorageClass به‌صورت خودکار یک PV می‌سازد و PersistentVolume controller آن دو را به هم <i>bind</i> می‌کند.</p>
+  </div>
+
+  <h3 id="ch16-wp-kustomization">ساختن فایل kustomization.yaml <small>(Create a kustomization.yaml)</small></h3>
+  <h4 id="ch16-wp-secret">افزودن Secret generator <small>(Add a Secret generator)</small></h4>
+  <p>یک <a href="https://kubernetes.io/docs/concepts/configuration/secret/">Secret</a> یک object است که یک قطعه داده‌ی حساس مانند یک رمز عبور یا کلید را ذخیره می‌کند. از نسخه‌ی ۱.۱۴،‏ <code>kubectl</code> از مدیریت objectهای کوبرنتیز با استفاده از یک kustomization file پشتیبانی می‌کند. می‌توانید یک Secret را با generatorها در <code>kustomization.yaml</code> بسازید.</p>
+  <p>یک Secret generator در <code>kustomization.yaml</code> از دستور زیر اضافه کنید. باید <code>YOUR_PASSWORD</code> را با رمز عبوری که می‌خواهید استفاده کنید جایگزین کنید.</p>
+
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">cat &lt;&lt;EOF &gt;./kustomization.yaml
+secretGenerator:
+- name: mysql-pass
+  literals:
+  - password=YOUR_PASSWORD
+EOF
+</pre></div>
+
+  <div class="deep"><b>توضیح تکمیلی: Kustomize چیست و چرا اینجا استفاده شده؟</b>
+    <p>Kustomize یک ابزار template-free برای سفارشی‌سازی manifestهای کوبرنتیز است که از نسخه‌ی ۱.۱۴ مستقیماً در <code>kubectl</code> ادغام شده (با flag <code>-k</code>). برخلاف Helm که از یک زبان templating استفاده می‌کند،‏ Kustomize یک فایل <code>kustomization.yaml</code> را می‌خواند که فهرستی از resourceهای پایه و یک سری «patch» یا «generator» روی آن‌ها را توصیف می‌کند.</p>
+    <p><code>secretGenerator</code> دقیقاً معادل دستوری است که در فصل ۶ دیدید: <code>kubectl create secret generic mysql-pass --from-literal=password=YOUR_PASSWORD</code>. تفاوت اصلی این است که Kustomize به‌صورت پیش‌فرض یک <b>hash</b> از محتوای Secret را به نام آن اضافه می‌کند (مثلاً <code>mysql-pass-c57bb4t7mf</code>)،‏ تا هر بار محتوای Secret تغییر کند،‏ نام آن هم تغییر کند. این کار content-hash naming (نام‌گذاری بر اساس hash محتوا) است،‏ نه immutable Secret؛‏ immutable فیلد جداگانه‌ای است (<code>immutable: true</code>) که تغییر محتوای همان object را ممنوع می‌کند. مزیت hash در نام این است که Kustomize ارجاع‌ها را در Deploymentها هم به نام تازه به‌روز می‌کند؛‏ پس <code>spec.template</code> تغییر می‌کند و Deployment یک rollout تازه (فصل ۴) شروع می‌کند تا Podها مقدار جدید را بخوانند (برای MySQL با strategy برابر Recreate). Secret قدیمی هم باقی می‌ماند و rollback به آن ممکن است.</p>
+    <p><b>دام مهم:</b> تصویر رسمی MySQL متغیرهای <code>MYSQL_ROOT_PASSWORD</code> و <code>MYSQL_PASSWORD</code> را فقط وقتی به کار می‌برد که data directory خالی باشد (اولین اجرا). وقتی داده روی PersistentVolume وجود دارد،‏ عوض کردن Secret و rollout،‏ رمز را در خود پایگاه‌داده تغییر نمی‌دهد؛‏ WordPress با رمز تازه وصل می‌شود و خطا می‌گیرد. rotate کردن رمز باید ابتدا در خود MySQL (با <code>ALTER USER</code>) انجام شود؛‏ تمرین‌های پایان فصل این روند را نشان می‌دهند.</p>
+  </div>
+
+  <h3 id="ch16-wp-resources">افزودن manifestهای MySQL و WordPress <small>(Add resource configs for MySQL and WordPress)</small></h3>
+  <p>manifest زیر یک Deployment تک‌instance از MySQL را توصیف می‌کند. container مربوط به MySQL،‏ PersistentVolume را در مسیر <code>/var/lib/mysql</code> mount می‌کند. environment variable <code>MYSQL_ROOT_PASSWORD</code>،‏ رمز عبور پایگاه‌داده را از Secret تنظیم می‌کند.</p>
+
+  <div class="code"><div class="lbl"><span>application/wordpress/mysql-deployment.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-mysql
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: wordpress
+    tier: mysql
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-mysql
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:8.0
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: MYSQL_DATABASE
+          value: wordpress
+        - name: MYSQL_USER
+          value: wordpress
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+</pre></div>
+
+  <p>manifest زیر یک Deployment تک‌instance از WordPress را توصیف می‌کند. container مربوط به WordPress،‏ PersistentVolume را در مسیر <code>/var/www/html</code> برای فایل‌های داده‌ی سایت mount می‌کند. environment variable <code>WORDPRESS_DB_HOST</code>،‏ نام Service مربوط به MySQL که در بالا تعریف شد را تنظیم می‌کند،‏ و WordPress از طریق Service به پایگاه‌داده دسترسی پیدا می‌کند. environment variable <code>WORDPRESS_DB_PASSWORD</code>،‏ رمز عبور پایگاه‌داده را از Secretای که kustomize ساخته تنظیم می‌کند.</p>
+
+  <div class="code"><div class="lbl"><span>application/wordpress/wordpress-deployment.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: wordpress
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wp-pv-claim
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress:6.2.1-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: wordpress-mysql
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: WORDPRESS_DB_USER
+          value: wordpress
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wp-pv-claim
+</pre></div>
+
+  <ol>
+    <li>فایل پیکربندی deployment مربوط به MySQL را دانلود کنید.
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl -LO https://k8s.io/examples/application/wordpress/mysql-deployment.yaml
+</pre></div>
+    </li>
+    <li>فایل پیکربندی WordPress را دانلود کنید.
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl -LO https://k8s.io/examples/application/wordpress/wordpress-deployment.yaml
+</pre></div>
+    </li>
+    <li>آن‌ها را به فایل <code>kustomization.yaml</code> اضافه کنید.
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">cat &lt;&lt;EOF &gt;&gt;./kustomization.yaml
+resources:
+  - mysql-deployment.yaml
+  - wordpress-deployment.yaml
+EOF
+</pre></div>
+    </li>
+  </ol>
+
+  <div class="deep"><b>توضیح تکمیلی: تحلیل field-به-field این دو manifest</b>
+    <div class="tbl"><table><thead><tr><th>field</th><th>در کدام manifest</th><th>توضیح</th></tr></thead><tbody>
+      <tr><td><code>clusterIP: None</code></td><td>Service <code>wordpress-mysql</code></td><td>این یک <b>Headless Service</b> است (فصل ۵). به‌جای یک ClusterIP واحد که load balance می‌کند،‏ DNS مستقیماً به IP خود Pod (نه یک IP مجازی Service) resolve می‌شود. چون فقط یک replica MySQL وجود دارد،‏ نیازی به load balancing نیست؛‏ Headless Service اینجا صرفاً برای stable DNS name استفاده می‌شود،‏ و kube-proxy هیچ ruleی برای آن نمی‌سازد.</td></tr>
+      <tr><td><code>accessModes: [ReadWriteOnce]</code></td><td>هر دو PVC</td><td>همان‌طور که در فصل ۷ دیدید،‏ <code>ReadWriteOnce</code> (RWO) یعنی Volume تنها می‌تواند به‌صورت read-write توسط یک Node واحد mount شود (نه لزوماً یک Pod واحد،‏ اما در عمل معمولاً با یک Pod همراه است). این مناسب MySQL و WordPress تک‌instance است؛‏ اگر بخواهید چند replica WordPress با یک Volume مشترک داشته باشید،‏ باید از <code>ReadWriteMany</code> (که همه‌ی provisionerها آن را پشتیبانی نمی‌کنند) استفاده کنید.</td></tr>
+      <tr><td><code>storage: 20Gi</code></td><td>هر دو PVC</td><td>مقدار درخواستی storage.‏ StorageClass با توجه به provisioner خودش،‏ یک PV با ظرفیت حداقل این مقدار می‌سازد.</td></tr>
+      <tr><td><code>strategy.type: Recreate</code></td><td>هر دو Deployment</td><td>این مهم‌ترین تفاوت با فصل ۴ (که پیش‌فرض <code>RollingUpdate</code> را پوشش داد) است. با استراتژی پیش‌فرض <code>RollingUpdate</code>،‏ Pod جدید <i>پیش</i> از حذف Pod قدیمی ساخته می‌شود. چون Volume از نوع <code>ReadWriteOnce</code> فقط به یک Node attach می‌شود،‏ اگر Pod جدید روی Node دیگری schedule شود با خطای <code>Multi-Attach error</code> در وضعیت <code>ContainerCreating</code> می‌ماند. اگر روی همان Node بیفتد،‏ RWO مانع نمی‌شود (محدودیت در سطح Node است،‏ نه Pod) و دو process به نام mysqld روی یک data directory اجرا می‌شوند؛‏ InnoDB قفل فایل را نمی‌گیرد و Pod دوم شکست می‌خورد یا داده در خطر می‌افتد. <code>Recreate</code> این مشکل را حل می‌کند: ابتدا تمام Podهای قدیمی را کاملاً خاموش می‌کند،‏ سپس Pod جدید را می‌سازد — به قیمت یک downtime کوتاه در حین هر update.</td></tr>
+      <tr><td><code>MYSQL_DATABASE</code> / <code>MYSQL_USER</code></td><td>Deployment MySQL</td><td>ساده‌سازی با plaintext value (نه از Secret)،‏ چون این مقادیر حساس محسوب نمی‌شوند (نام پایگاه‌داده و نام کاربری،‏ نه رمز عبور).</td></tr>
+      <tr><td><code>type: LoadBalancer</code></td><td>Service <code>wordpress</code></td><td>برخلاف Guestbook که این خط comment شده بود،‏ اینجا صریحاً LoadBalancer است چون هدف این tutorial،‏ دسترسی مستقیم و بیرونی به سایت WordPress است. در Minikube،‏ این Service هرگز EXTERNAL-IP واقعی نمی‌گیرد (چون Minikube یک cloud provider واقعی نیست)؛‏ دستور <code>minikube service</code> این محدودیت را دور می‌زند (به بخش بعد مراجعه کنید).</td></tr>
+    </tbody></table></div>
+  </div>
+
+  <h3 id="ch16-wp-apply">اعمال و بررسی <small>(Apply and Verify)</small></h3>
+  <p><code>kustomization.yaml</code> شامل همه‌ی resourceهای لازم برای deploy کردن یک سایت WordPress و یک پایگاه‌داده MySQL است. می‌توانید این پوشه را با دستور زیر apply کنید:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -k ./
+</pre></div>
+  <p>حالا می‌توانید تأیید کنید که تمام objectها وجود دارند.</p>
+  <ol>
+    <li>با اجرای دستور زیر تأیید کنید که Secret وجود دارد:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get secrets
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                    TYPE                                  DATA   AGE
+mysql-pass-c57bb4t7mf   Opaque                                1      9s
+</pre></div>
+    </li>
+    <li>تأیید کنید که یک PersistentVolume به‌صورت پویا provision شده است.
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pvc
+</pre></div>
+      <div class="note"><b>نکته</b><p>ممکن است تا چند دقیقه طول بکشد تا PVها provision و bind شوند.</p></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME             STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS       AGE
+mysql-pv-claim   Bound     pvc-8cbd7b2e-4044-11e9-b2bb-42010a800002   20Gi       RWO            standard           77s
+wp-pv-claim      Bound     pvc-8cd0df54-4044-11e9-b2bb-42010a800002   20Gi       RWO            standard           77s
+</pre></div>
+    </li>
+    <li>تأیید کنید که Pod در حال اجراست با اجرای دستور زیر:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods
+</pre></div>
+      <div class="note"><b>نکته</b><p>ممکن است تا چند دقیقه طول بکشد تا Status مربوط به Pod به <code>RUNNING</code> برسد.</p></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                               READY   STATUS    RESTARTS   AGE
+wordpress-6d9b7c5c8f-tq2xv         1/1     Running   0          40s
+wordpress-mysql-7c9f6d4b8d-x5dzt   1/1     Running   0          40s
+</pre></div>
+    </li>
+    <li>تأیید کنید که Service در حال اجراست با اجرای دستور زیر:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get services wordpress
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME        TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+wordpress   LoadBalancer   10.104.12.89    &lt;pending&gt;     80:32406/TCP   4m
+</pre></div>
+      <div class="note"><b>نکته</b><p>Minikube فقط می‌تواند Serviceها را از طریق <code>NodePort</code> expose کند. مقدار EXTERNAL-IP همیشه <code>pending</code> باقی می‌ماند.</p></div>
+    </li>
+    <li>دستور زیر را اجرا کنید تا آدرس IP مربوط به WordPress Service را بگیرید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">minikube service wordpress --url
+</pre></div>
+      پاسخ باید چیزی شبیه این باشد:
+      <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">http://192.168.49.2:32406
+</pre></div>
+    </li>
+    <li>آدرس IP را کپی کنید و صفحه را در مرورگر خود بارگذاری کنید تا سایت خود را ببینید.
+      <p>باید صفحه‌ی setup مربوط به WordPress را مشابه شکل زیر ببینید.</p>
+      <div class="warn"><b>هشدار</b><p>نصب WordPress خود را روی این صفحه رها نکنید. اگر کاربر دیگری آن را پیدا کند،‏ می‌تواند یک وب‌سایت روی instance شما راه‌اندازی کند و از آن برای ارائه‌ی محتوای مخرب استفاده کند. یا با ساختن یک username و password،‏ WordPress را نصب کنید یا instance خود را حذف کنید.</p></div>
+    </li>
+  </ol>
+
+  <div class="deep"><b>توضیح تکمیلی: چرا این یک single point of failure دوگانه است</b>
+    <p>این معماری،‏ برخلاف Guestbook،‏ داده را persist می‌کند (به لطف PersistentVolume،‏ فصل ۷)،‏ اما هنوز highly available نیست: هم MySQL و هم WordPress فقط یک replica دارند (و با Volume از نوع RWO،‏ replica دوم روی Node دیگر نمی‌تواند همان Volume را attach کند). اگر Node میزبان یکی از این دو Pod از دست برود،‏ برنامه تا مدتی در دسترس نیست: حدود ۵۰ ثانیه تا Node به‌عنوان NotReady شناخته شود،‏ ۳۰۰ ثانیه tolerationSeconds تا Pod evict شود،‏ و سپس زمان detach شدن Volume از Node مرده (attach/detach controller پس از ۶ دقیقه force detach می‌کند،‏ مگر این‌که Node را با taint به نام <code>node.kubernetes.io/out-of-service</code> علامت بزنید). به این مجموع <i>failover time</i> می‌گویند. برای پایگاه‌داده در production واقعی معمولاً از یک StatefulSet (که در فصل ۴ معرفی شد) با replication در سطح خود پایگاه‌داده استفاده می‌شود،‏ یا از یک managed database service بیرون از cluster.</p>
+  </div>
+
+  <h3 id="ch16-wp-cleanup">پاک‌سازی <small>(Cleaning up)</small></h3>
+  <ol>
+    <li>دستور زیر را اجرا کنید تا Secret،‏ Deploymentها،‏ Serviceها و PersistentVolumeClaimهای خود را حذف کنید:
+      <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete -k ./
+</pre></div>
+    </li>
+  </ol>
+  <p class="next">مطالب مرتبط در مستندات رسمی: مطالعه‌ی بیشتر درباره‌ی <a href="https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/">Introspection and Debugging</a>،‏ مطالعه‌ی بیشتر درباره‌ی <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">Jobs</a>،‏ مطالعه‌ی بیشتر درباره‌ی <a href="https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/">Port Forwarding</a>،‏ و یادگیری <a href="https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/">Get a Shell to a Container</a>.</p>
+
+  <div class="note"><b>نکته</b><p><code>kubectl delete -k ./</code> دقیقاً مکمل <code>kubectl apply -k ./</code> است: تمام objectهایی که در <code>kustomization.yaml</code> فهرست یا generate شده‌اند (شامل Secret تولیدشده با نام hash‌دار) حذف می‌شوند. توجه کنید حذف PVC معمولاً باعث حذف PV و داده‌ی زیرین آن هم می‌شود (بسته به <code>reclaimPolicy</code> StorageClass — فصل ۷ را برای <code>Retain</code> در برابر <code>Delete</code> ببینید)،‏ بنابراین این دستور داده‌ی WordPress و MySQL شما را برای همیشه پاک می‌کند.</p></div>
+  <h3 id="ch16-lab-intro">آزمایش عملی سرتاسری: ارتقای WordPress به پیکربندی نزدیک‌تر به production؛ خارج از مستندات رسمی</h3>
+  <div class="warn"><b>هشدار</b><p>هر چیزی که در این بخش می‌آید <b>بخشی از مستندات رسمی tutorial WordPress + MySQL نیست</b>. این محتوا برای نشان‌دادن اینکه چگونه مفاهیم فصل‌های ۳ و ۵ و ۶ و ۷ و ۹ و ۱۰ روی همین پروژه‌ی واقعی اعمال می‌شوند نوشته شده است. تمام manifestهای این بخش دستی نوشته شده‌اند (نه از مستندات کپی شده‌اند) اما با رفتار و API واقعی کوبرنتیز که در فصل‌های قبل پوشش داده شد سازگار و صحیح هستند.</p></div>
+  <p>پروژه‌ی WordPress که در بخش دوم ساختید،‏ از نظر <i>persistence</i> بهتر از Guestbook بود،‏ اما هنوز چند مشکل production جدی دارد:</p>
+  <ul>
+    <li>هیچ resource limit روی containerها تعریف نشده — یک memory leak در WordPress یا MySQL می‌تواند کل Node را تحت فشار بگذارد (فصل ۳،‏ QoS class).</li>
+    <li>هیچ liveness یا readiness probe تعریف نشده — اگر Apache داخل container WordPress hang کند،‏ kubelet هیچ‌وقت متوجه نمی‌شود و ترافیک همچنان به آن Pod ارسال می‌شود (فصل ۳،‏ Pods).</li>
+    <li>WordPress فقط یک replica دارد و امکان scale کردن آن به‌سادگی وجود ندارد،‏ چون از یک PVC با <code>ReadWriteOnce</code> و استراتژی <code>Recreate</code> استفاده می‌کند (فصل ۷،‏ Storage).</li>
+    <li>هیچ NetworkPolicy وجود ندارد — هر Pod دیگری در namespace می‌تواند مستقیماً به port ۳۳۰۶ مربوط به MySQL وصل شود (فصل ۵).</li>
+    <li>هیچ PodDisruptionBudget وجود ندارد — یک <code>kubectl drain</code> یا node upgrade می‌تواند به‌طور هم‌زمان همه‌ی replicaهای WordPress را پایین ببرد (فصل ۹).</li>
+  </ul>
+  <p>در ادامه هر مشکل را با یک تغییر مشخص برطرف می‌کنیم.</p>
+
+  <h4 id="ch16-lab-scale-storage">پیش‌نیاز scale کردن WordPress: از ReadWriteOnce به ReadWriteMany</h4>
+  <p>پیش از افزودن HorizontalPodAutoscaler،‏ باید یک نکته‌ی مهم را حل کنیم که مستقیماً نتیجه‌ی چیزی است که در فصل ۷ درباره‌ی <code>accessModes</code> یاد گرفتید: PVC فعلی <code>wp-pv-claim</code> با <code>ReadWriteOnce</code> تعریف شده،‏ یعنی فقط یک Node می‌تواند آن را هم‌زمان mount کند. اگر <code>replicas</code> در Deployment مربوط به WordPress را بیشتر از ۱ کنیم بدون تغییر این mode،‏ Podهایی که روی Node دیگری schedule شوند با <code>Multi-Attach error</code> در وضعیت <code>ContainerCreating</code> می‌مانند (مگر همه روی یک Node باشند،‏ که تضمین‌شده نیست).</p>
+  <p>راه‌حل صحیح،‏ استفاده از یک StorageClass که از <code>ReadWriteMany</code> (RWX) پشتیبانی کند (مثلاً یک backend مبتنی بر NFS یا یک filesystem توزیع‌شده‌ی cloud) و تغییر استراتژی Deployment از <code>Recreate</code> به <code>RollingUpdate</code> است،‏ چون دیگر محدودیت انحصاری بودن Volume وجود ندارد.</p>
+  <p>یک نکته‌ی عملی: <code>accessModes</code> در PVC موجود قابل تغییر نیست؛‏ apply کردن همان نام با mode تازه با خطای <code>spec is immutable after creation except resources.requests and volumeAttributesClassName for bound claims</code> رد می‌شود. برای همین manifest زیر یک PVC تازه به نام <code>wp-pv-rwx</code> می‌سازد؛‏ فایل‌های <code>/var/www/html</code> را باید یک بار از Volume قدیمی به Volume تازه کپی کنید (مثلاً با یک Job موقت که هر دو PVC را mount می‌کند،‏ وقتی WordPress متوقف است).</p>
+
+  <div class="code"><div class="lbl"><span>lab/wordpress-deployment-scaled.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wp-pv-rwx
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteMany            # instead of ReadWriteOnce: many Pods on many Nodes
+  storageClassName: nfs-rwx    # hypothetical StorageClass that supports RWX
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: RollingUpdate        # possible now: the volume is no longer exclusive
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress:6.2.1-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: wordpress-mysql
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: WORDPRESS_DB_USER
+          value: wordpress
+        ports:
+        - containerPort: 80
+          name: wordpress
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /wp-admin/install.php
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /wp-admin/install.php
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wp-pv-rwx
+</pre></div>
+
+  <div class="deep"><b>توضیح تکمیلی: چرا مسیر <code>/wp-admin/install.php</code> برای probe؟</b>
+    <p>این مسیر همیشه یک پاسخ HTTP (معمولاً ۲۰۰ یا یک redirect) برمی‌گرداند،‏ چه WordPress نصب شده باشد چه نشده،‏ بدون نیاز به authentication — که آن را به یک انتخاب امن و پایدار برای liveness/readiness probe تبدیل می‌کند (فصل ۳). مسیر ریشه (<code>‎/‎</code>) هم کار می‌کند،‏ اما اگر pluginی صفحه‌ی اصلی را redirect یا cache کند ممکن است رفتار غیرمنتظره‌ای داشته باشد. تفاوت <code>readinessProbe</code> و <code>livenessProbe</code> در اینجا: readiness با فاصله‌ی کوتاه‌تر (۵ ثانیه) بررسی می‌شود تا Service سریع بفهمد Pod برای دریافت ترافیک آماده است یا نه؛‏ liveness با delay اولیه‌ی بیشتر (۳۰ ثانیه) اجرا می‌شود تا به Apache زمان کافی برای راه‌اندازی کامل (bootstrap) بدهد و از یک <i>restart loop</i> کاذب جلوگیری شود.</p>
+  </div>
+
+  <h4 id="ch16-lab-mysql-probes">افزودن resources و probe به MySQL</h4>
+  <p>برای MySQL هم باید مشابه همین کار را انجام دهیم. چون MySQL یک HTTP endpoint ندارد،‏ از <code>exec</code> probe استفاده می‌کنیم که دستور <code>mysqladmin ping</code> را داخل container اجرا می‌کند (این دقیقاً همان الگوی exec probe است که در فصل ۳ دیدید).</p>
+
+  <div class="code"><div class="lbl"><span>lab/mysql-deployment-probes.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-mysql
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  strategy:
+    type: Recreate   # still one replica; the volume stays RWO
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:8.0
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: MYSQL_DATABASE
+          value: wordpress
+        - name: MYSQL_USER
+          value: wordpress
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD"]
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+</pre></div>
+
+  <div class="note"><b>نکته</b><p>برای MySQL همچنان <code>replicas</code> روی ۱ باقی مانده و <code>strategy.type</code> همچنان <code>Recreate</code> است،‏ چون PVC مربوط به MySQL هنوز <code>ReadWriteOnce</code> است و MySQL خودش (بدون پیکربندی replication در سطح پایگاه‌داده) توانایی چند-writer ندارد. Scale افقی کردن یک پایگاه‌داده رابطه‌ای مثل MySQL موضوع پیچیده‌تری است (معمولاً با primary/replica در سطح خود MySQL،‏ شبیه به آنچه در بخش Guestbook با Redis leader/follower دیدید) و خارج از محدوده‌ی این tutorial است.</p></div>
+
+  <h4 id="ch16-lab-hpa">افزودن HorizontalPodAutoscaler برای WordPress</h4>
+  <p>حالا که WordPress می‌تواند بیش از یک replica داشته باشد (به لطف RWX Volume) و resource requests دارد (پیش‌نیاز HPA مبتنی بر CPU،‏ طبق فصل ۱۰)،‏ می‌توانیم یک HorizontalPodAutoscaler تعریف کنیم.</p>
+
+  <div class="code"><div class="lbl"><span>lab/wordpress-hpa.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: wordpress
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: wordpress
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+</pre></div>
+
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f wordpress-hpa.yaml
+kubectl get hpa wordpress --watch
+</pre></div>
+  <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME        REFERENCE              TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+wordpress   Deployment/wordpress   cpu: 12%/70%   2         6         2          38s
+</pre></div>
+
+  <div class="deep"><b>توضیح تکمیلی: پیش‌نیاز Metrics Server</b>
+    <p>همان‌طور که در فصل ۱۰ توضیح داده شد،‏ HPA برای خواندن CPU/memory utilization به <a href="https://github.com/kubernetes-sigs/metrics-server">Metrics Server</a> نیاز دارد که باید جداگانه روی cluster نصب شود (در Minikube با <code>minikube addons enable metrics-server</code>). اگر Metrics Server نصب نباشد،‏ ستون TARGETS مقدار <code>cpu: &lt;unknown&gt;/70%</code> نشان می‌دهد و HPA هیچ تصمیم scale نمی‌گیرد.</p>
+    <p>نکته‌ی مهم دیگر: HPA فقط روی Deployment مربوط به <b>WordPress</b> تعریف شده،‏ نه روی Deployment مربوط به MySQL. این عمدی است — همان‌طور که در بالا توضیح داده شد،‏ MySQL با این معماری (یک replica،‏ RWO) اصلاً قابل horizontal scale نیست،‏ پس اضافه کردن HPA به آن بی‌معنی است: HPA می‌تواند replicas را بالا ببرد،‏ اما Pod دوم یا روی Node دیگر با <code>Multi-Attach error</code> می‌ماند یا روی همان Node با قفل data directory در MySQL شکست می‌خورد.</p>
+  </div>
+
+  <h4 id="ch16-lab-pdb">افزودن PodDisruptionBudget برای WordPress</h4>
+  <p>با ۲ تا ۶ replica از WordPress،‏ حالا باید مطمئن شویم که عملیات‌های داوطلبانه مثل <code>kubectl drain</code> یا node upgrade به‌طور هم‌زمان همه‌ی replicaها را پایین نمی‌آورند (فصل ۹).</p>
+
+  <div class="code"><div class="lbl"><span>lab/wordpress-pdb.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: wordpress-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+</pre></div>
+
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f wordpress-pdb.yaml
+kubectl get pdb wordpress-pdb
+</pre></div>
+  <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME            MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+wordpress-pdb   1               N/A               1                     11s
+</pre></div>
+  <p>با <code>minAvailable: 1</code>،‏ اگر تعداد replicaهای فعلی ۲ باشد (کمترین مقدار HPA)،‏ eviction API فقط اجازه‌ی خروج <b>یک</b> Pod را در یک لحظه می‌دهد؛‏ اگر <code>kubectl drain</code> بخواهد Nodeای را که هر دو Pod روی آن هستند خالی کند،‏ عملیات روی دومین Pod بلوکه می‌شود تا یک Pod جایگزین در جای دیگر Ready شود.</p>
+
+  <h4 id="ch16-lab-netpol">افزودن NetworkPolicy برای محدودکردن دسترسی به MySQL</h4>
+  <p>طبق فصل ۵ و فصل ۱۴،‏ به‌صورت پیش‌فرض هر Pod در یک namespace می‌تواند به هر Pod دیگری (از جمله MySQL روی port ۳۳۰۶) وصل شود،‏ مگر یک NetworkPolicy این ترافیک را محدود کند. یک NetworkPolicy می‌نویسیم که فقط به Podهای با label <code>tier: frontend</code> (یعنی WordPress) اجازه‌ی اتصال به MySQL را می‌دهد.</p>
+
+  <div class="code"><div class="lbl"><span>lab/mysql-networkpolicy.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mysql-allow-wordpress-only
+spec:
+  podSelector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: wordpress
+          tier: frontend
+    ports:
+    - protocol: TCP
+      port: 3306
+</pre></div>
+
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f mysql-networkpolicy.yaml
+kubectl describe networkpolicy mysql-allow-wordpress-only
+</pre></div>
+
+  <div class="warn"><b>هشدار</b><p>NetworkPolicy فقط زمانی اعمال می‌شود که CNI plugin نصب‌شده روی cluster از NetworkPolicy پشتیبانی کند (مثلاً Calico،‏ Cilium یا Weave Net؛‏ نه پیاده‌سازی پیش‌فرض کاملاً ساده‌ی برخی توزیع‌های local). اگر CNI پشتیبانی نکند،‏ اعمال این manifest بدون خطا موفق می‌شود اما هیچ اثری روی ترافیک واقعی نمی‌گذارد — این یک دام رایج در production است که در فصل ۵ به آن اشاره شد.</p></div>
+  <p>از آنجا که <code>podSelector</code> این NetworkPolicy روی Pod با <code>tier: mysql</code> است و تنها یک قاعده‌ی <code>Ingress</code> تعریف شده،‏ هر ترافیک ورودی دیگری (مثلاً از یک Pod debugging یا Pod مهاجم که در همان namespace اجرا شده) به‌طور پیش‌فرض drop می‌شود،‏ چون به‌محض تعریف حتی یک NetworkPolicy با <code>policyTypes: [Ingress]</code> برای یک Pod،‏ رفتار پیش‌فرض آن Pod از «allow-all» به «deny-all-except-explicitly-allowed» تغییر می‌کند (دقیقاً مطابق مدل امنیتی NetworkPolicy که در فصل ۵ توضیح داده شد).</p>
+
+  <div class="lab"><b>آزمایش عملی: تأیید عملکرد NetworkPolicy</b>
+    <p>برای تأیید اینکه NetworkPolicy واقعاً کار می‌کند،‏ یک Pod آزمایشی بدون label مناسب می‌سازیم و سعی می‌کنیم به MySQL وصل شویم:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run netpol-test --rm -it --image=busybox:1.36 --restart=Never -- sh -c "nc -zv -w 3 wordpress-mysql 3306"
+</pre></div>
+    <div class="code"><div class="lbl"><span>خروجی نمونه (بدون label مناسب — اتصال رد می‌شود)</span><button type="button">کپی</button></div><pre class="out">nc: wordpress-mysql (10.244.1.17:3306): Connection timed out
+pod "netpol-test" deleted from default namespace
+</pre></div>
+    <p>حالا همان تست را از یک Pod با labelهای درست (شبیه‌سازی frontend) تکرار می‌کنیم:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run netpol-test-frontend --rm -it --image=busybox:1.36 --restart=Never \
+  --labels="app=wordpress,tier=frontend" -- sh -c "nc -zv -w 3 wordpress-mysql 3306"
+</pre></div>
+    <div class="code"><div class="lbl"><span>خروجی نمونه (با label مجاز — اتصال موفق)</span><button type="button">کپی</button></div><pre class="out">wordpress-mysql (10.244.1.17:3306) open
+pod "netpol-test-frontend" deleted from default namespace
+</pre></div>
+    <p>IP در خروجی،‏ IP خود Pod در MySQL است و نه یک ClusterIP،‏ چون <code>wordpress-mysql</code> یک headless Service است (<code>clusterIP: None</code>). این دو تست به‌روشنی نشان می‌دهند که NetworkPolicy عمل کرده: تنها Podهایی با label دقیق <code>app: wordpress, tier: frontend</code> اجازه‌ی رسیدن به port ۳۳۰۶ روی MySQL را دارند.</p>
+  </div>
+
+  <div class="deep"><b>توضیح تکمیلی: جمع‌بندی معماری نهایی این آزمایش عملی</b>
+    <p>پس از این تغییرات،‏ معماری WordPress دیگر تنها یک کپی از دو Deployment ساده نیست؛‏ بلکه یک مثال کوچک اما واقعی از یک برنامه‌ی production-aware است:</p>
+    <div class="tbl"><table><thead><tr><th>مشکل اولیه</th><th>راه‌حل</th><th>فصل مرجع</th></tr></thead><tbody>
+      <tr><td>نبود resource limit</td><td><code>resources.requests</code>/<code>limits</code> روی هر دو container</td><td>فصل ۳ (QoS class)</td></tr>
+      <tr><td>نبود health check</td><td>readiness/liveness probe (HTTP برای WordPress،‏ exec برای MySQL)</td><td>فصل ۳</td></tr>
+      <tr><td>عدم امکان scale کردن WordPress</td><td>تغییر accessMode PVC به ReadWriteMany + استراتژی RollingUpdate + HorizontalPodAutoscaler</td><td>فصل ۷ و ۴ و ۱۰</td></tr>
+      <tr><td>نبود محافظت در برابر drain هم‌زمان</td><td>PodDisruptionBudget با <code>minAvailable: 1</code></td><td>فصل ۹</td></tr>
+      <tr><td>دسترسی شبکه‌ای باز به MySQL</td><td>NetworkPolicy که فقط Podهای frontend را مجاز می‌کند</td><td>فصل ۵/۱۱</td></tr>
+    </tbody></table></div>
+    <p>نکته‌ی پایانی: هیچ‌کدام از این تغییرات جایگزین پایگاه‌داده‌ی managed یا یک StatefulSet با replication واقعی نیستند؛‏ MySQL همچنان یک single point of failure باقی می‌ماند. برطرف‌کردن کامل این مشکل نیازمند یک راه‌حل جدی‌تر (مثل یک MySQL Operator یا یک managed database service) است که از محدوده‌ی این کتاب فراتر می‌رود،‏ اما دقیقاً نقطه‌ای است که خود مستندات با پیشنهاد <a href="https://github.com/bitnami/charts/tree/master/bitnami/wordpress">WordPress Helm Chart</a> به آن اشاره می‌کند.</p>
+  </div>
+  <div id="ch16-ex1" class="ex">
+    <div class="ex-h">تمرین‌های فصل ۱۶ <small>۲۱ تمرین</small></div>
+    <ol>
+      <li><span class="lvl l1">مفهومی</span>چرا در Guestbook یک Service جدا برای Redis leader و یک Service جدا برای Redis follower تعریف شده،‏ به‌جای یک Service واحد برای هر دو؟
+        <details class="ans"><summary>پاسخ</summary><p>چون Service یک abstraction ساده است که صرفاً ترافیک را بین مجموعه‌ای از Podهای منطبق با <code>selector</code> پخش می‌کند؛‏ هیچ منطقی برای تشخیص read/write ندارد. کد frontend باید صریحاً بداند که برای write باید به <code>redis-leader</code> و برای read باید به <code>redis-follower</code> وصل شود. اگر یک Service واحد با selector مشترک (مثلاً فقط <code>app: redis</code>) تعریف می‌شد،‏ ترافیک write می‌توانست به‌اشتباه به یک follower برسد که قابل نوشتن نیست (یا برعکس،‏ اگر رفتار Redis follower اجازه‌ی نوشتن نمی‌دهد،‏ خطا می‌گرفتیم). جداسازی Service دقیقاً معادل جداسازی endpoint در سطح شبکه است که با معماری leader/follower سازگار است.</p></details></li>
+
+      <li><span class="lvl l1">مفهومی</span>در فایل <code>redis-follower-deployment.yaml</code>،‏ فیلد <code>selector.matchLabels</code> فقط <code>app: redis</code> است،‏ نه ترکیب کامل با <code>role: follower</code>. آیا این می‌تواند مشکلی ایجاد کند؟ توضیح دهید.
+        <details class="ans"><summary>پاسخ</summary><p>selector دو Deployment (leader و follower) همپوشان است و مستندات Deployment صریحاً هشدار می‌دهد که controllerهایی با selector همپوشان با هم دعوا می‌کنند. در عمل اینجا دعوایی رخ نمی‌دهد: Deployment controller فقط ReplicaSetهایی را مدیریت می‌کند که ownerReference آن‌ها به خودش اشاره می‌کند،‏ و selector هر ReplicaSet علاوه بر <code>app: redis</code>،‏ label به نام <code>pod-template-hash</code> را هم دارد؛‏ پس هر ReplicaSet فقط Podهای خودش را می‌بیند و Pod دارای controller دیگر را تصاحب نمی‌کند.</p>
+        <p>مشکل جای دیگری ظاهر می‌شود: هر چیزی که فقط با selector کار می‌کند هر دو گروه را با هم می‌گیرد؛‏ مثلاً <code>kubectl get pods -l app=redis</code>،‏ یک PodDisruptionBudget یا NetworkPolicy با همین selector،‏ یا Service با selector ناقص. best practice این است که selector هر Deployment labelهای متمایزکننده (مثل <code>role</code>) را هم داشته باشد. دقت کنید <code>spec.selector</code> در Deployment پس از ساخت immutable است،‏ پس اصلاح آن یعنی ساختن Deployment تازه.</p></details></li>
+
+      <li><span class="lvl l1">مفهومی</span>چرا Deployment مربوط به MySQL در tutorial WordPress از <code>strategy: Recreate</code> استفاده می‌کند،‏ در حالی که پیش‌فرض Deployment در فصل ۴،‏ RollingUpdate بود؟
+        <details class="ans"><summary>پاسخ</summary><p>RollingUpdate پیش از حذف Pod قدیمی،‏ Pod تازه را می‌سازد؛‏ یعنی مدتی دو instance از MySQL هم‌زمان وجود دارند. PVC از نوع <code>ReadWriteOnce</code> است و این محدودیت در سطح Node است،‏ نه Pod: اگر Pod تازه روی Node دیگری schedule شود،‏ Volume با <code>Multi-Attach error</code> attach نمی‌شود و Pod در <code>ContainerCreating</code> می‌ماند؛‏ اگر روی همان Node بیفتد،‏ هر دو Pod Volume را mount می‌کنند و دو mysqld روی یک data directory اجرا می‌شوند که InnoDB اجازه نمی‌دهد (خطای قفل فایل) یا داده را به خطر می‌اندازد.</p>
+        <p>Recreate ابتدا همه‌ی Podهای قدیمی را حذف می‌کند و بعد Pod تازه را می‌سازد؛‏ با این کار همیشه حداکثر یک writer وجود دارد،‏ به قیمت downtime کوتاه در هر rollout. اگر حتی روی یک Node هم نباید دو Pod هم‌زمان Volume را داشته باشند،‏ access mode به نام <code>ReadWriteOncePod</code> این را در سطح Pod تضمین می‌کند.</p></details></li>
+
+      <li><span class="lvl l1">مفهومی</span>در manifest Service مربوط به <code>wordpress-mysql</code>،‏ فیلد <code>clusterIP: None</code> چه معنایی دارد و چرا در اینجا استفاده شده؟
+        <details class="ans"><summary>پاسخ</summary><p><code>clusterIP: None</code> این Service را به یک <b>Headless Service</b> تبدیل می‌کند (فصل ۵). به‌جای اختصاص یک ClusterIP مجازی که ترافیک را load balance می‌کند،‏ DNS داخلی cluster نام <code>wordpress-mysql</code> را مستقیماً به IP خود Pod (یا Podها) resolve می‌کند. چون فقط یک replica MySQL وجود دارد،‏ نیازی به load balancing نیست و Headless Service صرفاً یک نام DNS پایدار فراهم می‌کند بدون overhead مسیریابی اضافه.</p></details></li>
+
+      <li><span class="lvl l1">مفهومی</span>چرا اضافه‌کردن یک HorizontalPodAutoscaler به Deployment مربوط به MySQL در این پروژه بی‌معنی است؟
+        <details class="ans"><summary>پاسخ</summary><p>چون HPA فقط تعداد replicaهای Deployment را تغییر می‌دهد،‏ اما معماری فعلی MySQL (PVC با <code>ReadWriteOnce</code> و <code>strategy: Recreate</code>) صراحتاً فقط یک replica هم‌زمان را تحمل می‌کند. اگر HPA بخواهد replicas را بیشتر از ۱ کند،‏ Podهای اضافی یا روی Node دیگر با <code>Multi-Attach error</code> در <code>ContainerCreating</code> می‌مانند یا روی همان Node به قفل data directory در MySQL برمی‌خورند؛‏ در نتیجه اضافه‌کردن HPA به MySQL نه‌تنها فایده‌ای ندارد،‏ بلکه باعث سردرگمی و خطاهای بی‌مورد می‌شود. برای scale کردن پایگاه‌داده باید از یک راه‌حل دیگر مثل replication در سطح خود پایگاه‌داده یا یک managed database استفاده کرد.</p></details></li>
+
+      <li><span class="lvl l1">مفهومی</span>در Secret generator بخش <code>kustomization.yaml</code>،‏ چرا Kustomize یک hash به انتهای نام Secret (مثل <code>mysql-pass-c57bb4t7mf</code>) اضافه می‌کند؟ این چه مزیتی نسبت به نام ثابت دارد و چه محدودیتی؟
+        <details class="ans"><summary>پاسخ</summary><p>این content-hash naming است: hash از محتوای Secret ساخته می‌شود،‏ پس با هر تغییر محتوا نام Secret هم عوض می‌شود و Kustomize ارجاع‌ها را در Deploymentها به نام تازه به‌روز می‌کند. چون <code>spec.template</code> تغییر کرده،‏ Deployment یک rollout تازه انجام می‌دهد و Podهای تازه مقدار جدید را می‌خوانند؛‏ با نام ثابت،‏ Podهای در حال اجرا مقدار قدیمی environment variable را نگه می‌داشتند (environment variable پس از start شدن container به‌روز نمی‌شود،‏ فصل ۶). Secret قدیمی هم باقی می‌ماند،‏ پس rollback به revision قبلی کار می‌کند. این با immutable Secret (فیلد <code>immutable: true</code> که تغییر همان object را ممنوع می‌کند) فرق دارد.</p>
+        <p><b>نکته‌ی امتیازآور:</b> rollout فقط مقدار را به Podها می‌رساند. تصویر MySQL متغیرهای <code>MYSQL_*</code> را فقط هنگام مقداردهی اولیه‌ی data directory خالی می‌خواند؛‏ پس تغییر رمز در Secret،‏ رمز داخل پایگاه‌داده‌ی موجود را عوض نمی‌کند.</p></details></li>
+
+      <li><span class="lvl l2">عملی</span>یک kind cluster محلی بسازید و کل بخش Guestbook را از ابتدا تا انتها اجرا کنید (چهار manifest:‏ redis-leader Deployment/Service،‏ redis-follower Deployment/Service،‏ frontend Deployment/Service). سپس با <code>kubectl port-forward svc/frontend 8080:80</code> صفحه را باز کنید و یک پیام ثبت کنید.
+        <details class="ans"><summary>پاسخ</summary><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kind create cluster --name guestbook-lab
+kubectl apply -f https://k8s.io/examples/application/guestbook/redis-leader-deployment.yaml
+kubectl apply -f https://k8s.io/examples/application/guestbook/redis-leader-service.yaml
+kubectl apply -f https://k8s.io/examples/application/guestbook/redis-follower-deployment.yaml
+kubectl apply -f https://k8s.io/examples/application/guestbook/redis-follower-service.yaml
+kubectl apply -f https://k8s.io/examples/application/guestbook/frontend-deployment.yaml
+kubectl apply -f https://k8s.io/examples/application/guestbook/frontend-service.yaml
+kubectl get pods
+kubectl port-forward svc/frontend 8080:80
+</pre></div><p>انتظار می‌رود ۶ Pod (۱ leader،‏ ۲ follower،‏ ۳ frontend) به وضعیت <code>Running</code> برسند و صفحه‌ی guestbook روی <code>http://localhost:8080</code> در دسترس باشد. پس از ثبت یک پیام،‏ با اجرای <code>kubectl exec deploy/redis-leader -- redis-cli GET guestbook</code> می‌توانید مستقیماً پیام ذخیره‌شده در Redis را تأیید کنید (frontend همه‌ی پیام‌ها را به‌صورت یک رشته با کلید <code>guestbook</code> ذخیره می‌کند).</p></details></li>
+
+      <li><span class="lvl l2">عملی</span>پس از بالا آوردن Guestbook،‏ یکی از دو Redis follower Pod را با <code>kubectl delete pod</code> حذف کنید و رفتار Deployment را observe کنید. آیا داده از دست می‌رود؟
+        <details class="ans"><summary>پاسخ</summary><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l role=follower
+kubectl delete pod redis-follower-dddfbdcc9-82sfr
+kubectl get pods -l role=follower --watch
+</pre></div><p>ReplicaSet مربوط به Deployment <code>redis-follower</code> بلافاصله یک Pod جایگزین می‌سازد (self-healing،‏ فصل ۴). چون follower فقط یک replica از داده‌ی leader است و هیچ PersistentVolumeای در Guestbook تعریف نشده،‏ Pod جدید یک container کاملاً خالی است که دوباره از leader replicate می‌کند (رفتار داخلی image Redis follower)؛‏ در نتیجه داده‌ی نهایی از دست نمی‌رود چون منبع اصلی (leader) سالم مانده،‏ اما اگر همین آزمایش را روی خود <code>redis-leader</code> تکرار کنید،‏ تمام داده‌ی in-memory آن Pod برای همیشه از بین می‌رود،‏ چون هیچ Volume پایداری وجود ندارد.</p></details></li>
+
+      <li><span class="lvl l2">عملی</span>پروژه‌ی WordPress+MySQL را روی Minikube بالا بیاورید (با <code>kubectl apply -k ./</code>) و پس از رسیدن هر دو Pod به وضعیت Running،‏ دستور <code>kubectl delete pod</code> را روی Pod مربوط به <code>wordpress-mysql</code> اجرا کنید. تأیید کنید که پس از بازسازی Pod،‏ داده‌ی پایگاه‌داده (که پیش‌تر یک پست تستی در آن نوشته‌اید) هنوز موجود است.
+        <details class="ans"><summary>پاسخ</summary><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -k ./
+kubectl get pods --watch
+# When Running: open the URL from "minikube service wordpress --url",
+# finish the WordPress install and publish a test post.
+kubectl delete pod -l tier=mysql
+kubectl get pods --watch
+# After the new MySQL Pod is Running again:
+minikube service wordpress --url
+</pre></div><p>چون داده در PersistentVolume (نه در filesystem موقت container) ذخیره شده،‏ پس از بازسازی Pod،‏ همان PVC دوباره mount می‌شود و پست تستی همچنان در سایت قابل مشاهده است. این دقیقاً تفاوت اصلی معماری WordPress با Guestbook است: PersistentVolume،‏ lifecycle داده را از lifecycle Pod جدا می‌کند (فصل ۷).</p></details></li>
+
+      <li><span class="lvl l2">عملی</span>در آزمایش عملی این فصل،‏ NetworkPolicy مربوط به MySQL را apply کنید و سپس با یک Pod آزمایشی بدون label مناسب تلاش کنید به port ۳۳۰۶ وصل شوید. خروجی مورد انتظار چیست و چرا؟
+        <details class="ans"><summary>پاسخ</summary><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f mysql-networkpolicy.yaml
+kubectl run attacker --rm -it --image=busybox:1.36 --restart=Never -- sh -c "nc -zv -w 3 wordpress-mysql 3306"
+</pre></div><p>خروجی مورد انتظار یک timeout است (مثلاً <code>Connection timed out</code>)،‏ نه یک connection refused. این تفاوت مهم است: NetworkPolicy در سطح شبکه بسته‌ها را drop می‌کند (نه reject)،‏ بنابراین client تا پایان timeout منتظر می‌ماند. اگر CNI plugin از NetworkPolicy پشتیبانی نکند،‏ اتصال بلافاصله موفق می‌شود که نشانه‌ی این است که باید CNI را بررسی کنید (فصل ۵).</p></details></li>
+
+      <li><span class="lvl l2">عملی</span>پس از فعال‌کردن Metrics Server (<code>minikube addons enable metrics-server</code>) و apply کردن HPA این فصل،‏ با ابزاری مثل <code>hey</code> یا یک حلقه‌ی <code>curl</code> بار مصنوعی روی frontend وردپرس ایجاد کنید و رفتار <code>kubectl get hpa wordpress --watch</code> را مشاهده کنید.
+        <details class="ans"><summary>پاسخ</summary><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">minikube addons enable metrics-server
+kubectl apply -f wordpress-hpa.yaml
+URL=$(minikube service wordpress --url)
+for i in $(seq 1 20); do (while true; do curl -s -o /dev/null "$URL"; done) & done
+kubectl get hpa wordpress --watch
+</pre></div><p>وقتی متوسط CPU utilization Podهای WordPress از ۷۰٪ (مقدار <code>averageUtilization</code> در HPA) فراتر رود،‏ ستون REPLICAS به‌تدریج افزایش می‌یابد تا به <code>maxReplicas: 6</code> برسد. پس از توقف بار مصنوعی (با <code>kill %1 %2 ...</code> یا بستن ترمینال‌ها)،‏ HPA پس از یک دوره‌ی stabilization (پیش‌فرض ۵ دقیقه برای scale-down،‏ طبق فصل ۱۰) تعداد replicaها را دوباره کاهش می‌دهد.</p></details></li>
+
+      <li><span class="lvl l2">عملی</span>PodDisruptionBudget این فصل را apply کنید،‏ سپس با <code>kubectl drain</code> یکی از Nodeهایی که یک Pod از WordPress روی آن است را خالی کنید (با <code>--ignore-daemonsets</code>). نتیجه چیست؟
+        <details class="ans"><summary>پاسخ</summary><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f wordpress-pdb.yaml
+kubectl get nodes
+kubectl drain &lt;node-name&gt; --ignore-daemonsets --delete-emptydir-data
+</pre></div><p>اگر آن Node فقط یک Pod از WordPress دارد و <code>minAvailable: 1</code> است،‏ drain موفق می‌شود چون Pod باقیمانده روی Nodeهای دیگر برای برآورده‌کردن budget کافی است. اما اگر هر دو (یا همه‌ی) replicaهای WordPress هم‌زمان روی همان Node باشند،‏ eviction دومین Pod تا زمانی که یک Pod جایگزین در جای دیگر Ready شود بلوکه می‌ماند (خطای <code>Cannot evict pod as it would violate the pod's disruption budget</code>،‏ طبق فصل ۹).</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>شاپیفای معماری WordPress این فصل را (بدون تغییرات آزمایش عملی) برای صفحه‌ی محصولات یک فروشگاه کوچک deploy کرده است. نیمه‌شب،‏ Node میزبان Pod مربوط به MySQL به‌خاطر خرابی سخت‌افزار خاموش می‌شود. سایت بیش از ۱۰ دقیقه پیام <code>Error establishing a database connection</code> نشان می‌دهد و سفارش‌هایی که مشتری‌ها در این مدت ثبت کرده‌اند در سیستم نیست. زمان‌بندی این outage و سرنوشت سفارش‌ها را توضیح دهید و بهبود پیشنهاد دهید.
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص زمان‌بندی:</b> MySQL تک‌replica است و هیچ Pod دیگری جای آن را نمی‌گیرد تا مراحل زیر طی شوند: (۱) حدود ۵۰ ثانیه (<code>node-monitor-grace-period</code>) تا Node در وضعیت NotReady قرار بگیرد و taint به نام <code>node.kubernetes.io/unreachable</code> بخورد؛‏ (۲) ۳۰۰ ثانیه tolerationSeconds که admission plugin به نام DefaultTolerationSeconds به Pod داده،‏ پیش از evict شدن (فصل ۱۲)؛‏ (۳) Pod تازه روی Node دیگر ساخته می‌شود،‏ اما Volume از نوع RWO هنوز به Node مرده attach است و Pod با <code>Multi-Attach error</code> در ContainerCreating می‌ماند تا attach/detach controller پس از ۶ دقیقه انتظار،‏ Volume را force detach کند. جمع این‌ها بیش از ۱۰ دقیقه است. اگر Volume از نوع hostPath یا local روی همان Node بوده باشد،‏ Pod تازه اصلاً به داده‌ی قبلی دسترسی ندارد.</p>
+        <p><b>سرنوشت سفارش‌ها:</b> سفارش‌ها «گم» نشده‌اند؛‏ در این مدت WordPress به MySQL وصل نمی‌شد و درخواست‌ها شکست خوردند،‏ پس هیچ‌وقت ذخیره نشدند. داده‌ای که پیش از خرابی commit شده بود روی disk شبکه‌ای سالم است.</p>
+        <p><b>بهبود:</b> (۱) وقتی مطمئنید Node واقعاً خاموش است،‏ taint به نام <code>node.kubernetes.io/out-of-service</code> را روی آن بگذارید تا Pod و Volume بلافاصله آزاد شوند (non-graceful node shutdown)؛‏ (۲) کوتاه کردن tolerationSeconds برای این Pod زمان eviction را کم می‌کند ولی با قطعی‌های کوتاه شبکه هم Pod را جابه‌جا می‌کند؛‏ (۳) راه‌حل اصلی،‏ MySQL چند replica با replication (StatefulSet همراه با Operator یا Group Replication) یا یک managed database است؛‏ (۴) storage با replication در سطح disk و alert روی وضعیت Nodeها و در دسترس بودن پایگاه‌داده؛‏ (۵) در سطح برنامه،‏ صف یا retry برای ثبت سفارش تا قطعی کوتاه پایگاه‌داده باعث رد شدن سفارش نشود.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>یک مهندس تازه‌کار،‏ برای «افزایش دسترس‌پذیری» WordPress،‏ <code>replicas</code> Deployment مربوط به WordPress (نسخه‌ی بدون RWX از بخش دوم این فصل،‏ با PVC از نوع ReadWriteOnce) را از ۱ به ۳ تغییر می‌دهد و <code>kubectl apply</code> می‌کند. با <code>kubectl get pods</code> مشاهده می‌کند که دو Pod در وضعیت <code>ContainerCreating</code> برای مدت طولانی گیر کرده‌اند. با <code>kubectl describe pod</code> این event دیده می‌شود: <code>Multi-Attach error for volume "pvc-...": Volume is already exclusively attached to one node and can't be attached to another</code>. علت را توضیح دهید و راه‌حل صحیح ارائه دهید.
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> این دقیقاً همان محدودیت <code>accessModes: ReadWriteOnce</code> است که در متن فصل توضیح داده شد (فصل ۷). یک Volume از نوع RWO فقط می‌تواند هم‌زمان توسط یک Node mount شود. وقتی Pod اول از قبل آن را (روی Node A) mount کرده،‏ تلاش Pod دوم/سوم برای mount کردن همان PVC روی Node دیگر (یا حتی همان Node در برخی CSI driverها بدون پشتیبانی چند-mount) با خطای Multi-Attach رد می‌شود.</p><p><b>راه‌حل:</b> این مشکل را نمی‌توان صرفاً با افزایش <code>replicas</code> حل کرد. باید یا (۱) دقیقاً مطابق آزمایش عملی این فصل،‏ PVC را به یک StorageClass با پشتیبانی <code>ReadWriteMany</code> مهاجرت داد (مثلاً NFS یا یک filesystem توزیع‌شده) و استراتژی را به <code>RollingUpdate</code> تغییر داد،‏ یا (۲) معماری را طوری بازطراحی کرد که فایل‌های آپلودی WordPress (پوشه‌ی <code>wp-content/uploads</code>) در یک object storage خارجی (مثل S3) ذخیره شوند و PersistentVolume فقط برای فایل‌های core که نیازی به اشتراک‌گذاری ندارند استفاده شود. راه‌حل اشتباه،‏ افزایش صرف replicas بدون تغییر Volume است.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>تیم امنیت در audit سالانه گزارش می‌دهد که هر Pod در namespace به نام wordpress-prod (از جمله چند Pod موقت debugging) می‌توانسته به port ۳۳۰۶ روی Pod مربوط به MySQL اتصال TCP برقرار کند و به مرحله‌ی login برسد؛‏ فقط رمز عبور مانع ورود بوده است. چرا این اتفاق افتاد و چطور باید جلوی آن گرفته می‌شد؟
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> کوبرنتیز به‌طور پیش‌فرض هیچ محدودیت شبکه‌ای بین Podها (چه در یک namespace و چه بین namespaceها) اعمال نمی‌کند،‏ مگر NetworkPolicy تعریف شود (فصل ۵). namespace این پروژه هیچ NetworkPolicyی نداشت،‏ پس هر Pod مسیر شبکه‌ای مستقیم به MySQL داشت. رمز عبور فقط یک لایه‌ی دفاعی بود؛‏ با نشت credential یا brute-force،‏ مهاجم مسیر آماده داشت.</p>
+        <p><b>راه‌حل:</b> همان NetworkPolicy آزمایش عملی این فصل (podSelector روی <code>tier: mysql</code> و ingress فقط از <code>tier: frontend</code>). برای پیشگیری: (۱) یک NetworkPolicy از نوع default-deny در هر namespace تا هر Pod تازه به‌طور پیش‌فرض بسته باشد؛‏ (۲) Podهای debugging در namespace جدا اجرا شوند؛‏ (۳) مطمئن شوید CNI در cluster واقعاً NetworkPolicy را اعمال می‌کند.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>در یک cluster production با ۵ Node،‏ تیم عملیات یک upgrade kernel روی همه‌ی Nodeها به‌ترتیب انجام می‌دهد (rolling node upgrade،‏ یک Node در هر بار drain و reboot می‌شود).‏ WordPress با ۴ replica (نسخه‌ی RWX/HPA این فصل) و بدون PodDisruptionBudget deploy شده است. تیم متوجه می‌شود که در یک لحظه از فرآیند upgrade،‏ به‌طور اتفاقی ۳ از ۴ replica هم‌زمان Terminating بوده‌اند و سایت برای چند ثانیه کند/۵۰۲ شده است. چرا این اتفاق بدون PDB ممکن است،‏ و PDB چگونه دقیقاً جلوی آن را می‌گرفت؟
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> بدون PodDisruptionBudget،‏ هیچ محدودیتی روی تعداد Podهایی که <code>kubectl drain</code> می‌تواند هم‌زمان evict کند وجود ندارد؛‏ اگر به‌طور تصادفی چند replica WordPress روی چند Node مختلفی باشند که هم‌زمان (یا با فاصله‌ی کم) drain می‌شوند،‏ eviction API آن‌ها را بدون هماهنگی با یکدیگر قبول می‌کند،‏ چون هیچ budget مشترکی این عملیات‌ها را محدود نمی‌کند (فصل ۹).</p><p><b>راه‌حل:</b> یک PodDisruptionBudget مثل نمونه‌ی این فصل (<code>minAvailable: 1</code>،‏ یا برای این مقیاس بهتر <code>minAvailable: 2</code> یا <code>maxUnavailable: 1</code>) تعریف می‌کند که eviction API چند Pod را هم‌زمان مجاز می‌داند. با این budget،‏ هر <code>kubectl drain</code> که بخواهد بیش از حد مجاز Pod evict کند،‏ بلوکه می‌شود تا یک Pod جایگزین Ready شود،‏ و در نتیجه upgrade kernel در Nodeها به‌جای هم‌زمان،‏ به‌صورت طبیعی throttle و serialize می‌شود.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>یک روز،‏ مهندسی که مسئول به‌روزرسانی WordPress است،‏ image container WordPress را از <code>wordpress:6.2.1-apache</code> به یک نسخه‌ی جدیدتر (<code>wordpress:6.5-apache</code>) تغییر می‌دهد و <code>kubectl apply</code> می‌کند. در نسخه‌ی WordPress این فصل که هنوز readiness probe ندارد (نسخه‌ی خام بخش دوم)،‏ طراحی کنید که چرا این rollout (اعمال تدریجی یک تغییر روی replicaها) می‌تواند باعث ارسال ترافیک به یک Pod که هنوز کاملاً آماده نشده شود،‏ و چطور readiness probe این فصل مانع آن می‌شود.
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> بدون readiness probe،‏ کوبرنتیز به‌محض اینکه container به وضعیت <code>Running</code> برسد (فقط process شروع شده باشد)،‏ آن Pod را <code>Ready</code> در نظر می‌گیرد و Service بلافاصله شروع به فرستادن ترافیک به آن می‌کند (فصل ۳ و ۵). اما Apache و WordPress ممکن است چند ثانیه (یا در بار سنگین،‏ بیشتر) طول بکشد تا کاملاً initialize شوند و به درخواست‌های HTTP پاسخ صحیح بدهند؛‏ در این فاصله،‏ کاربران ممکن است خطای ۵۰۲/۵۰۳ یا صفحه‌ی نیمه‌بارگذاری‌شده ببینند.</p><p><b>راه‌حل:</b> readinessProbe این فصل (<code>httpGet</code> روی <code>/wp-admin/install.php</code>) دقیقاً این مشکل را حل می‌کند: تا وقتی این endpoint یک پاسخ موفق برنگرداند،‏ kubelet آن Pod را <code>NotReady</code> علامت می‌زند و Service آن را از لیست endpointهای فعال حذف می‌کند (فصل ۳)؛‏ در نتیجه در طول یک rolling update،‏ ترافیک فقط به Podهایی می‌رود که واقعاً آماده‌ی سرویس‌دهی هستند،‏ و ترکیب <code>readinessProbe</code> با <code>maxUnavailable</code>/<code>maxSurge</code> استراتژی RollingUpdate (فصل ۴) یک rollout بدون downtime قابل مشاهده برای کاربر ایجاد می‌کند.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>پس از فعال‌کردن HPA روی WordPress،‏ تیم متوجه می‌شود که در ساعات پرترافیک،‏ Podها به‌سرعت به <code>maxReplicas: 6</code> می‌رسند اما همچنان کند هستند،‏ و <code>kubectl top pods</code> نشان می‌دهد CPU هر Pod نزدیک به <code>limits.cpu: 500m</code> است (throttling). بررسی بیشتر نشان می‌دهد که واقعاً bottleneck،‏ CPU خود WordPress نیست بلکه MySQL (که هیچ HPA و فقط یک replica دارد) است که با تاخیر query به درخواست‌ها پاسخ می‌دهد و همین باعث می‌شود هر request بیشتر طول بکشد و CPU بیشتری مصرف کند. طراحی این incident را تحلیل کنید و راهکار پیشنهاد دهید.
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> این یک مثال کلاسیک از scale کردن اشتباه لایه است. HPA فقط روی metric CPU خود WordPress نگاه می‌کند (فصل ۱۰)؛‏ نمی‌داند که علت واقعی کندی،‏ bottleneck پایین‌دستی (MySQL) است. با افزایش تعداد Pod WordPress،‏ تعداد connectionهای هم‌زمان به MySQL هم افزایش می‌یابد،‏ که فشار بیشتری روی همان یک instance پایگاه‌داده می‌آورد و ممکن است حتی وضعیت را بدتر کند (thundering herd به سمت پایگاه‌داده).</p><p><b>راه‌حل:</b> (۱) به‌جای تکیه‌ی صرف بر CPU metric،‏ یک custom metric مرتبط با latency واقعی application (مثلاً از طریق Prometheus Adapter،‏ که در فصل ۱۰ به آن اشاره شد) برای HPA تعریف کنید تا تصویر دقیق‌تری از سلامت end-to-end داشته باشد. (۲) مشکل ریشه‌ای را حل کنید: MySQL را scale (با read replica،‏ caching در سطح query با چیزی مثل Redis،‏ یا یک connection pooler مثل ProxySQL) کنید تا bottleneck واقعی برطرف شود. (۳) یک سقف منطقی‌تر برای <code>maxReplicas</code> بگذارید و alert روی <code>kubectl top pods</code> MySQL و connection count آن تنظیم کنید (فصل ۱۱) تا این الگو زودتر شناسایی شود.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>تیم می‌خواهد رمز عبور MySQL را rotate کند. Secret به نام <code>mysql-pass</code> را با <code>kubectl edit secret mysql-pass</code> ویرایش می‌کنند (به‌جای secretGenerator در Kustomize) و سپس <code>kubectl rollout restart deployment wordpress wordpress-mysql</code> می‌زنند. پس از آن سایت با خطای <code>Error establishing a database connection</code> از کار می‌افتد و صبر کردن هم فایده‌ای ندارد. علت را توضیح دهید و روند درست rotate را بنویسید.
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> environment variableها فقط هنگام start شدن container از Secret خوانده می‌شوند،‏ پس restart لازم بود؛‏ اما مشکل اصلی جای دیگری است: تصویر رسمی MySQL متغیرهای <code>MYSQL_ROOT_PASSWORD</code> و <code>MYSQL_PASSWORD</code> را فقط وقتی به کار می‌برد که data directory خالی است. روی PersistentVolume از قبل داده وجود دارد،‏ پس MySQL با همان رمزهای قدیمی ذخیره‌شده در جدول کاربرانش بالا می‌آید،‏ در حالی که WordPress رمز تازه را می‌فرستد. همین اتفاق با تغییر <code>literals</code> در secretGenerator هم می‌افتد؛‏ hash در نام فقط rollout را خودکار می‌کند.</p>
+        <p><b>روند درست:</b></p>
+        <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh"># 1. Change the password inside MySQL first (old password still works for this session)
+kubectl exec -it deploy/wordpress-mysql -- \
+  mysql -uroot -p -e "ALTER USER 'wordpress'@'%' IDENTIFIED BY 'NEW_PASSWORD';
+                     ALTER USER 'root'@'%' IDENTIFIED BY 'NEW_PASSWORD'; FLUSH PRIVILEGES;"
+
+# 2. Update the Secret (kustomization literals or kubectl edit), then apply
+kubectl apply -k ./
+
+# 3. Restart WordPress so it reads the new value
+kubectl rollout restart deployment wordpress
+</pre></div>
+        <p>بعد از این،‏ فقط WordPress به restart نیاز دارد. برای rotate بدون downtime،‏ کاربر دوم یا رمز دوگانه (dual password در MySQL 8) را در نظر بگیرید،‏ و در production از ابزاری مثل External Secrets Operator یا Vault برای مدیریت چرخه‌ی رمز استفاده کنید. mount کردن Secret به‌صورت فایل هم کمک می‌کند: kubelet فایل را به‌روز می‌کند،‏ ولی برنامه باید فایل را دوباره بخواند.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>در حین یک incident review،‏ مشخص می‌شود که یک مهندس،‏ هنگام debug کردن یک مشکل،‏ به‌اشتباه دستور <code>kubectl scale deployment wordpress-mysql --replicas=0</code> را روی MySQL اجرا کرده و کل سایت برای ۱۰ دقیقه از دسترس خارج شده تا کسی متوجه شود. با معماری‌ای که در این فصل دیدید (بدون تغییر اضافه)،‏ چه مکانیزمی می‌توانست این incident را زودتر تشخیص دهد یا حتی از وقوع آن جلوگیری کند؟
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> این یک human error کلاسیک است،‏ نه یک خطای خودکار کوبرنتیز؛‏ <code>kubectl scale --replicas=0</code> یک دستور کاملاً معتبر است که Deployment را به عمد به صفر Pod می‌رساند و کوبرنتیز آن را دقیقاً اجرا می‌کند (فصل ۴،‏ desired state).</p><p><b>راه‌حل چندلایه:</b> (۱) <b>Observability</b> (فصل ۱۱): یک alert روی <code>kube_deployment_status_replicas_available</code> برای <code>wordpress-mysql</code> که به صفر برسد،‏ می‌توانست ظرف چند ثانیه به تیم هشدار دهد،‏ به‌جای اینکه ۱۰ دقیقه طول بکشد. (۲) readinessProbe/livenessProbe این فصل مانع این incident نمی‌شوند (چون کل Pod حذف شده،‏ نه اینکه فقط health check آن خراب شده)،‏ اما یک PodDisruptionBudget هم در برابر scale دستی به صفر محافظتی ایجاد نمی‌کند (PDB فقط eviction داوطلبانه را کنترل می‌کند،‏ نه دستور scale مستقیم).‏ (۳) راهکار واقعی،‏ RBAC محدودتر (فصل ۱۴) است: دسترسی به عملیات <code>update</code>/<code>patch</code> روی Deploymentهای حیاتی production را به یک نقش جداگانه (مثلاً از طریق یک approval workflow یا GitOps pipeline به‌جای <code>kubectl</code> مستقیم) محدود کنید،‏ تا تغییرات دستی و بدون بازبینی روی resourceهای حیاتی امکان‌پذیر نباشد.</p></details></li>
+
+      <li><span class="lvl l3">سناریوی Production</span>تیم QA پس از deploy کردن نسخه‌ی HPA‌دار WordPress یک بار تست ناگهانی اجرا می‌کند: ۳۰ ثانیه ترافیک سنگین و سپس قطع کامل. تعداد replicaها هیچ‌وقت بالا نمی‌رود،‏ با این‌که <code>kubectl top pods</code> برای چند ثانیه CPU بالای ۹۰٪ نشان داده است. علت را با توجه به رفتار پیش‌فرض HPA توضیح دهید.
+        <details class="ans"><summary>پاسخ</summary><p><b>تشخیص:</b> stabilization window پیش‌فرض برای scale up صفر است،‏ پس مانع کار نیست؛‏ مشکل زمان‌بندی اندازه‌گیری است. HPA هر ۱۵ ثانیه (<code>--horizontal-pod-autoscaler-sync-period</code>) metric را از metrics-server می‌خواند،‏ و metrics-server خودش هر ۱۵ ثانیه از kubeletها scrape می‌کند و مصرف CPU را به‌صورت میانگین روی یک بازه‌ی زمانی گزارش می‌دهد. یک spike سی‌ثانیه‌ای در این میانگین رقیق می‌شود و ممکن است هیچ نمونه‌ای از آستانه‌ی ۷۰٪ (میانگین روی همه‌ی Podها نسبت به request) بالاتر نرود. حتی اگر scale up شروع شود،‏ Podهای تازه پیش از Ready شدن (با readinessProbe چند ثانیه‌ای) به بار نمی‌رسند و بار تمام شده است. <code>kubectl top</code> همان داده‌ی metrics-server را نشان می‌دهد،‏ پس عدد لحظه‌ای ۹۰٪ لزوماً همان چیزی نیست که HPA در لحظه‌ی تصمیم دیده است.</p>
+        <p><b>راه‌حل:</b> HPA برای spikeهای چندثانیه‌ای طراحی نشده. (۱) minReplicas را برای ظرفیت پایه بالاتر بگذارید (over-provisioning عمدی)؛‏ (۲) برای رویدادهای قابل پیش‌بینی،‏ scale از پیش با CronJob یا ابزاری مثل KEDA؛‏ (۳) metric واکنش‌پذیرتر مثل request per second از Prometheus Adapter؛‏ (۴) limits.cpu سخاوتمندانه‌تر (یا بدون limit برای CPU) تا Podهای موجود burst کوتاه را جذب کنند.</p></details></li>
+    </ol>
+  </div>
+
+  
+  <h3 id="ch16-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
+  <div class="story solved"><b>مشکل‌های این فصل،‏ حالا</b><p>تمرین کامل نشان داد آموخته‌ها کنار هم کار می‌کنند و چند درس هم داشت:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>برنامه‌ی چندلایه‌ی stateless</td><td>Deploymentها و Serviceهای ClusterIP که همدیگر را با DNS پیدا می‌کنند (Guestbook)</td><td><a href="#ch16-guestbook-intro">Guestbook</a></td></tr><tr><td>پایگاه‌داده با Volume از نوع RWO</td><td>strategy از نوع Recreate؛‏ PVC موجود immutable است و برای RWX باید PVC تازه ساخت</td><td><a href="#ch16-wp-intro">WordPress و MySQL</a> و <a href="#ch16-lab-scale-storage">پیش‌نیاز scale</a></td></tr><tr><td>سلامت و منابع</td><td>probe و requests و limits برای MySQL</td><td><a href="#ch16-lab-mysql-probes">probe و resources</a></td></tr><tr><td>اوج ترافیک و نگهداری</td><td>HPA و PodDisruptionBudget برای WordPress</td><td><a href="#ch16-lab-hpa">HPA</a> و <a href="#ch16-lab-pdb">PDB</a></td></tr><tr><td>دسترسی باز به پایگاه‌داده</td><td>NetworkPolicy که port 3306 را فقط به Podهای frontend باز می‌کند</td><td><a href="#ch16-lab-netpol">NetworkPolicy</a></td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> سه کار از فصل‌های قبل باید پیش از روز انتشار انجام شود: HTTPS روی Ingress فروشگاه (<a href="#ch5-ingress-tls">TLS در Ingress</a>،‏ فصل ۵)؛‏ فرستادن backup به بیرون cluster (فصل ۷)؛‏ و اعمال تغییرات با pipeline یا GitOps به‌جای دستور دستی (فصل ۸).</p><p><b>از شب حراج تا اینجا:</b> در فصل ۱ فروشگاه روی یک server بود؛‏ API که از کار می‌افتاد شش ساعت پایین می‌ماند،‏ scale دستی بود و هر انتشار قطعی داشت. حالا containerها خودکار restart می‌شوند،‏ مقیاس با ترافیک تنظیم می‌شود،‏ انتشار و برگشت بدون قطعی است،‏ control plane سه Node دارد و از etcd و داده backup گرفته می‌شود،‏ دسترسی‌ها حداقلی و ممیزی‌شده‌اند و قانون‌های تیم را خود cluster اعمال می‌کند.</p></div>
+
+  <div id="ch16-ex2" class="ex iv">
+    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۶ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+    <ol>
+      <li><span class="lvl l1">پایه</span>یک برنامه‌ی سه‌لایه را روی کوبرنتیز deploy می‌کنید. برای هر لایه از چه objectهایی استفاده می‌کنید؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>لایه‌ی stateless (frontend یا API) با Deployment و یک Service از نوع ClusterIP،‏ و برای دسترسی بیرونی Ingress یا Service از نوع LoadBalancer. لایه‌ی داده با StatefulSet (یا یک Operator) و PersistentVolumeClaim،‏ پشت یک headless Service. پیکربندی در ConfigMap و رمزها در Secret. برای production هم probeها،‏ resources،‏ PodDisruptionBudget،‏ HPA برای لایه‌ی stateless و NetworkPolicy برای محدود کردن دسترسی به پایگاه‌داده.</p>
+          <p><b>نکته‌ی امتیازآور:</b> لایه‌ها فقط با نام DNS در Service به هم وصل می‌شوند،‏ نه IP؛‏ همین جدا شدن،‏ scale و جایگزینی Podها را شفاف می‌کند.</p>
+        </details></li>
+      <li><span class="lvl l1">پایه</span>headless Service چیست و چرا برای MySQL در WordPress استفاده شده است؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>Service با <code>clusterIP: None</code> که IP مجازی ندارد؛‏ DNS آن مستقیماً IP خود Podها را برمی‌گرداند و kube-proxy برایش ruleی نمی‌سازد. برای یک instance پایگاه‌داده load balancing لازم نیست و فقط نام پایدار می‌خواهیم. در StatefulSet همین نوع Service نام DNS ثابت برای هر Pod (مثل <code>mysql-0.mysql</code>) می‌سازد.</p>
+          <p><b>نکته‌ی امتیازآور:</b> در تست NetworkPolicy،‏ IP نشان‌داده‌شده IP خود Pod است (مثلاً از 10.244.x.x)،‏ نه یک ClusterIP.</p>
+        </details></li>
+      <li><span class="lvl l1">پایه</span>چرا Deployment با Volume از نوع ReadWriteOnce معمولاً با <code>strategy: Recreate</code> نوشته می‌شود؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>RollingUpdate پیش از حذف Pod قدیمی Pod تازه را می‌سازد. RWO در سطح Node است: Pod تازه روی Node دیگر با <code>Multi-Attach error</code> در ContainerCreating می‌ماند و روی همان Node دو writer روی یک Volume ایجاد می‌کند. Recreate اول Pod قدیمی را حذف می‌کند.</p>
+          <p><b>نکته‌ی امتیازآور:</b> برای تضمین در سطح Pod از access mode به نام <code>ReadWriteOncePod</code> استفاده کنید؛‏ و برای پایگاه‌داده StatefulSet از Deployment مناسب‌تر است.</p>
+        </details></li>
+      <li><span class="lvl l1">پایه</span><code>kubectl port-forward svc/frontend 8080:80</code> دقیقاً چه کار می‌کند؟ آیا ترافیک بین Podها پخش می‌شود؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>kubectl از طریق API server به kubelet یک Pod پشت آن Service وصل می‌شود و port محلی را به port آن Pod tunnel می‌کند. Service فقط برای پیدا کردن یک Pod استفاده می‌شود؛‏ همه‌ی ترافیک به همان یک Pod می‌رود و از kube-proxy عبور نمی‌کند. اگر آن Pod حذف شود،‏ اتصال قطع می‌شود.</p>
+          <p><b>نکته‌ی امتیازآور:</b> port-forward ابزار debugging است،‏ نه راه expose کردن برنامه.</p>
+        </details></li>
+      <li><span class="lvl l2">متوسط</span>دو Deployment با selector همپوشان (<code>app: redis</code>) دارید. آیا با هم دعوا می‌کنند؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>در عمل نه: Deployment فقط ReplicaSetهایی را که ownerReference آن‌ها به خودش اشاره دارد مدیریت می‌کند و selector هر ReplicaSet،‏ <code>pod-template-hash</code> را هم دارد. اما مستندات صریحاً هشدار می‌دهد و هر چیزی که فقط selector را نگاه می‌کند (PodDisruptionBudget،‏ NetworkPolicy،‏ <code>kubectl get -l</code>) هر دو گروه را با هم می‌گیرد.</p>
+          <p><b>نکته‌ی امتیازآور:</b> selector در Deployment پس از ساخت immutable است؛‏ پس از ابتدا labelهای متمایزکننده را در selector بگذارید.</p>
+        </details></li>
+      <li><span class="lvl l2">متوسط</span>secretGenerator در Kustomize چرا نام Secret را با hash می‌سازد و آیا این کار rotate رمز پایگاه‌داده را حل می‌کند؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>content-hash naming باعث می‌شود با تغییر محتوا نام Secret و در نتیجه Pod template در Deploymentها عوض شود و rollout خودکار رخ دهد؛‏ Secret قدیمی هم برای rollback می‌ماند. اما rollout فقط مقدار تازه را به Podها می‌رساند. تصویر MySQL متغیرهای <code>MYSQL_*</code> را فقط هنگام مقداردهی اولیه‌ی data directory خالی می‌خواند،‏ پس رمز داخل پایگاه‌داده عوض نمی‌شود و WordPress با رمز تازه شکست می‌خورد.</p>
+          <p><b>نکته‌ی امتیازآور:</b> روند درست: <code>ALTER USER</code> در MySQL،‏ سپس به‌روزرسانی Secret،‏ سپس restart برنامه.</p>
+        </details></li>
+      <li><span class="lvl l2">متوسط</span>چرا Guestbook متغیر <code>GET_HOSTS_FROM=dns</code> دارد؟ فرق service discovery با DNS و با environment variable چیست؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>kubelet برای Serviceهایی که هنگام ساخت Pod در همان namespace وجود دارند environment variable (مثل <code>REDIS_LEADER_SERVICE_HOST</code>) تزریق می‌کند؛‏ Serviceی که بعد ساخته شود دیده نمی‌شود. DNS (CoreDNS) همیشه نام Service را به ClusterIP آن resolve می‌کند،‏ پس ترتیب ساخت مهم نیست.</p>
+          <p><b>نکته‌ی امتیازآور:</b> متغیرهای Service در namespaceهای شلوغ زیاد می‌شوند؛‏ با <code>enableServiceLinks: false</code> در Pod می‌توان آن‌ها را خاموش کرد.</p>
+        </details></li>
+      <li><span class="lvl l2">متوسط</span>HPA روی WordPress مقدار <code>cpu: &lt;unknown&gt;/70%</code> نشان می‌دهد. چه چیزهایی را بررسی می‌کنید؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>(۱) نصب و سلامت metrics-server (<code>kubectl get apiservice v1beta1.metrics.k8s.io</code> و <code>kubectl top pods</code>)؛‏ (۲) وجود <code>resources.requests.cpu</code> برای همه‌ی containerهای Pod،‏ چون utilization نسبت به request محاسبه می‌شود؛‏ (۳) eventها و conditionها در <code>kubectl describe hpa</code> (مثل <code>FailedGetResourceMetric</code>)؛‏ (۴) این‌که Podها Ready هستند و تازه ساخته نشده‌اند.</p>
+          <p><b>نکته‌ی امتیازآور:</b> اگر حتی یک container (مثلاً sidecar) request نداشته باشد،‏ metric کل Pod قابل محاسبه نیست.</p>
+        </details></li>
+      <li><span class="lvl l2">متوسط</span>PodDisruptionBudget با <code>minAvailable: 1</code> برای WordPress با دو replica،‏ در چه موقعیت‌هایی محافظت نمی‌کند؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>PDB فقط eviction داوطلبانه از طریق Eviction API را محدود می‌کند (مثل <code>kubectl drain</code> یا ابزارهای upgrade). خرابی Node،‏ OOM kill،‏ <code>kubectl delete pod</code>،‏ تغییر replicas یا rollout در Deployment و scale به صفر را محدود نمی‌کند.</p>
+          <p><b>نکته‌ی امتیازآور:</b> با یک replica و <code>minAvailable: 1</code>،‏ drain هیچ‌وقت تمام نمی‌شود؛‏ برای workloadهای تک‌replica از <code>maxUnavailable</code> یا قبل از drain از scale موقت استفاده کنید.</p>
+        </details></li>
+      <li><span class="lvl l3">پیشرفته</span>Node میزبان MySQL با Volume شبکه‌ای از نوع RWO خاموش می‌شود. چه مدت طول می‌کشد تا MySQL دوباره بالا بیاید و چطور کوتاهش می‌کنید؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>حدود ۵۰ ثانیه تا Node در وضعیت NotReady قرار بگیرد،‏ ۳۰۰ ثانیه tolerationSeconds برای taint به نام <code>node.kubernetes.io/unreachable</code> تا Pod evict شود،‏ و سپس Pod تازه با <code>Multi-Attach error</code> منتظر می‌ماند تا attach/detach controller پس از ۶ دقیقه Volume را force detach کند؛‏ در مجموع بیش از ۱۰ دقیقه.</p>
+          <p><b>نکته‌ی امتیازآور:</b> اگر مطمئنید Node خاموش است،‏ taint به نام <code>node.kubernetes.io/out-of-service</code> (non-graceful node shutdown) Pod را force delete و Volume را بلافاصله detach می‌کند؛‏ راه‌حل اصلی replication در سطح پایگاه‌داده است.</p>
+        </details></li>
+      <li><span class="lvl l3">پیشرفته</span>برای scale کردن WordPress،‏ accessModes در PVC موجود را از RWO به RWX تغییر می‌دهید و apply می‌کنید. چه می‌شود و روند درست چیست؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>درخواست رد می‌شود،‏ چون spec در PVC پس از ساخت immutable است (به‌جز <code>resources.requests</code> برای بزرگ کردن و <code>volumeAttributesClassName</code>). باید یک PVC تازه با StorageClass پشتیبان RWX (مثل NFS یا CephFS یا Filestore) ساخت،‏ داده را با یک Job موقت کپی کرد،‏ Deployment را به PVC تازه اشاره داد و strategy را RollingUpdate کرد.</p>
+          <p><b>نکته‌ی امتیازآور:</b> برای WordPress راه بهتر این است که uploadها به object storage بروند تا Podها stateless شوند و اصلاً volume مشترک لازم نباشد.</p>
+        </details></li>
+      <li><span class="lvl l3">پیشرفته</span>بعد از اعمال NetworkPolicy برای MySQL،‏ تست با Pod بدون label هنوز وصل می‌شود. علت‌های احتمالی چیست؟
+        <details class="ans"><summary>پاسخ</summary>
+          <p>(۱) CNI در cluster از NetworkPolicy پشتیبانی نمی‌کند (policy بی‌صدا نادیده گرفته می‌شود)؛‏ (۲) podSelector در policy با labelهای Pod در MySQL مطابقت ندارد یا policy در namespace دیگری ساخته شده؛‏ (۳) policy دیگری در همان namespace این ترافیک را allow می‌کند (policyها جمع‌پذیرند و deny صریح ندارند)؛‏ (۴) Pod تست label مجاز را دارد یا در namespaceی است که با namespaceSelector انتخاب شده.</p>
+          <p><b>نکته‌ی امتیازآور:</b> با NetworkPolicy بسته‌ها drop می‌شوند،‏ پس نشانه‌ی درست اعمال policy معمولاً timeout است نه connection refused.</p>
+        </details></li>
+    </ol>
+  </div>
+
+  <div class="recap" id="ch16-recap">
+    <div class="recap-h">خلاصه‌ی فصل ۱۶ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>
+    <p class="recap-core">ایده‌ی محوری: یک برنامه‌ی واقعی از ترکیب همان objectهای فصل‌های قبل ساخته می‌شود؛‏ Guestbook الگوی stateless چندلایه با Deployment و Service را نشان می‌دهد،‏ WordPress داده‌ی ماندگار با PVC و Secret را،‏ و آزمایش پایانی نشان می‌دهد probe و resources و HPA و PodDisruptionBudget و NetworkPolicy چطور آن را به production نزدیک می‌کنند.</p>
+    <div class="recap-grid">
+      <div class="recap-card"><div class="recap-t">۱. معماری Guestbook</div><ul>
+        <li><b>لایه‌ها:</b> یک Redis leader برای نوشتن؛‏ دو follower برای خواندن؛‏ سه replica از frontend به زبان PHP.</li>
+        <li><b>Serviceها:</b> سه Service از نوع ClusterIP؛‏ تمایز نوشتن و خواندن در کد frontend است،‏ نه در Service.</li>
+        <li><b>discovery:</b> با DNS (<code>GET_HOSTS_FROM=dns</code>) چون environment variable فقط Serviceهای از قبل موجود را می‌بیند.</li>
+        <li><span class="trap">دام:</span> selector دو Deployment همپوشان است؛‏ pod-template-hash و ownerReference مانع دعوا هستند ولی مستندات آن را منع می‌کند.</li>
+      </ul></div>
+      <div class="recap-card"><div class="recap-t">۲. کار با Guestbook</div><ul>
+        <li><b>دیدن frontend:</b> با <code>kubectl port-forward svc/frontend 8080:80</code> یا Service از نوع LoadBalancer.</li>
+        <li><b>selector در kubectl:</b> شرط‌ها با کاما در یک <code>-l</code>؛‏ تکرار <code>-l</code> فقط آخری را نگه می‌دارد.</li>
+        <li><b>scale:‏</b> Service تغییری نمی‌خواهد؛‏ EndpointSlice خودکار به‌روز می‌شود.</li>
+        <li><b>پاک‌سازی:</b> حذف با label؛‏ kubectl در v1.37 پس از deleted نام namespace را هم چاپ می‌کند.</li>
+      </ul></div>
+      <div class="recap-card"><div class="recap-t">۳. WordPress و MySQL</div><ul>
+        <li><b>storage:</b> دو PVC از نوع RWO با 20Gi از StorageClass پیش‌فرض (dynamic provisioning).</li>
+        <li><b>Recreate:</b> با RWO،‏ Pod تازه روی Node دیگر Multi-Attach می‌گیرد و روی همان Node دو writer می‌سازد.</li>
+        <li><b>headless Service:</b> با <code>clusterIP: None</code> برای MySQL؛‏ DNS مستقیم به IP خود Pod.</li>
+        <li><b>Kustomize:‏</b> secretGenerator نام را با hash محتوا می‌سازد و rollout را خودکار می‌کند.</li>
+        <li><span class="trap">دام:</span> متغیرهای <code>MYSQL_*</code> فقط روی data directory خالی اثر دارند؛‏ rotate رمز با <code>ALTER USER</code> شروع می‌شود.</li>
+      </ul></div>
+      <div class="recap-card"><div class="recap-t">۴. آزمایش نزدیک به production</div>
+        <div class="tbl"><table class="mini"><thead><tr><th>مشکل</th><th>راه‌حل</th><th>فصل</th></tr></thead><tbody>
+          <tr><td>بدون limit</td><td>requests و limits</td><td>۳ و ۶</td></tr>
+          <tr><td>بدون health check</td><td>probe از نوع HTTP و exec</td><td>۳</td></tr>
+          <tr><td>یک replica</td><td>PVC تازه‌ی RWX و HPA</td><td>۷ و ۱۰</td></tr>
+          <tr><td>drain هم‌زمان</td><td>PodDisruptionBudget</td><td>۹</td></tr>
+          <tr><td>دسترسی باز به 3306</td><td>NetworkPolicy</td><td>۵</td></tr>
+        </tbody></table></div>
+        <ul>
+        <li><span class="trap">دام:</span> accessModes در PVC موجود immutable است؛‏ PVC تازه بسازید و داده را کپی کنید.</li>
+        <li><span class="trap">دام:</span> NetworkPolicy بدون CNI پشتیبان بی‌صدا بی‌اثر است.</li>
+      </ul></div>
+      <div class="recap-card"><div class="recap-t">۵. failover و autoscaling</div><ul>
+        <li><b>خرابی Node:</b> حدود ۵۰ ثانیه تا NotReady؛‏ ۳۰۰ ثانیه تا eviction؛‏ تا ۶ دقیقه برای force detach در Volume از نوع RWO.</li>
+        <li><b>کوتاه کردن:</b> taint به نام <code>node.kubernetes.io/out-of-service</code> برای Node واقعاً خاموش.</li>
+        <li><b>HPA:</b> نیاز به metrics-server و request برای CPU؛‏ بدون metric مقدار <code>&lt;unknown&gt;</code>.</li>
+        <li><b>spike کوتاه:</b> sync هر ۱۵ ثانیه و میانگین‌گیری metrics-server آن را رقیق می‌کنند؛‏ stabilization برای scale up صفر است.</li>
+        <li><b>PDB:</b> فقط eviction داوطلبانه را محدود می‌کند،‏ نه delete یا scale دستی.</li>
+      </ul></div>
+    </div>
+    <div class="recap-nums">
+      <span>تعداد replica در Guestbook: <b><bdi dir="rtl">۱ leader و ۲ follower و ۳ frontend</bdi></b></span>
+      <span>حجم هر PVC در WordPress: <b><bdi dir="rtl">20Gi از نوع RWO</bdi></b></span>
+      <span>مرزهای HPA: <b><bdi dir="rtl">۲ تا ۶ replica با هدف ۷۰٪ CPU</bdi></b></span>
+      <span>مهلت scale down در HPA: <b><bdi dir="rtl">۳۰۰ ثانیه stabilization</bdi></b></span>
+      <span>از دست رفتن Node: <b><bdi dir="rtl">۵۰ و ۳۰۰ ثانیه و تا ۶ دقیقه detach</bdi></b></span>
+    </div>
+  </div>
+</section>

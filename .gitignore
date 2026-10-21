@@ -2,3 +2,5 @@ node_modules/
 dist/
 .search-src/
 __pycache__/
+.taste-skill/
+.taste-preview.log

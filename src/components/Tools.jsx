@@ -1,9 +1,11 @@
 import { memo, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { SITE_NAME } from '../book.js';
 import notesUi from '../legacy/notes-ui.html?raw';
 import { editingOnThisDevice, editor, useEditor } from '../lib/editor.js';
 
 // ---- reading preferences (kept on <html> as data-* so the CSS can use them, and in localStorage)
-const DEF = { fs: '0', lh: 'normal', align: 'justify', width: 'narrow' };
+const DEF = { fs: '0', lh: 'normal', align: 'start', width: 'narrow' };
 const root = document.documentElement;
 const readPref = (k) => root.getAttribute('data-' + k) ?? DEF[k];
 
@@ -22,7 +24,7 @@ const FONT_SIZES = [
 ];
 const GROUPS = [
   { k: 'lh', legend: 'فاصله‌ی سطرها', opts: [['normal', 'عادی'], ['loose', 'باز']] },
-  { k: 'align', legend: 'تراز متن', opts: [['justify', 'تمام‌چین'], ['start', 'راست‌چین']] },
+  { k: 'align', legend: 'تراز متن', opts: [['start', 'راست‌چین'], ['justify', 'تمام‌چین']] },
   { k: 'width', legend: 'عرض ستون متن', opts: [['narrow', 'مطالعه'], ['wide', 'پهن']] },
 ];
 
@@ -152,6 +154,7 @@ export function Tools() {
 
   return (
     <div className={'tools' + (away ? ' away' : '')} ref={bar} onFocus={() => setAway(false)}>
+      <Link className="brand" to="/">{SITE_NAME}</Link>
       <button type="button" className="tbtn" id="sr-btn" aria-haspopup="dialog" aria-label="جستجو در جزوه" title="جستجو در جزوه (Ctrl+K)"
         onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new Event('jozve:search')); }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>

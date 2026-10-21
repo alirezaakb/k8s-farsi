@@ -6,6 +6,7 @@ import { loadPage, prepare } from '../lib/content.js';
 import { editingBuiltIn, editor, useEditor } from '../lib/editor.js';
 import { clearDraft, resolveText, saveDraft } from '../lib/overrides.js';
 import { initPlan } from '../lib/plan.js';
+import { initReveal } from '../lib/reveal.js';
 import { scrollTop, settleTo } from '../lib/settle.js';
 import { initNotes } from '../legacy/notes.js';
 import widgets from '../widgets/index.js';
@@ -62,6 +63,7 @@ export default function ContentView({ page, onLoaded }) {
     const root = ref.current;
     const undo = [];
     if (page === 'home') undo.push(initPlan(root));
+    undo.push(initReveal(root, page));
 
     const found = [];
     root.querySelectorAll('[data-widget]').forEach((node) => {

@@ -1,5 +1,5 @@
 <section class="ch" id="ch14">
-  <div class="ch-head"><span class="ch-num">۱۴</span><h2>امنیت: کنترل دسترسی،‏ RBAC و Pod Security</h2></div>
+  <div class="ch-head"><span class="ch-num">۱۴</span><h1>امنیت: کنترل دسترسی،‏ RBAC و Pod Security</h1></div>
   <p class="ch-sub">مرجع: <a href="https://kubernetes.io/docs/concepts/security/">concepts/security</a> · <a href="https://kubernetes.io/docs/concepts/security/cloud-native-security/">concepts/security/cloud-native-security</a> · <a href="https://kubernetes.io/docs/concepts/security/controlling-access/">concepts/security/controlling-access</a> · <a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/">reference/access-authn-authz/authentication</a> · <a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/">reference/access-authn-authz/authorization</a> · <a href="https://kubernetes.io/docs/concepts/security/hardening-guide/authentication-mechanisms/">concepts/security/hardening-guide/authentication-mechanisms</a> · <a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/">reference/access-authn-authz/rbac</a> · <a href="https://kubernetes.io/docs/concepts/security/service-accounts/">concepts/security/service-accounts</a> · <a href="https://kubernetes.io/docs/concepts/security/rbac-good-practices/">concepts/security/rbac-good-practices</a> · <a href="https://kubernetes.io/docs/concepts/security/api-server-bypass-risks/">concepts/security/api-server-bypass-risks</a> · <a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">reference/access-authn-authz/admission-controllers</a> · <a href="https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/">reference/access-authn-authz/service-accounts-admin</a> · <a href="https://kubernetes.io/docs/concepts/security/pod-security-standards/">concepts/security/pod-security-standards</a> · <a href="https://kubernetes.io/docs/concepts/security/pod-security-admission/">pod-security-admission</a> · <a href="https://kubernetes.io/docs/concepts/security/pod-security-policy/">pod-security-policy</a> · <a href="https://kubernetes.io/docs/tasks/configure-pod-container/security-context/">tasks/configure-pod-container/security-context</a> · <a href="https://kubernetes.io/docs/concepts/security/linux-security/">concepts/security/linux-security</a> · <a href="https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/">linux-kernel-security-constraints</a> · <a href="https://kubernetes.io/docs/concepts/security/secrets-good-practices/">secrets-good-practices</a> · <a href="https://kubernetes.io/docs/concepts/security/multi-tenancy/">multi-tenancy</a> · <a href="https://kubernetes.io/docs/concepts/security/security-checklist/">security-checklist</a> · <a href="https://kubernetes.io/docs/concepts/security/application-security-checklist/">application-security-checklist</a> · <a href="https://kubernetes.io/docs/concepts/security/hardening-guide/scheduler/">hardening-guide/scheduler</a> · <a href="https://kubernetes.io/docs/concepts/security/hardening-guide/dynamic-resource-allocation/">hardening-guide/dynamic-resource-allocation</a> · <a href="https://kubernetes.io/docs/concepts/security/windows-security/">windows-security</a> · <a href="https://kubernetes.io/docs/setup/best-practices/enforcing-pod-security-standards/">enforcing-pod-security-standards</a> · <a href="https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/">tasks/administer-cluster/encrypt-data</a></p>
 
   <p>بخش Security مستندات کوبرنتیز کمک می‌کند workloadها (برنامه‌هایی که روی cluster اجرا می‌شوند) را امن‌تر اجرا کنید و اصول اساسی امن نگه داشتن یک cluster کوبرنتیز را یاد بگیرید. کوبرنتیز بر پایه‌ی معماری cloud-native ساخته شده و از توصیه‌های CNCF درباره‌ی good practiceهای امنیت اطلاعات در محیط cloud-native پیروی می‌کند. این فصل سه بخش دارد:</p>
@@ -6887,35 +6887,35 @@ no
 
   <h4>authentication و authorization <small>(Authentication &amp; Authorization)</small></h4>
   <ul>
-    <li>☐ group به نام <code>system:masters</code> پس از bootstrap برای authentication کاربر یا اجزا به کار نمی‌رود.</li>
-    <li>☐ kube-controller-manager با <code>--use-service-account-credentials</code> اجرا می‌شود.</li>
-    <li>☐ root certificate محافظت می‌شود (CA آفلاین،‏ یا CA آنلاین مدیریت‌شده با کنترل دسترسی مؤثر).</li>
-    <li>☐ تاریخ انقضای certificateهای میانی و leaf بیش از ۳ سال بعد نیست.</li>
-    <li>☐ فرایندی برای بازبینی دوره‌ای دسترسی‌ها هست و فاصله‌ی بازبینی‌ها بیش از ۲۴ ماه نیست.</li>
-    <li>☐ <a href="#ch14-b-rbac-good-practices">good practiceهای RBAC</a> رعایت می‌شوند.</li>
+    <li>□ group به نام <code>system:masters</code> پس از bootstrap برای authentication کاربر یا اجزا به کار نمی‌رود.</li>
+    <li>□ kube-controller-manager با <code>--use-service-account-credentials</code> اجرا می‌شود.</li>
+    <li>□ root certificate محافظت می‌شود (CA آفلاین،‏ یا CA آنلاین مدیریت‌شده با کنترل دسترسی مؤثر).</li>
+    <li>□ تاریخ انقضای certificateهای میانی و leaf بیش از ۳ سال بعد نیست.</li>
+    <li>□ فرایندی برای بازبینی دوره‌ای دسترسی‌ها هست و فاصله‌ی بازبینی‌ها بیش از ۲۴ ماه نیست.</li>
+    <li>□ <a href="#ch14-b-rbac-good-practices">good practiceهای RBAC</a> رعایت می‌شوند.</li>
   </ul>
   <p>پس از bootstrap،‏ نه کاربران و نه اجزا نباید با <code>system:masters</code> به Kubernetes API،‏ authenticate شوند؛‏ اجرای کل kube-controller-manager با <code>system:masters</code> هم باید کنار گذاشته شود. <code>system:masters</code> فقط باید سازوکار break-glass (دسترسی اضطراری) باشد،‏ نه کاربر admin روزمره.</p>
 
   <h4>امنیت شبکه <small>(Network security)</small></h4>
   <ul>
-    <li>☐ CNI pluginهای در حال استفاده NetworkPolicy را پشتیبانی می‌کنند.</li>
-    <li>☐ NetworkPolicyهای ingress و egress روی همه‌ی workloadهای cluster اعمال شده‌اند.</li>
-    <li>☐ در هر namespace،‏ NetworkPolicy پیش‌فرضی هست که همه‌ی Podها را انتخاب می‌کند و همه‌چیز را رد می‌کند.</li>
-    <li>☐ در صورت مناسب بودن،‏ service mesh همه‌ی ارتباطات داخل cluster را رمزنگاری می‌کند.</li>
-    <li>☐ Kubernetes API و kubelet API و etcd به‌طور عمومی روی اینترنت در دسترس نیستند.</li>
-    <li>☐ دسترسی workloadها به cloud metadata API فیلتر شده است.</li>
-    <li>☐ استفاده از LoadBalancer و ExternalIPs محدود است.</li>
+    <li>□ CNI pluginهای در حال استفاده NetworkPolicy را پشتیبانی می‌کنند.</li>
+    <li>□ NetworkPolicyهای ingress و egress روی همه‌ی workloadهای cluster اعمال شده‌اند.</li>
+    <li>□ در هر namespace،‏ NetworkPolicy پیش‌فرضی هست که همه‌ی Podها را انتخاب می‌کند و همه‌چیز را رد می‌کند.</li>
+    <li>□ در صورت مناسب بودن،‏ service mesh همه‌ی ارتباطات داخل cluster را رمزنگاری می‌کند.</li>
+    <li>□ Kubernetes API و kubelet API و etcd به‌طور عمومی روی اینترنت در دسترس نیستند.</li>
+    <li>□ دسترسی workloadها به cloud metadata API فیلتر شده است.</li>
+    <li>□ استفاده از LoadBalancer و ExternalIPs محدود است.</li>
   </ul>
   <p>NetworkPolicyهای پیش‌فرضی که در هر namespace همه‌ی Podها را انتخاب و همه‌ی ingress و egress را مسدود می‌کنند،‏ رویکرد allow list را ممکن می‌کنند تا هیچ workloadی جا نماند. همه‌ی CNI pluginها رمزنگاری در مسیر انتقال ندارند؛‏ در این صورت service mesh جایگزین است. etcd باید کنترل دسترسی داشته باشد،‏ روی اینترنت در دسترس نباشد،‏ با mTLS ارتباط برقرار کند و CA آن مخصوص خودش باشد. دسترسی بیرونی از اینترنت به API server باید محدود شود؛‏ بسیاری از توزیع‌های مدیریت‌شده API server را به‌طور پیش‌فرض عمومی می‌کنند. دسترسی به kubelet API هم باید محدود باشد؛‏ تنظیمات پیش‌فرض authentication و authorization آن،‏ وقتی فایل پیکربندی با <code>--config</code> داده نشود،‏ بیش از حد آزاد است (<a href="#ch14-b-bypass">بخش bypass</a>). در cloud،‏ دسترسی Podها به metadata API در آدرس <code>169.254.169.254</code> باید محدود یا مسدود شود،‏ چون ممکن است اطلاعات حساس (مثل credential مربوط به Node) فاش کند. درباره‌ی LoadBalancer و ExternalIPs،‏ <a href="https://github.com/kubernetes/kubernetes/issues/97076">CVE-2020-8554</a> و <a href="#ch14-b-adm-denyserviceexternalips">DenyServiceExternalIPs</a> را ببینید.</p>
 
   <h4>امنیت Pod <small>(Pod security)</small></h4>
   <ul>
-    <li>☐ permissionهای RBAC برای <code>create</code> و <code>update</code> و <code>patch</code> و <code>delete</code> روی workloadها فقط در صورت نیاز داده می‌شوند.</li>
-    <li>☐ policy مناسب Pod Security Standards برای همه‌ی namespaceها اعمال و enforce شده است.</li>
-    <li>☐ برای workloadها memory limit گذاشته شده که برابر یا کمتر از request است.</li>
-    <li>☐ برای workloadهای حساس ممکن است CPU limit گذاشته شود.</li>
-    <li>☐ روی Nodeهایی که پشتیبانی می‌کنند،‏ seccomp با profile مناسب system callها فعال است.</li>
-    <li>☐ روی Nodeهایی که پشتیبانی می‌کنند،‏ AppArmor یا SELinux با profile مناسب فعال است.</li>
+    <li>□ permissionهای RBAC برای <code>create</code> و <code>update</code> و <code>patch</code> و <code>delete</code> روی workloadها فقط در صورت نیاز داده می‌شوند.</li>
+    <li>□ policy مناسب Pod Security Standards برای همه‌ی namespaceها اعمال و enforce شده است.</li>
+    <li>□ برای workloadها memory limit گذاشته شده که برابر یا کمتر از request است.</li>
+    <li>□ برای workloadهای حساس ممکن است CPU limit گذاشته شود.</li>
+    <li>□ روی Nodeهایی که پشتیبانی می‌کنند،‏ seccomp با profile مناسب system callها فعال است.</li>
+    <li>□ روی Nodeهایی که پشتیبانی می‌کنند،‏ AppArmor یا SELinux با profile مناسب فعال است.</li>
   </ul>
   <p>authorization در RBAC حیاتی است اما <a href="#ch14-a-escalation">به‌اندازه‌ی کافی ریزدانه نیست</a> که روی محتوای Pod (یا resourceهایی که Pod را مدیریت می‌کنند) authorization بدهد؛‏ تنها دانه‌بندی،‏ verb روی خود resource است. بدون admission اضافه،‏ اجازه‌ی ساختن این resourceها یعنی دسترسی نامحدود به Nodeهای قابل schedule. Pod Security Standards با سه policy،‏ تنظیم فیلدهای امنیتی <code>PodSpec</code> را محدود می‌کند و با <a href="#ch14-c-psa">Pod Security Admission</a> (پیش‌فرض فعال) یا webhook از نوع third-party در سطح namespace اعمال می‌شود. برخلاف PodSecurityPolicy حذف‌شده،‏ Pod Security Admission را به‌راحتی می‌توان با admission webhookها و سرویس‌های بیرونی ترکیب کرد. حالت‌های <code>warn</code> و <code>audit</code> و <code>enforce</code> اجازه می‌دهند security context مناسب تدریجی اعمال شود؛‏ با این حال security context در Podها باید جداگانه هم بررسی شود تا privilegeها فراتر از این استانداردها هم برای کاربردهای خاص محدود شوند.</p>
   <p>memory limit و CPU limit جلوی مصرف بیش از حد منابع Node به‌دست workload مخرب یا آلوده را می‌گیرند و admission controller می‌تواند این policy را اعمال کند. CPU limit مصرف را throttle می‌کند و ممکن است اثرهای ناخواسته روی autoscaling یا کارایی داشته باشد.</p>
@@ -6925,39 +6925,39 @@ no
   <div class="note"><b>یادداشت نویسنده</b><p>صفحه‌ی checklist می‌گوید AppArmor profile «با annotation» برای هر container تعیین می‌شود. این روش قدیمی است: از v1.30 فیلد <code>securityContext.appArmorProfile</code> جای annotationها را گرفته (feature gateهای AppArmor و AppArmorFields پس از v1.32 حذف شده‌اند و همیشه فعال‌اند) و annotationها deprecated هستند.</p></div>
 
   <h4>log و auditing <small>(Logs and auditing)</small></h4>
-  <ul><li>☐ audit logها،‏ اگر فعال باشند،‏ از دسترسی عمومی محافظت می‌شوند.</li></ul>
+  <ul><li>□ audit logها،‏ اگر فعال باشند،‏ از دسترسی عمومی محافظت می‌شوند.</li></ul>
 
   <h4>جایگذاری Pod <small>(Pod placement)</small></h4>
   <ul>
-    <li>☐ جایگذاری Podها بر اساس سطح حساسیت برنامه انجام می‌شود.</li>
-    <li>☐ برنامه‌های حساس روی Nodeهای جدا یا با sandboxed runtime مشخص اجرا می‌شوند.</li>
+    <li>□ جایگذاری Podها بر اساس سطح حساسیت برنامه انجام می‌شود.</li>
+    <li>□ برنامه‌های حساس روی Nodeهای جدا یا با sandboxed runtime مشخص اجرا می‌شوند.</li>
   </ul>
   <p>Podهایی با سطح حساسیت متفاوت (مثلاً Pod برنامه و Kubernetes API server) باید روی Nodeهای جداگانه deploy شوند تا فرار از container در برنامه مستقیماً به برنامه‌ی حساس‌تر نرسد. این جداسازی باید اجباری باشد تا Podها تصادفاً روی یک Node نیفتند؛‏ ابزارها: node selector (که با admission controller به نام <a href="#ch14-b-adm-podnodeselector">PodNodeSelector</a> در سطح namespace و cluster اجباری می‌شود)،‏ <a href="#ch14-b-adm-podtolerationrestriction">PodTolerationRestriction</a> برای محدود کردن tolerationهای مجاز هر namespace،‏ و <a href="#ch2-runtimeclass">RuntimeClass</a> برای انتخاب پیکربندی container runtime با جداسازی بیشتر از host به قیمت سربار کارایی.</p>
 
   <h4>Secretها <small>(Secrets)</small></h4>
   <ul>
-    <li>☐ از ConfigMap برای نگه‌داری داده‌ی محرمانه استفاده نمی‌شود.</li>
-    <li>☐ encryption at rest برای Secret API پیکربندی شده است.</li>
-    <li>☐ در صورت مناسب بودن،‏ سازوکاری برای تزریق Secretهای ذخیره‌شده در storage از نوع third-party deploy شده است.</li>
-    <li>☐ service account token در Podهایی که به آن نیاز ندارند mount نمی‌شود.</li>
-    <li>☐ به‌جای tokenهای بدون انقضا،‏ <a href="#ch14-b-sa-admin">bound service account token volume</a> به کار می‌رود.</li>
+    <li>□ از ConfigMap برای نگه‌داری داده‌ی محرمانه استفاده نمی‌شود.</li>
+    <li>□ encryption at rest برای Secret API پیکربندی شده است.</li>
+    <li>□ در صورت مناسب بودن،‏ سازوکاری برای تزریق Secretهای ذخیره‌شده در storage از نوع third-party deploy شده است.</li>
+    <li>□ service account token در Podهایی که به آن نیاز ندارند mount نمی‌شود.</li>
+    <li>□ به‌جای tokenهای بدون انقضا،‏ <a href="#ch14-b-sa-admin">bound service account token volume</a> به کار می‌رود.</li>
   </ul>
   <p>Secretهای لازم برای Podها باید در Secret کوبرنتیز نگه‌داری شوند،‏ نه در جایگزین‌هایی مثل ConfigMap،‏ و در etcd،‏ <a href="#ch14-c-encryption">encrypted at rest</a> باشند. Podها بهتر است Secretها را با volume بگیرند. سازوکارهایی مثل <a href="https://secrets-store-csi-driver.sigs.k8s.io/">Secrets Store CSI Driver</a> می‌توانند Secretها را از storageهای third-party به شکل volume تزریق کنند؛‏ این روش بر دادن دسترسی RBAC به Secretها به ServiceAccount مربوط به Pod ترجیح دارد. روش environment variable به‌خاطر crash dump در logها و محرمانه نبودن environment variable در Linux (در مقایسه با سازوکار permission فایل) بیشتر در معرض نشت است. service account token را با <code>automountServiceAccountToken: false</code> (در ServiceAccount برای کل namespace یا مشخصاً در Pod) از Podهایی که لازمش ندارند دور نگه دارید.</p>
 
   <h4>imageها <small>(Images)</small></h4>
   <ul>
-    <li>☐ محتوای غیرضروری container image به حداقل رسیده است.</li>
-    <li>☐ container imageها برای اجرا با کاربر بدون privilege پیکربندی شده‌اند.</li>
-    <li>☐ به imageها با digest از نوع sha256 (نه tag) ارجاع داده می‌شود،‏ یا منشأ image با verify کردن امضای دیجیتال آن هنگام deploy،‏ <a href="https://kubernetes.io/docs/tasks/administer-cluster/verify-signed-artifacts/#verifying-image-signatures-with-admission-controller">با admission control</a> تأیید می‌شود.</li>
-    <li>☐ container imageها هنگام ساخت و deploy مرتب scan می‌شوند و نرم‌افزارهای آسیب‌پذیر شناخته‌شده patch می‌شوند.</li>
+    <li>□ محتوای غیرضروری container image به حداقل رسیده است.</li>
+    <li>□ container imageها برای اجرا با کاربر بدون privilege پیکربندی شده‌اند.</li>
+    <li>□ به imageها با digest از نوع sha256 (نه tag) ارجاع داده می‌شود،‏ یا منشأ image با verify کردن امضای دیجیتال آن هنگام deploy،‏ <a href="https://kubernetes.io/docs/tasks/administer-cluster/verify-signed-artifacts/#verifying-image-signatures-with-admission-controller">با admission control</a> تأیید می‌شود.</li>
+    <li>□ container imageها هنگام ساخت و deploy مرتب scan می‌شوند و نرم‌افزارهای آسیب‌پذیر شناخته‌شده patch می‌شوند.</li>
   </ul>
   <p>image باید کمترین محتوای لازم برای اجرای برنامه را داشته باشد: ترجیحاً فقط برنامه و dependencyهایش،‏ از کوچک‌ترین base ممکن. imageهای production نباید shell یا ابزار debug داشته باشند؛‏ برای عیب‌یابی از <a href="#ch11-b-ephemeral-container">ephemeral debug container</a> استفاده کنید. imageها را طوری بسازید که با دستور <code>USER</code> در Dockerfile مستقیم با کاربر بدون privilege شروع شوند؛‏ security context هم با <code>runAsUser</code> و <code>runAsGroup</code> می‌تواند کاربر و group را تعیین کند،‏ ولی permission فایل‌ها در لایه‌های image ممکن است بدون تغییر image اجرا با کاربر تازه را ناممکن کند. از tag،‏ به‌ویژه <code>latest</code>،‏ پرهیز کنید چون image پشت tag در registry به‌راحتی عوض می‌شود؛‏ digest کامل <code>sha256</code> که برای manifest مربوط به image یکتاست بهتر است و این policy را می‌توان با <a href="#ch14-b-adm-imagepolicywebhook">ImagePolicyWebhook</a> اعمال کرد. scan کردن image پیش از deploy (معمولاً در pipeline از نوع CI/CD) جلوی ورود آسیب‌پذیری‌های جدی را می‌گیرد؛‏ با ترکیب نتیجه‌ی scan (مثلاً امتیاز <a href="https://www.first.org/cvss/">CVSS</a>) با قاعده‌های compliance در pipeline،‏ فقط imageهای patch‌شده به production می‌رسند.</p>
 
   <h4>admission controllerها <small>(Admission controllers)</small></h4>
   <ul>
-    <li>☐ مجموعه‌ی مناسبی از admission controllerها فعال است.</li>
-    <li>☐ policy امنیتی Pod با Pod Security Admission و/یا admission controller از نوع webhook اعمال می‌شود.</li>
-    <li>☐ pluginها و webhookهای زنجیره‌ی admission امن پیکربندی شده‌اند.</li>
+    <li>□ مجموعه‌ی مناسبی از admission controllerها فعال است.</li>
+    <li>□ policy امنیتی Pod با Pod Security Admission و/یا admission controller از نوع webhook اعمال می‌شود.</li>
+    <li>□ pluginها و webhookهای زنجیره‌ی admission امن پیکربندی شده‌اند.</li>
   </ul>
   <p>admission controllerها امنیت cluster را بهتر می‌کنند،‏ اما چون API server را گسترش می‌دهند خودشان هم ممکن است ریسک بسازند و <a href="https://kubernetes.io/blog/2022/01/19/secure-your-admission-controllers-and-webhooks/">باید امن شوند</a>. سه گروه را در نظر بگیرید:</p>
   <div class="tbl"><table><thead><tr><th>گروه</th><th>pluginها</th><th>توصیه</th></tr></thead><tbody>
@@ -6970,19 +6970,19 @@ no
   <p>این checklist رهنمودهای پایه برای امن کردن برنامه‌های در حال اجرا در کوبرنتیز را از دید توسعه‌دهنده می‌دهد. فرض آن این است که «توسعه‌دهنده» کاربری از cluster است که با objectهای namespaced کار می‌کند. همان هشدار checklist قبلی اینجا هم صدق می‌کند: checklist به‌تنهایی کافی نیست.</p>
   <h4>hardening پایه <small>(Base security hardening)</small></h4>
   <div class="tbl"><table><thead><tr><th>حوزه</th><th>موارد</th></tr></thead><tbody>
-    <tr><td>طراحی برنامه</td><td>☐ رعایت <a href="https://www.cncf.io/wp-content/uploads/2022/06/CNCF_cloud-native-security-whitepaper-May2022-v2.pdf">اصول امنیتی</a> درست در طراحی؛‏ ☐ QoS class مناسب با request و limit؛‏ ☐ memory limit برابر یا بیشتر از request؛‏ ☐ CPU limit برای workloadهای حساس در صورت لزوم</td></tr>
-    <tr><td>service account</td><td>☐ استفاده نکردن از ServiceAccount به نام <code>default</code> و ساختن ServiceAccount برای هر workload یا microservice؛‏ ☐ <code>automountServiceAccountToken: false</code> مگر اینکه Pod واقعاً به Kubernetes API نیاز داشته باشد</td></tr>
-    <tr><td>securityContext در سطح Pod</td><td>☐ <code>runAsNonRoot: true</code>؛‏ ☐ اجرا با کاربر کم‌privilege (مثلاً با <code>runAsUser</code> و <code>runAsGroup</code>) و permission مناسب فایل‌ها در image؛‏ ☐ در صورت نیاز supplementary group با <code>fsGroup</code> برای دسترسی به persistent volume؛‏ ☐ deploy در namespaceی که <a href="#ch14-c-pss">Pod Security Standard</a> مناسب را enforce می‌کند (اگر کنترلی بر cluster مقصد ندارید،‏ این را مستند کنید یا با لایه‌های دفاعی دیگر جبران کنید)</td></tr>
-    <tr><td>securityContext در سطح container</td><td>☐ <code>allowPrivilegeEscalation: false</code>؛‏ ☐ <code>readOnlyRootFilesystem: true</code>؛‏ ☐ <code>privileged: false</code>؛‏ ☐ drop کردن همه‌ی capabilityها و افزودن فقط موارد لازم</td></tr>
-    <tr><td>RBAC</td><td>☐ دادن <b>create</b> و <b>patch</b> و <b>update</b> و <b>delete</b> فقط در صورت نیاز؛‏ ☐ نساختن permission برای ساختن یا update کردن roleها که به <a href="#ch14-b-privilege-escalation">privilege escalation</a> می‌انجامد؛‏ ☐ بازبینی و حذف bindingهای group به نام <code>system:unauthenticated</code>،‏ چون به هر کسی که در سطح شبکه به API server برسد دسترسی می‌دهد</td></tr>
-    <tr><td>امنیت image</td><td>☐ scan کردن image با ابزار scan پیش از deploy؛‏ ☐ verify کردن امضای container image پیش از deploy</td></tr>
-    <tr><td>NetworkPolicy</td><td>☐ پیکربندی NetworkPolicy تا فقط ترافیک ingress و egress مورد انتظار مجاز باشد؛‏ مطمئن شوید cluster،‏ NetworkPolicy را پشتیبانی و اعمال می‌کند</td></tr>
+    <tr><td>طراحی برنامه</td><td>□ رعایت <a href="https://www.cncf.io/wp-content/uploads/2022/06/CNCF_cloud-native-security-whitepaper-May2022-v2.pdf">اصول امنیتی</a> درست در طراحی؛‏ □ QoS class مناسب با request و limit؛‏ □ memory limit برابر یا بیشتر از request؛‏ □ CPU limit برای workloadهای حساس در صورت لزوم</td></tr>
+    <tr><td>service account</td><td>□ استفاده نکردن از ServiceAccount به نام <code>default</code> و ساختن ServiceAccount برای هر workload یا microservice؛‏ □ <code>automountServiceAccountToken: false</code> مگر اینکه Pod واقعاً به Kubernetes API نیاز داشته باشد</td></tr>
+    <tr><td>securityContext در سطح Pod</td><td>□ <code>runAsNonRoot: true</code>؛‏ □ اجرا با کاربر کم‌privilege (مثلاً با <code>runAsUser</code> و <code>runAsGroup</code>) و permission مناسب فایل‌ها در image؛‏ □ در صورت نیاز supplementary group با <code>fsGroup</code> برای دسترسی به persistent volume؛‏ □ deploy در namespaceی که <a href="#ch14-c-pss">Pod Security Standard</a> مناسب را enforce می‌کند (اگر کنترلی بر cluster مقصد ندارید،‏ این را مستند کنید یا با لایه‌های دفاعی دیگر جبران کنید)</td></tr>
+    <tr><td>securityContext در سطح container</td><td>□ <code>allowPrivilegeEscalation: false</code>؛‏ □ <code>readOnlyRootFilesystem: true</code>؛‏ □ <code>privileged: false</code>؛‏ □ drop کردن همه‌ی capabilityها و افزودن فقط موارد لازم</td></tr>
+    <tr><td>RBAC</td><td>□ دادن <b>create</b> و <b>patch</b> و <b>update</b> و <b>delete</b> فقط در صورت نیاز؛‏ □ نساختن permission برای ساختن یا update کردن roleها که به <a href="#ch14-b-privilege-escalation">privilege escalation</a> می‌انجامد؛‏ □ بازبینی و حذف bindingهای group به نام <code>system:unauthenticated</code>،‏ چون به هر کسی که در سطح شبکه به API server برسد دسترسی می‌دهد</td></tr>
+    <tr><td>امنیت image</td><td>□ scan کردن image با ابزار scan پیش از deploy؛‏ □ verify کردن امضای container image پیش از deploy</td></tr>
+    <tr><td>NetworkPolicy</td><td>□ پیکربندی NetworkPolicy تا فقط ترافیک ingress و egress مورد انتظار مجاز باشد؛‏ مطمئن شوید cluster،‏ NetworkPolicy را پشتیبانی و اعمال می‌کند</td></tr>
   </tbody></table></div>
   <p>verbهای <b>create</b> و <b>update</b> و <b>delete</b> را با احتیاط بدهید. verb به نام <b>patch</b> اگر روی Namespace مجاز باشد،‏ <a href="#ch14-b-gp-risks">اجازه‌ی تغییر labelهای namespace</a> را می‌دهد که سطح حمله را بزرگ‌تر می‌کند. برای workloadهای حساس،‏ ValidatingAdmissionPolicy پیشنهادی را در نظر بگیرید که نوشتن‌های مجاز را بیشتر محدود کند. اگر برنامه‌ای می‌نویسید که کاربران در clusterهای مختلف deploy می‌کنند،‏ بررسی کنید می‌توانید فرض کنید NetworkPolicy در دسترس و اعمال‌شده است یا نه.</p>
   <h4>hardening پیشرفته <small>(Advanced security hardening)</small></h4>
   <ul>
-    <li><b>امنیت container لینوکسی:</b> ☐ <a href="#ch14-c-security-context">تعیین seccomp profile</a>؛‏ ☐ محدود کردن دسترسی container به resourceها با AppArmor؛‏ ☐ تعیین SELinux label برای container.</li>
-    <li><b>runtime class:</b> ☐ پیکربندی runtime class مناسب. بعضی containerها به سطح جداسازی متفاوت از runtime پیش‌فرض cluster نیاز دارند و <code>runtimeClassName</code> در podspec آن را تعیین می‌کند. برای workloadهای حساس،‏ ابزارهای شبیه‌سازی kernel مثل <a href="https://gvisor.dev/docs/">gVisor</a> یا جداسازی مجازی مثل <a href="https://katacontainers.io/">kata-containers</a> را در نظر بگیرید و در محیط‌های با اعتماد بالا <a href="https://kubernetes.io/blog/2023/07/06/confidential-kubernetes/">confidential virtual machine</a> را.</li>
+    <li><b>امنیت container لینوکسی:</b> □ <a href="#ch14-c-security-context">تعیین seccomp profile</a>؛‏ □ محدود کردن دسترسی container به resourceها با AppArmor؛‏ □ تعیین SELinux label برای container.</li>
+    <li><b>runtime class:</b> □ پیکربندی runtime class مناسب. بعضی containerها به سطح جداسازی متفاوت از runtime پیش‌فرض cluster نیاز دارند و <code>runtimeClassName</code> در podspec آن را تعیین می‌کند. برای workloadهای حساس،‏ ابزارهای شبیه‌سازی kernel مثل <a href="https://gvisor.dev/docs/">gVisor</a> یا جداسازی مجازی مثل <a href="https://katacontainers.io/">kata-containers</a> را در نظر بگیرید و در محیط‌های با اعتماد بالا <a href="https://kubernetes.io/blog/2023/07/06/confidential-kubernetes/">confidential virtual machine</a> را.</li>
   </ul>
   <div class="note"><b>نکته</b><p>دو checklist در memory limit با هم فرق دارند: checklist مدیر cluster می‌گوید limit «برابر یا کمتر از request» و checklist برنامه «برابر یا بیشتر از request». چون limit هرگز نمی‌تواند کمتر از request باشد (API چنین Podی را رد می‌کند)،‏ جمع این دو یعنی <b>limit برابر request</b> برای memory؛‏ که همان توصیه‌ی محتاطانه برای جلوگیری از OOM در Node است.</p></div>
 

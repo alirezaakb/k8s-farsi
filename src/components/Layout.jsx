@@ -12,9 +12,14 @@ const headingText = (h) => {
 export function Footer() {
   return (
     <footer className="site-foot">
-      <Link to="/">{SITE_NAME}</Link>
-      <Link to="/sources">منابع</Link>
-      <span>بر پایه‌ی مستندات رسمی kubernetes.io</span>
+      <div className="foot-links">
+        <Link to="/">صفحه‌ی اصلی</Link>
+        <Link to="/sources">منابع</Link>
+        <span>بر پایه‌ی مستندات رسمی kubernetes.io</span>
+      </div>
+      <svg className="foot-word" viewBox="0 0 760 150" aria-hidden="true" focusable="false">
+        <text x="380" y="118" textAnchor="middle" fontSize="130" fontWeight="900" textLength="740" lengthAdjust="spacingAndGlyphs">{SITE_NAME}</text>
+      </svg>
     </footer>
   );
 }
@@ -29,15 +34,45 @@ function WithPart({ part, children }) {
   );
 }
 
-function Sidebar({ current, outline }) {
+/** All chapters, grouped by part; the open one is marked. */
+function ChapterNav({ current }) {
   useEffect(() => {
     const toc = document.querySelector('nav.toc');
-    if (!toc) return undefined;
-    const cur = toc.querySelector('li.cur > a');
-    if (cur) toc.scrollTop += cur.getBoundingClientRect().top - toc.getBoundingClientRect().top - 60;
+    const cur = toc?.querySelector('li.cur > a');
+    if (toc && cur) toc.scrollTop += cur.getBoundingClientRect().top - toc.getBoundingClientRect().top - 60;
+  }, [current]);
 
+  return (
+    <nav className="toc" aria-label="فهرست فصل‌ها">
+      <h2>فصل‌ها</h2>
+      <ol>
+        {book.chapters.map((c) => {
+          const here = c.id === current;
+          return (
+            <WithPart key={c.id} part={c.part}>
+              <li className={here ? 'cur' : undefined}>
+                <Link to={'/' + c.id} aria-current={here ? 'page' : undefined}>
+                  <span className="n">{c.n}</span><span>{c.title}</span>
+                </Link>
+              </li>
+            </WithPart>
+          );
+        })}
+        <li className={current === 'sources' ? 'cur' : undefined}>
+          <Link to="/sources" aria-current={current === 'sources' ? 'page' : undefined}><span className="n" /><span>منابع</span></Link>
+        </li>
+      </ol>
+    </nav>
+  );
+}
+
+/** The sections of the open chapter; the one being read is marked. */
+function Outline({ outline }) {
+  useEffect(() => {
+    const box = document.querySelector('nav.outline');
+    if (!box) return undefined;
     const links = {};
-    toc.querySelectorAll('ol.sub a').forEach((a) => { links[a.getAttribute('data-id')] = a; });
+    box.querySelectorAll('a').forEach((a) => { links[a.getAttribute('data-id')] = a; });
     const heads = outline.map((o) => document.getElementById(o.id)).filter(Boolean);
     if (!heads.length) return undefined;
 
@@ -54,44 +89,25 @@ function Sidebar({ current, outline }) {
       active = a;
       if (!a) return;
       a.classList.add('on');
-      const tr = toc.getBoundingClientRect();
+      const tr = box.getBoundingClientRect();
       const ar = a.getBoundingClientRect();
-      if (ar.top < tr.top + 40) toc.scrollTop -= tr.top + 40 - ar.top;
-      else if (ar.bottom > tr.bottom - 40) toc.scrollTop += ar.bottom - (tr.bottom - 40);
+      if (ar.top < tr.top + 40) box.scrollTop -= tr.top + 40 - ar.top;
+      else if (ar.bottom > tr.bottom - 40) box.scrollTop += ar.bottom - (tr.bottom - 40);
     };
     const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(spy); } };
     window.addEventListener('scroll', onScroll, { passive: true });
     spy();
     return () => window.removeEventListener('scroll', onScroll);
-  }, [current, outline]);
+  }, [outline]);
 
+  if (!outline.length) return <div className="outline-slot" />;
   return (
-    <nav className="toc" aria-label="فهرست مطالب">
-      <Link className="toc-home" to="/">← صفحه‌ی اصلی جزوه</Link>
-      <h2>فهرست فصل‌ها</h2>
+    <nav className="outline" aria-label="در این فصل">
+      <h2>در این فصل</h2>
       <ol>
-        {book.chapters.map((c) => {
-          const here = c.id === current;
-          return (
-            <WithPart key={c.id} part={c.part}>
-              <li className={here ? 'cur' : undefined}>
-                <Link to={'/' + c.id} aria-current={here ? 'page' : undefined}>
-                  <span className="n">{c.n}</span><span>{c.title}</span>
-                </Link>
-                {here && outline.length > 0 && (
-                  <ol className="sub">
-                    {outline.map((o) => (
-                      <li key={o.id}><Link to={{ pathname: '/' + c.id, hash: '#' + o.id }} data-id={o.id}>{o.text}</Link></li>
-                    ))}
-                  </ol>
-                )}
-              </li>
-            </WithPart>
-          );
-        })}
-        <li className={current === 'sources' ? 'cur' : undefined}>
-          <Link to="/sources" aria-current={current === 'sources' ? 'page' : undefined}><span className="n" /><span>منابع</span></Link>
-        </li>
+        {outline.map((o) => (
+          <li key={o.id}><Link to={{ hash: '#' + o.id }} data-id={o.id}>{o.text}</Link></li>
+        ))}
       </ol>
     </nav>
   );
@@ -99,10 +115,10 @@ function Sidebar({ current, outline }) {
 
 function MobileToc({ current }) {
   return (
-    <details className="toc-mobile">
+    <nav aria-label="فهرست فصل‌ها" className="toc-mobile-nav"><details className="toc-mobile">
       <summary>فهرست فصل‌ها</summary>
-      <p><Link to="/">← صفحه‌ی اصلی جزوه</Link></p>
       <ol>
+        <li><Link to="/">صفحه‌ی اصلی جزوه</Link></li>
         {book.chapters.map((c) => (
           <WithPart key={c.id} part={c.part}>
             <li className={c.id === current ? 'cur' : undefined}>
@@ -112,7 +128,7 @@ function MobileToc({ current }) {
         ))}
         <li><Link to="/sources">منابع</Link></li>
       </ol>
-    </details>
+    </details></nav>
   );
 }
 
@@ -144,7 +160,7 @@ function Pager({ chapter }) {
   );
 }
 
-/** A chapter or the sources page: breadcrumb, sidebar with the page's outline, content, previous/next. */
+/** A chapter or the sources page: breadcrumb, chapter list, content, previous/next, and the chapter's own outline. */
 export function Shell({ page, chapter }) {
   const [outline, setOutline] = useState([]);
   const onLoaded = useCallback((el) => {
@@ -160,14 +176,14 @@ export function Shell({ page, chapter }) {
   return (
     <>
       <Crumbs chapter={chapter} />
-      <h1 className="sr-only">{SITE_NAME}</h1>
-      <div className="shell">
-        <Sidebar current={page} outline={outline} />
+      <div className={chapter ? 'shell' : 'shell no-outline'}>
+        <ChapterNav current={page} />
         <main id="main" tabIndex={-1}>
           <MobileToc current={page} />
           <ContentView page={page} onLoaded={onLoaded} />
           {chapter && <Pager chapter={chapter} />}
         </main>
+        {chapter && <Outline outline={outline} />}
       </div>
       <Footer />
     </>

@@ -53,6 +53,12 @@ npm run dev     # http://localhost:5173
 
 کامپوننت را در `src/widgets/` بسازید و در `src/widgets/index.js` با همان نام ثبت کنید. جاهای دیگر سایت (فهرست، جستجو، تنظیمات مطالعه) هم کامپوننت‌های React در `src/components/` هستند.
 
+## ظاهر سایت
+
+- رنگ‌ها، اندازه‌ی متن‌ها و همه‌ی ظاهر کلی در `src/styles/design.css` است (بعد از `jozve.css` و `site.css` بارگذاری می‌شود و فقط تفاوت‌ها را می‌گوید). رنگ‌ها در بالای همان فایل متغیر هستند: `--ground`، `--ink`، `--accent` و بقیه.
+- طراحی با مهارت `design-taste-frontend` انجام شد (جهت «Type and nothing else»): نوشتار بزرگ به‌جای تصویر، رنگ تخت به‌جای سایه و گرادیان و کادر، گوشه‌ی تیز، متن راست‌چین.
+- بعد از هر تغییر بزرگ در ظاهر: `node .agents/skills/design-taste-frontend/scripts/inspect.mjs http://localhost:5173/ch5` را با `npm run dev` در حال اجرا بزنید تا ظاهر در سه عرض سنجیده و اسکرین‌شات گرفته شود (در `.taste-skill/`).
+
 ## ساخت و انتشار
 
 ```bash

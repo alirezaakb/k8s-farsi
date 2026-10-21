@@ -22,7 +22,7 @@ export function readBook() {
     const id = f.replace('.html', '');
     const html = read(f);
     const n = (html.match(/<span class="ch-num">([^<]*)<\/span>/) || [])[1]?.trim() ?? String(i + 1);
-    const h2 = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/);
+    const h2 = html.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/);
     pageIds[id] = idsOf(html);
     return { id, n, title: h2 ? text(h2[1]) : id, part: meta.parts[id] || null };
   });

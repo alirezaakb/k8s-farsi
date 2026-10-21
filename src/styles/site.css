@@ -22,7 +22,7 @@
 
 /* previous / next chapter */
 .pager{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:6px 0 36px}
-.pager a{display:grid;gap:2px;padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+.pager a{display:grid;gap:2px;padding:14px 18px;border:0;border-radius:0;background:var(--surface);
   color:var(--ink);text-decoration:none;min-width:0}
 .pager a:hover{border-color:var(--accent);background:var(--accent-soft)}
 .pager small{font-size:.78rem;color:var(--ink-2)}
@@ -32,14 +32,14 @@
 @media (max-width:600px){.pager{grid-template-columns:1fr}.pager .next,.pager .prev{grid-column:1}}
 
 /* footer */
-.site-foot{max-width:1150px;margin:8px auto 0;padding:18px 0 8px;border-top:1px solid var(--line);
+.site-foot{max-width:1150px;margin:8px auto 0;padding:18px 0 8px;border-top:0;
   display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.84rem;color:var(--ink-2)}
 .site-foot a{color:var(--accent-ink)}
 
 /* home: call to action under the cover */
 .cta{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px}
 .cta a{display:inline-block;padding:10px 20px;border-radius:12px;font-weight:700;text-decoration:none;
-  border:1px solid var(--accent);color:var(--accent-ink);background:var(--surface)}
+  border:0;color:var(--accent-ink);background:var(--surface)}
 .cta a.go{background:var(--accent);color:#fff}
 .cta a:hover{filter:brightness(1.07)}
 
@@ -50,7 +50,7 @@ section.ch{border-bottom:0;margin-bottom:24px}
 #sr-wrap{position:fixed;inset:0;z-index:100;background:rgba(8,13,24,.55);display:flex;justify-content:center;align-items:flex-start;padding:max(56px,8vh) 12px 12px}
 #sr-wrap[hidden]{display:none}
 #sr-dlg{width:min(720px,100%);max-height:calc(100vh - 80px);overflow:auto;background:var(--surface);color:var(--ink);
-  border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+  border:0;border-radius:0;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.35)} /* taste-skill-ignore: a real dialog */
 #sr-dlg h2{font-size:.95rem;margin:0 0 10px;font-weight:800}
 #sr-box{direction:rtl;text-align:start;
   --pagefind-ui-scale:.95;--pagefind-ui-primary:var(--accent);--pagefind-ui-text:var(--ink);--pagefind-ui-background:var(--surface);
@@ -61,7 +61,7 @@ section.ch{border-bottom:0;margin-bottom:24px}
 #sr-box .pagefind-ui__result-excerpt,#sr-box .pagefind-ui__result-title{text-align:start;direction:rtl}
 #sr-box .pagefind-ui__search-input{font-family:inherit}
 .sr-hint{font-size:.78rem;color:var(--ink-2);margin:10px 0 0}
-.sr-hint kbd{font-family:inherit;border:1px solid var(--line);border-radius:4px;padding:0 5px;background:var(--sunk)}
+.sr-hint kbd{font-family:inherit;border:0;border-radius:0;padding:0 5px;background:var(--sunk)}
 @media print{#sr-wrap,#sr-btn{display:none!important}}
 #sr-box .pagefind-ui__search-clear{right:auto;left:calc(52px * var(--pagefind-ui-scale));color:var(--ink);background:var(--sunk);border-radius:6px;padding:0 10px}
 
@@ -73,12 +73,12 @@ body.editing #hl-bar{display:none!important}
 [contenteditable="true"]{outline:2px dashed var(--accent);outline-offset:8px;border-radius:6px;caret-color:var(--accent)}
 #ed-btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
 .editbar{position:fixed;inset-inline:0;bottom:0;z-index:80;background:var(--surface);color:var(--ink);border-top:2px solid var(--accent);
-  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(15,23,41,.18);font-size:.85rem;line-height:1.7}
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(15,23,41,.18);font-size:.85rem;line-height:1.7} /* taste-skill-ignore: a bar that floats over the page */
 .eb-row{max-width:1150px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
 .eb-row + .eb-row{margin-top:8px}
 .eb-state{flex:1 1 220px;color:var(--ink-2)}
 .eb-btns{display:flex;flex-wrap:wrap;gap:6px}
-.editbar button{font:600 .8rem "Vazirmatn",Tahoma,sans-serif;background:var(--sunk);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;min-height:34px}
+.editbar button{font:600 .8rem "Vazirmatn",Tahoma,sans-serif;background:var(--sunk);color:var(--ink);border:0;border-radius:0;padding:6px 12px;cursor:pointer;min-height:34px}
 .editbar button:disabled{opacity:.5;cursor:default}
 .editbar button.eb-pri{background:var(--accent);border-color:var(--accent);color:#fff}
 .editbar input{flex:1 1 260px;font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}

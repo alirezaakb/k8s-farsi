@@ -7,6 +7,10 @@
   <p>روش اول <i>horizontal scaling</i> نامیده می‌شود،‏ در حالی که روش دوم <i>vertical scaling</i> نامیده می‌شود.</p>
   <p>روش‌های manual و automatic برای scale کردن workloadها وجود دارد که بسته به use case شما متفاوت است.</p>
 
+  <div class="story"><b>ماجرای این فصل: Black Friday</b><p>Black Friday و Cyber Monday نزدیک است. در حراج پاییزه‌ی پارسال (فصل ۱) ترافیک ساعت اول شش برابر روزهای عادی شد؛‏ امسال با کمپین‌های بیشتر،‏ تا هشت برابر پیش‌بینی می‌شود،‏ ولی کسی نمی‌داند اوج دقیقاً چه ساعتی است و هر کمپین تبلیغاتی ممکن است جهش تازه‌ای بسازد. نگه‌داشتن هشت برابر Pod و Node در تمام سال هزینه را چند برابر می‌کند و کم گذاشتنش در روز حراج،‏ یعنی از دست رفتن فروش در پرترافیک‌ترین ساعت‌های سال.</p><p><b>راه‌حل را در این بخش‌ها می‌سازید:</b></p><ul><li><a href="#ch10-hpa">HorizontalPodAutoscaler</a></li><li><a href="#ch10-walk">آزمایش گام‌به‌گام HPA</a></li><li><a href="#ch10-vpa">Vertical Pod Autoscaler</a></li><li><a href="#ch10-node">Node autoscaling</a></li><li><a href="#ch10-solved">حل مسئله‌ی شاپیفای</a></li></ul></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نقشه‌ی ذهنی این فصل</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نقشه‌ی ذهنی این فصل</b>
     <p>این فصل چهار محور دارد که در ادامه به‌ترتیب پوشش داده می‌شوند:</p>
     <ul>
@@ -17,8 +21,7 @@
     </ul>
     <p>نکته‌ی مهم: HPA و VPA دو مسیر مستقل هستند و اگر هر دو روی یک resource یکسان (مثلا CPU) پیکربندی شوند،‏ می‌توانند با هم تداخل ایجاد کنند (به تمرین‌های پایان فصل مراجعه کنید).</p>
   </div>
-
-  <div class="story"><b>ماجرای این فصل: Black Friday</b><p>Black Friday و Cyber Monday نزدیک است. در حراج پاییزه‌ی پارسال (فصل ۱) ترافیک ساعت اول شش برابر روزهای عادی شد؛‏ امسال با کمپین‌های بیشتر،‏ تا هشت برابر پیش‌بینی می‌شود،‏ ولی کسی نمی‌داند اوج دقیقاً چه ساعتی است و هر کمپین تبلیغاتی ممکن است جهش تازه‌ای بسازد. نگه‌داشتن هشت برابر Pod و Node در تمام سال هزینه را چند برابر می‌کند و کم گذاشتنش در روز حراج،‏ یعنی از دست رفتن فروش در پرترافیک‌ترین ساعت‌های سال.</p><p><b>راه‌حل را در این بخش‌ها می‌سازید:</b></p><ul><li><a href="#ch10-hpa">HorizontalPodAutoscaler</a></li><li><a href="#ch10-walk">آزمایش گام‌به‌گام HPA</a></li><li><a href="#ch10-vpa">Vertical Pod Autoscaler</a></li><li><a href="#ch10-node">Node autoscaling</a></li><li><a href="#ch10-solved">حل مسئله‌ی شاپیفای</a></li></ul></div>
+  </details>
 
   <h3 id="ch10-manual">scale کردن دستی workloadها <small>(Scaling workloads manually)</small></h3>
   <p>کوبرنتیز از <i>manual scaling</i> workloadها پشتیبانی می‌کند. Horizontal scaling را می‌توان با CLI کوبرنتیز یعنی <code>kubectl</code> انجام داد. برای vertical scaling،‏ باید resource definition workload خود را <i>patch</i> کنید.</p>
@@ -101,6 +104,8 @@ web    4/4     4            4           25s
   <p>اگر scale کردن workloadها برای برآورده کردن نیازهایتان کافی نباشد،‏ می‌توانید infrastructure مربوط به خود cluster را نیز scale کنید.</p>
   <p>Scale کردن infrastructure مربوط به cluster معمولا به معنای اضافه یا حذف کردن Node است. برای اطلاعات بیشتر بخش <a href="#ch10-node">Node autoscaling</a> همین فصل را بخوانید.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">horizontal در برابر vertical،‏ و کجا هرکدام مناسب است</span></summary>
   <div class="deep"><b>توضیح تکمیلی: horizontal در برابر vertical،‏ و کجا هرکدام مناسب است</b>
     <div class="tbl"><table><thead><tr><th>معیار</th><th>Horizontal scaling (HPA)</th><th>Vertical scaling (VPA / in-place resize)</th></tr></thead><tbody>
       <tr><td>واکنش به بار</td><td>تعداد Pod بیشتر می‌شود</td><td>هر Pod resource بیشتری می‌گیرد</td></tr>
@@ -111,6 +116,7 @@ web    4/4     4            4           25s
     </tbody></table></div>
     <p>در عمل،‏ بسیاری از تیم‌های production این سه لایه را با هم ترکیب می‌کنند: VPA (یا رتبه‌بندی دستی resourceها) برای رساندن هر Pod به سایز درست،‏ HPA برای پاسخ سریع به نوسانات بار با اضافه/کم کردن تعداد Pod،‏ و Node autoscaling برای تأمین capacity زیرساخت لازم برای هر دوی این‌ها. جزئیات این ترکیب در بخش <a href="#ch10-node-combine">Combine workload and Node autoscaling</a> همین فصل آمده است.</p>
   </div>
+  </details>
 
   <!-- ================= HPA concept ================= -->
   <h3 id="ch10-hpa">Horizontal Pod Autoscaling</h3>
@@ -121,6 +127,8 @@ web    4/4     4            4           25s
   <p>HorizontalPodAutoscaler به‌صورت یک Kubernetes API resource و یک controller پیاده‌سازی شده است. آن resource رفتار controller را تعیین می‌کند. horizontal pod autoscaling controller که درون control plane (اجزای مدیریتی cluster که تصمیم‌ها را می‌گیرند و وضعیت را نگه می‌دارند) اجرا می‌شود،‏ به‌طور دوره‌ای scale مطلوب (desired scale) هدف خود (برای مثال یک Deployment) را طوری تنظیم می‌کند که با metricهای مشاهده‌شده مثل میانگین CPU utilization،‏ میانگین memory utilization یا هر custom metric دیگری که مشخص کنید،‏ هماهنگ شود.</p>
   <p>یک مثال walkthrough از استفاده از horizontal pod autoscaling در بخش <a href="#ch10-walk">HorizontalPodAutoscaler Walkthrough</a> همین فصل آمده است.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا DaemonSet قابل autoscale افقی نیست؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا DaemonSet قابل autoscale افقی نیست؟</b>
     <p>تعداد Podهای یک DaemonSet را «تعداد Nodeهای واجد شرایط» تعیین می‌کند،‏ نه یک field به نام <code>replicas</code>. به همین دلیل DaemonSet اصلا subresource (مسیر فرعی یک شیء در API مثل status یا scale) به نام <code>scale</code> ندارد و HPA چیزی برای تغییر دادن پیدا نمی‌کند. اگر بخواهید تعداد Podهای یک DaemonSet بیشتر شود،‏ باید Node اضافه کنید (Node autoscaling)،‏ و اگر هر Pod آن resource بیشتری لازم دارد،‏ باید سراغ vertical scaling بروید. قاعده‌ی کلی: HPA فقط روی resourceهایی کار می‌کند که subresource <code>/scale</code> دارند؛‏ مثل Deployment،‏ ReplicaSet،‏ StatefulSet،‏ ReplicationController و CRDهایی که scale subresource را تعریف کرده‌اند.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># which resources expose a scale subresource?
@@ -132,6 +140,7 @@ statefulsets/scale
 </pre></div>
     <p>همان‌طور که می‌بینید،‏ <code>daemonsets/scale</code> در این فهرست وجود ندارد.</p>
   </div>
+  </details>
 
   <h3 id="ch10-hpa-how">HorizontalPodAutoscaler چگونه کار می‌کند؟ <small>(How does a HorizontalPodAutoscaler work?)</small></h3>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/179f51cc42.svg" alt="HorizontalPodAutoscaler که scale یک Deployment و ReplicaSet آن را کنترل می‌کند"></div><figcaption><b>شکل ۱۰-۳.</b> HorizontalPodAutoscaler مقدار scale یک Deployment و ReplicaSet آن را کنترل می‌کند؛‏ HPA فقط subresource <code>Scale</code> را تغییر می‌دهد و Deployment تعداد Pod 1 تا Pod N را مدیریت می‌کند. منبع: <span class="en">concepts/workloads/autoscaling/horizontal-pod-autoscale</span></figcaption></figure>
@@ -147,6 +156,26 @@ statefulsets/scale
   <p>بخش <a href="#ch10-hpa-apis">Support for metrics APIs</a> تضمین‌های پایداری و وضعیت پشتیبانی این APIهای مختلف را توضیح می‌دهد.</p>
   <p>HorizontalPodAutoscaler controller به workload resourceهای متناظری که از scaling پشتیبانی می‌کنند (مثل Deploymentها و StatefulSet) دسترسی پیدا می‌کند. هرکدام از این resourceها یک subresource به نام <code>scale</code> دارند؛‏ یک interface که به شما اجازه می‌دهد تعداد replicaها را به‌صورت پویا تنظیم کنید و current state هرکدام را بررسی کنید. برای اطلاعات عمومی درباره‌ی subresourceها در Kubernetes API،‏ به Kubernetes API Concepts (فصل ۸) مراجعه کنید.</p>
 
+  <h4 id="ch10-hpa-algo">جزئیات الگوریتم <small>(Algorithm details)</small></h4>
+  <p>از ساده‌ترین دیدگاه،‏ HorizontalPodAutoscaler controller بر اساس نسبت بین مقدار مطلوب metric و مقدار فعلی metric عمل می‌کند:</p>
+  <div class="code"><div class="lbl"><span>formula</span><button type="button">کپی</button></div><pre class="out">desiredReplicas = ceil[ currentReplicas × ( currentMetricValue / desiredMetricValue ) ]
+</pre></div>
+  <p>برای مثال،‏ اگر مقدار فعلی metric برابر <code>200m</code> و مقدار مطلوب <code>100m</code> باشد،‏ تعداد replicaها دو برابر می‌شود،‏ چون <code>‎200.0 ÷ 100.0 = 2.0‎</code>. اگر مقدار فعلی به جای آن <code>50m</code> باشد،‏ تعداد replicaها نصف می‌شود،‏ چون <code>‎50.0 ÷ 100.0 = 0.5‎</code>. Control Plane اگر این نسبت به‌اندازه‌ی کافی به 1.0 نزدیک باشد (در محدوده‌ی یک <a href="#ch10-hpa-tolerance">tolerance قابل پیکربندی</a> که به‌طور پیش‌فرض 0.1 است)،‏ هر اقدام scaling را نادیده می‌گیرد.</p>
+  <p>وقتی یک <code>targetAverageValue</code> یا <code>targetAverageUtilization</code> مشخص شده باشد،‏ <code>currentMetricValue</code> با گرفتن میانگین metric مورد نظر روی همه‌ی Podهای scale target آن HorizontalPodAutoscaler محاسبه می‌شود.</p>
+  <p>پیش از بررسی tolerance و تصمیم‌گیری درباره‌ی مقادیر نهایی،‏ Control Plane همچنین بررسی می‌کند که آیا metricی گم شده (missing) است یا نه،‏ و چند Pod در وضعیت <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions"><code>Ready</code></a> هستند. برای per-pod resource metrics،‏ همه‌ی Podهایی که deletion timestamp دارند (objectهایی با deletion timestamp در حال خاموش شدن / حذف شدن هستند) نادیده گرفته می‌شوند،‏ و همه‌ی Podهای failed کنار گذاشته (discard) می‌شوند. برای external و object metrics،‏ تعداد replica بر اساس تعداد Podهای Running و Ready تعیین می‌شود؛‏ Podهای در حال termination که هنوز Ready هستند همچنان در این شمارش حساب می‌شوند.</p>
+  <p>اگر یک Pod خاص metric نداشته باشد،‏ برای بعد کنار گذاشته می‌شود؛‏ Podهای بدون metric برای تنظیم مقدار نهایی scaling استفاده خواهند شد.</p>
+  <p>هنگام scale کردن بر اساس CPU،‏ اگر هر Pod هنوز ready نشده باشد (هنوز در حال initialize است،‏ یا احتمالا unhealthy است) <i>یا</i> آخرین نقطه‌ی metric آن Pod مربوط به پیش از ready شدنش باشد،‏ آن Pod هم کنار گذاشته می‌شود.</p>
+  <p>به دلیل محدودیت‌های فنی،‏ HorizontalPodAutoscaler controller نمی‌تواند دقیقا تعیین کند که یک Pod اولین بار چه زمانی ready شده است،‏ وقتی می‌خواهد تصمیم بگیرد برخی CPU metricها را کنار بگذارد یا نه. در عوض،‏ یک Pod را «هنوز ready نشده» در نظر می‌گیرد اگر unready باشد و در یک پنجره‌ی زمانی کوتاه و قابل پیکربندی از زمان شروعش به ready تغییر وضعیت داده باشد. این مقدار با گزینه‌ی خط فرمان <code>--horizontal-pod-autoscaler-initial-readiness-delay</code> پیکربندی می‌شود و پیش‌فرض آن ۳۰ ثانیه است. وقتی یک Pod ready شد،‏ هر تغییر وضعیت به ready را اولین تغییر در نظر می‌گیرد اگر در یک بازه‌ی زمانی طولانی‌تر و قابل پیکربندی از زمان شروعش رخ داده باشد. این مقدار با گزینه‌ی خط فرمان <code>--horizontal-pod-autoscaler-cpu-initialization-period</code> پیکربندی می‌شود و پیش‌فرض آن ۵ دقیقه است.</p>
+  <p>سپس نسبت پایه‌ی scale یعنی <code>currentMetricValue / desiredMetricValue</code> با استفاده از Podهای باقی‌مانده‌ای که کنار گذاشته یا discard نشده‌اند محاسبه می‌شود.</p>
+  <p>اگر metricهای missing وجود داشت،‏ Control Plane میانگین را محافظه‌کارانه‌تر دوباره محاسبه می‌کند: فرض می‌کند آن Podها در حالت scale down،‏ <b>۱۰۰٪</b> مقدار مطلوب را مصرف می‌کنند و در حالت scale up،‏ <b>۰٪</b>. این کار دامنه‌ی هر scale احتمالی را کاهش می‌دهد (dampen می‌کند).</p>
+  <p>علاوه بر این،‏ اگر Podهای not-yet-ready وجود داشتند و workload بدون در نظر گرفتن metricهای missing یا Podهای not-yet-ready،‏ scale up می‌شد،‏ controller محافظه‌کارانه فرض می‌کند که Podهای not-yet-ready،‏ ۰٪ از metric مطلوب را مصرف می‌کنند،‏ که دامنه‌ی scale up را بیشتر کاهش می‌دهد.</p>
+  <p>پس از لحاظ کردن Podهای not-yet-ready و metricهای missing،‏ controller نسبت مصرف (usage ratio) را دوباره محاسبه می‌کند. اگر نسبت جدید جهت scale را برعکس کند،‏ یا در محدوده‌ی tolerance باشد،‏ controller هیچ اقدام scalingی انجام نمی‌دهد. در سایر موارد،‏ نسبت جدید برای تصمیم‌گیری درباره‌ی هر تغییر در تعداد Podها استفاده می‌شود.</p>
+  <p>توجه کنید که مقدار <i>اصلی</i> میانگین utilization،‏ بدون در نظر گرفتن Podهای not-yet-ready یا metricهای missing،‏ از طریق status مربوط به HorizontalPodAutoscaler گزارش می‌شود،‏ حتی وقتی نسبت مصرف جدید استفاده شده باشد.</p>
+  <p>اگر چند metric در یک HorizontalPodAutoscaler مشخص شده باشد،‏ این محاسبه برای هر metric انجام می‌شود و سپس بزرگ‌ترین تعداد replica مطلوب انتخاب می‌شود. اگر هرکدام از این metricها قابل تبدیل به یک تعداد replica مطلوب نباشد (مثلا به دلیل خطا در fetch کردن metric از metrics APIها) و metricهایی که قابل fetch هستند scale down را پیشنهاد کنند،‏ scaling نادیده گرفته می‌شود. یعنی HPA همچنان می‌تواند scale up کند اگر یک یا چند metric مقدار <code>desiredReplicas</code> بزرگ‌تر از مقدار فعلی بدهند.</p>
+  <p>در نهایت،‏ درست پیش از آنکه HPA هدف را scale کند،‏ پیشنهاد scale (scale recommendation) ثبت می‌شود. controller همه‌ی پیشنهادهای درون یک پنجره‌ی قابل پیکربندی را در نظر می‌گیرد و بالاترین پیشنهاد از درون آن پنجره را انتخاب می‌کند. این مقدار را می‌توانید با گزینه‌ی خط فرمان <code>--horizontal-pod-autoscaler-downscale-stabilization</code> پیکربندی کنید که پیش‌فرض آن ۵ دقیقه است. این یعنی scale downها به‌تدریج رخ می‌دهند و اثر مقادیر metric که سریع نوسان می‌کنند را هموار می‌کنند.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">مسیر کامل یک تصمیم HPA · الگوریتم با عدد</span></summary>
   <div class="deep"><b>توضیح تکمیلی: مسیر کامل یک تصمیم HPA</b>
     <ol>
       <li>هر ۱۵ ثانیه (sync period)،‏ HPA controller درون <code>kube-controller-manager</code> بیدار می‌شود.</li>
@@ -169,25 +198,6 @@ kubectl get --raw /apis/apps/v1/namespaces/default/deployments/php-apache/scale 
 }
 </pre></div>
   </div>
-
-  <h4 id="ch10-hpa-algo">جزئیات الگوریتم <small>(Algorithm details)</small></h4>
-  <p>از ساده‌ترین دیدگاه،‏ HorizontalPodAutoscaler controller بر اساس نسبت بین مقدار مطلوب metric و مقدار فعلی metric عمل می‌کند:</p>
-  <div class="code"><div class="lbl"><span>formula</span><button type="button">کپی</button></div><pre class="out">desiredReplicas = ceil[ currentReplicas × ( currentMetricValue / desiredMetricValue ) ]
-</pre></div>
-  <p>برای مثال،‏ اگر مقدار فعلی metric برابر <code>200m</code> و مقدار مطلوب <code>100m</code> باشد،‏ تعداد replicaها دو برابر می‌شود،‏ چون <code>‎200.0 ÷ 100.0 = 2.0‎</code>. اگر مقدار فعلی به جای آن <code>50m</code> باشد،‏ تعداد replicaها نصف می‌شود،‏ چون <code>‎50.0 ÷ 100.0 = 0.5‎</code>. Control Plane اگر این نسبت به‌اندازه‌ی کافی به 1.0 نزدیک باشد (در محدوده‌ی یک <a href="#ch10-hpa-tolerance">tolerance قابل پیکربندی</a> که به‌طور پیش‌فرض 0.1 است)،‏ هر اقدام scaling را نادیده می‌گیرد.</p>
-  <p>وقتی یک <code>targetAverageValue</code> یا <code>targetAverageUtilization</code> مشخص شده باشد،‏ <code>currentMetricValue</code> با گرفتن میانگین metric مورد نظر روی همه‌ی Podهای scale target آن HorizontalPodAutoscaler محاسبه می‌شود.</p>
-  <p>پیش از بررسی tolerance و تصمیم‌گیری درباره‌ی مقادیر نهایی،‏ Control Plane همچنین بررسی می‌کند که آیا metricی گم شده (missing) است یا نه،‏ و چند Pod در وضعیت <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-conditions"><code>Ready</code></a> هستند. برای per-pod resource metrics،‏ همه‌ی Podهایی که deletion timestamp دارند (objectهایی با deletion timestamp در حال خاموش شدن / حذف شدن هستند) نادیده گرفته می‌شوند،‏ و همه‌ی Podهای failed کنار گذاشته (discard) می‌شوند. برای external و object metrics،‏ تعداد replica بر اساس تعداد Podهای Running و Ready تعیین می‌شود؛‏ Podهای در حال termination که هنوز Ready هستند همچنان در این شمارش حساب می‌شوند.</p>
-  <p>اگر یک Pod خاص metric نداشته باشد،‏ برای بعد کنار گذاشته می‌شود؛‏ Podهای بدون metric برای تنظیم مقدار نهایی scaling استفاده خواهند شد.</p>
-  <p>هنگام scale کردن بر اساس CPU،‏ اگر هر Pod هنوز ready نشده باشد (هنوز در حال initialize است،‏ یا احتمالا unhealthy است) <i>یا</i> آخرین نقطه‌ی metric آن Pod مربوط به پیش از ready شدنش باشد،‏ آن Pod هم کنار گذاشته می‌شود.</p>
-  <p>به دلیل محدودیت‌های فنی،‏ HorizontalPodAutoscaler controller نمی‌تواند دقیقا تعیین کند که یک Pod اولین بار چه زمانی ready شده است،‏ وقتی می‌خواهد تصمیم بگیرد برخی CPU metricها را کنار بگذارد یا نه. در عوض،‏ یک Pod را «هنوز ready نشده» در نظر می‌گیرد اگر unready باشد و در یک پنجره‌ی زمانی کوتاه و قابل پیکربندی از زمان شروعش به ready تغییر وضعیت داده باشد. این مقدار با گزینه‌ی خط فرمان <code>--horizontal-pod-autoscaler-initial-readiness-delay</code> پیکربندی می‌شود و پیش‌فرض آن ۳۰ ثانیه است. وقتی یک Pod ready شد،‏ هر تغییر وضعیت به ready را اولین تغییر در نظر می‌گیرد اگر در یک بازه‌ی زمانی طولانی‌تر و قابل پیکربندی از زمان شروعش رخ داده باشد. این مقدار با گزینه‌ی خط فرمان <code>--horizontal-pod-autoscaler-cpu-initialization-period</code> پیکربندی می‌شود و پیش‌فرض آن ۵ دقیقه است.</p>
-  <p>سپس نسبت پایه‌ی scale یعنی <code>currentMetricValue / desiredMetricValue</code> با استفاده از Podهای باقی‌مانده‌ای که کنار گذاشته یا discard نشده‌اند محاسبه می‌شود.</p>
-  <p>اگر metricهای missing وجود داشت،‏ Control Plane میانگین را محافظه‌کارانه‌تر دوباره محاسبه می‌کند: فرض می‌کند آن Podها در حالت scale down،‏ <b>۱۰۰٪</b> مقدار مطلوب را مصرف می‌کنند و در حالت scale up،‏ <b>۰٪</b>. این کار دامنه‌ی هر scale احتمالی را کاهش می‌دهد (dampen می‌کند).</p>
-  <p>علاوه بر این،‏ اگر Podهای not-yet-ready وجود داشتند و workload بدون در نظر گرفتن metricهای missing یا Podهای not-yet-ready،‏ scale up می‌شد،‏ controller محافظه‌کارانه فرض می‌کند که Podهای not-yet-ready،‏ ۰٪ از metric مطلوب را مصرف می‌کنند،‏ که دامنه‌ی scale up را بیشتر کاهش می‌دهد.</p>
-  <p>پس از لحاظ کردن Podهای not-yet-ready و metricهای missing،‏ controller نسبت مصرف (usage ratio) را دوباره محاسبه می‌کند. اگر نسبت جدید جهت scale را برعکس کند،‏ یا در محدوده‌ی tolerance باشد،‏ controller هیچ اقدام scalingی انجام نمی‌دهد. در سایر موارد،‏ نسبت جدید برای تصمیم‌گیری درباره‌ی هر تغییر در تعداد Podها استفاده می‌شود.</p>
-  <p>توجه کنید که مقدار <i>اصلی</i> میانگین utilization،‏ بدون در نظر گرفتن Podهای not-yet-ready یا metricهای missing،‏ از طریق status مربوط به HorizontalPodAutoscaler گزارش می‌شود،‏ حتی وقتی نسبت مصرف جدید استفاده شده باشد.</p>
-  <p>اگر چند metric در یک HorizontalPodAutoscaler مشخص شده باشد،‏ این محاسبه برای هر metric انجام می‌شود و سپس بزرگ‌ترین تعداد replica مطلوب انتخاب می‌شود. اگر هرکدام از این metricها قابل تبدیل به یک تعداد replica مطلوب نباشد (مثلا به دلیل خطا در fetch کردن metric از metrics APIها) و metricهایی که قابل fetch هستند scale down را پیشنهاد کنند،‏ scaling نادیده گرفته می‌شود. یعنی HPA همچنان می‌تواند scale up کند اگر یک یا چند metric مقدار <code>desiredReplicas</code> بزرگ‌تر از مقدار فعلی بدهند.</p>
-  <p>در نهایت،‏ درست پیش از آنکه HPA هدف را scale کند،‏ پیشنهاد scale (scale recommendation) ثبت می‌شود. controller همه‌ی پیشنهادهای درون یک پنجره‌ی قابل پیکربندی را در نظر می‌گیرد و بالاترین پیشنهاد از درون آن پنجره را انتخاب می‌کند. این مقدار را می‌توانید با گزینه‌ی خط فرمان <code>--horizontal-pod-autoscaler-downscale-stabilization</code> پیکربندی کنید که پیش‌فرض آن ۵ دقیقه است. این یعنی scale downها به‌تدریج رخ می‌دهند و اثر مقادیر metric که سریع نوسان می‌کنند را هموار می‌کنند.</p>
-
   <div class="deep"><b>توضیح تکمیلی: الگوریتم با عدد</b>
     <p>فرض کنید یک Deployment با ۴ replica داریم؛‏ هر Pod یک container با <code>requests.cpu: 200m</code> دارد و target برابر <code>averageUtilization: 50</code> است (یعنی ۱۰۰m برای هر Pod).</p>
     <div class="tbl"><table><thead><tr><th>حالت</th><th>ورودی</th><th>محاسبه</th><th>نتیجه</th></tr></thead><tbody>
@@ -201,6 +211,7 @@ kubectl get --raw /apis/apps/v1/namespaces/default/deployments/php-apache/scale 
     <p>در همه‌ی این حالت‌ها،‏ ستون <code>TARGETS</code> در <code>kubectl get hpa</code> همان میانگین <b>اصلی</b> (مثلا ۱۲۰٪ در حالت ۳) را نشان می‌دهد،‏ نه عدد dampen‌شده. این دلیل رایج سردرگمی است: «HPA می‌گوید ۱۲۰٪ است ولی فقط تا ۸ scale کرد».</p>
     <p>(توجه: محاسبات حالت‌های ۳ تا ۵ برای ساده‌سازی با فرض کنار گذاشتن Podهای missing و تقسیم بر کل Podها نوشته شده‌اند؛‏ منطق دقیق در کد controller مشابه است.) (خارج از مستندات رسمی)</p>
   </div>
+  </details>
 
   <h3 id="ch10-hpa-ready">readiness در Pod و metricهای autoscaling <small>(Pod readiness and autoscaling metrics)</small></h3>
   <p>HorizontalPodAutoscaler (HPA) controller دو گزینه‌ی خط فرمان دارد که بر نحوه‌ی جمع‌آوری CPU metricها از Podها در زمان startup اثر می‌گذارند:</p>
@@ -269,6 +280,8 @@ spec:
   <h3 id="ch10-hpa-api">API object</h3>
   <p>HorizontalPodAutoscaler یک API kind در API group <code>autoscaling</code> کوبرنتیز است. نسخه‌ی stable فعلی در API version <code>autoscaling/v2</code> قرار دارد که از scaling بر اساس memory و custom metricها پشتیبانی می‌کند. fieldهای جدیدی که در <code>autoscaling/v2</code> معرفی شده‌اند،‏ هنگام کار با <code>autoscaling/v1</code> به‌صورت annotation حفظ می‌شوند.</p>
   <p>وقتی یک API object از نوع HorizontalPodAutoscaler می‌سازید،‏ مطمئن شوید نام مشخص‌شده یک <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names#dns-subdomain-names">DNS subdomain name</a> معتبر باشد. جزئیات بیشتر درباره‌ی این API object در <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#horizontalpodautoscaler-v2-autoscaling">HorizontalPodAutoscaler Object</a> آمده است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">ساختار کامل یک HPA در autoscaling/v2</span></summary>
   <div class="deep"><b>توضیح تکمیلی: ساختار کامل یک HPA در <code>autoscaling/v2</code></b>
     <div class="code"><div class="lbl"><span>hpa-anatomy.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -299,9 +312,12 @@ status:                     # filled in by the controller
 </pre></div>
     <p>اگر یک HPA را با <code>autoscaling/v1</code> بخوانید (که فقط <code>targetCPUUtilizationPercentage</code> دارد)،‏ fieldهای v2 مثل <code>metrics</code> اضافی و <code>behavior</code> از بین نمی‌روند،‏ بلکه در annotationها نگه داشته می‌شوند؛‏ اما برای هر کار جدید همیشه از <code>autoscaling/v2</code> استفاده کنید.</p>
   </div>
+  </details>
 
   <h3 id="ch10-hpa-flap">پایداری scale یک workload؛‏ flapping <small>(Stability of workload scale)</small></h3>
   <p>هنگام مدیریت scale یک گروه از replicaها با HorizontalPodAutoscaler،‏ ممکن است تعداد replicaها به دلیل ماهیت پویای metricهای ارزیابی‌شده،‏ مرتبا نوسان کند. این وضعیت گاهی <i>thrashing</i> یا <i>flapping</i> نامیده می‌شود. این مشابه مفهوم <i>hysteresis</i> در سایبرنتیک است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">flapping در عمل و ابزارهای مقابله</span></summary>
   <div class="deep"><b>توضیح تکمیلی: flapping در عمل و ابزارهای مقابله</b>
     <p>تصور کنید ترافیک یک API هر ۲ دقیقه یک burst کوتاه ۳۰ ثانیه‌ای دارد. بدون محافظت: HPA در burst به ۱۲ Pod می‌رود،‏ ۴۵ ثانیه بعد CPU افت می‌کند و به ۴ برمی‌گردد،‏ و burst بعدی دوباره ۱۲ Pod لازم دارد که باید از صفر start شوند (cold start،‏ اتصالات جدید به پایگاه‌داده،‏ cache خالی).‏ Kubernetes چهار ابزار برای مقابله دارد که همه در همین فصل پوشش داده می‌شوند:</p>
     <div class="tbl"><table><thead><tr><th>ابزار</th><th>کجا</th><th>اثر</th></tr></thead><tbody>
@@ -311,10 +327,14 @@ status:                     # filled in by the controller
       <tr><td>readiness درست</td><td><code>startupProbe</code>/<code>readinessProbe</code> و flagهای initialization</td><td>مصرف کاذب startup باعث scale up نمی‌شود</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch10-hpa-rolling">autoscaling در حین rolling update <small>(Autoscaling during rolling update)</small></h3>
   <p>کوبرنتیز به شما اجازه می‌دهد روی یک Deployment یک rolling update (جایگزینی تدریجی Podهای قدیمی با Podهای جدید بدون قطعی) انجام دهید. در این حالت،‏ Deployment،‏ ReplicaSetهای زیرین را برای شما مدیریت می‌کند. وقتی autoscaling را برای یک Deployment پیکربندی می‌کنید،‏ یک HorizontalPodAutoscaler را به یک Deployment منفرد bind می‌کنید. HorizontalPodAutoscaler field <code>replicas</code> مربوط به Deployment را مدیریت می‌کند. deployment controller مسئول تنظیم <code>replicas</code> در ReplicaSetهای زیرین است،‏ به‌طوری که مجموع آن‌ها در طول rollout و پس از آن به عدد مناسبی برسد.</p>
   <p>اگر یک rolling update روی یک StatefulSet انجام دهید که تعداد replicaهای آن autoscale می‌شود،‏ StatefulSet مستقیما مجموعه‌ی Podهای خود را مدیریت می‌کند (هیچ resource میانی مشابه ReplicaSet وجود ندارد).</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا HPA را به Deployment وصل می‌کنیم و نه به ReplicaSet؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا HPA را به Deployment وصل می‌کنیم و نه به ReplicaSet؟</b>
     <p>در یک rollout،‏ Deployment یک ReplicaSet جدید می‌سازد و به‌تدریج ReplicaSet قدیمی را کوچک می‌کند (فصل ۴). اگر HPA را مستقیم به ReplicaSet فعلی وصل کنید،‏ با اولین rollout آن ReplicaSet به صفر می‌رسد و HPA به یک object مرده اشاره می‌کند،‏ در حالی که ReplicaSet جدید اصلا autoscale نمی‌شود. با اتصال HPA به Deployment،‏ HPA فقط <code>Deployment.spec.replicas</code> را تعیین می‌کند (مثلا ۱۰) و Deployment controller با رعایت <code>maxSurge</code>/<code>maxUnavailable</code> این عدد را بین ReplicaSet قدیم و جدید تقسیم می‌کند.</p>
     <div class="code"><div class="lbl"><span>خروجی نمونه در میانه‌ی rollout (HPA روی 10)</span><button type="button">کپی</button></div><pre class="out">$ kubectl get rs -l app=web
@@ -324,6 +344,7 @@ web-5f4b7c9e8a   7         7         4       40s    # new ReplicaSet (maxSurge=2
 </pre></div>
     <p>یک نکته‌ی عملی: در طول rollout،‏ Podهای جدید تازه start شده‌اند و ممکن است هنوز Ready نباشند؛‏ طبق قواعد بخش Algorithm details،‏ این Podها در محاسبه‌ی CPU کنار گذاشته می‌شوند و HPA در این مدت محافظه‌کارانه‌تر عمل می‌کند.</p>
   </div>
+  </details>
   <h3 id="ch10-hpa-resmetrics">پشتیبانی از resource metrics <small>(Support for resource metrics)</small></h3>
   <p>هر HPA target می‌تواند بر اساس مصرف resource Podهای درون scaling target خودش scale شود. هنگام تعریف specification یک Pod،‏ resource requestهایی مثل <code>cpu</code> و <code>memory</code> باید مشخص شوند. این مقادیر برای تعیین resource utilization استفاده می‌شوند و HPA controller از آن‌ها برای scale up یا scale down کردن target استفاده می‌کند. برای استفاده از scaling بر اساس resource utilization،‏ یک metric source به این شکل مشخص کنید:</p>
   <div class="code"><div class="lbl"><span>yaml</span><button type="button">کپی</button></div><pre class="yaml">type: Resource
@@ -500,6 +521,8 @@ web    Deployment/web     22%/65%       2         15        2          5s
     selectPolicy: Disabled
 </pre></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">یک پیکربندی behavior production-ready</span></summary>
   <div class="deep"><b>توضیح تکمیلی: یک پیکربندی <code>behavior</code> production-ready</b>
     <p>ترکیبی که در بسیاری از تیم‌های production دیده می‌شود: scale up سریع و تهاجمی (چون هزینه‌ی زیر-provision شدن،‏ از دست دادن ترافیک است)،‏ و scale down محافظه‌کارانه و تدریجی (چون هزینه‌ی over-provision شدن فقط پول است،‏ نه از دست دادن کاربر):</p>
     <div class="code"><div class="lbl"><span>hpa-behavior-prod.yaml (قطعه)</span><button type="button">کپی</button></div><pre class="yaml">behavior:
@@ -525,6 +548,7 @@ web    Deployment/web     22%/65%       2         15        2          5s
 </pre></div>
     <p>این پیکربندی سناریوی اول «توضیح تکمیلی: flapping در عمل» در همین فصل را کاملا خنثی می‌کند: burst در چند ثانیه با policy تهاجمی scale up پاسخ می‌گیرد،‏ اما پس از افت بار،‏ به دلیل stabilization window ده‌دقیقه‌ای،‏ تا وقتی که مطمئن نشویم بار واقعا افت کرده،‏ Podها حذف نمی‌شوند.</p>
   </div>
+  </details>
 
   <h3 id="ch10-hpa-kubectl">پشتیبانی kubectl از HPA <small>(Support for HorizontalPodAutoscaler in kubectl)</small></h3>
   <p>HorizontalPodAutoscaler،‏ مانند هر API resource دیگر،‏ به‌شکل استاندارد توسط <code>kubectl</code> پشتیبانی می‌شود. می‌توانید با دستور <code>kubectl create</code> یک autoscaler جدید بسازید. می‌توانید با <code>kubectl get hpa</code> فهرست autoscalerها را ببینید یا با <code>kubectl describe hpa</code> توضیح جزئی دریافت کنید. در نهایت،‏ می‌توانید با <code>kubectl delete hpa</code> یک autoscaler را حذف کنید.</p>
@@ -909,6 +933,9 @@ spec:
   <div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">horizontalpodautoscaler.autoscaling/php-apache created
 </pre></div>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا تعداد replica در walkthrough به ۷ رسید،‏ نه ۱۰؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا تعداد replica در walkthrough به ۷ رسید،‏ نه ۱۰؟</b>
     <p>CPU request هر Pod برابر <code>200m</code> است و target utilization برابر ۵۰٪ است،‏ یعنی مقدار مطلوب هر Pod برابر ۱۰۰m است. وقتی load-generator شروع به کار کرد،‏ مصرف واقعی هر Pod به ۳۰۵٪ (یعنی حدود ۶۱۰m) رسید. طبق فرمول الگوریتم:</p>
     <div class="code"><div class="lbl"><span>محاسبه</span><button type="button">کپی</button></div><pre class="out">desiredReplicas = ceil( 1 × (305 / 50) ) = ceil(6.1) = 7
@@ -916,6 +943,7 @@ spec:
     <p><b>یادداشت نویسنده:</b> عدد ۳۰۵٪ از خروجی نمونه‌ی مستندات است. در manifest همین مثال limit برابر 500m است،‏ پس یک Pod تنها نمی‌تواند بیش از ۲۵۰٪ از request را مصرف کند و در اجرای واقعی TARGETS را حداکثر حدود ۲۵۰٪ می‌بینید؛‏ در این حالت گام اول به <code>ceil(1 × 250/50) = 5</code> replica می‌رسد و اگر بار هنوز زیاد باشد،‏ گام‌های بعدی تعداد را بالاتر می‌برند.</p>
     <p>یعنی یک Pod تنها با ظرفیت درخواستی خودش نمی‌تواند بار busybox را جواب دهد،‏ و HPA ۷ Pod می‌خواهد تا میانگین utilization به نزدیک ۵۰٪ برسد. چون <code>maxReplicas</code> برابر ۱۰ است،‏ HPA هرگز بیش از ۱۰ Pod نمی‌سازد،‏ حتی اگر بار بیشتر هم شود.</p>
   </div>
+  </details>
   <!-- ================= VPA ================= -->
   <h3 id="ch10-vpa">Vertical Pod Autoscaler</h3>
   <p>در کوبرنتیز،‏ یک <i>VerticalPodAutoscaler</i> یک workload management resource (مثل یک Deployment یا StatefulSet) را به‌صورت خودکار به‌روزرسانی می‌کند،‏ با این هدف که <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits">resource requestها و limitها</a>ی زیرساخت به‌طور خودکار با مصرف واقعی هماهنگ شوند.</p>
@@ -956,16 +984,6 @@ spec:
   <p>روش انتخاب‌شده به update mode پیکربندی‌شده،‏ قابلیت‌های cluster و نوع تغییر resource موردنیاز بستگی دارد. به‌روزرسانی‌های in-place،‏ وقتی در دسترس باشند،‏ از اختلال (disruption) در Pod جلوگیری می‌کنند اما ممکن است محدودیت‌هایی درباره‌ی اینکه کدام resourceها قابل تغییر هستند داشته باشند. updater برای کاهش اثر روی سرویس،‏ PodDisruptionBudgetها (سقف تعداد Podهایی که هم‌زمان می‌توانند به‌طور داوطلبانه از دسترس خارج شوند) را رعایت می‌کند.</p>
   <p>_admission controller_ به‌صورت یک mutating webhook عمل می‌کند که requestهای ساخت Pod را intercept می‌کند. بررسی می‌کند که آیا آن Pod هدف یک VerticalPodAutoscaler است،‏ و اگر بله،‏ resource requestها و limitهای توصیه‌شده را پیش از ساخته‌شدن Pod اعمال می‌کند. به‌طور خاص‌تر،‏ admission controller از Target recommendation موجود در بخش <code>.status.recommendation</code> resource VerticalPodAutoscaler به‌عنوان resource requestهای جدید استفاده می‌کند. admission controller اطمینان می‌دهد Podهای جدید با تخصیص resource مناسبی شروع به کار کنند،‏ چه در طول deploy اولیه ساخته شده باشند،‏ چه بعد از eviction توسط updater،‏ یا به دلیل عملیات scaling.</p>
   <p>VerticalPodAutoscaler به یک منبع metric نیاز دارد،‏ مثل add-on به نام Metrics Server مربوط به کوبرنتیز،‏ که باید در cluster نصب شود. componentهای VPA metricها را از API <code>metrics.k8s.io</code> دریافت می‌کنند. Metrics Server باید به‌صورت جداگانه راه‌اندازی شود،‏ چون در بیشتر clusterها به‌طور پیش‌فرض deploy نمی‌شود. برای اطلاعات بیشتر درباره‌ی resource metrics،‏ بخش <a href="#ch10-metrics">Metrics Server</a> همین فصل را ببینید.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: تفاوت VPA با HPA در معماری</b>
-    <div class="tbl"><table><thead><tr><th>معیار</th><th>HPA</th><th>VPA</th></tr></thead><tbody>
-      <tr><td>محل تعریف</td><td>core API group <code>autoscaling</code></td><td>CRD جدا،‏ باید نصب شود</td></tr>
-      <tr><td>تعداد controller/component</td><td>یک controller داخل <code>kube-controller-manager</code></td><td>سه component جدا: recommender،‏ updater،‏ admission controller webhook</td></tr>
-      <tr><td>محل اجرا</td><td>control plane</td><td>data plane (به‌عنوان workload معمولی روی cluster)</td></tr>
-      <tr><td>چه چیزی را تغییر می‌دهد</td><td><code>spec.replicas</code> (از طریق subresource <code>/scale</code>)</td><td><code>resources.requests</code>/<code>limits</code> containerها</td></tr>
-      <tr><td>روش اعمال</td><td>فقط subresource؛‏ Deployment controller خودش Pod نمی‌سازد بابت HPA</td><td>eviction (recreate)،‏ in-place resize،‏ یا فقط injection موقع ساخت Pod جدید (بسته به mode)</td></tr>
-    </tbody></table></div>
-  </div>
 
   
   <figure><div class="plate"><svg viewBox="0 0 760 318" width="760" height="318" role="img" aria-label="سه component اصلی VPA و مسیر اعمال توصیه" style="max-width:100%;height:auto;display:block"><defs><marker id="c10f1-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="c10f1-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="c10f1-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker><marker id="c10f1-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a94ab"></path></marker></defs><rect x="590" y="24" width="150" height="52" rx="8" fill="#f2f4f8" stroke="#8a94ab" stroke-width="1.5"></rect><text x="665.0" y="45" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">metrics.k8s.io</text><text x="665.0" y="64" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">مصرف CPU و memory</text><rect x="380" y="24" width="150" height="52" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="455.0" y="45" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">recommender</text><text x="455.0" y="64" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">تحلیل مصرف تاریخی</text><rect x="110" y="18" width="210" height="64" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="215.0" y="39" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">شیء VerticalPodAutoscaler</text><text x="215.0" y="58" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">status.recommendation</text><line x1="588" y1="50" x2="534" y2="50" stroke="#8a94ab" stroke-width="1.6" marker-end="url(#c10f1-k)"></line><line x1="378" y1="50" x2="324" y2="50" stroke="#326ce5" stroke-width="1.6" marker-end="url(#c10f1-b)"></line><rect x="110" y="140" width="210" height="52" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="215.0" y="161" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">updater</text><text x="215.0" y="180" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">مقایسه‌ی request با Target</text><line x1="215" y1="84" x2="215" y2="136" stroke="#326ce5" stroke-width="1.6" marker-end="url(#c10f1-b)"></line><rect x="470" y="140" width="200" height="52" rx="8" fill="#ffffff" stroke="#4a5672" stroke-width="1.5"></rect><text x="570.0" y="171.0" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">Pod در حال اجرا</text><line x1="322" y1="156" x2="466" y2="156" stroke="#12806f" stroke-width="1.6" marker-end="url(#c10f1-g)"></line><text x="460" y="148" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">resize درجا در حالت InPlace</text><line x1="322" y1="180" x2="466" y2="180" stroke="#b83227" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c10f1-r)"></line><text x="460" y="200" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="700" fill="#b83227" direction="rtl" text-anchor="start">evict در حالت Recreate</text><rect x="560" y="250" width="180" height="52" rx="8" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"></rect><text x="650.0" y="271" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">ساخت Pod جایگزین</text><text x="650.0" y="290" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">workload controller</text><path d="M600,194 C610,220 640,226 650,246" fill="none" stroke="#b83227" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c10f1-r)"></path><rect x="330" y="250" width="190" height="52" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="425.0" y="271" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">admission webhook</text><text x="425.0" y="290" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">Target شیء VPA را اعمال می‌کند</text><line x1="558" y1="276" x2="524" y2="276" stroke="#b26b00" stroke-width="1.6" marker-end="url(#c10f1-k)"></line><rect x="30" y="250" width="250" height="52" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="155.0" y="281.0" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">Pod جدید با requests توصیه‌شده</text><line x1="328" y1="276" x2="284" y2="276" stroke="#12806f" stroke-width="1.6" marker-end="url(#c10f1-g)"></line></svg></div><figcaption><b>شکل ۱۰-۴.</b> <span style="flex:1 1 0;min-width:0">سه component اصلی VPA. recommender توصیه را در status شیء VPA می‌نویسد؛‏ updater بسته به updateMode،‏ Pod را درجا resize یا evict می‌کند؛‏ admission webhook مقدار Target را روی Pod تازه‌ساخته اعمال می‌کند.</span></figcaption></figure>
@@ -1024,17 +1042,6 @@ spec:
   <h5 id="ch10-vpa-auto">Auto (منسوخ‌شده)</h5>
   <div class="note"><b>نکته</b><p>update mode به نام <code>Auto</code> از نسخه‌ی VPA 1.4.0 <b>منسوخ (deprecated)</b> شده است. برای به‌روزرسانی مبتنی بر eviction از <code>Recreate</code> و برای به‌روزرسانی in-place با fallback به eviction از <code>InPlaceOrRecreate</code> استفاده کنید.</p></div>
   <p>mode <code>Auto</code> در حال حاضر یک نام مستعار (alias) برای mode <code>Recreate</code> است و دقیقا مشابه آن رفتار می‌کند. این نام معرفی شده بود تا امکان گسترش آینده‌ی راهبردهای به‌روزرسانی خودکار را فراهم کند.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: کدام update mode را در production انتخاب کنیم؟</b>
-    <div class="tbl"><table><thead><tr><th>Mode</th><th>Disruption</th><th>مناسب برای</th></tr></thead><tbody>
-      <tr><td><code>Off</code></td><td>هیچ</td><td>فقط می‌خواهید توصیه ببینید («VPA dry-run»)،‏ تصمیم دستی می‌گیرید</td></tr>
-      <tr><td><code>Initial</code></td><td>هیچ (فقط در ساخت Pod)</td><td>می‌خواهید مقدار request اولیه‌ی درست تنظیم شود،‏ اما rollout غیرمنتظره نمی‌خواهید</td></tr>
-      <tr><td><code>Recreate</code></td><td>eviction (rolling،‏ اگر PodDisruptionBudget رعایت شود)</td><td>clusterهای بدون InPlacePodVerticalScaling،‏ برنامه‌هایی که restart برایشان مشکلی ایجاد نمی‌کند</td></tr>
-      <tr><td><code>InPlaceOrRecreate</code></td><td>ترجیحا هیچ؛‏ در صورت نیاز eviction</td><td>می‌خواهید بیشتر وقت‌ها resize بدون اختلال باشد اما تضمین سخت نمی‌خواهید</td></tr>
-      <tr><td><code>InPlace</code></td><td>هیچ (اما ممکن است resize به تعویق بیفتد)</td><td>برنامه‌های حساس به restart (مثل stateful workload) که ترجیح می‌دهند صبر کنند تا اینکه restart شوند</td></tr>
-    </tbody></table></div>
-    <p>یک نکته‌ی مهم که در تمرین‌های پایان فصل به آن پرداخته می‌شود: اگر VPA با mode غیر از <code>Off</code> روی همان resourceی (مثلا CPU) که HPA هم روی آن پیکربندی شده کار کند،‏ این دو می‌توانند در یک حلقه با هم تداخل ایجاد کنند (VPA درخواست CPU را بالا می‌برد ⇐ utilization درصدی HPA پایین می‌آید ⇐ HPA اشتباها فکر می‌کند بار کم شده و Pod کم می‌کند،‏ در حالی که بار واقعی تغییری نکرده است). راه‌حل رایج این است که یا VPA را فقط روی <code>memory</code> بگذارید و HPA را روی <code>cpu</code>،‏ یا با <code>controlledResources</code> این تداخل را از بین ببرید.</p>
-  </div>
 
   <h4 id="ch10-vpa-policy">resource policyها <small>(Resource policies)</small></h4>
   <p>resource policyها به شما اجازه می‌دهند نحوه‌ی تولید توصیه و اعمال به‌روزرسانی توسط VerticalPodAutoscaler را به‌دقت تنظیم کنید. می‌توانید مرزهایی برای توصیه‌های resource تعیین کنید،‏ مشخص کنید کدام resourceها مدیریت شوند،‏ و برای containerهای مختلف درون یک Pod policyهای متفاوتی پیکربندی کنید.</p>
@@ -1151,6 +1158,29 @@ kubectl describe vpa hungry-app-vpa
   </div>
 
   <p class="next">مطالب بیشتر: <a href="#ch10-node">Node autoscaling</a>،‏ <a href="#ch10-hpa">Horizontal Pod Autoscaling</a>.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">تفاوت VPA با HPA در معماری · کدام update mode را در production انتخاب کنیم؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: تفاوت VPA با HPA در معماری</b>
+    <div class="tbl"><table><thead><tr><th>معیار</th><th>HPA</th><th>VPA</th></tr></thead><tbody>
+      <tr><td>محل تعریف</td><td>core API group <code>autoscaling</code></td><td>CRD جدا،‏ باید نصب شود</td></tr>
+      <tr><td>تعداد controller/component</td><td>یک controller داخل <code>kube-controller-manager</code></td><td>سه component جدا: recommender،‏ updater،‏ admission controller webhook</td></tr>
+      <tr><td>محل اجرا</td><td>control plane</td><td>data plane (به‌عنوان workload معمولی روی cluster)</td></tr>
+      <tr><td>چه چیزی را تغییر می‌دهد</td><td><code>spec.replicas</code> (از طریق subresource <code>/scale</code>)</td><td><code>resources.requests</code>/<code>limits</code> containerها</td></tr>
+      <tr><td>روش اعمال</td><td>فقط subresource؛‏ Deployment controller خودش Pod نمی‌سازد بابت HPA</td><td>eviction (recreate)،‏ in-place resize،‏ یا فقط injection موقع ساخت Pod جدید (بسته به mode)</td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: کدام update mode را در production انتخاب کنیم؟</b>
+    <div class="tbl"><table><thead><tr><th>Mode</th><th>Disruption</th><th>مناسب برای</th></tr></thead><tbody>
+      <tr><td><code>Off</code></td><td>هیچ</td><td>فقط می‌خواهید توصیه ببینید («VPA dry-run»)،‏ تصمیم دستی می‌گیرید</td></tr>
+      <tr><td><code>Initial</code></td><td>هیچ (فقط در ساخت Pod)</td><td>می‌خواهید مقدار request اولیه‌ی درست تنظیم شود،‏ اما rollout غیرمنتظره نمی‌خواهید</td></tr>
+      <tr><td><code>Recreate</code></td><td>eviction (rolling،‏ اگر PodDisruptionBudget رعایت شود)</td><td>clusterهای بدون InPlacePodVerticalScaling،‏ برنامه‌هایی که restart برایشان مشکلی ایجاد نمی‌کند</td></tr>
+      <tr><td><code>InPlaceOrRecreate</code></td><td>ترجیحا هیچ؛‏ در صورت نیاز eviction</td><td>می‌خواهید بیشتر وقت‌ها resize بدون اختلال باشد اما تضمین سخت نمی‌خواهید</td></tr>
+      <tr><td><code>InPlace</code></td><td>هیچ (اما ممکن است resize به تعویق بیفتد)</td><td>برنامه‌های حساس به restart (مثل stateful workload) که ترجیح می‌دهند صبر کنند تا اینکه restart شوند</td></tr>
+    </tbody></table></div>
+    <p>یک نکته‌ی مهم که در تمرین‌های پایان فصل به آن پرداخته می‌شود: اگر VPA با mode غیر از <code>Off</code> روی همان resourceی (مثلا CPU) که HPA هم روی آن پیکربندی شده کار کند،‏ این دو می‌توانند در یک حلقه با هم تداخل ایجاد کنند (VPA درخواست CPU را بالا می‌برد ⇐ utilization درصدی HPA پایین می‌آید ⇐ HPA اشتباها فکر می‌کند بار کم شده و Pod کم می‌کند،‏ در حالی که بار واقعی تغییری نکرده است). راه‌حل رایج این است که یا VPA را فقط روی <code>memory</code> بگذارید و HPA را روی <code>cpu</code>،‏ یا با <code>controlledResources</code> این تداخل را از بین ببرید.</p>
+  </div>
+  </details>
   <!-- ================= Resource metrics pipeline ================= -->
   <h3 id="ch10-metrics">Resource metrics pipeline و Metrics Server</h3>
   <p>برای کوبرنتیز،‏ <i>Metrics API</i> مجموعه‌ای پایه از metricها را برای پشتیبانی از automatic scaling و use caseهای مشابه فراهم می‌کند. این API اطلاعاتی درباره‌ی مصرف resource برای node و pod،‏ شامل metricهای CPU و memory،‏ در دسترس قرار می‌دهد. اگر Metrics API را در cluster خود deploy کنید،‏ clientهای Kubernetes API می‌توانند این اطلاعات را query کنند،‏ و می‌توانید با استفاده از مکانیزم‌های access control کوبرنتیز،‏ دسترسی به آن را مدیریت کنید.</p>
@@ -1251,6 +1281,10 @@ kubectl describe vpa hungry-app-vpa
     <li>endpoint Summary API یعنی <code>/stats/summary</code> در نسخه‌های قدیمی‌تر</li>
   </ul>
 
+  <p class="next">مطالب بیشتر: <a href="https://github.com/kubernetes-sigs/metrics-server">مخزن metrics-server</a>،‏ <a href="https://github.com/kubernetes-sigs/metrics-server/blob/master/FAQ.md">FAQ</a>،‏ <a href="https://github.com/kubernetes-sigs/metrics-server/blob/master/KNOWN_ISSUES.md">مشکلات شناخته‌شده</a>،‏ <a href="https://kubernetes.io/docs/reference/instrumentation/node-metrics">Node Metrics Data</a>.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">زنجیره‌ی end-to-end یک عدد CPU که HPA می‌بیند</span></summary>
   <div class="deep"><b>توضیح تکمیلی: زنجیره‌ی end-to-end یک عدد CPU که HPA می‌بیند</b>
     <ol>
       <li>container runtime آمار مصرف را در cgroup آن container ثبت می‌کند.</li>
@@ -1271,8 +1305,7 @@ NAME       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
 minikube   612m         15%    1204Mi          31%
 </pre></div>
   </div>
-
-  <p class="next">مطالب بیشتر: <a href="https://github.com/kubernetes-sigs/metrics-server">مخزن metrics-server</a>،‏ <a href="https://github.com/kubernetes-sigs/metrics-server/blob/master/FAQ.md">FAQ</a>،‏ <a href="https://github.com/kubernetes-sigs/metrics-server/blob/master/KNOWN_ISSUES.md">مشکلات شناخته‌شده</a>،‏ <a href="https://kubernetes.io/docs/reference/instrumentation/node-metrics">Node Metrics Data</a>.</p>
+  </details>
 
   <!-- ================= In-place resize ================= -->
   <h3 id="ch10-resize">Resize Container Resources In-Place</h3>
@@ -1497,9 +1530,12 @@ kubectl patch pod resize-demo -n qos-example --subresource resize --patch \
   <p>اگر Pod به دلیل یک خطای دائمی ناسالم است،‏ scaling بدون رفع آن خطا ممکن است منجر به وضعیتی شود که عضویت StatefulSet به زیر حداقل تعداد replicaی لازم برای کارکرد صحیح برسد. این ممکن است باعث شود StatefulSet شما در دسترس نباشد.</p>
   <p>اگر Pod به دلیل یک خطای گذرا ناسالم است و ممکن است دوباره در دسترس شود،‏ آن خطای گذرا ممکن است در عملیات scale-up یا scale-down شما اختلال ایجاد کند. برخی پایگاه‌داده‌های توزیع‌شده وقتی nodeها هم‌زمان join و leave می‌کنند مشکل دارند. در این موارد بهتر است در سطح برنامه درباره‌ی عملیات scaling استدلال کنید،‏ و scaling را فقط زمانی انجام دهید که مطمئن باشید cluster برنامه‌ی stateful شما کاملا سالم است.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">HPA روی StatefulSet چه فرقی با Deployment دارد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: HPA روی StatefulSet چه فرقی با Deployment دارد؟</b>
     <p>StatefulSet هم subresource <code>/scale</code> دارد و می‌تواند مانند Deployment هدف یک HPA باشد. تفاوت اصلی این است که StatefulSet هیچ ReplicaSet میانی ندارد و مستقیما مجموعه‌ی Podهای خود (با نام‌های پایدار مثل <code>web-0</code>،‏ <code>web-1</code>،‏ ...) را مدیریت می‌کند؛‏ به همین دلیل در بخش «Autoscaling during rolling update» این فصل گفته شد که هنگام rolling update یک StatefulSet با replica خودکار،‏ هیچ resource میانی مشابه ReplicaSet وجود ندارد. برای برنامه‌های stateful (پایگاه‌داده‌های توزیع‌شده،‏ message brokerهایی مثل Kafka)،‏ معمولا HPA <b>روی CPU/memory</b> کمتر مناسب است،‏ چون افزودن یا حذف یک replica معمولا نیازمند rebalance کردن داده است (که کند و پرهزینه است)؛‏ برای همین بسیاری از این workloadها بهتر است به‌جای HPA خودکار،‏ با توجه به بخش Troubleshooting بالا،‏ به‌صورت دستی و کنترل‌شده scale شوند.</p>
   </div>
+  </details>
 
   <!-- ================= DNS autoscaling ================= -->
   <h3 id="ch10-dns">Autoscale the DNS Service in a Cluster</h3>
@@ -1789,6 +1825,11 @@ kube-dns-autoscaler-6b59789fc8        0         0         0       ...
   
   <figure><div class="plate"><svg viewBox="0 0 760 386" width="760" height="386" role="img" aria-label="همکاری HPA و Node autoscaling هنگام افزایش و کاهش بار" style="max-width:100%;height:auto;display:block"><defs><marker id="c10f3-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker></defs><rect x="40" y="10" width="700" height="40" rx="9" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="726" y="35" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">۱. بار زیاد می‌شود و میانگین utilization از target بالاتر می‌رود.</text><line x1="390" y1="50" x2="390" y2="62" stroke="#4a5672" stroke-width="1.6" marker-end="url(#c10f3-k)"></line><rect x="40" y="62" width="700" height="56" rx="9" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="726" y="87" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">۲. HPA فقط عدد replicas را از ۵ به ۸ می‌برد؛‏</text><text x="726" y="108" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">خودش Podی نمی‌سازد.</text><line x1="390" y1="118" x2="390" y2="130" stroke="#4a5672" stroke-width="1.6" marker-end="url(#c10f3-k)"></line><rect x="40" y="130" width="700" height="56" rx="9" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"></rect><text x="726" y="155" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">۳. ReplicaSet سه Pod تازه می‌سازد؛‏ Nodeها جا ندارند</text><text x="726" y="176" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">و Podها با FailedScheduling در Pending می‌مانند.</text><line x1="390" y1="186" x2="390" y2="198" stroke="#4a5672" stroke-width="1.6" marker-end="url(#c10f3-k)"></line><rect x="40" y="198" width="700" height="56" rx="9" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="726" y="223" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">۴. Node autoscaler این Podهای unschedulable را می‌بیند</text><text x="726" y="244" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">و Node تازه provision می‌کند (Cluster Autoscaler یا Karpenter).</text><line x1="390" y1="254" x2="390" y2="266" stroke="#4a5672" stroke-width="1.6" marker-end="url(#c10f3-k)"></line><rect x="40" y="266" width="700" height="40" rx="9" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="726" y="291" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">۵. Podهای Pending روی Node تازه schedule می‌شوند.</text><line x1="390" y1="306" x2="390" y2="318" stroke="#4a5672" stroke-width="1.6" marker-end="url(#c10f3-k)"></line><rect x="40" y="318" width="700" height="56" rx="9" fill="#f2f4f8" stroke="#4a5672" stroke-width="1.5"></rect><text x="726" y="343" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">۶. با کاهش بار،‏ HPA تعداد replica را کم می‌کند و Node autoscaler</text><text x="726" y="364" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">بعداً Nodeهای کم‌استفاده را consolidate می‌کند.</text></svg></div><figcaption><b>شکل ۱۰-۶.</b> <span style="flex:1 1 0;min-width:0">همکاری HPA و Node autoscaling. HPA فقط تعداد replica را تغییر می‌دهد؛‏ اگر Nodeها جا نداشته باشند،‏ فقط Node autoscaler است که ظرفیت تازه provision می‌کند.</span></figcaption></figure>
 
+  <p class="next">مطالب بیشتر: <a href="#ch10-auto">workload-level autoscaling</a> (همین فصل).</p>
+
+  <!-- ================= Exercises ================= -->
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا HPA به‌تنهایی کافی نیست و باید با Node autoscaling ترکیب شود؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا HPA به‌تنهایی کافی نیست و باید با Node autoscaling ترکیب شود؟</b>
     <p>یک سناریوی واقعی: یک cluster با ۳ Node و کل ظرفیت CPU پر شده تا ۹۰٪. HPA یک Deployment را از ۵ به ۸ replica scale up می‌کند،‏ اما Nodeها جا ندارند. نتیجه:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l app=web
@@ -1812,12 +1853,10 @@ web-7d4b9c6f8d-q9rjd   0/1     Pending   0          20s
 </pre></div>
     <p>HPA کار خودش را انجام داده (عدد <code>spec.replicas</code> را بالا برده)،‏ اما نمی‌تواند ظرفیت تازه provision کند. Node autoscaler (Cluster Autoscaler یا Karpenter) این Podهای unschedulable را (با condition از نوع <code>PodScheduled</code> برابر False و reason برابر <code>Unschedulable</code>) می‌بیند و یک Node جدید provision می‌کند. اگر Node autoscaling فعال نباشد،‏ این Pod تا ابد در وضعیت <code>Pending</code> می‌ماند. این دقیقا همان نکته‌ای است که در بخش «مسیر کامل یک تصمیم HPA» ابتدای این فصل اشاره شد.</p>
   </div>
+  </details>
 
-  <p class="next">مطالب بیشتر: <a href="#ch10-auto">workload-level autoscaling</a> (همین فصل).</p>
-
-  <!-- ================= Exercises ================= -->
-  <div id="ch10-ex1" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۰ <small>۲۱ تمرین</small></div>
+  <details id="ch10-ex1" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۰ <small>۲۱ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>چرا نمی‌توان یک HorizontalPodAutoscaler را مستقیم به یک DaemonSet متصل کرد؟ چه فرقی بین Deployment/StatefulSet و DaemonSet از نظر subresource وجود دارد؟
         <details class="ans"><summary>پاسخ</summary><p>HPA فقط روی resourceهایی کار می‌کند که یک subresource به نام <code>scale</code> دارند (رابطی که تعداد <code>replicas</code> را می‌توان از طریق آن خواند/نوشت).‏ Deployment،‏ ReplicaSet،‏ StatefulSet و ReplicationController این subresource را دارند. DaemonSet ندارد،‏ چون تعداد Podهای آن با تعداد Nodeهای واجد شرایط تعیین می‌شود،‏ نه یک field <code>replicas</code> مستقل. با <code>kubectl get --raw /apis/apps/v1 | jq -r '.resources[].name' | grep /scale</code> می‌توان این را تأیید کرد.</p></details></li>
@@ -1932,14 +1971,14 @@ spec:
       <li><span class="lvl l3">سناریوی Production</span>پس از فعال‌سازی HPA روی یک Deployment قدیمی که در manifest آن <code>spec.replicas: 10</code> نوشته شده بود،‏ تیم DevOps با اجرای pipeline CI/CD (که همیشه <code>kubectl apply -f deployment.yaml</code> اجرا می‌کند) متوجه شد که هر بار deploy،‏ replicaها موقتا به ۱۰ می‌پرند و بعد HPA دوباره آن‌ها را به مقدار درست برمی‌گرداند و باعث یک نوسان بی‌مورد می‌شود. توضیح دهید چرا و راه‌حل رسمی چیست.
         <details class="ans"><summary>پاسخ</summary><p>این دقیقا سناریوی بخش <a href="#ch10-hpa-migrate">Migrating Deployments and StatefulSets to horizontal autoscaling</a> است. وقتی HPA فعال است اما <code>spec.replicas</code> هنوز در manifest نوشته شده،‏ هر <code>kubectl apply</code> مقدار replica را به همان عدد نوشته‌شده در فایل (۱۰) برمی‌گرداند،‏ حتی اگر HPA آن را قبلا به عدد دیگری تنظیم کرده بود؛‏ این باعث thrashing/flapping می‌شود.</p><p><b>راه‌حل:</b> field <code>spec.replicas</code> باید از manifest حذف شود. با روش Client Side Apply مستندات: ابتدا <code>kubectl apply edit-last-applied deployment/&lt;name&gt;</code> و حذف <code>spec.replicas</code> از آن (بدون تغییر Pod count در این مرحله)،‏ سپس حذف همان field از فایل manifest در git،‏ و commit کردن. از این پس <code>kubectl apply -f deployment.yaml</code> دیگر تعداد replica را override نمی‌کند. اگر از Server-Side Apply استفاده می‌شود،‏ باید از روال transferring ownership استفاده شود.</p></details></li>
     </ol>
-  </div>
+  </details>
 
   
   <h3 id="ch10-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این فصل،‏ حالا</b><p>فروشگاه برای Black Friday دیگر به عدد ثابت replica و Node تکیه نمی‌کند:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>اوج ترافیک نامعلوم و جهش‌های ناگهانی</td><td>HorizontalPodAutoscaler روی CPU برای API با minReplicas و maxReplicas؛‏ با behavior،‏ scale up سریع و scale down آرام (stabilization پیش‌فرض ۳۰۰ ثانیه)</td><td><a href="#ch10-hpa">HPA</a> و <a href="#ch10-walk">آزمایش گام‌به‌گام</a></td></tr><tr><td>پیش‌نیاز HPA</td><td>request برای CPU در Pod و metrics-server برای Metrics API؛‏ بدون آن‌ها مقدار metric برابر <code>&lt;unknown&gt;</code> است</td><td><a href="#ch10-walk">آزمایش گام‌به‌گام</a></td></tr><tr><td>ساعت شروع حراج از قبل معلوم است</td><td>scale زمان‌بندی‌شده پیش از شروع حراج؛‏ HPA از آن نقطه به بعد تنظیم می‌کند</td><td><a href="#ch10-auto-sched">autoscaling بر اساس schedule</a></td></tr><tr><td>request نادرست که یا هدر می‌دهد یا OOM می‌شود</td><td>VerticalPodAutoscaler برای پیشنهاد یا تنظیم request؛‏ هم‌زمان با HPA روی همان metric مربوط به CPU به کار نرود</td><td><a href="#ch10-vpa">VPA</a></td></tr><tr><td>Podهای اضافه جا نمی‌شوند و هزینه‌ی Node در تمام سال</td><td>autoscaling برای Node (Cluster Autoscaler یا Karpenter): افزودن Node برای Podهای Pending و حذف Node خالی پس از حراج</td><td><a href="#ch10-node">Node autoscaling</a></td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> وقتی چیزی در اوج کند می‌شود،‏ هنوز نه log ماندگاری داریم،‏ نه metric تاریخی و نه سابقه‌ی تغییرات (فصل ۱۱).</p><p><b>فصل بعد:</b> پرداخت شب‌ها کند است و هیچ ردی از علت نمانده.</p></div>
 
-  <div id="ch10-ex2" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۰ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch10-ex2" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۰ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>HorizontalPodAutoscaler چطور کار می‌کند و هر چند وقت تصمیم می‌گیرد؟
         <details class="ans"><summary>پاسخ</summary>
@@ -2007,7 +2046,7 @@ spec:
           <p>manifest هنوز <code>spec.replicas</code> دارد و هر <code>kubectl apply</code> آن را بازنویسی می‌کند. باید field را از manifest حذف کرد. اگر مستقیم حذف کنید،‏ apply مقدار را به پیش‌فرض ۱ برمی‌گرداند؛‏ پس با Client Side Apply اول <code>kubectl apply edit-last-applied</code> را اجرا کنید و field را از last-applied حذف کنید،‏ و با Server-Side Apply مالکیت field را به HPA منتقل کنید.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch10-recap">
     <div class="recap-h">خلاصه‌ی فصل ۱۰ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

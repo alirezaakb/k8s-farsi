@@ -20,6 +20,17 @@
   <p><b>توصیه‌ی مستندات</b> این است که هر جا ممکن است،‏ اجزای کوبرنتیز را به شکل container image اجرا کنید و مدیریتشان را به خود کوبرنتیز بسپارید. اما اجزایی که خودشان container اجرا می‌کنند،‏ به‌خصوص kubelet،‏ نمی‌توانند این‌طور اجرا شوند.</p>
   <p>اگر نمی‌خواهید cluster را خودتان مدیریت کنید،‏ می‌توانید یک سرویس مدیریت‌شده انتخاب کنید،‏ از جمله <a href="https://kubernetes.io/docs/setup/production-environment/turnkey-solutions/">پلتفرم‌های تأییدشده (certified)</a>. راه‌حل‌های استاندارد و سفارشی دیگری هم برای طیف وسیعی از محیط‌های cloud و serverهای فیزیکی (bare metal) وجود دارد.</p>
 
+  <h4>محیط یادگیری</h4>
+  <p>اگر در حال یادگیری کوبرنتیز هستید،‏ از ابزارهایی که جامعه‌ی کوبرنتیز پشتیبانی می‌کند یا ابزارهای موجود در اکوسیستم استفاده کنید تا روی ماشین خودتان cluster بسازید. صفحه‌ی <a href="https://kubernetes.io/docs/setup/learning-environment/">Learning environment</a> را ببینید (در ادامه کامل آمده).</p>
+
+  <h4>production</h4>
+  <p>وقتی راه‌حلی را برای <a href="https://kubernetes.io/docs/setup/production-environment/">production</a> ارزیابی می‌کنید،‏ مشخص کنید کدام جنبه‌های اداره‌ی cluster را خودتان مدیریت می‌کنید و کدام را ترجیح می‌دهید به یک سرویس‌دهنده بسپارید.</p>
+  <p>برای clusterی که خودتان مدیریت می‌کنید،‏ ابزار رسمی و پشتیبانی‌شده‌ی deployment،‏ <a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/">kubeadm</a> است (بخش دوم همین فصل).</p>
+  <p>control plane کوبرنتیز برای اجرا روی Linux طراحی شده است. اما داخل cluster می‌توانید برنامه‌ها را روی Linux یا سیستم‌عامل‌های دیگر،‏ از جمله Windows،‏ اجرا کنید (<a href="https://kubernetes.io/docs/concepts/windows/">concepts/windows</a>).</p>
+
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا kubelet نمی‌تواند container باشد؟ · مقایسه‌ی سه مسیر اصلی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا kubelet نمی‌تواند container باشد؟</b>
     <p>ایده‌ی «کوبرنتیز اجزای خودش را مدیریت کند» یعنی kube-apiserver،‏ kube-controller-manager،‏ kube-scheduler و etcd به شکل Pod اجرا شوند (در kubeadm این‌ها static Pod هستند؛‏ فصل ۱۲ و بخش دوم همین فصل). اما بالاخره کسی باید این Podها را اجرا کند؛‏ و آن «کس» kubelet است. kubelet از طریق container runtime (مثل containerd) containerها را می‌سازد،‏ پس خودش باید <i>پیش از</i> هر containerی روی سیستم‌عامل Node در حال اجرا باشد؛‏ برای همین معمولاً یک سرویس systemd است. این همان مسئله‌ی «مرغ و تخم‌مرغ» است و مستندات به همین دلیل kubelet را استثنا کرده.</p>
     <div class="tbl"><table><thead><tr><th>جزء</th><th>معمولاً چطور اجرا می‌شود (در clusterهای kubeadm)</th><th>دلیل</th></tr></thead><tbody>
@@ -29,15 +40,6 @@
       <tr><td>container runtime</td><td>سرویس سیستم‌عامل</td><td>پایه‌ی اجرای همه‌ی containerهاست</td></tr>
     </tbody></table></div>
   </div>
-
-  <h4>محیط یادگیری</h4>
-  <p>اگر در حال یادگیری کوبرنتیز هستید،‏ از ابزارهایی که جامعه‌ی کوبرنتیز پشتیبانی می‌کند یا ابزارهای موجود در اکوسیستم استفاده کنید تا روی ماشین خودتان cluster بسازید. صفحه‌ی <a href="https://kubernetes.io/docs/setup/learning-environment/">Learning environment</a> را ببینید (در ادامه کامل آمده).</p>
-
-  <h4>production</h4>
-  <p>وقتی راه‌حلی را برای <a href="https://kubernetes.io/docs/setup/production-environment/">production</a> ارزیابی می‌کنید،‏ مشخص کنید کدام جنبه‌های اداره‌ی cluster را خودتان مدیریت می‌کنید و کدام را ترجیح می‌دهید به یک سرویس‌دهنده بسپارید.</p>
-  <p>برای clusterی که خودتان مدیریت می‌کنید،‏ ابزار رسمی و پشتیبانی‌شده‌ی deployment،‏ <a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/">kubeadm</a> است (بخش دوم همین فصل).</p>
-  <p>control plane کوبرنتیز برای اجرا روی Linux طراحی شده است. اما داخل cluster می‌توانید برنامه‌ها را روی Linux یا سیستم‌عامل‌های دیگر،‏ از جمله Windows،‏ اجرا کنید (<a href="https://kubernetes.io/docs/concepts/windows/">concepts/windows</a>).</p>
-
   <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی سه مسیر اصلی</b>
     <div class="tbl"><table><thead><tr><th>معیار</th><th>محیط یادگیری (kind / minikube)</th><th>خودمدیریت (kubeadm)</th><th>سرویس مدیریت‌شده / آماده</th></tr></thead><tbody>
       <tr><td>سهولت نگهداری</td><td>بسیار ساده؛‏ با یک دستور ساخته و حذف می‌شود</td><td>سخت؛‏ ارتقا،‏ certificateها و etcd با شماست</td><td>ساده؛‏ control plane را سرویس‌دهنده نگه می‌دارد</td></tr>
@@ -48,6 +50,7 @@
     </tbody></table></div>
     <p>قاعده‌ی عملی (خارج از مستندات رسمی): یادگیری و توسعه‌ی روزمره را روی kind یا minikube انجام دهید؛‏ برای فهمیدن سازوکار درونی یا کار در محیط داخل سازمان،‏ kubeadm را روی چند VM امتحان کنید؛‏ و برای production،‏ اگر تیم عملیات کوچکی دارید،‏ سرویس مدیریت‌شده معمولاً ریسک کمتری دارد.</p>
   </div>
+  </details>
   <h3 id="ch13-a-learning-env">محیط یادگیری <small>(Learning environment)</small></h3>
   <p>برای یاد گرفتن کوبرنتیز به جایی برای تمرین نیاز دارید. این بخش گزینه‌های راه‌اندازی یک محیط آزمایشی را معرفی می‌کند.</p>
 
@@ -83,19 +86,6 @@
   <p>اگر می‌خواهید راه‌اندازی clusterی شبیه production را تمرین کنید،‏ از <b>kubeadm</b> استفاده کنید. این کار پیشرفته است و به چند ماشین (فیزیکی یا مجازی) و پیکربندی دقیق نیاز دارد. جزئیات در بخش دوم همین فصل.</p>
   <div class="note"><b>نکته</b><p>راه‌اندازی cluster شبیه production خیلی پیچیده‌تر از محیط‌های یادگیری بالاست. اول با kind،‏ minikube یا یک محیط آنلاین شروع کنید.</p></div>
 
-  <div class="deep"><b>توضیح تکمیلی: kind در برابر minikube</b>
-    <p>هر دو از پروژه‌های رسمی گروه‌های SIG کوبرنتیزند (دامنه‌ی <code>sigs.k8s.io</code>)،‏ اما فلسفه‌شان فرق دارد:</p>
-    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>kind</th><th>minikube</th></tr></thead><tbody>
-      <tr><td>Node چیست؟</td><td>هر Node یک Docker container (یا Podman) است</td><td>بسته به driver: یک VM،‏ یک container یا خود host</td></tr>
-      <tr><td>پیش‌فرض</td><td>یک Node که هم control plane است و هم worker</td><td>یک Node که هم control plane است و هم worker</td></tr>
-      <tr><td>چند Node</td><td>با یک فایل پیکربندی ساده</td><td>با flag <code>--nodes</code></td></tr>
-      <tr><td>امکانات جانبی</td><td>حداقلی؛‏ مناسب CI و تست</td><td>addonها (dashboard،‏ metrics-server،‏ ingress و…)،‏ <code>minikube service</code>،‏ <code>minikube tunnel</code></td></tr>
-      <tr><td>نام context در kubeconfig</td><td><code>kind-&lt;cluster-name&gt;</code> (پیش‌فرض <code>kind-kind</code>)</td><td><code>minikube</code> (یا نام profile)</td></tr>
-      <tr><td>کاربرد رایج</td><td>خط لوله‌های CI،‏ تست Operatorها و فایل‌های manifest</td><td>آموزش،‏ توسعه‌ی روزمره،‏ آموزش‌های رسمی</td></tr>
-    </tbody></table></div>
-    <p>(ردیف‌های «چند Node» و «نام context» از مستندات خود kind و minikube است.)</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: ساختن cluster سه‌Node با kind</b>
     <p>(دستورها از مستندات kind هستند.) یک فایل پیکربندی بسازید:</p>
     <div class="code"><div class="lbl"><span>kind-3nodes.yaml</span><button type="button">کپی</button></div><pre class="yaml">kind: Cluster
@@ -118,6 +108,22 @@ lab-worker2         Ready    &lt;none&gt;          40s   v1.37.0
 </pre></div>
     <p>با <code>docker ps</code> می‌بینید هر Node در واقع یک container است. با <code>kind delete cluster --name lab</code> cluster حذف می‌شود و context آن هم از kubeconfig پاک می‌شود.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">kind در برابر minikube</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: kind در برابر minikube</b>
+    <p>هر دو از پروژه‌های رسمی گروه‌های SIG کوبرنتیزند (دامنه‌ی <code>sigs.k8s.io</code>)،‏ اما فلسفه‌شان فرق دارد:</p>
+    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>kind</th><th>minikube</th></tr></thead><tbody>
+      <tr><td>Node چیست؟</td><td>هر Node یک Docker container (یا Podman) است</td><td>بسته به driver: یک VM،‏ یک container یا خود host</td></tr>
+      <tr><td>پیش‌فرض</td><td>یک Node که هم control plane است و هم worker</td><td>یک Node که هم control plane است و هم worker</td></tr>
+      <tr><td>چند Node</td><td>با یک فایل پیکربندی ساده</td><td>با flag <code>--nodes</code></td></tr>
+      <tr><td>امکانات جانبی</td><td>حداقلی؛‏ مناسب CI و تست</td><td>addonها (dashboard،‏ metrics-server،‏ ingress و…)،‏ <code>minikube service</code>،‏ <code>minikube tunnel</code></td></tr>
+      <tr><td>نام context در kubeconfig</td><td><code>kind-&lt;cluster-name&gt;</code> (پیش‌فرض <code>kind-kind</code>)</td><td><code>minikube</code> (یا نام profile)</td></tr>
+      <tr><td>کاربرد رایج</td><td>خط لوله‌های CI،‏ تست Operatorها و فایل‌های manifest</td><td>آموزش،‏ توسعه‌ی روزمره،‏ آموزش‌های رسمی</td></tr>
+    </tbody></table></div>
+    <p>(ردیف‌های «چند Node» و «نام context» از مستندات خود kind و minikube است.)</p>
+  </div>
+  </details>
   <h3 id="ch13-a-kubeconfig">سازمان‌دهی دسترسی به cluster با فایل‌های kubeconfig <small>(Organizing Cluster Access Using kubeconfig Files)</small></h3>
   <p>فایل‌های kubeconfig اطلاعات clusterها،‏ کاربران،‏ namespaceها و روش‌های authentication (تشخیص هویت درخواست‌دهنده) را سازمان‌دهی می‌کنند. <code>kubectl</code> از این فایل‌ها می‌فهمد به کدام cluster وصل شود و چطور با API server آن ارتباط برقرار کند.</p>
   <div class="note"><b>نکته</b><p>«فایل kubeconfig» نامی عمومی برای هر فایلی است که دسترسی به cluster را پیکربندی می‌کند؛‏ معنی‌اش این نیست که فایلی دقیقاً به نام <code>kubeconfig</code> وجود دارد.</p></div>
@@ -133,10 +139,6 @@ lab-worker2         Ready    &lt;none&gt;          40s   v1.37.0
     <li>مدیران ممکن است مجموعه‌ای از certificateها داشته باشند که به کاربران مختلف می‌دهند.</li>
   </ul>
   <p>با فایل‌های kubeconfig می‌توانید clusterها،‏ کاربران و namespaceها (محدوده‌ای برای جدا کردن نام‌ها و منابع درون یک cluster) را سازمان‌دهی کنید و با تعریف context سریع و راحت بین clusterها و namespaceها جابه‌جا شوید.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا یک فایل به‌جای چند flag؟</b>
-    <p>بدون kubeconfig باید برای هر دستور <code>kubectl</code> آدرس API server،‏ certificate CA و اطلاعات ورود را با flag می‌دادید؛‏ برای تیمی که با چند cluster (مثلاً <code>dev</code>،‏ <code>staging</code> و <code>production</code>) کار می‌کند عملاً غیرقابل‌مدیریت است. kubeconfig سه بخش (cluster،‏ user،‏ context) را جدا نگه می‌دارد تا بتوان یک کاربر را برای چند cluster،‏ یا چند کاربر را برای یک cluster استفاده کرد،‏ بدون تکرار اطلاعات authentication. همین جداسازی اجازه می‌دهد ابزارهایی مثل <code>kubectx</code> و <code>kubens</code> (ابزارهای جامعه) فقط context فعال را عوض کنند،‏ بی‌آنکه به بقیه‌ی فایل دست بزنند.</p>
-  </div>
-
   <h4 id="ch13-a-kubeconfig-context">Context</h4>
   <p><i>context</i> در فایل kubeconfig پارامترهای دسترسی را زیر یک نام راحت گروه‌بندی می‌کند. هر context سه پارامتر دارد: <b>cluster</b>،‏ <b>namespace</b> و <b>user</b>. <code>kubectl</code> به‌طور پیش‌فرض از پارامترهای <i>context فعلی</i> (current context) برای ارتباط با cluster استفاده می‌کند.</p>
   <p>برای انتخاب context فعلی:</p>
@@ -211,9 +213,6 @@ CURRENT   NAME            CLUSTER    AUTHINFO   NAMESPACE
   
   <figure><div class="plate"><svg viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="ادغام دو فایل kubeconfig با قاعده‌ی برنده بودن فایل اول" style="max-width:100%;height:auto;display:block"><defs><marker id="c13f1-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="c13f1-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a94ab"></path></marker></defs><text x="380" y="22" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12.5" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">KUBECONFIG=~/.kube/config:~/.kube/team-config</text><rect x="500" y="40" width="246" height="168" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="734" y="62" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#326ce5" direction="rtl" text-anchor="start">فایل اول فهرست</text><text x="514" y="62" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="start">~/.kube/config</text><text x="514" y="90" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">current-context: dev</text><text x="514" y="114" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">contexts: dev</text><text x="514" y="138" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">users:</text><text x="530" y="160" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="start">red-user: token A</text><text x="514" y="190" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">clusters: dev-cluster</text><rect x="14" y="40" width="246" height="168" rx="8" fill="#f2f4f8" stroke="#8a94ab" stroke-width="1.5"></rect><text x="248" y="62" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#4a5672" direction="rtl" text-anchor="start">فایل دوم</text><text x="28" y="62" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#4a5672" direction="ltr" text-anchor="start">~/.kube/team-config</text><text x="28" y="90" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">current-context: prod</text><text x="28" y="114" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">contexts: prod</text><text x="28" y="138" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">users:</text><text x="44" y="160" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#b83227" direction="ltr" text-anchor="start">red-user: token B, key</text><text x="28" y="190" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">clusters: prod-cluster</text><rect x="250" y="226" width="260" height="92" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="498" y="248" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">نتیجه‌ی ادغام</text><text x="264" y="272" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">current-context: dev</text><text x="264" y="294" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="start">red-user: token A</text><text x="264" y="312" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">contexts: dev, prod</text><path d="M560,210 C540,226 528,236 514,246" fill="none" stroke="#326ce5" stroke-width="1.6" marker-end="url(#c13f1-b)"></path><path d="M200,210 C220,226 232,236 246,246" fill="none" stroke="#8a94ab" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c13f1-k)"></path><text x="380" y="100" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="700" fill="#b83227" direction="rtl" text-anchor="middle">red-user فایل دوم</text><text x="380" y="120" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">کاملاً کنار گذاشته می‌شود؛‏</text><text x="380" y="140" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">حتی فیلدهای غیرمتضادش</text><text x="380" y="176" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">نام‌های تازه (prod) اضافه می‌شوند</text></svg></div><figcaption><b>شکل ۱۳-۱.</b> <span style="flex:1 1 0;min-width:0">ادغام فایل‌های فهرست KUBECONFIG: برای هر نام،‏ اولین فایلی که آن را تعریف کرده برنده است و ورودی هم‌نام فایل‌های بعدی کامل کنار گذاشته می‌شود؛‏ نام‌های تازه به نتیجه اضافه می‌شوند.</span></figcaption></figure>
 
-  <div class="deep"><b>توضیح تکمیلی: قاعده‌ی «اولین فایل برنده است» در عمل</b>
-    <p>این قاعده برخلاف عادت بسیاری از سیستم‌های پیکربندی است (که معمولاً فایل آخر بر قبلی‌ها اولویت دارد). پیامد عملی‌اش: اگر در <code>KUBECONFIG</code> فایل شخصی را اول بگذارید (مثلاً <code>KUBECONFIG=$HOME/.kube/config:$HOME/.kube/team-config</code>)،‏ هر ورودی هم‌نام در فایل تیمی نادیده گرفته می‌شود؛‏ یعنی مقدار شخصی شما حفظ می‌شود،‏ ولی به‌روزرسانی‌های فایل تیمی هم برای آن ورودی به شما نمی‌رسد (سناریوی تمرین ۱۲ همین بخش). <b>نکته‌ی مهم:</b> ادغام در سطح <b>کل یک ورودی</b> است،‏ نه فیلدبه‌فیلد. برای اینکه ببینید واقعاً کدام context و user استفاده می‌شود،‏ همیشه از <code>kubectl config view --minify --flatten</code> استفاده کنید،‏ نه صرفاً نگاه به فایل‌ها.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: ادغام دو فایل kubeconfig</b>
     <p>دو فایل kubeconfig جدا بسازید و ادغامشان را ببینید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl config view --raw &gt; ~/base-config
@@ -247,13 +246,23 @@ contexts:
 - context:
   name: development
 </pre></div>
+  <p class="next">مطالب مرتبط: <a href="https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/">Configure Access to Multiple Clusters</a> ·‏ <a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#config">kubectl config</a></p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">چرا یک فایل به‌جای چند flag؟ · قاعده‌ی «اولین فایل برنده است» در عمل · کاربرد proxy-url در عمل</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا یک فایل به‌جای چند flag؟</b>
+    <p>بدون kubeconfig باید برای هر دستور <code>kubectl</code> آدرس API server،‏ certificate CA و اطلاعات ورود را با flag می‌دادید؛‏ برای تیمی که با چند cluster (مثلاً <code>dev</code>،‏ <code>staging</code> و <code>production</code>) کار می‌کند عملاً غیرقابل‌مدیریت است. kubeconfig سه بخش (cluster،‏ user،‏ context) را جدا نگه می‌دارد تا بتوان یک کاربر را برای چند cluster،‏ یا چند کاربر را برای یک cluster استفاده کرد،‏ بدون تکرار اطلاعات authentication. همین جداسازی اجازه می‌دهد ابزارهایی مثل <code>kubectx</code> و <code>kubens</code> (ابزارهای جامعه) فقط context فعال را عوض کنند،‏ بی‌آنکه به بقیه‌ی فایل دست بزنند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: قاعده‌ی «اولین فایل برنده است» در عمل</b>
+    <p>این قاعده برخلاف عادت بسیاری از سیستم‌های پیکربندی است (که معمولاً فایل آخر بر قبلی‌ها اولویت دارد). پیامد عملی‌اش: اگر در <code>KUBECONFIG</code> فایل شخصی را اول بگذارید (مثلاً <code>KUBECONFIG=$HOME/.kube/config:$HOME/.kube/team-config</code>)،‏ هر ورودی هم‌نام در فایل تیمی نادیده گرفته می‌شود؛‏ یعنی مقدار شخصی شما حفظ می‌شود،‏ ولی به‌روزرسانی‌های فایل تیمی هم برای آن ورودی به شما نمی‌رسد (سناریوی تمرین ۱۲ همین بخش). <b>نکته‌ی مهم:</b> ادغام در سطح <b>کل یک ورودی</b> است،‏ نه فیلدبه‌فیلد. برای اینکه ببینید واقعاً کدام context و user استفاده می‌شود،‏ همیشه از <code>kubectl config view --minify --flatten</code> استفاده کنید،‏ نه صرفاً نگاه به فایل‌ها.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: کاربرد proxy-url در عمل</b>
     <p><code>proxy-url</code> وقتی به کار می‌آید که API server یک cluster فقط از طریق یک پراکسی HTTP در دسترس باشد (مثلاً clusterی داخل شبکه‌ی محدود سازمان). بدون آن،‏ باید متغیر <code>HTTPS_PROXY</code> را برای کل shell تنظیم می‌کردید که روی همه‌ی ترافیک شبکه (نه فقط <code>kubectl</code>) اثر می‌گذاشت؛‏ با <code>proxy-url</code> در سطح <code>cluster</code> می‌توانید هم‌زمان به یک cluster از طریق پراکسی و به cluster دیگری مستقیم وصل شوید،‏ فقط با عوض کردن context.</p>
   </div>
-  <p class="next">مطالب مرتبط: <a href="https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/">Configure Access to Multiple Clusters</a> ·‏ <a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#config">kubectl config</a></p>
+  </details>
 
-  <div id="ch13-ex1" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۳،‏ بخش اول <small>۱۷ تمرین</small></div>
+  <details id="ch13-ex1" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۳،‏ بخش اول <small>۱۷ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>فرق کاری که <code>kubectl</code> انجام می‌دهد با کاری که خود cluster (API server،‏ kubelet و…) انجام می‌دهد چیست؟ چرا نصب یک فایل اجرایی به‌تنهایی برای «داشتن کوبرنتیز» کافی نیست؟
         <details class="ans"><summary>پاسخ</summary><p><code>kubectl</code> فقط یک client خط فرمان است که از طریق HTTP/REST با API server cluster ارتباط برقرار می‌کند؛‏ خودش هیچ Podی اجرا نمی‌کند و هیچ وضعیتی ذخیره نمی‌کند. همه‌ی منطق واقعی،‏ یعنی reconciliation،‏ scheduling و اجرای container،‏ در control plane (API server،‏ scheduler،‏ controller-manager،‏ etcd) و در kubelet و runtime هر Node است. نصب <code>kubectl</code> فقط ابزار ارتباط را فراهم می‌کند؛‏ یک cluster واقعی (minikube،‏ kind یا مدیریت‌شده) هم باید وجود داشته باشد و <code>kubectl</code> باید از طریق kubeconfig بداند به کدام cluster و با کدام اطلاعات ورود وصل شود.</p></details></li>
@@ -349,7 +358,7 @@ checkout-api-5b8f4c7d9f-hv7pn   1/1     Running   0          20h
       <li><span class="lvl l3">سناریوی عملیاتی</span>سرویسی با ۱۲ replica در حال برگشت (rollback) است،‏ چون revision جدید مشکل داشت. پایش نشان می‌دهد در طول برگشت،‏ تعداد Podهای Ready برای مدتی کمتر از ۱۲ شده؛‏ درست مثل یک rollout معمولی. تیم پشتیبانی می‌پرسد: «چرا برگشت هم ظرفیت را کم می‌کند؟ مگر قرار نبود نجاتمان بدهد؟» پاسخ فنی درست چیست؟
         <details class="ans"><summary>پاسخ</summary><p><code>rollout undo</code> فقط Pod template (الگویی که controller از روی آن Podهای تازه را می‌سازد) را به revision قبلی برمی‌گرداند و بقیه‌ی کار با همان سازوکار rolling update انجام می‌شود،‏ نه بازگشت آنی: ReplicaSet سالم قبلی کم‌کم بزرگ و ReplicaSet معیوب کم‌کم کوچک می‌شود،‏ با همان محدودیت‌های <code>maxUnavailable</code>/<code>maxSurge</code>. پس کاهش موقت ظرفیت طبق طراحی است،‏ نه باگ؛‏ نکته‌ی مهم این است که کاهش با همان مرزهای ایمنی (مثلاً حداکثر ۲۵٪) کنترل می‌شود؛‏ برخلاف حذف دستی همه‌ی Podها که می‌تواند کل ظرفیت را یک‌باره از بین ببرد. توصیه: برای سرویس‌های حساس،‏ <code>maxUnavailable: 0</code> را از قبل تنظیم کنید تا ظرفیت آماده هرگز زیر مقدار دلخواه نرود (به قیمت کندتر شدن rollout و برگشت و نیاز به منابع اضافه برای Podهای surge).</p></details></li>
     </ol>
-  </div>
+  </details>
 
   <!-- ================= Part B: Production ================= -->
   <h3 id="ch13-b-production">Production environment</h3>
@@ -377,6 +386,8 @@ checkout-api-5b8f4c7d9f-hv7pn   1/1     Running   0          20h
   <li><b>یکپارچه‌سازی</b>: سرویس‌دهنده‌هایی که کوبرنتیز را با سرویس‌های دیگر (storage،‏ container registry،‏ روش‌های authentication،‏ ابزارهای توسعه) یکپارچه می‌کنند.</li>
   </ul>
   <p>چه خودتان cluster را بسازید و چه با شرکا کار کنید،‏ بخش‌های بعدی را برای ارزیابی نیازهایتان درباره‌ی <i>control plane</i>،‏ <i>worker Nodeها</i>،‏ <i>دسترسی کاربران</i> و <i>منابع workloadها</i> مرور کنید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">محورهای تصمیم در یک نگاه</span></summary>
   <div class="deep"><b>توضیح تکمیلی: محورهای تصمیم در یک نگاه</b>
   <div class="tbl"><table><thead><tr><th>محور</th><th>محیط یادگیری</th><th>production</th></tr></thead><tbody>
   <tr><td>دسترس‌پذیری</td><td>یک ماشین (kind یا minikube)؛‏ نقطه‌ی شکست واحد</td><td>دست‌کم ۳ Node control plane،‏ etcd با quorum،‏ load balancer جلوی API server،‏ چند worker Node</td></tr>
@@ -385,6 +396,7 @@ checkout-api-5b8f4c7d9f-hv7pn   1/1     Running   0          20h
   <tr><td>مسئولیت مدیریت</td><td>خودتان</td><td>خودتان (kubeadm،‏ kops،‏ Kubespray،‏ Cluster API) یا سرویس مدیریت‌شده</td></tr>
   </tbody></table></div>
   <p>قاعده‌ی عملی: هر چیزی را که «اگر از دست برود کل سرویس می‌خوابد» پیدا کنید (API server،‏ etcd،‏ CoreDNS،‏ load balancer،‏ حتی نام DNS آدرس cluster) و برایش افزونگی (redundancy) طراحی کنید.</p></div>
+  </details>
 
   <h3 id="ch13-b-prod-setup">راه‌اندازی production cluster <small>(Production cluster setup)</small></h3>
   <p>در production cluster،‏ control plane از طریق سرویس‌هایی اداره می‌شود که می‌توانند به روش‌های مختلف روی چند کامپیوتر پخش شوند؛‏ اما هر worker Node یک موجودیت مستقل است که برای اجرای Podها پیکربندی شده.</p>
@@ -402,16 +414,6 @@ checkout-api-5b8f4c7d9f-hv7pn   1/1     Running   0          20h
   <li><b>مدیریت مداوم</b>: اگر قصد دارید cluster را مدت طولانی نگه دارید،‏ کارهایی برای حفظ سلامت و امنیتش لازم است؛‏ مثلاً در kubeadm راهنماهای Certificate Management و Upgrading kubeadm clusters. فهرست کامل‌تر در «Administer a Cluster».</li>
   </ul>
   <p>گزینه‌های اجرای سرویس‌های control plane در صفحات مرجع kube-apiserver،‏ kube-controller-manager و kube-scheduler آمده. instanceهای control plane با دسترس‌پذیری بالا در ادامه‌ی همین فصل پوشش داده شده‌اند.</p>
-  <div class="deep"><b>توضیح تکمیلی: «scheduler fault tolerant باشد،‏ نه highly available» در عمل یعنی چه؟</b>
-  <p>روی هر Node control plane یک instance از kube-scheduler و kube-controller-manager اجرا می‌شود،‏ اما در هر لحظه فقط <b>یکی</b> فعال (leader) است و بقیه آماده‌به‌کارند. leader election (انتخاب یک instance فعال از میان چند instance یک جزء) با یک شیء Lease در namespace <code>kube-system</code> انجام می‌شود (فصل ۱۲). اگر leader از بین برود،‏ بعد از پایان مدت Lease،‏ instance دیگری leader می‌شود. پس هنگام خرابی چند ثانیه scheduling متوقف می‌شود (مقاومت در برابر خطا: سیستم خودش بازیابی می‌شود)،‏ اما هیچ‌وقت دو scheduler هم‌زمان تصمیم نمی‌گیرند. در مقابل،‏ kube-apiserver واقعاً همه‌فعال (active-active) است و همه‌ی instanceهایش هم‌زمان پشت load balancer پاسخ می‌دهند.</p>
-  <div class="code"><div class="lbl"><span>مشاهده‌ی leader فعلی</span><button type="button">کپی</button></div><pre class="sh">kubectl -n kube-system get lease kube-scheduler kube-controller-manager
-</pre></div>
-  <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                      HOLDER                                       AGE
-kube-scheduler            cp2_4f1c1d2e-8a5b-4b52-9f0e-1c3a4b5d6e7f     12d
-kube-controller-manager   cp1_9a8b7c6d-1e2f-4a3b-8c9d-0e1f2a3b4c5d     12d
-</pre></div>
-  <p>etcd از Raft استفاده می‌کند و برای نوشتن به quorum (اکثریت،‏ یعنی ⌊n/2⌋+1 عضو) نیاز دارد. با ۳ عضو خرابی ۱ عضو و با ۵ عضو خرابی ۲ عضو قابل تحمل است. برای همین تعداد اعضا فرد انتخاب می‌شود: ۴ عضو همان تحمل خرابی ۳ عضو (یک خرابی) را دارد ولی هزینه‌ی بیشتری دارد.</p></div>
-
   <h4>worker Nodeها در production</h4>
   <p>workloadهای production و هر چیزی که به آن تکیه دارند (مثل CoreDNS) باید مقاوم باشند. چه control plane را خودتان مدیریت کنید و چه cloud provider،‏ باز هم باید تصمیم بگیرید worker Nodeها را چطور مدیریت می‌کنید:</p>
   <ul>
@@ -426,6 +428,19 @@ kube-controller-manager   cp1_9a8b7c6d-1e2f-4a3b-8c9d-0e1f2a3b4c5d     12d
   <li><b>مقیاس‌دهی خودکار Nodeها</b>: صفحه‌ی Node Autoscaling را برای ابزارهای مدیریت خودکار Nodeها بخوانید (فصل ۱۰).</li>
   <li><b>بررسی سلامت Nodeها</b>: برای workloadهای مهم باید مطمئن باشید Nodeها و Podهایشان سالم‌اند؛‏ با Node Problem Detector می‌توانید این را پایش کنید (فصل ۱۱).</li>
   </ul>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«scheduler fault tolerant باشد،‏ نه highly available» در عمل یعنی چه؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: «scheduler fault tolerant باشد،‏ نه highly available» در عمل یعنی چه؟</b>
+  <p>روی هر Node control plane یک instance از kube-scheduler و kube-controller-manager اجرا می‌شود،‏ اما در هر لحظه فقط <b>یکی</b> فعال (leader) است و بقیه آماده‌به‌کارند. leader election (انتخاب یک instance فعال از میان چند instance یک جزء) با یک شیء Lease در namespace <code>kube-system</code> انجام می‌شود (فصل ۱۲). اگر leader از بین برود،‏ بعد از پایان مدت Lease،‏ instance دیگری leader می‌شود. پس هنگام خرابی چند ثانیه scheduling متوقف می‌شود (مقاومت در برابر خطا: سیستم خودش بازیابی می‌شود)،‏ اما هیچ‌وقت دو scheduler هم‌زمان تصمیم نمی‌گیرند. در مقابل،‏ kube-apiserver واقعاً همه‌فعال (active-active) است و همه‌ی instanceهایش هم‌زمان پشت load balancer پاسخ می‌دهند.</p>
+  <div class="code"><div class="lbl"><span>مشاهده‌ی leader فعلی</span><button type="button">کپی</button></div><pre class="sh">kubectl -n kube-system get lease kube-scheduler kube-controller-manager
+</pre></div>
+  <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME                      HOLDER                                       AGE
+kube-scheduler            cp2_4f1c1d2e-8a5b-4b52-9f0e-1c3a4b5d6e7f     12d
+kube-controller-manager   cp1_9a8b7c6d-1e2f-4a3b-8c9d-0e1f2a3b4c5d     12d
+</pre></div>
+  <p>etcd از Raft استفاده می‌کند و برای نوشتن به quorum (اکثریت،‏ یعنی ⌊n/2⌋+1 عضو) نیاز دارد. با ۳ عضو خرابی ۱ عضو و با ۵ عضو خرابی ۲ عضو قابل تحمل است. برای همین تعداد اعضا فرد انتخاب می‌شود: ۴ عضو همان تحمل خرابی ۳ عضو (یک خرابی) را دارد ولی هزینه‌ی بیشتری دارد.</p></div>
+  </details>
 
   <h3 id="ch13-b-prod-users">مدیریت کاربران در production <small>(Production user management)</small></h3>
   <p>در production ممکن است از مدلی که فقط شما یا گروهی کوچک به cluster دسترسی دارید،‏ به مدلی بروید که ده‌ها یا صدها نفر دسترسی دارند. در محیط یادگیری شاید یک حساب مدیر برای همه‌چیز داشته باشید؛‏ در عملیات،‏ حساب‌های بیشتری با سطح دسترسی متفاوت به namespaceهای مختلف می‌خواهید.</p>
@@ -516,7 +531,10 @@ requests.memory  0     16Gi
 
   <h3 id="ch13-b-turnkey">راه‌حل‌های آماده‌ی cloud <small>(Turnkey Cloud Solutions)</small></h3>
   <p>مستندات فهرستی از سرویس‌دهندگان راه‌حل‌های تأییدشده (certified) کوبرنتیز دارد؛‏ در صفحه‌ی هر کدام می‌توانید ببینید cluster آماده‌ی عملیات را چطور نصب و راه‌اندازی کنید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b><p>«تأییدشده» یعنی محصول آن سرویس‌دهنده در برنامه‌ی Certified Kubernetes (بر پایه‌ی آزمون‌های سازگاری یا conformance) قبول شده و API استاندارد کوبرنتیز را بدون تغییر ارائه می‌دهد؛‏ پس manifestهایی که در این جزوه می‌نویسید روی آن‌ها هم کار می‌کنند. تفاوت‌ها معمولاً در لایه‌های پیرامونی است: نوع load balancer برای Serviceهای LoadBalancer،‏ StorageClassهای پیش‌فرض،‏ روش authentication و سیاست ارتقا.</p></div>
+  </details>
 
   <h3 id="ch13-b-tools">نصب کوبرنتیز با ابزارهای deployment <small>(Installing Kubernetes with deployment tools)</small></h3>
   <p>ابزارهای زیادی برای راه‌اندازی production cluster وجود دارد؛‏ مثلاً:</p>
@@ -526,6 +544,8 @@ requests.memory  0     16Gi
   <li><b>kops</b>: ابزاری خودکار برای تأمین (provisioning) cluster؛‏ آموزش‌ها و روش‌های خوبش در وب‌سایت kOps است.</li>
   <li><b>Kubespray</b>: ترکیبی از playbookهای Ansible،‏ فهرست ماشین‌ها (inventory)،‏ ابزارهای تأمین و دانش تخصصی برای مدیریت پیکربندی سیستم‌عامل و cluster. جامعه‌اش در کانال <code>#kubespray</code> در Slack فعال است.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام ابزار؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کدام ابزار؟</b>
   <div class="tbl"><table><thead><tr><th>ابزار</th><th>مدل کار</th><th>مناسب برای</th></tr></thead><tbody>
   <tr><td>kubeadm</td><td>فقط راه‌اندازی (bootstrap) کوبرنتیز روی ماشین‌های آماده؛‏ ماشین،‏ load balancer و سیستم‌عامل با شماست</td><td>داخل سازمان،‏ یادگیری عمیق،‏ پایه‌ی ابزارهای دیگر</td></tr>
@@ -534,13 +554,17 @@ requests.memory  0     16Gi
   <tr><td>Cluster API</td><td>clusterها و ماشین‌ها به شکل custom resourceها در یک «cluster مدیریتی» تعریف و reconcile می‌شوند</td><td>مدیریت اعلانی ناوگانی از clusterها</td></tr>
   </tbody></table></div>
   <p>Kubespray و Cluster API (با bootstrap provider پیش‌فرض) در زیر از kubeadm استفاده می‌کنند؛‏ پس فهم kubeadm در ادامه‌ی فصل برای عیب‌یابی همه‌ی این ابزارها مفید است.</p></div>
+  </details>
 
   <h3 id="ch13-b-runtimes">container runtimeها <small>(Container Runtimes)</small></h3>
   <p>روی هر Node باید یک container runtime نصب کنید تا Podها بتوانند آنجا اجرا شوند. کوبرنتیز 1.37 الزام می‌کند runtime با CRI (Container Runtime Interface؛‏ رابط استاندارد بین kubelet و container runtime) سازگار باشد (بخش پشتیبانی نسخه‌ی CRI).</p>
   <p>این بخش استفاده از چند runtime رایج را خلاصه می‌کند:</p>
   <ul><li>containerd</li><li>CRI-O</li><li>Docker Engine</li><li>Mirantis Container Runtime</li></ul>
   <div class="note"><b>نکته</b><p>نسخه‌های کوبرنتیز پیش از v1.24 یک یکپارچگی مستقیم با Docker Engine داشتند که از جزئی به نام <i>dockershim</i> استفاده می‌کرد. این یکپارچگی دیگر بخشی از کوبرنتیز نیست (حذفش در v1.20 اعلام شد). صفحه‌های «Check whether Dockershim removal affects you» و «Migrating from dockershim» را ببینید. اگر نسخه‌ای غیر از v1.37 اجرا می‌کنید،‏ مستندات همان نسخه را بخوانید.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">حذف dockershim یعنی «Docker مرد»؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: حذف dockershim یعنی «Docker مرد»؟</b><p>نه! این سوءتفاهم رایج در مصاحبه‌هاست. imageهایی (بسته‌ی فقط‌خواندنی شامل برنامه و وابستگی‌هایش که container از آن ساخته می‌شود) که با Docker ساخته می‌شوند استاندارد OCI دارند و روی containerd و CRI-O عیناً اجرا می‌شوند؛‏ ساختن image با Docker روی لپ‌تاپ و CI هم مثل قبل ادامه دارد. فقط kubelet دیگر مستقیماً با Docker Engine ارتباط برقرار نمی‌کند. اگر باز هم بخواهید Docker Engine runtime Nodeها باشد،‏ باید adapter جداگانه‌ی <code>cri-dockerd</code> را نصب کنید.</p></div>
+  </details>
 
   <h3 id="ch13-b-rt-prereq">نصب و پیکربندی پیش‌نیازها</h3>
   <h4>پیکربندی شبکه</h4>
@@ -560,6 +584,8 @@ sudo sysctl --system
 </pre></div>
   <div class="code"><div class="lbl"><span>خروجی مورد انتظار</span><button type="button">کپی</button></div><pre class="out">net.ipv4.ip_forward = 1
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا ip_forward؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا ip_forward؟</b>
   <p>ترافیک یک Pod از interface مجازی‌اش (مثلاً یک veth که سر دیگرش در network namespace مربوط به Pod است) وارد host می‌شود و باید از interface فیزیکی (مثلاً <code>eth0</code>) به Node دیگر برود. یعنی host نقش روتر بین دو interface را بازی می‌کند و بدون <code>ip_forward=1</code> kernel این بسته‌ها را دور می‌ریزد. علامت رایج: Podهای یک Node با هم ارتباط برقرار می‌کنند ولی ارتباط بین Nodeها یا با Serviceها قطع است؛‏ kubeadm هم در بررسی‌های پیش از نصب (preflight) خطا می‌دهد.</p>
   <p>بسیاری از راهنماهای قدیمی‌تر ماژول <code>br_netfilter</code> و sysctlهای <code>net.bridge.bridge-nf-call-iptables</code> را هم تنظیم می‌کنند؛‏ مستندات فعلی این را به مستندات network plugin (CNI) سپرده است. اگر CNI شما (مثلاً bridge plugin یا flannel) به آن نیاز دارد،‏ ماندگارش کنید:</p>
@@ -569,6 +595,7 @@ br_netfilter
 EOF
 sudo modprobe overlay &amp;&amp; sudo modprobe br_netfilter
 </pre></div></div>
+  </details>
 
   <h3 id="ch13-b-cgroup-drivers">cgroup driverها</h3>
   <p>در Linux،‏ گروه‌های کنترلی (cgroup) منابع processها را محدود می‌کنند (فصل ۱۲). هم kubelet و هم container runtime برای اعمال مدیریت منابع Podها و containerها (requests و limits) باید با cgroupها کار کنند و برای این کار از یک <i>cgroup driver</i> استفاده می‌کنند. <b>حیاتی است که kubelet و runtime از یک driver و با پیکربندی یکسان استفاده کنند.</b></p>
@@ -590,6 +617,8 @@ cgroupDriver: systemd
   <p>اما نسخه‌های قدیمی‌تر runtime (به‌طور مشخص containerd 1.x و پایین‌تر) از <code>RuntimeConfig</code> پشتیبانی نمی‌کنند؛‏ در این حالت kubelet به مقدار flag <code>--cgroup-driver</code> خودش برمی‌گردد. <b>در کوبرنتیز 1.38 این رفتار بازگشتی حذف می‌شود و containerd قدیمی با kubeletهای جدید کار نخواهد کرد</b>؛‏ پس برای ارتقاهای آینده،‏ مهاجرت به containerd 2.x را برنامه‌ریزی کنید.</p>
   <p><b>یادداشت نویسنده:</b> صفحه‌ی Container Runtimes حذف این fallback را برای Kubernetes 1.38 اعلام کرده است،‏ اما صفحه‌ی feature gate مربوط به <code>KubeletCgroupDriverFromCRI</code> نسخه‌ی 1.36 را نوشته است. در Kubernetes v1.37 هنوز kubelet با containerd 1.x به مقدار <code>cgroupDriver</code> خودش برمی‌گردد؛‏ یعنی متن صفحه‌ی Container Runtimes با رفتار فعلی سازگارتر است.</p>
   <div class="warn"><b>هشدار</b><p>تغییر cgroup driver روی Nodeی که به cluster پیوسته عملیات حساسی است. اگر kubelet Podها را با قواعد یک driver ساخته باشد،‏ عوض‌کردن cgroup driver در runtime ممکن است هنگام بازسازی sandbox آن Podها خطا بدهد و حتی restart kubelet هم حلش نکند. اگر خودکارسازی دارید،‏ Node را با Node تازه‌ای با پیکربندی جدید جایگزین کنید یا با خودکارسازی از نو نصبش کنید.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">cgroup driver را روی Node واقعی ببینید</span></summary>
   <div class="deep"><b>توضیح تکمیلی: cgroup driver را روی Node واقعی ببینید</b>
   <p>نسخه‌ی cgroup را از نوع filesystem <code>/sys/fs/cgroup</code> تشخیص دهید: <code>cgroup2fs</code> یعنی v2 و <code>tmpfs</code> یعنی v1. بعد cgroup driver در kubelet و runtime را مقایسه کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">stat -fc %T /sys/fs/cgroup/
@@ -602,6 +631,7 @@ cgroupDriver: systemd
 </pre></div>
   <p>با driver <code>systemd</code>،‏ cgroup هر Pod به شکل یک slice در systemd دیده می‌شود (مثلاً <code>kubepods-burstable-pod&lt;uid&gt;.slice</code>) و با <code>systemd-cgls</code> قابل مشاهده است؛‏ با <code>cgroupfs</code> مسیرها مستقیم زیر <code>/sys/fs/cgroup/kubepods/...</code> ساخته می‌شوند و systemd از آن‌ها خبر ندارد.</p>
   <p>kubeadm از v1.22،‏ اگر <code>cgroupDriver</code> را در <code>KubeletConfiguration</code> تعیین نکنید،‏ آن را به‌طور پیش‌فرض <code>systemd</code> می‌گذارد؛‏ یعنی در clusterهای kubeadm معمولاً فقط باید runtime را هم‌راستا کنید.</p></div>
+  </details>
 
   <h3 id="ch13-b-cri-versions">پشتیبانی نسخه‌ی CRI</h3>
   <p>runtime شما باید از نسخه‌ی v1 interface CRI پشتیبانی کند. کوبرنتیز از v1.26 <i>فقط</i> با v1 از CRI API کار می‌کند؛‏ اگر runtime از v1 پشتیبانی نکند،‏ kubelet Node را ثبت نمی‌کند.</p>
@@ -685,6 +715,8 @@ pause_image="registry.k8s.io/pause:3.10"
   <h4>بازنویسی image sandbox در cri-dockerd</h4>
   <p><code>cri-dockerd</code> container image زیرساخت Pod («pause») را با آرگومان <code>--pod-infra-container-image</code> می‌گیرد.</p>
   <p class="next">ادامه‌ی مسیر: علاوه بر runtime،‏ cluster به یک network plugin سالم هم نیاز دارد (فصل ۵).</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جمع‌بندی container runtimeها</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جمع‌بندی container runtimeها</b>
   <div class="tbl"><table><thead><tr><th>runtime</th><th>socket CRI پیش‌فرض (Linux)</th><th>cgroup driver پیش‌فرض</th><th>تنظیم image pause</th></tr></thead><tbody>
   <tr><td>containerd</td><td><code>/run/containerd/containerd.sock</code></td><td>در پیکربندی پیش‌فرض cgroupfs (<code>SystemdCgroup = false</code>)</td><td><code>sandbox_image</code> (1.x) یا <code>pinned_images.sandbox</code> (2.x)</td></tr>
@@ -693,6 +725,7 @@ pause_image="registry.k8s.io/pause:3.10"
   <tr><td>MCR + cri-dockerd</td><td>از unit <code>cri-docker.socket</code></td><td>مطابق تنظیم MCR</td><td><code>--pod-infra-container-image</code></td></tr>
   </tbody></table></div>
   <p>image pause همان containerی است که network namespace و IPC namespace مربوط به Pod را «نگه می‌دارد» (فصل ۳). اگر registry آن در دسترس نباشد،‏ <b>هیچ</b> Podی ساخته نمی‌شود و خطای رایج <code>failed to get sandbox image "registry.k8s.io/pause:..."</code> در eventها دیده می‌شود.</p></div>
+  </details>
 
   <h3 id="ch13-b-install-kubeadm">نصب kubeadm <small>(Installing kubeadm)</small></h3>
   <p>این بخش نصب جعبه‌ابزار <code>kubeadm</code> را نشان می‌دهد. پس از نصب،‏ ساختن cluster را در بخش «ساختن cluster با kubeadm» ادامه دهید.</p>
@@ -719,14 +752,6 @@ sudo kubeadm init --ignore-preflight-errors=SystemVerification ...
   <ul><li>آدرس MAC interfaceهای شبکه را با <code>ip link</code> یا <code>ifconfig -a</code> ببینید.</li>
   <li>product_uuid را با <code>sudo cat /sys/class/dmi/id/product_uuid</code> ببینید.</li></ul>
   <p>سخت‌افزارهای فیزیکی تقریباً همیشه آدرس یکتا دارند،‏ اما بعضی virtual machineها ممکن است مقادیر یکسان داشته باشند. کوبرنتیز از این مقادیر برای شناسایی یکتای Nodeها استفاده می‌کند و اگر یکتا نباشند،‏ نصب ممکن است شکست بخورد.</p>
-  <div class="deep"><b>توضیح تکمیلی: VMهای کلون‌شده</b>
-  <p>رایج‌ترین منبع مقادیر تکراری،‏ ساختن VMها از یک قالب (template) است. علاوه بر product_uuid و MAC،‏ فایل <code>/etc/machine-id</code> هم در کلون‌ها تکراری می‌ماند و ممکن است client DHCP به همین دلیل به دو ماشین IP یکسان بدهد. یک script ساده برای مقایسه‌ی همه‌ی Nodeها:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">for h in cp1 cp2 cp3 w1 w2; do
-  ssh $h 'echo "$(hostname) $(sudo cat /sys/class/dmi/id/product_uuid) $(cat /etc/machine-id) $(ip -br link show eth0 | awk "{print \$3}")"'
-done | sort -k2 | uniq -D -f1
-</pre></div>
-  <p>اگر خروجی خالی باشد،‏ product_uuid تکراری وجود ندارد.</p></div>
-
   <h4>بررسی کارت‌های شبکه</h4>
   <p>اگر بیش از یک کارت شبکه دارید و اجزای کوبرنتیز از مسیر پیش‌فرض (default route) در دسترس نیستند،‏ مسیرهای IP اضافه کنید تا آدرس‌های cluster از کارت مناسب عبور کنند (و در kubeadm آدرس درست را با <code>--apiserver-advertise-address</code> یا <code>node-ip</code> مشخص کنید).</p>
 
@@ -811,6 +836,17 @@ memorySwap:
 </pre></div>
   <div class="code"><div class="lbl"><span>خطای نمونه در صورت تشخیص چند runtime</span><button type="button">کپی</button></div><pre class="out">found multiple CRI endpoints on the host. Please define which one do you wish to use by setting the 'criSocket' field in the kubeadm configuration file: unix:///var/run/containerd/containerd.sock, unix:///var/run/cri-dockerd.sock
 </pre></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">VMهای کلون‌شده</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: VMهای کلون‌شده</b>
+  <p>رایج‌ترین منبع مقادیر تکراری،‏ ساختن VMها از یک قالب (template) است. علاوه بر product_uuid و MAC،‏ فایل <code>/etc/machine-id</code> هم در کلون‌ها تکراری می‌ماند و ممکن است client DHCP به همین دلیل به دو ماشین IP یکسان بدهد. یک script ساده برای مقایسه‌ی همه‌ی Nodeها:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">for h in cp1 cp2 cp3 w1 w2; do
+  ssh $h 'echo "$(hostname) $(sudo cat /sys/class/dmi/id/product_uuid) $(cat /etc/machine-id) $(ip -br link show eth0 | awk "{print \$3}")"'
+done | sort -k2 | uniq -D -f1
+</pre></div>
+  <p>اگر خروجی خالی باشد،‏ product_uuid تکراری وجود ندارد.</p></div>
+  </details>
 
   <h3 id="ch13-b-install-pkgs">نصب kubeadm،‏ kubelet و kubectl</h3>
   <p>این بسته‌ها را روی همه‌ی ماشین‌ها نصب می‌کنید:</p>
@@ -923,18 +959,6 @@ curl -sSL "https://raw.githubusercontent.com/kubernetes/release/${RELEASE_VERSIO
 </pre></div>
   <div class="note"><b>نکته</b><p>Flatcar Container Linux پوشه‌ی <code>/usr</code> را فقط‌خواندنی mount می‌کند؛‏ پیش از راه‌اندازی cluster باید یک پوشه‌ی قابل‌نوشتن پیکربندی کنید (بخش عیب‌یابی kubeadm،‏ «<code>/usr</code> is mounted read-only»).</p></div>
   <p>حالا kubelet هر چند ثانیه restart می‌شود؛‏ در یک crash loop منتظر است تا kubeadm بگوید چه کند.</p>
-  <div class="deep"><b>توضیح تکمیلی: crash loop طبیعی kubelet پیش از init</b>
-  <p>kubelet نصب‌شده با بسته،‏ طبق فایل تکمیلی systemd دنبال <code>/var/lib/kubelet/config.yaml</code> می‌گردد که هنوز وجود ندارد (kubeadm هنگام init یا join آن را می‌سازد). پس این خروجی در این مرحله کاملاً <b>طبیعی</b> است و نباید وقتتان را صرف عیب‌یابی‌اش کنید:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">systemctl status kubelet --no-pager | head -5
-journalctl -u kubelet -n 3 --no-pager
-</pre></div>
-  <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">● kubelet.service - kubelet: The Kubernetes Node Agent
-     Loaded: loaded (/usr/lib/systemd/system/kubelet.service; enabled; preset: enabled)
-    Drop-In: /usr/lib/systemd/system/kubelet.service.d
-             └─10-kubeadm.conf
-     Active: activating (auto-restart) (Result: exit-code) since ...
-... "command failed" err="failed to load kubelet config file, path: /var/lib/kubelet/config.yaml, error: ... open /var/lib/kubelet/config.yaml: no such file or directory"
-</pre></div></div>
   <h4>عیب‌یابی نصب</h4>
   <p>اگر با kubeadm به مشکل خوردید،‏ بخش «عیب‌یابی kubeadm» در همین فصل را ببینید.</p>
 
@@ -947,6 +971,22 @@ journalctl -u kubelet -n 3 --no-pager
   <li>برای محیط‌های کاملاً ایزوله (air-gapped): گرفتن فهرست با <code>kubeadm config images list</code> روی ماشینی با دسترسی،‏ دریافت و ذخیره‌ی imageها،‏ و وارد کردنشان روی Nodeها با <code>ctr -n k8s.io images import</code>.</li>
   </ul>
   <p>همیشه یکپارچگی را حفظ کنید: از mirrorهای ناشناس بدون بررسی امضای GPG بسته‌ها یا digest imageها استفاده نکنید؛‏ این‌ها زنجیره‌ی تأمین (supply chain) cluster شما هستند. imageهای رسمی کوبرنتیز با cosign امضا می‌شوند و می‌توانید امضای image دریافتی از mirror را بررسی کنید.</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">crash loop طبیعی kubelet پیش از init</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: crash loop طبیعی kubelet پیش از init</b>
+  <p>kubelet نصب‌شده با بسته،‏ طبق فایل تکمیلی systemd دنبال <code>/var/lib/kubelet/config.yaml</code> می‌گردد که هنوز وجود ندارد (kubeadm هنگام init یا join آن را می‌سازد). پس این خروجی در این مرحله کاملاً <b>طبیعی</b> است و نباید وقتتان را صرف عیب‌یابی‌اش کنید:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">systemctl status kubelet --no-pager | head -5
+journalctl -u kubelet -n 3 --no-pager
+</pre></div>
+  <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">● kubelet.service - kubelet: The Kubernetes Node Agent
+     Loaded: loaded (/usr/lib/systemd/system/kubelet.service; enabled; preset: enabled)
+    Drop-In: /usr/lib/systemd/system/kubelet.service.d
+             └─10-kubeadm.conf
+     Active: activating (auto-restart) (Result: exit-code) since ...
+... "command failed" err="failed to load kubelet config file, path: /var/lib/kubelet/config.yaml, error: ... open /var/lib/kubelet/config.yaml: no such file or directory"
+</pre></div></div>
+  </details>
 
   <h3 id="ch13-b-create-cluster">ساختن cluster با kubeadm <small>(Creating a cluster with kubeadm)</small></h3>
   <p>با <code>kubeadm</code> می‌توانید clusterی حداقلی و قابل استفاده بسازید که با روش‌های خوب سازگار است؛‏ در واقع clusterی که آزمون‌های سازگاری کوبرنتیز (Conformance) را با موفقیت پشت سر می‌گذارد. <code>kubeadm</code> از کارهای دیگر چرخه‌ی عمر cluster مثل tokenهای bootstrap و ارتقای cluster هم پشتیبانی می‌کند.</p>
@@ -1027,12 +1067,6 @@ sudo kubeadm config images pull --image-repository registry.mirror.example.ir/k8
 </pre></div>
   <p>که <code>‎192.168.0.102‎</code> آدرس این Node است و <code>cluster-endpoint</code> یک نام DNS سفارشی که به آن نگاشت شده. این اجازه می‌دهد <code>--control-plane-endpoint=cluster-endpoint</code> را به <code>kubeadm init</code> و همین نام را به <code>kubeadm join</code> بدهید و بعداً در سناریوی دسترس‌پذیری بالا،‏ <code>cluster-endpoint</code> را به آدرس load balancer تغییر دهید.</p>
   <p><b>تبدیل cluster با یک control plane که بدون <code>--control-plane-endpoint</code> ساخته شده به cluster با دسترس‌پذیری بالا،‏ توسط kubeadm پشتیبانی نمی‌شود.</b></p>
-  <div class="deep"><b>توضیح تکمیلی: چرا بعداً قابل تبدیل نیست؟</b>
-  <p>آدرس endpoint در سه جا «حک» می‌شود: (۱) در SAN certificate <code>apiserver.crt</code>؛‏ (۲) در فیلد <code>server:</code> همه‌ی kubeconfigها (<code>admin.conf</code>،‏ <code>kubelet.conf</code> روی همه‌ی Nodeها،‏ <code>controller-manager.conf</code>،‏ <code>scheduler.conf</code>)؛‏ و (۳) در ConfigMapهای <code>kubeadm-config</code> و <code>cluster-info</code> (در namespace <code>kube-public</code>) که Nodeهای جدید هنگام join از آن استفاده می‌کنند. اگر init با IP خود cp1 انجام شده باشد،‏ همه‌ی Nodeها مستقیم به cp1 وصل‌اند و با خرابی آن کل cluster از کار می‌افتد. با یک نام DNS (حتی اگر امروز به IP همان cp1 اشاره کند) کافی است فردا رکورد DNS را به load balancer عوض کنید. <b>درس مصاحبه‌ای:</b> «همیشه از روز اول با <code>--control-plane-endpoint</code> و یک نام DNS init کنید،‏ حتی برای cluster تک‌Node.»</p>
-  <div class="code"><div class="lbl"><span>بررسی endpoint فعلی</span><button type="button">کپی</button></div><pre class="sh">kubectl -n kube-system get cm kubeadm-config -o jsonpath='{.data.ClusterConfiguration}' | grep controlPlaneEndpoint
-sudo openssl x509 -in /etc/kubernetes/pki/apiserver.crt -noout -ext subjectAltName
-</pre></div></div>
-
   <h4>اطلاعات بیشتر</h4>
   <p>آرگومان‌های <code>kubeadm init</code> در راهنمای مرجع kubeadm آمده؛‏ برای پیکربندی با فایل،‏ «Using kubeadm init with a configuration file» را ببینید. برای سفارشی‌سازی اجزای control plane (مثلاً IPv6 برای liveness probe اجزا و etcd)،‏ آرگومان‌های اضافه را طبق بخش «سفارشی‌سازی اجزا با API kubeadm» بدهید. برای تغییر پیکربندی cluster موجود،‏ «Reconfiguring a kubeadm cluster» را ببینید. برای اجرای دوباره‌ی <code>kubeadm init</code> باید اول cluster را برچینید (بخش پاک‌سازی). اگر Nodeی با معماری متفاوت اضافه می‌کنید،‏ مطمئن شوید DaemonSetها image آن معماری را دارند.</p>
   <p><code>kubeadm init</code> اول یک سری بررسی پیش از نصب اجرا می‌کند که هشدار نشان می‌دهند و در صورت خطا متوقف می‌شوند؛‏ بعد اجزای control plane را دانلود و نصب می‌کند که ممکن است چند دقیقه طول بکشد. در پایان این را می‌بینید:</p>
@@ -1077,6 +1111,15 @@ kubeadm join k8s-api.example.internal:6443 --token 3x9q1k.p8tz2m7v5c4n6b1a --dis
 7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
 </pre></div>
   <p>مدت اعتبار (TTL) پیش‌فرض token bootstrap،‏ ۲۴ ساعت است؛‏ پس دستور join چاپ‌شده هنگام init،‏ فردا دیگر کار نمی‌کند (راه ساده: <code>kubeadm token create --print-join-command</code>). hash مربوط به CA تا وقتی CA عوض نشود ثابت است و به Node در حال پیوستن اجازه می‌دهد مطمئن شود با API server واقعی ارتباط برقرار می‌کند،‏ نه یک مهاجم؛‏ این کار جلوی حمله‌ی man-in-the-middle را می‌گیرد.</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا بعداً قابل تبدیل نیست؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا بعداً قابل تبدیل نیست؟</b>
+  <p>آدرس endpoint در سه جا «حک» می‌شود: (۱) در SAN certificate <code>apiserver.crt</code>؛‏ (۲) در فیلد <code>server:</code> همه‌ی kubeconfigها (<code>admin.conf</code>،‏ <code>kubelet.conf</code> روی همه‌ی Nodeها،‏ <code>controller-manager.conf</code>،‏ <code>scheduler.conf</code>)؛‏ و (۳) در ConfigMapهای <code>kubeadm-config</code> و <code>cluster-info</code> (در namespace <code>kube-public</code>) که Nodeهای جدید هنگام join از آن استفاده می‌کنند. اگر init با IP خود cp1 انجام شده باشد،‏ همه‌ی Nodeها مستقیم به cp1 وصل‌اند و با خرابی آن کل cluster از کار می‌افتد. با یک نام DNS (حتی اگر امروز به IP همان cp1 اشاره کند) کافی است فردا رکورد DNS را به load balancer عوض کنید. <b>درس مصاحبه‌ای:</b> «همیشه از روز اول با <code>--control-plane-endpoint</code> و یک نام DNS init کنید،‏ حتی برای cluster تک‌Node.»</p>
+  <div class="code"><div class="lbl"><span>بررسی endpoint فعلی</span><button type="button">کپی</button></div><pre class="sh">kubectl -n kube-system get cm kubeadm-config -o jsonpath='{.data.ClusterConfiguration}' | grep controlPlaneEndpoint
+sudo openssl x509 -in /etc/kubernetes/pki/apiserver.crt -noout -ext subjectAltName
+</pre></div></div>
+  </details>
 
   <h3 id="ch13-b-pod-network">نصب Pod network add-on <small>(Installing a Pod network add-on)</small></h3>
   <div class="warn"><b>هشدار</b><p>این بخش اطلاعات مهمی درباره‌ی شبکه و ترتیب deployment دارد؛‏ پیش از ادامه،‏ همه‌ی توصیه‌ها را با دقت بخوانید.</p>
@@ -1126,7 +1169,10 @@ NAME   STATUS   ROLES           AGE   VERSION
 cp1    Ready    control-plane   1d    v1.37.0
 w1     Ready    worker          1d    v1.37.0
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا این محدودیت؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا این محدودیت؟</b><p>اگر kubelet می‌توانست هر labelی به Node خودش بزند،‏ یک Node آلوده می‌توانست خودش را <code>node-role.kubernetes.io/control-plane</code> یا Node «مجاز برای داده‌ی حساس» معرفی کند و workloadهای حساسی را که با nodeSelector آن label را هدف گرفته‌اند جذب کند. NodeRestriction تضمین می‌کند labelهایی که در تصمیم‌های امنیتی استفاده می‌شوند فقط توسط مدیر تنظیم شوند (پیشوند <code>node-restriction.kubernetes.io/</code> دقیقاً برای همین رزرو شده؛‏ فصل ۱۴).</p></div>
+  </details>
 
   <h3 id="ch13-b-cp-isolation">جداسازی Node control plane</h3>
   <p>cluster به دلایل امنیتی به‌طور پیش‌فرض Pod روی Nodeهای control plane schedule نمی‌کند. اگر می‌خواهید این کار ممکن باشد (مثلاً در cluster تک‌ماشینی)،‏ اجرا کنید:</p>
@@ -1201,6 +1247,9 @@ kubectl --kubeconfig ./admin.conf proxy
   <p>برای شروع دوباره،‏ <code>kubeadm init</code> یا <code>kubeadm join</code> را با آرگومان‌های مناسب اجرا کنید.</p>
   <h4>پاک‌سازی control plane</h4>
   <p>با <code>kubeadm reset</code> روی host control plane می‌توانید پاک‌سازی با بهترین تلاش (best-effort) انجام دهید؛‏ جزئیات گزینه‌هایش در مرجع <code>kubeadm reset</code> است.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">بعد از kubeadm reset چه چیزهایی باقی می‌ماند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: بعد از kubeadm reset چه چیزهایی باقی می‌ماند؟</b>
   <p><code>kubeadm reset</code> پوشه‌های <code>/etc/kubernetes/manifests</code>،‏ <code>/etc/kubernetes/pki</code>،‏ <code>/var/lib/kubelet</code> و (در control plane با etcd داخلی) <code>/var/lib/etcd</code> را پاک می‌کند،‏ اما این‌ها می‌مانند و در init بعدی دردسر می‌سازند: <code>/etc/cni/net.d</code> (پیکربندی CNI قبلی؛‏ خود reset در خروجی‌اش به آن اشاره می‌کند)،‏ interfaceهای مجازی CNI (مثل <code>cni0</code>،‏ <code>flannel.1</code>،‏ <code>vxlan.calico</code>)،‏ قوانین iptables/IPVS،‏ و <code>$HOME/.kube/config</code> قدیمی که به CA قبلی اشاره می‌کند (منبع رایج خطای <code>x509: certificate signed by unknown authority</code> بعد از init دوباره).</p>
   <div class="code"><div class="lbl"><span>پاک‌سازی کامل برای lab</span><button type="button">کپی</button></div><pre class="sh">sudo kubeadm reset -f
@@ -1208,6 +1257,7 @@ sudo rm -rf /etc/cni/net.d $HOME/.kube/config
 sudo iptables -F &amp;&amp; sudo iptables -t nat -F &amp;&amp; sudo iptables -t mangle -F &amp;&amp; sudo iptables -X
 sudo ipvsadm -C 2&gt;/dev/null || true
 </pre></div></div>
+  </details>
   <h3 id="ch13-b-version-skew">version skew policy در kubeadm <small>(Version skew policy)</small></h3>
   <p>kubeadm تا حدی اجازه می‌دهد نسخه‌ی خودش با نسخه‌ی اجزایی که مدیریت می‌کند فرق داشته باشد (به این اختلاف «version skew» می‌گویند). با این حال توصیه‌ی رسمی این است که نسخه‌ی kubeadm را با نسخه‌ی اجزای control plane،‏ kube-proxy و kubelet یکسان نگه دارید. سه قاعده را باید بشناسید:</p>
   <h4>۱. kubeadm در برابر نسخه‌ی کوبرنتیز</h4>
@@ -1226,6 +1276,8 @@ sudo ipvsadm -C 2&gt;/dev/null || true
   
   <figure><div class="plate"><svg viewBox="0 0 760 300" width="760" height="300" role="img" aria-label="اختلاف نسخه‌ی مجاز اجزا نسبت به kube-apiserver نسخه‌ی v1.37" style="max-width:100%;height:auto;display:block"><line x1="70" y1="34" x2="70" y2="254" stroke="#c9d3e6" stroke-width="1"></line><text x="70" y="274" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">v1.33</text><line x1="144" y1="34" x2="144" y2="254" stroke="#c9d3e6" stroke-width="1"></line><text x="144" y="274" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">v1.34</text><line x1="218" y1="34" x2="218" y2="254" stroke="#c9d3e6" stroke-width="1"></line><text x="218" y="274" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">v1.35</text><line x1="292" y1="34" x2="292" y2="254" stroke="#c9d3e6" stroke-width="1"></line><text x="292" y="274" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">v1.36</text><line x1="366" y1="34" x2="366" y2="254" stroke="#c9d3e6" stroke-width="1"></line><text x="366" y="274" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">v1.37</text><line x1="440" y1="34" x2="440" y2="254" stroke="#c9d3e6" stroke-width="1"></line><text x="440" y="274" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">v1.38</text><rect x="338" y="30" width="56" height="228" fill="#326ce5" fill-opacity="0.08" stroke="#326ce5" stroke-width="1.2" rx="6"></rect><text x="366" y="22" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="700" fill="#326ce5" direction="ltr" text-anchor="middle">kube-apiserver</text><rect x="268" y="46" width="196" height="34" rx="7" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="752" y="61" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#326ce5" direction="rtl" text-anchor="start">نسخه‌ی kubectl</text><text x="752" y="78" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">یک minor جلوتر یا عقب‌تر</text><rect x="120" y="98" width="270" height="34" rx="7" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="752" y="113" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">نسخه‌ی kubelet و kube-proxy</text><text x="752" y="130" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">تا سه minor عقب‌تر؛‏ هرگز جلوتر</text><rect x="268" y="150" width="122" height="34" rx="7" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"></rect><text x="752" y="165" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b26b00" direction="rtl" text-anchor="start">اجزای control plane با kubeadm v1.37</text><text x="752" y="182" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">هم‌نسخه یا یک minor قدیمی‌تر</text><rect x="342" y="202" width="48" height="34" rx="7" fill="#fbe5e3" stroke="#b83227" stroke-width="1.5"></rect><text x="752" y="217" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b83227" direction="rtl" text-anchor="start">نسخه‌ی kubeadm برای join</text><text x="752" y="234" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">دقیقاً نسخه‌ی آخرین init یا upgrade</text></svg></div><figcaption><b>شکل ۱۳-۲.</b> <span style="flex:1 1 0;min-width:0">اختلاف نسخه‌ی مجاز اجزا در clusterی که kube-apiserver آن v1.37 است؛‏ kubelet هرگز از kube-apiserver جلوتر نیست و برای همین در ارتقا اول control plane ارتقا می‌یابد.</span></figcaption></figure>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جدول خلاصه‌ی اختلاف نسخه برای kubeadm 1.37</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جدول خلاصه‌ی اختلاف نسخه برای kubeadm 1.37</b>
   <div class="tbl"><table><thead><tr><th>جزء</th><th>نسخه‌های مجاز</th><th>پیامد عملی</th></tr></thead><tbody>
   <tr><td>control plane و kube-proxy (<code>kubernetesVersion</code>)</td><td>1.37،‏ 1.36</td><td>با kubeadm 1.37 هنوز می‌توانید cluster 1.36 بسازید</td></tr>
@@ -1239,6 +1291,7 @@ kubelet --version
 kubectl version
 kubectl get nodes -o custom-columns=NAME:.metadata.name,KUBELET:.status.nodeInfo.kubeletVersion
 </pre></div></div>
+  </details>
 
   <h3 id="ch13-b-limitations">محدودیت‌های cluster با یک control plane <small>(Limitations)</small></h3>
   <h4>تاب‌آوری cluster <small>(Cluster resilience)</small></h4>
@@ -1290,6 +1343,9 @@ sudo ls -lh /var/lib/etcd/
   <p>عیب: دو برابر host لازم دارد؛‏ دست‌کم سه host برای control plane و سه host برای etcd.</p>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/c4155463dc.svg" alt="سه Node control plane جدا از سه Node etcd؛ هر Node control plane با هر سه host etcd ارتباط دارد"></div><figcaption><b>شکل ۱۳-۴.</b> توپولوژی etcd بیرونی: control plane و اعضای etcd روی Nodeهای جدا اجرا می‌شوند و هر Node control plane به همه‌ی hostهای etcd وصل است. منبع: <span class="en">setup/production-environment/tools/kubeadm/ha-topology</span></figcaption></figure>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام توپولوژی را انتخاب کنیم؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کدام توپولوژی را انتخاب کنیم؟</b>
   <div class="tbl"><table><thead><tr><th>معیار</th><th>etcd انباشته</th><th>etcd بیرونی</th></tr></thead><tbody>
   <tr><td>تعداد host لازم</td><td>دست‌کم ۳</td><td>دست‌کم ۶ (۳ control plane + ۳ etcd)</td></tr>
@@ -1298,6 +1354,7 @@ sudo ls -lh /var/lib/etcd/
   <tr><td>مناسب برای</td><td>بیشتر production clusterهای on-premises</td><td>نیاز شدید به جداسازی،‏ clusterهای خیلی بزرگ،‏ یا وقتی تیم جداگانه etcd را اداره می‌کند</td></tr>
   </tbody></table></div>
   <p>چرا دست‌کم سه عضو؟ etcd بر پایه‌ی الگوریتم اجماع Raft کار می‌کند و برای هر نوشتن به تأیید اکثریت اعضا (quorum = ⌊n/2⌋+1) نیاز دارد. با ۳ عضو،‏ quorum برابر ۲ است و cluster خرابی ۱ عضو را تحمل می‌کند؛‏ با ۵ عضو،‏ خرابی ۲ عضو. تعداد زوج کمکی نمی‌کند: ۴ عضو هم فقط خرابی ۱ عضو را تحمل می‌کند (quorum=۳) ولی هزینه و تأخیر بیشتری دارد. برای همین تعداد اعضا را فرد انتخاب می‌کنند.</p></div>
+  </details>
   <h3 id="ch13-b-high-availability">ساخت cluster با دسترس‌پذیری بالا با kubeadm <small>(Creating Highly Available clusters with kubeadm)</small></h3>
   <p>این بخش دو روش برای ساخت cluster HA با kubeadm را قدم‌به‌قدم نشان می‌دهد:</p>
   <ul>
@@ -1604,8 +1661,12 @@ ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELE
   <tr><td><code>cri-tools</code></td><td>binary <code>/usr/bin/crictl</code> را از <a href="https://github.com/kubernetes-sigs/cri-tools">repository cri-tools</a> نصب می‌کند.</td></tr>
   <tr><td><code>kubernetes-cni</code></td><td>pluginهای پایه‌ی CNI را در <code>/opt/cni/bin</code> از <a href="https://github.com/containernetworking/plugins">repository plugins</a> نصب می‌کند.</td></tr>
   </tbody></table></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا kubeadm و kubelet چرخه‌ی عمر جدا دارند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا kubeadm و kubelet چرخه‌ی عمر جدا دارند؟</b>
   <p>kubeadm ابزاری «یک‌باره» است: اجرا می‌شود،‏ فایل‌ها و منابع را می‌سازد و تمام می‌شود. kubelet اما باید دائماً و مستقل از kubeadm کار کند،‏ حتی اگر kubeadm روی ماشین نباشد. برای همین kubeadm فقط فایل‌هایی مثل <code>config.yaml</code>،‏ <code>kubeadm-flags.env</code> و kubeconfigها را می‌نویسد و از systemd می‌خواهد kubelet را دوباره بارگذاری کند. نتیجه‌ی عملی در ارتقا: <code>kubeadm upgrade</code> binary kubelet را عوض نمی‌کند؛‏ بعد از آن باید بسته‌ی kubelet را با مدیر بسته ارتقا دهید و kubelet را restart کنید. اگر kubelet را با سیستم init دیگری مدیریت می‌کنید،‏ معادل همین reload را باید خودتان انجام دهید.</p></div>
+  </details>
   <h3 id="ch13-b-control-plane-flags">سفارشی‌سازی اجزا با API پیکربندی kubeadm <small>(Customizing components with the kubeadm API)</small></h3>
   <p>این بخش نشان می‌دهد اجزایی را که kubeadm deploy می‌کند چطور سفارشی کنید:</p>
   <ul>
@@ -1772,17 +1833,6 @@ apiServer:
   <li>اگر فکر می‌کنید باگ kubeadm است،‏ در <a href="https://github.com/kubernetes/kubeadm/issues">issueهای پروژه‌ی kubeadm</a> جست‌وجو کنید و اگر چیزی نبود،‏ طبق قالب،‏ <a href="https://github.com/kubernetes/kubeadm/issues/new">یک issue جدید</a> باز کنید.</li>
   <li>اگر درباره‌ی نحوه‌ی کار kubeadm مطمئن نیستید،‏ در <a href="https://slack.k8s.io/">Slack</a> کانال <code>#kubeadm</code> یا در <a href="https://stackoverflow.com/questions/tagged/kubernetes">StackOverflow</a> با labelهای <code>kubernetes</code> و <code>kubeadm</code> بپرسید.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: جعبه‌ابزار اول عیب‌یابی روی یک Node</b>
-  <p>بیشتر مشکلات kubeadm با این چند دستور پیدا می‌شوند. چون از 1.24 به بعد dockershim حذف شده،‏ به‌جای <code>docker ps</code> از <code>crictl</code> استفاده کنید:</p>
-  <div class="code"><div class="lbl"><span>بررسی اولیه‌ی Node</span><button type="button">کپی</button></div><pre class="sh">systemctl status kubelet
-journalctl -xeu kubelet --no-pager | tail -50       # why is the kubelet not running?
-sudo crictl ps -a                                     # control plane containers, including exited ones
-sudo crictl logs &lt;CONTAINER_ID&gt;                      # logs of a crashed container
-ls /etc/kubernetes/manifests/                         # static Pods the kubelet should run
-sudo kubeadm init --dry-run                           # show what kubeadm would do without applying it
-</pre></div>
-  <p>بخشی از موارد زیر (مثل خطاهای مربوط به نسخه‌های 1.17،‏ 1.18 و 1.28 یا Docker قدیمی روی CentOS 7) در خود مستندات هم مانده‌اند ولی امروز بیشتر جنبه‌ی تاریخی دارند؛‏ آن‌ها با label «قدیمی» مشخص شده‌اند.</p></div>
-
   <h4>ناتوانی در پیوستن Node نسخه‌ی 1.18 به cluster 1.17 به‌خاطر نبود RBAC <small>(قدیمی)</small></h4>
   <p>در 1.18،‏ kubeadm جلوی پیوستن Nodeی را می‌گیرد که Nodeی با همان نام از قبل در cluster دارد. برای این کار کاربر bootstrap-token باید بتواند شیء Node را GET کند و این نیازمند یک قاعده‌ی RBAC جدید بود. در نتیجه <code>kubeadm join</code> نسخه‌ی 1.18 نمی‌توانست به clusterی که با kubeadm 1.17 ساخته شده بپیوندد. دو راه‌حل:</p>
   <ul>
@@ -2087,8 +2137,22 @@ index d807ccbe0aa..46b35f00e15 100644
   </ul>
   <p>جزئیات در <a href="https://github.com/kubernetes/kubeadm/issues/2927">issue ردیابی</a> این باگ.</p>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">جعبه‌ابزار اول عیب‌یابی روی یک Node · چرا این‌قدر مشکل به container runtime،‏ cgroup و SELinux مربوط است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: جعبه‌ابزار اول عیب‌یابی روی یک Node</b>
+  <p>بیشتر مشکلات kubeadm با این چند دستور پیدا می‌شوند. چون از 1.24 به بعد dockershim حذف شده،‏ به‌جای <code>docker ps</code> از <code>crictl</code> استفاده کنید:</p>
+  <div class="code"><div class="lbl"><span>بررسی اولیه‌ی Node</span><button type="button">کپی</button></div><pre class="sh">systemctl status kubelet
+journalctl -xeu kubelet --no-pager | tail -50       # why is the kubelet not running?
+sudo crictl ps -a                                     # control plane containers, including exited ones
+sudo crictl logs &lt;CONTAINER_ID&gt;                      # logs of a crashed container
+ls /etc/kubernetes/manifests/                         # static Pods the kubelet should run
+sudo kubeadm init --dry-run                           # show what kubeadm would do without applying it
+</pre></div>
+  <p>بخشی از موارد زیر (مثل خطاهای مربوط به نسخه‌های 1.17،‏ 1.18 و 1.28 یا Docker قدیمی روی CentOS 7) در خود مستندات هم مانده‌اند ولی امروز بیشتر جنبه‌ی تاریخی دارند؛‏ آن‌ها با label «قدیمی» مشخص شده‌اند.</p></div>
   <div class="deep"><b>توضیح تکمیلی: چرا این‌قدر مشکل به container runtime،‏ cgroup و SELinux مربوط است؟</b>
   <p>بسیاری از موارد این بخش نشان می‌دهند kubeadm و kubelet به رفتار container runtime وابسته‌اند: مدیریت cgroupها،‏ اجرای exec داخل containerها و اعمال سیاست‌های امنیتی kernel (SELinux و AppArmor). به همین دلیل مستندات این‌قدر روی هماهنگی نسخه‌ها و cgroup driver بین runtime و kubelet تأکید دارد. در عمل،‏ بیشتر «مشکلات مرموز» یا نسخه‌ی قدیمی runtime هستند،‏ یا ناهماهنگی پیکربندی بین آن و kubelet،‏ یا پیش‌نیازهای برآورده‌نشده‌ی Node (swap روشن،‏ ماژول <code>br_netfilter</code> یا <code>ip_forward</code> خاموش،‏ firewall روی portهای 6443/10250).</p></div>
+  </details>
   <h3 id="ch13-b-best-practices">بهترین شیوه‌ها <small>(Best practices)</small></h3>
   <p>بخش‌های بعدی شیوه‌های توصیه‌شده برای راه‌اندازی و اجرای کوبرنتیز در production را جمع می‌کنند: مدیریت certificateها،‏ اجرای clusterهای بزرگ،‏ پخش کردن cluster در چند zone،‏ آزمون سازگاری یک Node با نیازهای کوبرنتیز. (اعمال Pod Security Standards در فصل ۱۴ آمده است.)</p>
 
@@ -2254,8 +2318,12 @@ KUBECONFIG=&lt;filename&gt; kubectl config use-context default-system
 /etc/kubernetes/controller-manager.conf
 /etc/kubernetes/scheduler.conf
 </pre></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا دو فایل مدیر جداگانه؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا دو فایل مدیر جداگانه؟</b>
   <p>این یک اقدام امنیتی لایه‌لایه (defense in depth) است. هویت <code>admin.conf</code> از مسیر RBAC دسترسی می‌گیرد؛‏ پس اگر این فایل (که روی همه‌ی Nodeهای control plane هست) لو برود،‏ می‌توان با حذف یا تغییر ClusterRoleBinding <code>kubeadm:cluster-admins</code> دسترسی‌اش را محدود یا لغو کرد. اما عضویت در <code>system:masters</code> پیش از RBAC بررسی می‌شود و هیچ سیاست RBACی نمی‌تواند آن را محدود کند؛‏ تنها راه لغو،‏ عوض کردن CA یا منتظر ماندن تا انقضای certificate است. برای همین <code>super-admin.conf</code> فقط روی یک Node ساخته می‌شود و بهتر است آن را از Node بیرون ببرید و در مکانی امن نگه دارید.</p></div>
+  </details>
   <h3 id="ch13-b-cluster-large">ملاحظات clusterهای بزرگ <small>(Considerations for large clusters)</small></h3>
   <p>cluster مجموعه‌ای از Nodeها (ماشین فیزیکی یا مجازی) است که agentهای کوبرنتیز (مثل kubelet و kube-proxy) را اجرا می‌کنند و control plane مدیریتشان می‌کند. Kubernetes v1.37 از clusterهایی تا ۵٬۰۰۰ Node پشتیبانی می‌کند. دقیق‌تر بگوییم،‏ کوبرنتیز برای پیکربندی‌هایی طراحی شده که <i>همه‌ی</i> این شرط‌ها را با هم داشته باشند:</p>
   <ul>
@@ -2423,8 +2491,8 @@ cat $LOG_DIR/junit_01.xml | grep -c 'failures="0"'
 
   
 
-  <div id="ch13-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۳،‏ بخش دوم <small>۱۶ تمرین</small></div>
+  <details id="ch13-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۳،‏ بخش دوم <small>۱۶ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>تفاوت اصلی توپولوژی etcd انباشته و etcd بیرونی چیست؟ چرا در حالت انباشته دست‌کم سه Node control plane توصیه می‌شود و نه دو؟
         <details class="ans"><summary>پاسخ</summary><p>در حالت انباشته،‏ هر Node control plane هم اجزای control plane و هم یک عضو etcd محلی را اجرا می‌کند؛‏ در حالت بیرونی این دو روی hostهای جدا هستند (دست‌کم ۶ host به‌جای ۳). با دو Node انباشته،‏ quorum برابر ۲ است؛‏ اگر یکی از دست برود،‏ یک عضو می‌ماند که کمتر از quorum است و etcd دیگر نوشتن را نمی‌پذیرد. پس دو عضو هیچ تحمل خطایی ندارند و حتی از یک عضو شکننده‌ترند (خرابی هر کدام از دو ماشین etcd را از کار می‌اندازد). با سه عضو،‏ از دست رفتن یکی هنوز quorum (۲ از ۳) را نگه می‌دارد.</p></details></li>
@@ -2520,14 +2588,14 @@ patches:
       <li><span class="lvl l3">سناریوی عملیاتی</span>بعد از نصب یک CNI جدید،‏ Podهای CoreDNS در <code>CrashLoopBackOff</code> هستند و در log آن‌ها پیام loop detection دیده می‌شود. کسی پیشنهاد کرده <code>allowPrivilegeEscalation: true</code> را روی Deployment coredns بگذارید. آیا این کار درست است؟
         <details class="ans"><summary>پاسخ</summary><p>خیر. مستندات صریحاً هشدار می‌دهد گذاشتن <code>allowPrivilegeEscalation: true</code> (یا خاموش کردن SELinux) امنیت را کم می‌کند،‏ و این راه‌حل اصلاً برای مشکل دیگری بود: Docker قدیمی همراه با SELinux. پیام «loop» یعنی CoreDNS تشخیص داده درخواست‌هایی که به upstream می‌فرستد به خودش برمی‌گردد و عمداً خارج می‌شود. علت رایج: <code>/etc/resolv.conf</code> روی host به resolver محلی <code>‎127.0.0.53‎</code> (systemd-resolved) اشاره می‌کند؛‏ CoreDNS با <code>forward . /etc/resolv.conf</code> به آن آدرس می‌فرستد که داخل Pod یعنی خود CoreDNS. رفع درست: kubelet را با <code>resolvConf: /run/systemd/resolve/resolv.conf</code> تنظیم کنید (یا در Corefile مقصد <code>forward</code> را یک DNS واقعی بگذارید) و Podهای CoreDNS را restart کنید. تغییر سطح امنیتی Pod ربطی به این مشکل ندارد.</p></details></li>
     </ol>
-  </div>
+  </details>
 
   
   <h3 id="ch13-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این فصل،‏ حالا</b><p>cluster production فروشگاه حالا الزام‌های فهرست را دارد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>خرابی یک Node نباید فروشگاه را متوقف کند</td><td>سه Node برای control plane با etcd از نوع stacked و یک load balancer جلوی API serverها؛‏ quorum با دو عضو از سه</td><td><a href="#ch13-b-ha-topology">توپولوژی HA</a> و <a href="#ch13-b-high-availability">ساخت cluster با HA</a></td></tr><tr><td>backup آزموده از etcd</td><td>گرفتن snapshot با <code>etcdctl snapshot save</code> و انتقال فوری به بیرون Node همراه پوشه‌ی pki؛‏ بازیابی با <code>etcdutl</code></td><td><a href="#ch13-b-limitations">محدودیت‌های تک control plane</a></td></tr><tr><td>certificateهای یک‌ساله</td><td>بررسی با <code>kubeadm certs check-expiration</code>؛‏ ارتقا با kubeadm خودش renew می‌کند و در غیر این صورت <code>kubeadm certs renew</code></td><td><a href="#ch13-b-certificates">certificateهای PKI</a></td></tr><tr><td>ارتقای منظم بدون قطعی</td><td>هر بار یک نسخه‌ی minor؛‏ اول control plane و بعد Nodeها با drain؛‏ با رعایت version skew</td><td><a href="#ch13-b-version-skew">version skew</a></td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> هر کس kubeconfig مدیر را داشته باشد،‏ هر کاری می‌تواند بکند (فصل ۱۴).</p><p><b>فصل بعد:</b> دسترسی‌ها،‏ ممیزی و امنیت Podها.</p></div>
 
-  <div id="ch13-ex3" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۳ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch13-ex3" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۳ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>اختلاف نسخه‌ی مجاز kubectl با kube-apiserver چقدر است؟ و kubelet با kube-apiserver؟
         <details class="ans"><summary>پاسخ</summary>
@@ -2613,7 +2681,7 @@ patches:
           <p>پیش‌فرض <code>maxSurge=25%</code> (رو به بالا گرد می‌شود: ۳) و <code>maxUnavailable=25%</code> (رو به پایین گرد می‌شود: ۲) است؛‏ پس حداکثر ۱۳ Pod در کل و حداقل ۸ Pod آماده. اگر image جدید خراب باشد،‏ Podهای جدید آماده نمی‌شوند و rollout متوقف می‌ماند؛‏ Podهای قدیمی بیشتر از حد maxUnavailable کم نمی‌شوند،‏ پس سرویس با ظرفیت کمتر ادامه می‌دهد. بعد از <code>progressDeadlineSeconds</code> (پیش‌فرض ۶۰۰ ثانیه) شرط <code>Progressing=False</code> با دلیل <code>ProgressDeadlineExceeded</code> ثبت می‌شود،‏ ولی کوبرنتیز خودکار rollback نمی‌کند؛‏ باید <code>kubectl rollout undo</code> بزنید یا ابزار CD این کار را بکند.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch13-recap">
     <div class="recap-h">خلاصه‌ی فصل ۱۳ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

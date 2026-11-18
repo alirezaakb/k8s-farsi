@@ -2,12 +2,29 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import book, { SITE_NAME } from '../book.js';
 import ContentView from './ContentView.jsx';
+import { chapterTotal, fa, isRead, lastPlace, readCount, setLast, setSections, toggleRead, useProgress } from '../lib/progress.js';
 
 const headingText = (h) => {
   const c = h.cloneNode(true);
   c.querySelectorAll('small').forEach((s) => s.remove());
   return (c.textContent.trim() || h.textContent.trim()).replace(/\s+/g, ' ');
 };
+
+/** Minutes for the main path of one section: its text, code and lab steps, without folded notes and exercises. */
+function sectionMinutes(h3) {
+  let words = 0;
+  let code = 0;
+  let steps = 0;
+  for (let n = h3.nextElementSibling; n && n.tagName !== 'H3'; n = n.nextElementSibling) {
+    if (n.matches('details.more, details.ex')) continue;
+    const c = n.cloneNode(true);
+    c.querySelectorAll('details.more, details.ex, svg, script, style').forEach((x) => x.remove());
+    c.querySelectorAll('pre').forEach((p) => { code += (p.textContent.match(/\n/g) || []).length + 1; p.remove(); });
+    words += (c.textContent.match(/\S+/g) || []).length;
+    steps += n.matches('h4.step') ? 1 : n.querySelectorAll('h4.step').length;
+  }
+  return Math.max(1, Math.round(words / 120 + code * 0.06 + steps * 5));
+}
 
 export function Footer() {
   return (
@@ -36,6 +53,7 @@ function WithPart({ part, children }) {
 
 /** All chapters, grouped by part; the open one is marked. */
 function ChapterNav({ current }) {
+  useProgress();
   useEffect(() => {
     const toc = document.querySelector('nav.toc');
     const cur = toc?.querySelector('li.cur > a');
@@ -53,6 +71,9 @@ function ChapterNav({ current }) {
               <li className={here ? 'cur' : undefined}>
                 <Link to={'/' + c.id} aria-current={here ? 'page' : undefined}>
                   <span className="n">{c.n}</span><span>{c.title}</span>
+                  {readCount(c.id) > 0 && chapterTotal(c.id) > 0 && (
+                    <em className="prog" title="بخش‌های خوانده‌شده">{fa(Math.min(100, Math.round((100 * readCount(c.id)) / chapterTotal(c.id))))}٪</em>
+                  )}
                 </Link>
               </li>
             </WithPart>
@@ -66,8 +87,34 @@ function ChapterNav({ current }) {
   );
 }
 
+/** One line per section: a mark for "read", the title, and the minutes the main path takes. */
+function SectionList({ chapter, outline }) {
+  useProgress();
+  return (
+    <ol>
+      {outline.map((o) => {
+        const read = isRead(chapter.id, o.id);
+        return (
+          <li key={o.id} className={read ? 'read' : undefined}>
+            <button type="button" className="chk" aria-pressed={read} aria-label={`خوانده شد: ${o.text}`} title="علامت‌گذاری به‌عنوان خوانده‌شده"
+              onClick={() => toggleRead(chapter.id, o.id)} />
+            <Link to={{ hash: '#' + o.id }} data-id={o.id}>{o.text}<small>{fa(o.min)} دقیقه</small></Link>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function OutlineSummary({ chapter, outline }) {
+  useProgress();
+  const minutes = outline.reduce((s, o) => s + o.min, 0);
+  const done = outline.filter((o) => isRead(chapter.id, o.id)).length;
+  return <p className="outline-sum">مسیر اصلی حدود {fa(minutes)} دقیقه · {fa(done)} از {fa(outline.length)} بخش خوانده شد</p>;
+}
+
 /** The sections of the open chapter; the one being read is marked. */
-function Outline({ outline }) {
+function Outline({ chapter, outline }) {
   useEffect(() => {
     const box = document.querySelector('nav.outline');
     if (!box) return undefined;
@@ -85,6 +132,7 @@ function Outline({ outline }) {
       for (const h of heads) { if (h.getBoundingClientRect().top <= line) now = h; else break; }
       const a = now ? links[now.id] : null;
       if (a === active) return;
+      if (now) setLast(chapter.id, now.id, headingText(now));
       active?.classList.remove('on');
       active = a;
       if (!a) return;
@@ -98,22 +146,19 @@ function Outline({ outline }) {
     window.addEventListener('scroll', onScroll, { passive: true });
     spy();
     return () => window.removeEventListener('scroll', onScroll);
-  }, [outline]);
+  }, [outline, chapter]);
 
   if (!outline.length) return <div className="outline-slot" />;
   return (
     <nav className="outline" aria-label="در این فصل">
       <h2>در این فصل</h2>
-      <ol>
-        {outline.map((o) => (
-          <li key={o.id}><Link to={{ hash: '#' + o.id }} data-id={o.id}>{o.text}</Link></li>
-        ))}
-      </ol>
+      <OutlineSummary chapter={chapter} outline={outline} />
+      <SectionList chapter={chapter} outline={outline} />
     </nav>
   );
 }
 
-function MobileToc({ current }) {
+function MobileToc({ current, chapter, outline }) {
   return (
     <nav aria-label="فهرست فصل‌ها" className="toc-mobile-nav"><details className="toc-mobile">
       <summary>فهرست فصل‌ها</summary>
@@ -128,7 +173,15 @@ function MobileToc({ current }) {
         ))}
         <li><Link to="/sources">منابع</Link></li>
       </ol>
-    </details></nav>
+    </details>
+    {chapter && outline.length > 0 && (
+      <details className="toc-mobile">
+        <summary>بخش‌های این فصل</summary>
+        <OutlineSummary chapter={chapter} outline={outline} />
+        <SectionList chapter={chapter} outline={outline} />
+      </details>
+    )}
+    </nav>
   );
 }
 
@@ -164,7 +217,10 @@ function Pager({ chapter }) {
 export function Shell({ page, chapter }) {
   const [outline, setOutline] = useState([]);
   const onLoaded = useCallback((el) => {
-    setOutline([...el.querySelectorAll('h3[id]')].map((h) => ({ id: h.id, text: headingText(h) })));
+    const list = [...el.querySelectorAll('h3[id]')].map((h) => ({ id: h.id, text: headingText(h), min: sectionMinutes(h) }));
+    setOutline(list);
+    const sec = el.querySelector('section.ch');
+    if (sec) setSections(sec.id, list.map((o) => o.id));
   }, []);
 
   useEffect(() => {
@@ -179,14 +235,27 @@ export function Shell({ page, chapter }) {
       <div className={chapter ? 'shell' : 'shell no-outline'}>
         <ChapterNav current={page} />
         <main id="main" tabIndex={-1}>
-          <MobileToc current={page} />
+          <MobileToc current={page} chapter={chapter} outline={outline} />
           <ContentView page={page} onLoaded={onLoaded} />
           {chapter && <Pager chapter={chapter} />}
         </main>
-        {chapter && <Outline outline={outline} />}
+        {chapter && <Outline chapter={chapter} outline={outline} />}
       </div>
       <Footer />
     </>
+  );
+}
+
+/** Link back to the section the reader was in last. */
+function ResumeBar() {
+  useProgress();
+  const l = lastPlace();
+  const c = l && book.chapters.find((x) => x.id === l.ch);
+  if (!c) return null;
+  return (
+    <div className="resume">
+      <Link to={{ pathname: '/' + c.id, hash: '#' + l.id }}>ادامه از جایی که بودید: فصل {c.n}، {l.text}</Link>
+    </div>
   );
 }
 
@@ -198,6 +267,7 @@ export function Home() {
   }, []);
   return (
     <>
+      <ResumeBar />
       <div id="main" tabIndex={-1}><ContentView page="home" /></div>
       <Footer />
     </>

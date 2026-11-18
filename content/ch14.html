@@ -49,6 +49,9 @@
   <p>policyهای امنیتی را می‌توانید با سازوکارهای خود کوبرنتیز تعریف کنید؛‏ مثل NetworkPolicy (کنترل declarative روی فیلتر کردن بسته‌های شبکه) یا ValidatingAdmissionPolicy (محدودیت‌های declarative روی تغییراتی که هر کس می‌تواند از راه Kubernetes API بدهد).</p>
   <p>به پیاده‌سازی‌های policy در اکوسیستم کوبرنتیز هم می‌توانید تکیه کنید. کوبرنتیز سازوکارهای extension دارد تا این پروژه‌ها کنترل‌های policy خودشان را روی بازبینی source code،‏ تأیید container image،‏ کنترل دسترسی به API،‏ شبکه و موارد دیگر پیاده کنند.</p>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا امنیت در کوبرنتیز یک لایه نیست و یک زنجیره است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا امنیت در کوبرنتیز یک لایه نیست و یک زنجیره است؟</b>
     <p>یک برداشت اشتباه رایج این است که «یک تنظیم» یا «یک ابزار» cluster را امن می‌کند. در واقع امنیت کوبرنتیز از چند لایه‌ی مستقل و مکمل ساخته شده که هر کدام نوع متفاوتی از تهدید را پوشش می‌دهد:</p>
     <div class="tbl"><table><thead><tr><th>لایه</th><th>سؤالی که پاسخ می‌دهد</th><th>سازوکار در کوبرنتیز</th></tr></thead><tbody>
@@ -62,6 +65,7 @@
     </tbody></table></div>
     <p>چهار لایه‌ی اول روی هر درخواست API به ترتیب اجرا می‌شوند: درخواست اول از TLS می‌گذرد،‏ بعد authenticate می‌شود،‏ بعد authorize می‌شود و بعد از admission control عبور می‌کند؛‏ تنها پس از آن شیء در etcd نوشته می‌شود. دو لایه‌ی workload isolation و network در زمان اجرای container اثر دارند. هیچ لایه‌ای نقص لایه‌ی دیگر را جبران نمی‌کند؛‏ مثلاً اگر anonymous authentication فعال بماند و یک RoleBinding اشتباه به group <code>system:unauthenticated</code> دسترسی بدهد،‏ هر کسی بدون credential به همان منابع دسترسی پیدا می‌کند.</p>
   </div>
+  </details>
   <h3 id="ch14-a-cloud-native">امنیت cloud-native و کوبرنتیز <small>(Cloud Native Security and Kubernetes)</small></h3>
   <p>کوبرنتیز بر پایه‌ی معماری cloud-native ساخته شده و از توصیه‌های CNCF درباره‌ی good practiceهای امنیت اطلاعات پیروی می‌کند. white paper مربوط به CNCF درباره‌ی امنیت cloud-native،‏ کنترل‌ها و روش‌های امنیتی مناسب هر <i>مرحله از چرخه‌ی عمر</i> (lifecycle phase) نرم‌افزار را تعریف می‌کند.</p>
 
@@ -142,6 +146,9 @@
   <p>هر جا مناسب است،‏ اقدام‌های امنیتی زیر لایه‌ی کوبرنتیز را هم deploy کنید؛‏ مثل measured boot رمزنگاری‌شده یا توزیع authenticated زمان (که کمک می‌کند درستی زمان در logها و audit recordها تضمین شود).</p>
   <p>در محیط‌هایی که سطح اطمینان بالایی لازم دارند،‏ با حفاظت رمزنگاری مطمئن شوید logها هم دست‌کاری‌ناپذیرند (tamper-proof) و هم محرمانه.</p>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چهار مرحله‌ی چرخه‌ی عمر در یک مثال عملی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چهار مرحله‌ی چرخه‌ی عمر در یک مثال عملی</b>
     <p>فرض کنید تیم پرداخت شاپیفای می‌خواهد یک سرویس پرداخت تازه را روی production cluster اجرا کند:</p>
     <ul>
@@ -152,6 +159,7 @@
     </ul>
     <p>بیشتر این فصل روی دسترسی در مرحله‌ی Runtime (authentication و authorization) و بخش بزرگی از مرحله‌ی Deploy (RBAC و Pod Security) تمرکز دارد،‏ چون بیشترین تنظیمات در دست کاربر کوبرنتیز همین‌جاست.</p>
   </div>
+  </details>
   <h3 id="ch14-a-controlling-access">کنترل دسترسی به Kubernetes API <small>(Controlling Access to the Kubernetes API)</small></h3>
   <p>این بخش نمای کلی کنترل دسترسی به Kubernetes API را نشان می‌دهد.</p>
   <p>کاربران با <code>kubectl</code>،‏ با client libraryها یا با فرستادن درخواست REST به Kubernetes API دسترسی پیدا می‌کنند. هم کاربران انسانی و هم service accountهای کوبرنتیز می‌توانند برای دسترسی به API،‏ authorize شوند. هر درخواست پس از رسیدن به API از چند مرحله می‌گذرد که در شکل زیر آمده است:</p>
@@ -164,41 +172,6 @@
   <p>API server یک certificate ارائه می‌دهد. این certificate ممکن است با یک CA خصوصی امضا شده باشد،‏ یا بر پایه‌ی یک PKI متصل به CA عمومیِ شناخته‌شده باشد. certificate و private key آن با flagهای <code>--tls-cert-file</code> و <code>--tls-private-key-file</code> تنظیم می‌شوند.</p>
   <p>اگر cluster از CA خصوصی استفاده می‌کند،‏ باید کپی certificate همان CA در <code>~/.kube/config</code> روی client پیکربندی شده باشد تا بتوانید به اتصال اعتماد کنید و مطمئن باشید کسی وسط راه آن را intercept نکرده است.</p>
   <p>client هم می‌تواند در همین مرحله یک TLS client certificate ارائه دهد.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: CA certificate در kubeconfig دقیقاً کجاست؟</b>
-    <p>در فایل kubeconfig،‏ بخش <code>clusters</code> مشخص می‌کند client به کدام API server وصل شود و به کدام CA اعتماد کند. فیلد <code>certificate-authority-data</code> (محتوای CA certificate به شکل base64) یا <code>certificate-authority</code> (مسیر فایل) همان «کپی CA certificate» است که مستندات می‌گوید. بخش <code>users</code> هم credential خود client را نگه می‌دارد (مثلاً <code>client-certificate-data</code> و <code>client-key-data</code>) که همان TLS client certificate در مرحله‌ی انتقال است.</p>
-    <div class="code"><div class="lbl"><span>~/.kube/config (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
-kind: Config
-clusters:
-- name: prod
-  cluster:
-    server: https://api.prod.example.com:443
-    certificate-authority-data: LS0tLS1CRUdJTi...   # CA that signed the API server certificate
-users:
-- name: alice
-  user:
-    client-certificate-data: LS0tLS1CRUdJTi...     # TLS client certificate
-    client-key-data: LS0tLS1CRUdJTi...
-contexts:
-- name: alice@prod
-  context:
-    cluster: prod
-    user: alice
-current-context: alice@prod
-</pre></div>
-    <p>در production هرگز از <code>insecure-skip-tls-verify: true</code> استفاده نکنید. این گزینه همان تضمینی را از بین می‌برد که مستندات می‌گوید (اتصال intercept نشده باشد) و راه حمله‌ی man-in-the-middle را باز می‌کند.</p>
-    <p>برای دیدن port و certificateی که API server واقعاً ارائه می‌دهد:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl cluster-info
-# Kubernetes control plane is running at https://127.0.0.1:6443
-openssl s_client -connect 127.0.0.1:6443 -showcerts &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates
-</pre></div>
-    <div class="code"><div class="lbl"><span>output (نمونه در یک cluster kubeadm)</span><button type="button">کپی</button></div><pre class="out">subject=CN = kube-apiserver
-issuer=CN = kubernetes
-notBefore=Sep  1 08:12:03 2026 GMT
-notAfter=Sep  1 08:17:03 2027 GMT
-</pre></div>
-    <p>اختلاف پنج‌دقیقه‌ای بین ساعت <code>notBefore</code> و <code>notAfter</code> عمدی است: kubeadm زمان شروع اعتبار certificate را چند دقیقه عقب می‌برد تا اختلاف ساعت ماشین‌ها مشکل نسازد.</p>
-  </div>
 
   <h4 id="ch14-a-ca-authentication">تشخیص هویت فرستنده‌ی درخواست <small>(Authentication)</small></h4>
   <p>پس از برقراری TLS،‏ درخواست HTTP به مرحله‌ی authentication می‌رود؛‏ مرحله‌ی <b>۱</b> در شکل. script ساخت cluster یا مدیر cluster،‏ API server را طوری پیکربندی می‌کند که یک یا چند authenticator module اجرا کند. authenticatorها در <a href="#ch14-a-authenticating">بخش Authenticating</a> با جزئیات آمده‌اند.</p>
@@ -241,15 +214,6 @@ notAfter=Sep  1 08:17:03 2027 GMT
   <p>authorization در کوبرنتیز از attributeهای رایج REST استفاده می‌کند تا با سیستم‌های کنترل دسترسی موجود در سازمان یا cloud provider سازگار باشد. این قالب REST مهم است،‏ چون آن سیستم‌ها ممکن است علاوه بر Kubernetes API با APIهای دیگری هم کار کنند.</p>
   <p>کوبرنتیز چند authorization module دارد؛‏ مثل حالت‌های ABAC و RBAC و Webhook. مدیر هنگام ساختن cluster مشخص می‌کند API server از کدام moduleها استفاده کند. اگر بیش از یک module پیکربندی شده باشد،‏ کوبرنتیز moduleها را بررسی می‌کند و اگر <b>یکی</b> از آن‌ها درخواست را authorize کند،‏ درخواست ادامه پیدا می‌کند. اگر <b>همه</b> رد کنند،‏ درخواست با HTTP status code <code>‎403‎</code> رد می‌شود. جزئیات دقیق‌تر (از جمله Deny صریح) در <a href="#ch14-a-authz-verdicts">بخش Authorization verdicts</a> آمده است.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: 401 در برابر 403</b>
-    <p>تفاوت این دو status code کلید عیب‌یابی دسترسی به API است:</p>
-    <div class="tbl"><table><thead><tr><th>کد</th><th>مرحله</th><th>معنا</th><th>پیام نمونه‌ی kubectl</th></tr></thead><tbody>
-      <tr><td><code>401 Unauthorized</code></td><td>Authentication (۱)</td><td>API server نمی‌داند شما چه کسی هستید (credential نامعتبر،‏ منقضی یا غیرقابل‌تأیید)</td><td><code>error: You must be logged in to the server (Unauthorized)</code></td></tr>
-      <tr><td><code>403 Forbidden</code></td><td>Authorization (۲) یا Admission (۳)</td><td>API server می‌داند شما چه کسی هستید،‏ ولی اجازه‌ی این کار را ندارید یا admission درخواست را رد کرده است</td><td><code>Error from server (Forbidden): pods is forbidden: User "bob" cannot list resource "pods" ...</code></td></tr>
-    </tbody></table></div>
-    <p>پس اگر کاربری گفت «401 می‌گیرم»،‏ سراغ RBAC نروید؛‏ مشکل در credential است (مثلاً certificate منقضی شده یا <code>id_token</code> مربوط به OIDC منقضی شده). اگر گفت «403 می‌گیرم»،‏ هویت درست است و باید Role و RoleBinding یا admission policy را بررسی کنید.</p>
-  </div>
-
   <h4 id="ch14-a-ca-admission">بررسی و تغییر محتوای درخواست پیش از ذخیره <small>(Admission control)</small></h4>
   <p>admission control moduleها ماژول‌هایی نرم‌افزاری‌اند که می‌توانند درخواست را تغییر دهند یا رد کنند. این moduleها علاوه بر attributeهایی که authorization moduleها می‌بینند،‏ به محتوای شیئی که در حال ساخته شدن یا تغییر است هم دسترسی دارند.</p>
   <p>admission controllerها روی درخواست‌هایی اثر دارند که شیئی را create،‏ modify یا delete می‌کنند یا به آن connect (proxy) می‌شوند. روی درخواست‌هایی که فقط شیء را می‌خوانند اثری ندارند. اگر چند admission controller پیکربندی شده باشد،‏ به ترتیب فراخوانی می‌شوند.</p>
@@ -259,6 +223,54 @@ notAfter=Sep  1 08:17:03 2027 GMT
   <p>admission controllerهای موجود در <a href="#ch14-b-adm-list">بخش دوم همین فصل</a> آمده‌اند.</p>
   <p>وقتی درخواست از همه‌ی admission controllerها گذشت،‏ با validation routineهای همان نوع شیء بررسی می‌شود و سپس در object store (etcd) نوشته می‌شود؛‏ مرحله‌ی <b>۴</b> در شکل.</p>
 
+  <h4 id="ch14-a-ca-auditing">ممیزی <small>(Auditing)</small></h4>
+  <p>auditing در کوبرنتیز مجموعه‌ای از رکوردهای امنیتی و مرتب بر اساس زمان فراهم می‌کند که ترتیب کارهای انجام‌شده در cluster را ثبت می‌کند. cluster فعالیت‌های کاربران،‏ برنامه‌هایی که از Kubernetes API استفاده می‌کنند و خود control plane را audit می‌کند. جزئیات در فصل ۱۱ آمده است.</p>
+  <p class="next">ادامه‌ی مطالعه: Authenticating ·‏ Authenticating with Bootstrap Tokens ·‏ Admission Controllers ·‏ Dynamic Admission Control ·‏ Authorization ·‏ Role Based Access Control ·‏ Attribute Based Access Control ·‏ Node Authorization ·‏ Webhook Authorization ·‏ Certificate Signing Requests ·‏ Service accounts (راهنمای توسعه‌دهنده و مدیر) · نحوه‌ی استفاده‌ی Podها از Secret برای گرفتن credential مربوط به API.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">CA certificate در kubeconfig دقیقاً کجاست؟ · 401 در برابر 403 · «یکی کافی است» در authentication و authorization،‏ «همه باید موافق باشند» در admission</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: CA certificate در kubeconfig دقیقاً کجاست؟</b>
+    <p>در فایل kubeconfig،‏ بخش <code>clusters</code> مشخص می‌کند client به کدام API server وصل شود و به کدام CA اعتماد کند. فیلد <code>certificate-authority-data</code> (محتوای CA certificate به شکل base64) یا <code>certificate-authority</code> (مسیر فایل) همان «کپی CA certificate» است که مستندات می‌گوید. بخش <code>users</code> هم credential خود client را نگه می‌دارد (مثلاً <code>client-certificate-data</code> و <code>client-key-data</code>) که همان TLS client certificate در مرحله‌ی انتقال است.</p>
+    <div class="code"><div class="lbl"><span>~/.kube/config (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: Config
+clusters:
+- name: prod
+  cluster:
+    server: https://api.prod.example.com:443
+    certificate-authority-data: LS0tLS1CRUdJTi...   # CA that signed the API server certificate
+users:
+- name: alice
+  user:
+    client-certificate-data: LS0tLS1CRUdJTi...     # TLS client certificate
+    client-key-data: LS0tLS1CRUdJTi...
+contexts:
+- name: alice@prod
+  context:
+    cluster: prod
+    user: alice
+current-context: alice@prod
+</pre></div>
+    <p>در production هرگز از <code>insecure-skip-tls-verify: true</code> استفاده نکنید. این گزینه همان تضمینی را از بین می‌برد که مستندات می‌گوید (اتصال intercept نشده باشد) و راه حمله‌ی man-in-the-middle را باز می‌کند.</p>
+    <p>برای دیدن port و certificateی که API server واقعاً ارائه می‌دهد:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl cluster-info
+# Kubernetes control plane is running at https://127.0.0.1:6443
+openssl s_client -connect 127.0.0.1:6443 -showcerts &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -subject -issuer -dates
+</pre></div>
+    <div class="code"><div class="lbl"><span>output (نمونه در یک cluster kubeadm)</span><button type="button">کپی</button></div><pre class="out">subject=CN = kube-apiserver
+issuer=CN = kubernetes
+notBefore=Sep  1 08:12:03 2026 GMT
+notAfter=Sep  1 08:17:03 2027 GMT
+</pre></div>
+    <p>اختلاف پنج‌دقیقه‌ای بین ساعت <code>notBefore</code> و <code>notAfter</code> عمدی است: kubeadm زمان شروع اعتبار certificate را چند دقیقه عقب می‌برد تا اختلاف ساعت ماشین‌ها مشکل نسازد.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: 401 در برابر 403</b>
+    <p>تفاوت این دو status code کلید عیب‌یابی دسترسی به API است:</p>
+    <div class="tbl"><table><thead><tr><th>کد</th><th>مرحله</th><th>معنا</th><th>پیام نمونه‌ی kubectl</th></tr></thead><tbody>
+      <tr><td><code>401 Unauthorized</code></td><td>Authentication (۱)</td><td>API server نمی‌داند شما چه کسی هستید (credential نامعتبر،‏ منقضی یا غیرقابل‌تأیید)</td><td><code>error: You must be logged in to the server (Unauthorized)</code></td></tr>
+      <tr><td><code>403 Forbidden</code></td><td>Authorization (۲) یا Admission (۳)</td><td>API server می‌داند شما چه کسی هستید،‏ ولی اجازه‌ی این کار را ندارید یا admission درخواست را رد کرده است</td><td><code>Error from server (Forbidden): pods is forbidden: User "bob" cannot list resource "pods" ...</code></td></tr>
+    </tbody></table></div>
+    <p>پس اگر کاربری گفت «401 می‌گیرم»،‏ سراغ RBAC نروید؛‏ مشکل در credential است (مثلاً certificate منقضی شده یا <code>id_token</code> مربوط به OIDC منقضی شده). اگر گفت «403 می‌گیرم»،‏ هویت درست است و باید Role و RoleBinding یا admission policy را بررسی کنید.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: «یکی کافی است» در authentication و authorization،‏ «همه باید موافق باشند» در admission</b>
     <p>این تفاوت ظریف ولی مهم است:</p>
     <ul>
@@ -268,10 +280,7 @@ notAfter=Sep  1 08:17:03 2027 GMT
     </ul>
     <p>نتیجه‌ی عملی: افزودن یک authorizer تازه معمولاً فقط دسترسی را <b>بیشتر</b> می‌کند (مگر این‌که پیش از بقیه قرار بگیرد و Deny صریح برگرداند)،‏ ولی افزودن یک admission controller فقط می‌تواند درخواست‌ها را <b>محدودتر</b> کند. برای همین policyهای «ممنوعیت» (مثل «هیچ Pod با حالت privileged مجاز نیست») جایشان در admission است،‏ نه در RBAC؛‏ RBAC قاعده‌ی deny ندارد.</p>
   </div>
-
-  <h4 id="ch14-a-ca-auditing">ممیزی <small>(Auditing)</small></h4>
-  <p>auditing در کوبرنتیز مجموعه‌ای از رکوردهای امنیتی و مرتب بر اساس زمان فراهم می‌کند که ترتیب کارهای انجام‌شده در cluster را ثبت می‌کند. cluster فعالیت‌های کاربران،‏ برنامه‌هایی که از Kubernetes API استفاده می‌کنند و خود control plane را audit می‌کند. جزئیات در فصل ۱۱ آمده است.</p>
-  <p class="next">ادامه‌ی مطالعه: Authenticating ·‏ Authenticating with Bootstrap Tokens ·‏ Admission Controllers ·‏ Dynamic Admission Control ·‏ Authorization ·‏ Role Based Access Control ·‏ Attribute Based Access Control ·‏ Node Authorization ·‏ Webhook Authorization ·‏ Certificate Signing Requests ·‏ Service accounts (راهنمای توسعه‌دهنده و مدیر) · نحوه‌ی استفاده‌ی Podها از Secret برای گرفتن credential مربوط به API.</p>
+  </details>
   <h3 id="ch14-a-authenticating">Authentication در کوبرنتیز <small>(Authenticating)</small></h3>
   <p>این بخش نمای کلی authentication در کوبرنتیز را می‌دهد و روی authentication به Kubernetes API تمرکز دارد.</p>
 
@@ -290,6 +299,8 @@ notAfter=Sep  1 08:17:03 2027 GMT
   <p>هر درخواست API یا به یک کاربر عادی نسبت داده می‌شود،‏ یا به یک service account،‏ یا درخواست anonymous حساب می‌شود. یعنی هر processی داخل یا بیرون cluster (از کاربری که روی ایستگاه کاری‌اش <code>kubectl</code> تایپ می‌کند تا <code>kubelet</code> روی Nodeها و اجزای control plane) هنگام فرستادن درخواست به API server باید authenticate شود،‏ وگرنه کاربر anonymous حساب می‌شود.</p>
   <p>اگر authentication موفق باشد،‏ API server خودکار شما را عضو group ویژه‌ی <code>system:authenticated</code> می‌کند.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«کاربر وجود ندارد» یعنی چه؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: «کاربر وجود ندارد» یعنی چه؟</b>
     <p>این برای تازه‌واردها از غافلگیرکننده‌ترین نکته‌هاست: دستوری مثل <code>kubectl create user alice</code> وجود ندارد و <code>kubectl get users</code> هم خطا می‌دهد. هویت کاربر عادی فقط داخل credentialی است که ارائه می‌دهد (CN در certificate،‏ یک claim در OIDC token،‏ یک سطر در static token file یا پاسخ یک webhook). API server در هر درخواست این هویت را می‌خواند،‏ استفاده می‌کند و جایی نگه نمی‌دارد.</p>
     <p>پیامد عملی: اگر در RoleBinding نام <code>alice</code> را بنویسید ولی certificate او <code>CN=Alice</code> داشته باشد،‏ binding هیچ اثری ندارد و خطایی هم نمی‌بینید؛‏ چون کوبرنتیز فهرستی از کاربران ندارد که وجود <code>alice</code> را با آن بسنجد.</p>
@@ -306,6 +317,7 @@ bootstrap-signer                     0         12d
 certificate-controller               0         12d
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch14-a-strategies">راهبردهای authentication <small>(Authentication strategies)</small></h3>
   <p>کوبرنتیز درخواست‌های API را با authentication pluginها و از راه client certificate،‏ bearer token یا authenticating proxy،‏ authenticate می‌کند. وقتی درخواست HTTP به API server می‌رسد،‏ pluginها سعی می‌کنند این attributeها را به آن نسبت دهند:</p>
@@ -317,9 +329,12 @@ certificate-controller               0         12d
   </ul>
   <div class="note"><b>نکته</b><p>همه‌ی این مقدارها برای سیستم authentication فقط رشته‌اند و معنای خاصی ندارند (opaque)؛‏ تنها وقتی یک authorizer تفسیرشان کند معنا پیدا می‌کنند.</p></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا UID جدا از username است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا UID جدا از username است؟</b>
     <p>فرض کنید کارمندی با نشانی <code>jane@example.com</code> شرکت را ترک می‌کند و شش ماه بعد کارمند تازه‌ای با همان نشانی استخدام می‌شود. اگر authorization یا audit فقط بر پایه‌ی username باشد،‏ این دو نفر از هم تشخیص داده نمی‌شوند. UID (مثلاً claim به نام <code>sub</code> در OIDC که معمولاً شناسه‌ای تغییرناپذیر است) این دو را از هم جدا می‌کند. groupها هم پایه‌ی مقیاس‌پذیری RBAC هستند: به‌جای ۵۰ RoleBinding برای ۵۰ مهندس،‏ یک RoleBinding برای group به نام <code>devops-team</code> می‌سازید و عضویت را در identity provider مدیریت می‌کنید.</p>
   </div>
+  </details>
 
   <h3 id="ch14-a-anonymous">درخواست‌های anonymous <small>(Anonymous requests)</small></h3>
   <p>وقتی این قابلیت فعال باشد،‏ درخواستی که هیچ‌کدام از روش‌های authentication پیکربندی‌شده آن را رد نکرده‌اند،‏ درخواست anonymous حساب می‌شود و username برابر <code>system:anonymous</code> و group برابر <code>system:unauthenticated</code> می‌گیرد.</p>
@@ -911,18 +926,6 @@ jwt:
 </pre></div>
   <p>و در user validation رد می‌شود،‏ چون username با <code>system:</code> شروع شده است. API server پاسخ <code>401 Unauthorized</code> برمی‌گرداند.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: ترتیب پردازش در structured authentication</b>
-    <p>سه نمونه‌ی بالا در واقع سه مرحله‌ی پشت‌سرهم یک pipeline هستند:</p>
-    <ol>
-      <li><b>بررسی امضا،‏ issuer و audience:</b> <code>iss</code> باید با <code>issuer.url</code> برابر باشد،‏ امضا با کلیدی که از JWKS گرفته شده معتبر باشد،‏ <code>aud</code> دست‌کم با یکی از <code>audiences</code> بخواند و token منقضی نشده باشد.</li>
-      <li><b>claimValidationRules:</b> روی claimهای خام token با متغیر <code>claims</code> اجرا می‌شود. حالت ۲ این‌جا رد شد.</li>
-      <li><b>claimMappings:</b> از claimها یک <code>UserInfo</code> شامل username و uid و groups و extra ساخته می‌شود.</li>
-      <li><b>userValidationRules:</b> روی UserInfo نهایی با متغیر <code>user</code> اجرا می‌شود. حالت ۳ این‌جا رد شد.</li>
-    </ol>
-    <p>چرا userValidationRules مهم است؟ mappingها با CEL نوشته می‌شوند و یک اشتباه (یا claimی که کاربر بتواند خودش در IdP تغییر دهد) ممکن است username یا groupی مثل <code>system:masters</code> بسازد. قاعده‌ی <code>user.groups.all(group, !group.startsWith('system:'))</code> مثل کمربند ایمنی جلوی رسیدن هر هویت بیرونی به groupهای رزروشده‌ی کوبرنتیز را می‌گیرد.</p>
-    <p>در هر دو حالت شکست،‏ کاربر فقط <code>‎401‎</code> می‌بیند؛‏ پیام دقیق (<code>message</code>) فقط در log مربوط به API server ثبت می‌شود تا اطلاعات داخلی به مهاجم نرسد.</p>
-  </div>
-
   <h4 id="ch14-a-oidc-limitations">محدودیت‌ها <small>(Limitations)</small></h4>
   <ol>
     <li>distributed claims از راه CEL expression کار نمی‌کنند.</li>
@@ -977,47 +980,6 @@ jwt:
   <p><b>گزینه‌ی ۲: flag <code>--token</code>.</b> با flag <code>--token</code> می‌توانید token را مستقیم به <code>kubectl</code> بدهید؛‏ <code>id_token</code> را کپی کنید و این‌جا بگذارید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl --token=eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL21sYi50cmVtb2xvLmxhbjo4MDQzL2F1dGgvaWRwL29pZGMiLCJhdWQiOiJrdWJlcm5ldGVzIiwiZXhwIjoxNDc0NTk2NjY5LCJqdGkiOiI2RDUzNXoxUEpFNjJOR3QxaWVyYm9RIiwiaWF0IjoxNDc0NTk2MzY5LCJuYmYiOjE0NzQ1OTYyNDksInN1YiI6Im13aW5kdSIsInVzZXJfcm9sZSI6WyJ1c2VycyIsIm5ldy1uYW1lc3BhY2Utdmlld2VyIl0sImVtYWlsIjoibXdpbmR1QG5vbW9yZWplZGkuY29tIn0.f2As579n9VNoaKzoF-dOQGmXkFKf1FMyNV0-va_B63jn-_n9LGSCca_6IVMP8pO-Zb4KvRqGyTP0r3HkHxYy5c81AnIh8ijarruczl-TK_yF5akjSTHFZD-0gRzlevBDiH8Q79NAr-ky0P4iIXS8lY9Vnjch5MF74Zx0c3alKJHJUnnpjIACByfF2SCaYzbWFMUNat-K1PaUk5-ujMBG7yYnr95xD-63n8CO8teGUAAEMx6zRjzfhnhbzX-ajwZLGwGUBT4WqjMs70-6a7_8gZmLZb2az1cZynkFRj2BaCkVT3A2RrjeEwZEtGXlMqKJ1_I2ulrOVsYx01_yD35-rw get nodes
 </pre></div>
-
-  <div class="deep"><b>توضیح تکمیلی: یکپارچگی Keycloak با structured authentication در production</b>
-    <p>(نام‌های Keycloak و kubelogin فقط برای مثال‌اند.) فرض کنید Keycloak شاپیفای در نشانی <code>https://sso.example.com/realms/platform</code> اجرا می‌شود،‏ یک client به نام <code>kubernetes</code> دارد و یک mapper که groupهای کاربر را در claim به نام <code>groups</code> می‌گذارد. یک پیکربندی امن و ساده برای API server:</p>
-    <div class="code"><div class="lbl"><span>/etc/kubernetes/authn/config.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apiserver.config.k8s.io/v1
-kind: AuthenticationConfiguration
-jwt:
-- issuer:
-    url: https://sso.example.com/realms/platform
-    audiences:
-    - kubernetes
-    certificateAuthority: |
-      -----BEGIN CERTIFICATE-----
-      ...internal organization CA...
-      -----END CERTIFICATE-----
-  claimValidationRules:
-  - expression: 'claims.?email_verified.orValue(false) == true'
-    message: email must be verified
-  - expression: 'claims.exp - claims.iat &lt;= 900'
-    message: token lifetime must not exceed 15 minutes
-  claimMappings:
-    username:
-      claim: email
-      prefix: "oidc:"
-    groups:
-      claim: groups
-      prefix: "oidc:"
-  userValidationRules:
-  - expression: "!user.username.startsWith('system:')"
-    message: 'username cannot used reserved system: prefix'
-  - expression: "user.groups.all(group, !group.startsWith('system:'))"
-    message: 'groups cannot used reserved system: prefix'
-</pre></div>
-    <p>نکته‌های طراحی:</p>
-    <ul>
-      <li>پیشوند <code>oidc:</code> باعث می‌شود groupی به نام <code>system:masters</code> در Keycloak (که هر مدیر IdP می‌تواند بسازد) به <code>oidc:system:masters</code> تبدیل شود که هیچ اختیاری ندارد.</li>
-      <li>عمر token حداکثر ۱۵ دقیقه است،‏ چون <code>id_token</code> قابل revoke نیست؛‏ غیرفعال کردن کاربر در Keycloak حداکثر پس از ۱۵ دقیقه اثر می‌کند.</li>
-      <li>در سمت کاربر به‌جای گزینه‌ی ۱ (که <code>client-secret</code> را در kubeconfig نگه می‌دارد) معمولاً exec credential pluginی مثل kubelogin به کار می‌رود که browser را باز می‌کند.</li>
-      <li>RBAC فقط به groupها bind می‌شود: <code>kubectl create clusterrolebinding devops-edit --clusterrole=edit --group=oidc:devops</code>.</li>
-    </ul>
-    <p>چون API server تغییر این فایل را خودکار reload می‌کند،‏ افزودن issuer دوم (مثلاً برای CI) به restart نیاز ندارد؛‏ کافی است metric مربوط به آخرین reload را بررسی کنید.</p>
-  </div>
 
   <h4 id="ch14-a-webhook-authn">بررسی token با فراخوانی یک سرویس بیرونی <small>(Webhook token authentication)</small></h4>
   <p>webhook authentication در کوبرنتیز سازوکاری است که برای بررسی bearer token یک درخواست HTTP به سرویس بیرونی می‌فرستد.</p>
@@ -1177,10 +1139,6 @@ contexts:
   }
 }
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: cache-ttl و revoke کردن</b>
-    <p>مزیت اصلی webhook نسبت به OIDC و certificate این است که هر token در لحظه توسط سرویس شما بررسی می‌شود؛‏ پس می‌توانید token را فوراً باطل کنید. اما <code>--authentication-token-webhook-cache-ttl</code> (پیش‌فرض <code>2m</code>) یعنی API server نتیجه‌ی موفق را تا دو دقیقه cache می‌کند؛‏ پس «revoke فوری» در عمل یعنی «revoke در حداکثر زمان TTL». از طرف دیگر اگر TTL را خیلی کوچک کنید،‏ هر درخواست kubectl (و هر watch) یک فراخوانی به سرویس شما می‌سازد و از دسترس خارج شدن آن سرویس،‏ ورود همه‌ی کاربران را قطع می‌کند. انتخاب TTL یک trade-off بین سرعت revoke و بار و وابستگی است.</p>
-  </div>
-
   <h4 id="ch14-a-authn-proxy">proxyی که هویت را در header می‌فرستد <small>(Authenticating reverse proxy)</small></h4>
   <div class="warn"><b>هشدار</b><p>اگر CAی دارید که در جای دیگری هم استفاده می‌شود،‏ برای شناسایی clientهای authenticating proxy به آن CA اعتماد <b>نکنید</b>،‏ مگر این‌که ریسک‌ها و سازوکارهای محافظت از استفاده‌ی آن CA را کاملاً بشناسید.</p></div>
   <p>API server را می‌توان طوری پیکربندی کرد که کاربر را از مقدار headerهای درخواست،‏ مثل <code>X-Remote-User</code>،‏ تشخیص دهد. این قابلیت برای کار همراه با یک <i>authenticating proxy</i> طراحی شده که این headerها را می‌گذارد.</p>
@@ -1214,10 +1172,6 @@ extra:
 </pre></div>
   <p><b>client certificate.</b> برای جلوگیری از جعل header،‏ authenticating proxy باید پیش از بررسی headerها یک client certificate معتبر به API server ارائه دهد که با CA مشخص‌شده validate شود.</p>
   <p>از CAی که جای دیگری استفاده می‌شود دوباره استفاده <b>نکنید</b>،‏ مگر این‌که ریسک‌ها و سازوکارهای محافظت از استفاده‌ی آن CA را بشناسید.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا این‌قدر بر CA جداگانه تأکید شده است؟</b>
-    <p>فرض کنید <code>--requestheader-client-ca-file</code> به همان CA اصلی cluster (همان <code>--client-ca-file</code>) اشاره کند و <code>--requestheader-allowed-names</code> خالی باشد. آن وقت <b>هر</b> کاربری که از آن CA یک client certificate معمولی دارد (مثلاً یک توسعه‌دهنده با دسترسی کم) می‌تواند مستقیم به API server وصل شود و headerهای <code>X-Remote-User: admin</code> و <code>X-Remote-Group: system:masters</code> را بفرستد؛‏ API server او را proxy معتبر می‌داند و headerها را باور می‌کند. برای همین kubeadm برای این کار CA جداگانه‌ای به نام <code>front-proxy-ca</code> و CN مجاز <code>front-proxy-client</code> تنظیم می‌کند (فصل ۱۳).</p>
-  </div>
-
   <h4 id="ch14-a-static-token">فایل static token <small>(Static token file integration)</small></h4>
   <p>وقتی flag <code>--token-auth-file=&lt;SOMEFILE&gt;</code> داده شود،‏ API server،‏ bearer tokenهای ثابت را از یک فایل می‌خواند. در Kubernetes v1.37 این tokenها همیشه معتبرند و فهرستشان بدون restart کردن API server تغییر نمی‌کند.</p>
   <p>فایل token یک فایل CSV با دست‌کم سه ستون است: token،‏ username،‏ uid کاربر؛‏ و پس از آن به‌صورت اختیاری فهرست groupها که با ویرگول جدا شده‌اند.</p>
@@ -1227,6 +1181,67 @@ extra:
   <p>static token file برای tokenهایی مناسب است که ذاتاً بلندمدت و ثابت‌اند و شاید هرگز rotate نشوند؛‏ همچنین برای clientی که روی همان ماشین control plane و کنار API server اجرا می‌شود،‏ مثل یک agent پایش.</p>
   <p>اگر هنگام راه‌اندازی cluster از این روش استفاده می‌کنید و بعد به روش authentication بلندمدت دیگری مهاجرت می‌کنید،‏ token مربوط به bootstrap را غیرفعال کنید (که به restart همه‌ی API serverها نیاز دارد).</p>
   <p>در شرایط دیگر،‏ به‌ویژه جایی که rotate سریع token مهم است،‏ پروژه‌ی کوبرنتیز توصیه می‌کند به‌جای این سازوکار از webhook token authenticator استفاده کنید.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">ترتیب پردازش در structured authentication · یکپارچگی Keycloak با structured authentication در production · cache-ttl و revoke کردن · چرا این‌قدر بر CA جداگانه تأکید شده است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: ترتیب پردازش در structured authentication</b>
+    <p>سه نمونه‌ی بالا در واقع سه مرحله‌ی پشت‌سرهم یک pipeline هستند:</p>
+    <ol>
+      <li><b>بررسی امضا،‏ issuer و audience:</b> <code>iss</code> باید با <code>issuer.url</code> برابر باشد،‏ امضا با کلیدی که از JWKS گرفته شده معتبر باشد،‏ <code>aud</code> دست‌کم با یکی از <code>audiences</code> بخواند و token منقضی نشده باشد.</li>
+      <li><b>claimValidationRules:</b> روی claimهای خام token با متغیر <code>claims</code> اجرا می‌شود. حالت ۲ این‌جا رد شد.</li>
+      <li><b>claimMappings:</b> از claimها یک <code>UserInfo</code> شامل username و uid و groups و extra ساخته می‌شود.</li>
+      <li><b>userValidationRules:</b> روی UserInfo نهایی با متغیر <code>user</code> اجرا می‌شود. حالت ۳ این‌جا رد شد.</li>
+    </ol>
+    <p>چرا userValidationRules مهم است؟ mappingها با CEL نوشته می‌شوند و یک اشتباه (یا claimی که کاربر بتواند خودش در IdP تغییر دهد) ممکن است username یا groupی مثل <code>system:masters</code> بسازد. قاعده‌ی <code>user.groups.all(group, !group.startsWith('system:'))</code> مثل کمربند ایمنی جلوی رسیدن هر هویت بیرونی به groupهای رزروشده‌ی کوبرنتیز را می‌گیرد.</p>
+    <p>در هر دو حالت شکست،‏ کاربر فقط <code>‎401‎</code> می‌بیند؛‏ پیام دقیق (<code>message</code>) فقط در log مربوط به API server ثبت می‌شود تا اطلاعات داخلی به مهاجم نرسد.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: یکپارچگی Keycloak با structured authentication در production</b>
+    <p>(نام‌های Keycloak و kubelogin فقط برای مثال‌اند.) فرض کنید Keycloak شاپیفای در نشانی <code>https://sso.example.com/realms/platform</code> اجرا می‌شود،‏ یک client به نام <code>kubernetes</code> دارد و یک mapper که groupهای کاربر را در claim به نام <code>groups</code> می‌گذارد. یک پیکربندی امن و ساده برای API server:</p>
+    <div class="code"><div class="lbl"><span>/etc/kubernetes/authn/config.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apiserver.config.k8s.io/v1
+kind: AuthenticationConfiguration
+jwt:
+- issuer:
+    url: https://sso.example.com/realms/platform
+    audiences:
+    - kubernetes
+    certificateAuthority: |
+      -----BEGIN CERTIFICATE-----
+      ...internal organization CA...
+      -----END CERTIFICATE-----
+  claimValidationRules:
+  - expression: 'claims.?email_verified.orValue(false) == true'
+    message: email must be verified
+  - expression: 'claims.exp - claims.iat &lt;= 900'
+    message: token lifetime must not exceed 15 minutes
+  claimMappings:
+    username:
+      claim: email
+      prefix: "oidc:"
+    groups:
+      claim: groups
+      prefix: "oidc:"
+  userValidationRules:
+  - expression: "!user.username.startsWith('system:')"
+    message: 'username cannot used reserved system: prefix'
+  - expression: "user.groups.all(group, !group.startsWith('system:'))"
+    message: 'groups cannot used reserved system: prefix'
+</pre></div>
+    <p>نکته‌های طراحی:</p>
+    <ul>
+      <li>پیشوند <code>oidc:</code> باعث می‌شود groupی به نام <code>system:masters</code> در Keycloak (که هر مدیر IdP می‌تواند بسازد) به <code>oidc:system:masters</code> تبدیل شود که هیچ اختیاری ندارد.</li>
+      <li>عمر token حداکثر ۱۵ دقیقه است،‏ چون <code>id_token</code> قابل revoke نیست؛‏ غیرفعال کردن کاربر در Keycloak حداکثر پس از ۱۵ دقیقه اثر می‌کند.</li>
+      <li>در سمت کاربر به‌جای گزینه‌ی ۱ (که <code>client-secret</code> را در kubeconfig نگه می‌دارد) معمولاً exec credential pluginی مثل kubelogin به کار می‌رود که browser را باز می‌کند.</li>
+      <li>RBAC فقط به groupها bind می‌شود: <code>kubectl create clusterrolebinding devops-edit --clusterrole=edit --group=oidc:devops</code>.</li>
+    </ul>
+    <p>چون API server تغییر این فایل را خودکار reload می‌کند،‏ افزودن issuer دوم (مثلاً برای CI) به restart نیاز ندارد؛‏ کافی است metric مربوط به آخرین reload را بررسی کنید.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: cache-ttl و revoke کردن</b>
+    <p>مزیت اصلی webhook نسبت به OIDC و certificate این است که هر token در لحظه توسط سرویس شما بررسی می‌شود؛‏ پس می‌توانید token را فوراً باطل کنید. اما <code>--authentication-token-webhook-cache-ttl</code> (پیش‌فرض <code>2m</code>) یعنی API server نتیجه‌ی موفق را تا دو دقیقه cache می‌کند؛‏ پس «revoke فوری» در عمل یعنی «revoke در حداکثر زمان TTL». از طرف دیگر اگر TTL را خیلی کوچک کنید،‏ هر درخواست kubectl (و هر watch) یک فراخوانی به سرویس شما می‌سازد و از دسترس خارج شدن آن سرویس،‏ ورود همه‌ی کاربران را قطع می‌کند. انتخاب TTL یک trade-off بین سرعت revoke و بار و وابستگی است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا این‌قدر بر CA جداگانه تأکید شده است؟</b>
+    <p>فرض کنید <code>--requestheader-client-ca-file</code> به همان CA اصلی cluster (همان <code>--client-ca-file</code>) اشاره کند و <code>--requestheader-allowed-names</code> خالی باشد. آن وقت <b>هر</b> کاربری که از آن CA یک client certificate معمولی دارد (مثلاً یک توسعه‌دهنده با دسترسی کم) می‌تواند مستقیم به API server وصل شود و headerهای <code>X-Remote-User: admin</code> و <code>X-Remote-Group: system:masters</code> را بفرستد؛‏ API server او را proxy معتبر می‌داند و headerها را باور می‌کند. برای همین kubeadm برای این کار CA جداگانه‌ای به نام <code>front-proxy-ca</code> و CN مجاز <code>front-proxy-client</code> تنظیم می‌کند (فصل ۱۳).</p>
+  </div>
+  </details>
 
   <h3 id="ch14-a-impersonation">جعل هویت کاربر <small>(User impersonation)</small></h3>
   <p>user impersonation راهی است که یک کاربر با impersonation headerها مثل کاربر دیگری عمل کند. (صفحه‌ی Authentication فقط به صفحه‌ی مستقل User Impersonation ارجاع می‌دهد؛‏ چون این موضوع بخشی از این فصل است،‏ محتوای آن صفحه کامل این‌جا آمده است.)</p>
@@ -1726,6 +1741,8 @@ kind: AuthenticationConfiguration
 anonymous:
   enabled: false
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">به‌روزرسانی atomic فایل روی control plane</span></summary>
   <div class="deep"><b>توضیح تکمیلی: به‌روزرسانی atomic فایل روی control plane</b>
     <p>چرا atomic؟ API server فایل را زیر نظر دارد؛‏ اگر ویرایشگر مستقیم روی خود فایل بنویسد،‏ ممکن است API server محتوای نیمه‌نوشته را بخواند و نامعتبر تشخیص دهد. الگوی امن:</p>
     <div class="code"><div class="lbl"><span>shell (روی هر control plane node)</span><button type="button">کپی</button></div><pre class="sh">cp /etc/kubernetes/authn/config.yaml /etc/kubernetes/authn/.config.yaml.new
@@ -1734,6 +1751,7 @@ mv /etc/kubernetes/authn/.config.yaml.new /etc/kubernetes/authn/config.yaml   # 
 </pre></div>
     <p>در kubeadm،‏ API server یک static Pod است و فایل باید با <code>hostPath</code> در Pod آن mount شده باشد (فصل ۱۳،‏ <code>extraVolumes</code>). اگر خود فایل به‌تنهایی mount شده باشد،‏ rename روی host داخل container دیده نمی‌شود،‏ چون mount به inode قبلی وصل مانده است؛‏ mount کردن کل پوشه امن‌تر است.</p>
   </div>
+  </details>
 
   <h3 id="ch14-a-credential-plugins">credential pluginهای client-go <small>(client-go credential plugins)</small></h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.22 [stable]</span></p>
@@ -2213,6 +2231,8 @@ Groups      [developers system:authenticated]
   <p>همه‌ی بخش‌های درخواست API باید با یک سازوکار authorization مجاز شوند تا درخواست ادامه پیدا کند؛‏ یعنی دسترسی به‌طور پیش‌فرض رد می‌شود.</p>
   <div class="note"><b>نکته</b><p>کنترل‌ها و policyهایی که به fieldهای مشخصی از نوع خاصی از اشیا وابسته‌اند،‏ کار admission controllerها هستند. admission control پس از authorization انجام می‌شود؛‏ یعنی فقط وقتی authorization درخواست را پذیرفته باشد.</p></div>
   <p>وقتی چند authorization module پیکربندی شده باشد،‏ به ترتیب بررسی می‌شوند. اگر یکی از authorizerها درخواست را <i>بپذیرد</i> یا <i>رد کند</i>،‏ همان تصمیم بی‌درنگ برگردانده می‌شود و authorizerهای بعدی بررسی نمی‌شوند. اگر همه‌ی moduleها درباره‌ی درخواست <i>نظری نداشته باشند</i> (no opinion)،‏ درخواست رد می‌شود. رد شدن یعنی API server پاسخ HTTP با status <code>403 (Forbidden)</code> می‌دهد.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">سه حالت allow و deny و no opinion</span></summary>
   <div class="deep"><b>توضیح تکمیلی: سه حالت allow و deny و no opinion</b>
     <p>RBAC هیچ‌وقت deny صریح برنمی‌گرداند؛‏ اگر قاعده‌ای پیدا نکند «no opinion» می‌دهد و نوبت authorizer بعدی می‌رسد. ولی Webhook authorizer می‌تواند صریحاً deny کند (یا با <code>failurePolicy: Deny</code> در زمان خطا deny کند) و در آن صورت authorizerهای بعدی اصلاً بررسی نمی‌شوند. پس ترتیب authorizerها مهم است:</p>
     <div class="tbl"><table><thead><tr><th>ترتیب زنجیره</th><th>تصمیم‌ها به ترتیب</th><th>نتیجه</th></tr></thead><tbody>
@@ -2223,6 +2243,7 @@ Groups      [developers system:authenticated]
     </tbody></table></div>
     <p>پس اگر می‌خواهید فهرست ممنوعیت سازمانی داشته باشید که حتی cluster-adminهای RBAC را محدود کند،‏ webhook باید <b>پیش</b> از RBAC در زنجیره باشد. فقط اعضای group به نام <code>system:masters</code> از این قاعده مستثنا هستند،‏ چون پیش از همه‌ی authorizerها اجازه می‌گیرند (<a href="#ch14-a-authz-modes">بخش authorization modeها</a>).</p>
   </div>
+  </details>
 
   <h3 id="ch14-a-authz-attrs">attributeهای درخواست در authorization <small>(Request attributes used in authorization)</small></h3>
   <p>کوبرنتیز فقط این attributeهای درخواست API را بررسی می‌کند:</p>
@@ -2297,10 +2318,6 @@ PATCH https://127.0.0.1:6443/apis/apps/v1/namespaces/default/deployments/web/sca
 
   <h4 id="ch14-a-system-masters">group به نام system:masters <small>(The system:masters group)</small></h4>
   <p>group به نام <code>system:masters</code> یک group داخلی کوبرنتیز است که دسترسی نامحدود به API server می‌دهد. هر کاربری که عضو این group باشد اختیار کامل مدیر cluster را دارد و همه‌ی محدودیت‌های authorization در RBAC یا Webhook را دور می‌زند. کاربران را به این group اضافه نکنید. اگر واقعاً لازم است کسی اختیار cluster-admin داشته باشد،‏ یک ClusterRoleBinding به ClusterRole داخلی <code>cluster-admin</code> بسازید.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا cluster-admin از راه RBAC بهتر از system:masters است؟</b>
-    <p>هر دو دسترسی کامل می‌دهند،‏ ولی فرقشان در قابلیت پس گرفتن است. عضویت در <code>system:masters</code> معمولاً داخل یک X.509 certificate (فیلد <code>O</code>) است؛‏ در هیچ شیء قابل حذفی ذخیره نشده و چون certificate قابل revoke نیست،‏ تا زمان انقضا باقی می‌ماند. در مقابل،‏ ClusterRoleBinding به <code>cluster-admin</code> یک شیء است و با <code>kubectl delete clusterrolebinding ...</code> دسترسی فوراً قطع می‌شود. برای همین kubeadm از نسخه‌ی 1.29 فایل <code>admin.conf</code> را با group به نام <code>kubeadm:cluster-admins</code> (که با ClusterRoleBinding به cluster-admin وصل است) صادر می‌کند و certificate دارای <code>system:masters</code> را فقط در <code>super-admin.conf</code> برای شرایط اضطراری نگه می‌دارد (فصل ۱۳).</p>
-  </div>
-
   <h4 id="ch14-a-authz-choice">پیکربندی authorization mode <small>(Authorization mode configuration)</small></h4>
   <p>زنجیره‌ی authorizer در API server را <b>یا</b> با فایل پیکربندی <b>یا</b> با flagهای خط فرمان تنظیم می‌کنید.</p>
   <p>باید یکی از این دو را انتخاب کنید؛‏ دادن هم‌زمان <code>--authorization-config</code> و پیکربندی webhook با flagهای <code>--authorization-mode</code> و <code>--authorization-webhook-*</code> مجاز نیست. در این حالت API server هنگام شروع خطا گزارش می‌کند و بی‌درنگ خارج می‌شود.</p>
@@ -2425,16 +2442,6 @@ authorizers:
         type: InClusterConfig
 </pre></div>
   <p>وقتی زنجیره‌ی authorizer را با فایل تنظیم می‌کنید،‏ مطمئن شوید محتوای فایل روی همه‌ی Nodeهای control plane یکسان است. هنگام ارتقا یا برگشت نسخه هم به این فایل توجه کنید؛‏ مثلاً پیش از ارتقا از Kubernetes 1.36 به 1.37 باید مطمئن شوید فایل در قالبی است که 1.37 می‌فهمد،‏ و اگر به 1.36 برمی‌گردید،‏ پیکربندی را متناسب با آن تنظیم کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی: مثال بالا به زبان ساده</b>
-    <p>زنجیره‌ی مثال این کار را می‌کند:</p>
-    <ol>
-      <li>webhook اول (به نام <code>webhook</code>) فقط برای درخواست‌های resource در namespace به نام <code>kube-system</code> فراخوانی می‌شود که از ServiceAccountهای خود <code>kube-system</code> نیستند. اگر webhook در دسترس نباشد یا پاسخ نامعتبر بدهد،‏ <code>failurePolicy: Deny</code> درخواست را رد می‌کند؛‏ یعنی برای حساس‌ترین namespace «در صورت شک،‏ رد کن».</li>
-      <li>اگر webhook اول فراخوانی نشد یا no opinion داد،‏ Node authorizer (برای kubeletها) و سپس RBAC بررسی می‌شوند.</li>
-      <li>در پایان webhook دوم با <code>failurePolicy: NoOpinion</code> است؛‏ اگر در دسترس نباشد فقط نادیده گرفته می‌شود و نتیجه همان رد پیش‌فرض است.</li>
-    </ol>
-    <p><code>matchConditions</code> دو فایده دارد: latency کمتر (برای بیشتر درخواست‌ها هیچ فراخوانی HTTP انجام نمی‌شود) و blast radius کوچک‌تر (اگر webhook از کار بیفتد،‏ فقط <code>kube-system</code> اثر می‌پذیرد،‏ نه کل cluster).</p>
-  </div>
-
   <h4 id="ch14-a-authz-reload">پیکربندی authorization و reload <small>(Authorization configuration and reloads)</small></h4>
   <p>کوبرنتیز هر وقت API server تغییری در فایل پیکربندی authorization ببیند آن را reload می‌کند؛‏ اگر هم رویداد تغییری دیده نشود،‏ هر ۶۰ ثانیه یک بار فایل را دوباره می‌خواند.</p>
   <div class="note"><b>نکته</b><p>هنگام reload،‏ authorizerهای غیر webhook در فایل نباید تغییر کنند. reload <b>نباید</b> authorizerهای Node یا RBAC را اضافه یا حذف کند؛‏ فقط ترتیبشان را می‌توان عوض کرد.</p></div>
@@ -2461,6 +2468,22 @@ authorizers:
     <p>در clusterهای مدیریت‌شده (EKS و GKE و AKS) Pod مربوط به API server دیده نمی‌شود و باید مستندات provider را ببینید.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا cluster-admin از راه RBAC بهتر از system:masters است؟ · مثال بالا به زبان ساده</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا cluster-admin از راه RBAC بهتر از system:masters است؟</b>
+    <p>هر دو دسترسی کامل می‌دهند،‏ ولی فرقشان در قابلیت پس گرفتن است. عضویت در <code>system:masters</code> معمولاً داخل یک X.509 certificate (فیلد <code>O</code>) است؛‏ در هیچ شیء قابل حذفی ذخیره نشده و چون certificate قابل revoke نیست،‏ تا زمان انقضا باقی می‌ماند. در مقابل،‏ ClusterRoleBinding به <code>cluster-admin</code> یک شیء است و با <code>kubectl delete clusterrolebinding ...</code> دسترسی فوراً قطع می‌شود. برای همین kubeadm از نسخه‌ی 1.29 فایل <code>admin.conf</code> را با group به نام <code>kubeadm:cluster-admins</code> (که با ClusterRoleBinding به cluster-admin وصل است) صادر می‌کند و certificate دارای <code>system:masters</code> را فقط در <code>super-admin.conf</code> برای شرایط اضطراری نگه می‌دارد (فصل ۱۳).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: مثال بالا به زبان ساده</b>
+    <p>زنجیره‌ی مثال این کار را می‌کند:</p>
+    <ol>
+      <li>webhook اول (به نام <code>webhook</code>) فقط برای درخواست‌های resource در namespace به نام <code>kube-system</code> فراخوانی می‌شود که از ServiceAccountهای خود <code>kube-system</code> نیستند. اگر webhook در دسترس نباشد یا پاسخ نامعتبر بدهد،‏ <code>failurePolicy: Deny</code> درخواست را رد می‌کند؛‏ یعنی برای حساس‌ترین namespace «در صورت شک،‏ رد کن».</li>
+      <li>اگر webhook اول فراخوانی نشد یا no opinion داد،‏ Node authorizer (برای kubeletها) و سپس RBAC بررسی می‌شوند.</li>
+      <li>در پایان webhook دوم با <code>failurePolicy: NoOpinion</code> است؛‏ اگر در دسترس نباشد فقط نادیده گرفته می‌شود و نتیجه همان رد پیش‌فرض است.</li>
+    </ol>
+    <p><code>matchConditions</code> دو فایده دارد: latency کمتر (برای بیشتر درخواست‌ها هیچ فراخوانی HTTP انجام نمی‌شود) و blast radius کوچک‌تر (اگر webhook از کار بیفتد،‏ فقط <code>kube-system</code> اثر می‌پذیرد،‏ نه کل cluster).</p>
+  </div>
+  </details>
+
   <h3 id="ch14-a-escalation">افزایش اختیار با ساخت یا ویرایش workload <small>(Privilege escalation via workload creation or edits)</small></h3>
   <p>کاربرانی که می‌توانند در یک namespace،‏ Pod بسازند یا ویرایش کنند (مستقیم یا از راه اشیایی که workload را غیرمستقیم مدیریت می‌کنند)،‏ ممکن است بتوانند اختیارشان را در همان namespace افزایش دهند (escalate). extensionهای Kubernetes API و controllerهای مربوط به آن‌ها هم می‌توانند مسیر privilege escalation باشند.</p>
   <div class="warn"><b>هشدار</b><p>مدیر cluster باید در دادن اجازه‌ی ساخت یا ویرایش workload محتاط باشد. جزئیات سوءاستفاده‌ی ممکن در مسیرهای زیر آمده است.</p></div>
@@ -2476,6 +2499,8 @@ authorizers:
       <ul><li>برای خواندن و تغییر داده‌ی workloadهای دیگر.</li></ul></li>
   </ul>
   <div class="warn"><b>هشدار</b><p>مدیر سیستم باید در deploy کردن CustomResourceDefinitionهایی که به کاربران اجازه‌ی تغییر در حوزه‌های بالا را می‌دهند محتاط باشد؛‏ این‌ها هم می‌توانند مسیر privilege escalation باز کنند. هنگام طراحی کنترل‌های authorization،‏ پیامد این نوع تغییرها را در نظر بگیرید.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">یک escalation عملی در سه خط</span></summary>
   <div class="deep"><b>توضیح تکمیلی: یک escalation عملی در سه خط</b>
     <p>فرض کنید یک توسعه‌دهنده در namespace به نام <code>shop</code> فقط اجازه‌ی <code>create pods</code> دارد و <code>get secrets</code> ندارد؛‏ ولی در همان namespace،‏ ServiceAccount به نام <code>deployer</code> با اجازه‌ی خواندن همه‌ی Secretها وجود دارد:</p>
     <div class="code"><div class="lbl"><span>escalate-pod.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -2496,6 +2521,7 @@ kubectl logs -n shop innocent | head -3         # contents of every Secret!
 </pre></div>
     <p>این همان مسیر دوم مستندات است. برای همین «اجازه‌ی ساخت Pod در یک namespace» را باید معادل «دسترسی به همه‌ی Secretها و ServiceAccountهای آن namespace» دانست. راه‌حل: ServiceAccountهای پراختیار را در namespace جدا بگذارید و با admission policy،‏ استفاده از ServiceAccountها را محدود کنید (بخش‌های دوم و سوم همین فصل).</p>
   </div>
+  </details>
 
   <h3 id="ch14-a-checking-access">بررسی دسترسی به API <small>(Checking API access)</small></h3>
   <p><code>kubectl</code> زیرفرمان <code>auth can-i</code> را برای پرسیدن سریع از لایه‌ی authorization دارد. این دستور با API به نام <code>SelfSubjectAccessReview</code> بررسی می‌کند کاربر فعلی می‌تواند کار مشخصی را انجام دهد یا نه،‏ و با هر authorization modeی کار می‌کند.</p>
@@ -2647,6 +2673,10 @@ no
   <p>اول،‏ ارتباط بین proxy و API server باید با TLS درست پیکربندی‌شده باشد تا ریسک intercept یا شنود ترافیک کم شود.</p>
   <p>دوم،‏ مهاجمی که بتواند headerهای درخواست را تغییر دهد،‏ ممکن است به resourceهای کوبرنتیز دسترسی غیرمجاز بگیرد؛‏ پس باید مطمئن شوید headerها امن‌اند و قابل دست‌کاری نیستند.</p>
 
+  <p class="next">ادامه‌ی مطالعه: User Authentication ·‏ Authenticating with Bootstrap Tokens ·‏ kubelet Authentication ·‏ Authenticating with Service Account Tokens.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جدول تصمیم‌گیری برای انتخاب سازوکار authentication</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جدول تصمیم‌گیری برای انتخاب سازوکار authentication</b>
     <div class="tbl"><table><thead><tr><th>سازوکار</th><th>مناسب برای</th><th>revoke</th><th>تغییر group</th><th>نیاز به دسترسی به control plane</th></tr></thead><tbody>
       <tr><td>X.509 client certificate</td><td>اجزای سیستمی (kubelet و scheduler) و دسترسی اضطراری</td><td>ندارد (فقط re-key کردن CA)</td><td>فقط با صدور certificate تازه</td><td>برای CA؛‏ یا از راه CSR API</td></tr>
@@ -2660,10 +2690,10 @@ no
     </tbody></table></div>
     <p>ستون revoke برای TokenRequest بر اساس رفتار bound tokenهاست که در <a href="#ch14-b-sa-admin">بخش مدیریت ServiceAccountها</a> توضیح داده می‌شود.</p>
   </div>
-  <p class="next">ادامه‌ی مطالعه: User Authentication ·‏ Authenticating with Bootstrap Tokens ·‏ kubelet Authentication ·‏ Authenticating with Service Account Tokens.</p>
+  </details>
 
-  <div id="ch14-ex1" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۴،‏ بخش اول <small>۱۷ تمرین</small></div>
+  <details id="ch14-ex1" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۴،‏ بخش اول <small>۱۷ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>روی یک API server که token authentication و anonymous access هر دو فعال‌اند،‏ سه درخواست به <code>/api/v1/namespaces/default/pods</code> ارسال می‌شود: (الف) بدون header <code>Authorization</code>،‏ (ب) با یک bearer token نامعتبر،‏ (ج) با یک token معتبر برای کاربری که هیچ RoleBindingی ندارد. status code هر کدام چیست و چرا؟ چرا طراحی کوبرنتیز حالت (ب) را anonymous در نظر نمی‌گیرد؟
         <details class="ans"><summary>پاسخ</summary>
@@ -3128,7 +3158,7 @@ spec:
           <p><b>درس:</b> <code>kubectl auth can-i</code> فقط دسترسی <i>مستقیم</i> را می‌سنجد. در audit دسترسی،‏ «can create pods/deployments/jobs/... in NS» را معادل «can use every ServiceAccount, Secret, ConfigMap and volume in NS» در نظر بگیرید.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 <!-- chapter 11 part b -->
   <h3 id="ch14-b-rbac-intro">کنترل دسترسی مبتنی بر نقش <small>(Role-based access control)</small></h3>
   <p><i>Role-based access control</i> (RBAC) روشی برای تنظیم دسترسی به منابع رایانه‌ای یا شبکه بر اساس نقش (role) کاربران در سازمان است. RBAC authorization تصمیم‌هایش را بر اساس API group به نام <code>rbac.authorization.k8s.io</code> می‌گیرد و اجازه می‌دهد policyها را به‌صورت پویا از راه Kubernetes API تنظیم کنید.</p>
@@ -3143,9 +3173,12 @@ authorizers:
   <p>یا API server را با flag <code>--authorization-mode</code> و فهرستی (جداشده با ویرگول) که <code>RBAC</code> را دارد اجرا کنید؛‏ مثلاً:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kube-apiserver --authorization-mode=...,RBAC --other-options --more-options
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جایگاه RBAC در زنجیره‌ی authorization</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جایگاه RBAC در زنجیره‌ی authorization</b>
     <p>RBAC یکی از authorizerهای ممکن است،‏ نه تنها گزینه؛‏ می‌توان چند authorizer را پشت هم گذاشت (مثلاً اول Node authorizer،‏ بعد RBAC،‏ بعد یک webhook). درخواست کافی است با <b>یکی</b> از authorizerها پذیرفته شود؛‏ اگر یکی صریحاً deny کند یا همه no opinion بدهند،‏ درخواست با <code>Forbidden</code> رد می‌شود. بقیه‌ی این فصل فرض می‌کند RBAC فعال است،‏ چون رایج‌ترین و توصیه‌شده‌ترین روش authorization در production clusterهاست.</p>
   </div>
+  </details>
 
   <h3 id="ch14-b-api-overview">اشیای API <small>(API objects)</small></h3>
   <p>RBAC API چهار نوع شیء تعریف می‌کند: <i>Role</i> و <i>ClusterRole</i> و <i>RoleBinding</i> و <i>ClusterRoleBinding</i>. این اشیا را مثل هر شیء دیگر کوبرنتیز با ابزارهایی مثل <code>kubectl</code> می‌توانید ببینید یا تغییر دهید.</p>
@@ -3420,13 +3453,6 @@ kubectl get clusterrole monitoring -o yaml | sed -n '/^rules:/,$p'
 </pre></div>
     <p>حالا <code>kubectl delete clusterrole monitoring-endpointslices</code> را اجرا کنید؛‏ پس از چند لحظه <code>rules</code> در monitoring دوباره خالی می‌شود،‏ چون این فیلد همیشه از ClusterRoleهای منطبق محاسبه می‌شود (کار clusterrole-aggregation-controller که در فهرست نقش‌های controllerها در ادامه می‌آید).</p>
   </div>
-  <div class="deep"><b>توضیح تکمیلی: یک پیامد امنیتی aggregation</b>
-    <p>هر ClusterRole با label <code>rbac.authorization.k8s.io/aggregate-to-edit: "true"</code> خودکار به نقش edit اضافه می‌شود؛‏ پس کسی که بتواند ClusterRole بسازد یا labelهای آن را تغییر دهد،‏ عملاً دامنه‌ی edit را در همه‌ی namespaceهایی که edit در آن‌ها bind شده گسترش می‌دهد. قاعده‌ی جلوگیری از privilege escalation (در ادامه) مانع می‌شود کاربر قاعده‌ای در ClusterRole بنویسد که خودش ندارد،‏ مگر verb به نام <code>escalate</code> را داشته باشد. پس فقط افراد مورد اعتماد باید اجازه‌ی create و update روی <code>clusterroles</code> داشته باشند. Helm chartهای operatorها هم معمولاً با همین labelها CRDهایشان را در view و edit و admin قابل استفاده می‌کنند؛‏ هنگام نصب operator بررسی کنید کدام ClusterRoleها را با این labelها اضافه می‌کند.</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># which ClusterRoles are aggregated into edit?
-kubectl get clusterroles -l rbac.authorization.k8s.io/aggregate-to-edit=true
-</pre></div>
-  </div>
-
   <h4>نمونه‌های Role</h4>
   <p>نمونه‌های زیر فقط بخش <code>rules</code> از اشیای Role یا ClusterRole را نشان می‌دهند.</p>
   <p>اجازه‌ی خواندن resource به نام <code>"pods"</code> در core API group:</p>
@@ -3486,6 +3512,16 @@ kubectl get clusterroles -l rbac.authorization.k8s.io/aggregate-to-edit=true
 - nonResourceURLs: ["/healthz", "/healthz/*"] # '*' in a nonResourceURL is a suffix glob match
   verbs: ["get", "post"]
 </pre></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">یک پیامد امنیتی aggregation</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: یک پیامد امنیتی aggregation</b>
+    <p>هر ClusterRole با label <code>rbac.authorization.k8s.io/aggregate-to-edit: "true"</code> خودکار به نقش edit اضافه می‌شود؛‏ پس کسی که بتواند ClusterRole بسازد یا labelهای آن را تغییر دهد،‏ عملاً دامنه‌ی edit را در همه‌ی namespaceهایی که edit در آن‌ها bind شده گسترش می‌دهد. قاعده‌ی جلوگیری از privilege escalation (در ادامه) مانع می‌شود کاربر قاعده‌ای در ClusterRole بنویسد که خودش ندارد،‏ مگر verb به نام <code>escalate</code> را داشته باشد. پس فقط افراد مورد اعتماد باید اجازه‌ی create و update روی <code>clusterroles</code> داشته باشند. Helm chartهای operatorها هم معمولاً با همین labelها CRDهایشان را در view و edit و admin قابل استفاده می‌کنند؛‏ هنگام نصب operator بررسی کنید کدام ClusterRoleها را با این labelها اضافه می‌کند.</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># which ClusterRoles are aggregated into edit?
+kubectl get clusterroles -l rbac.authorization.k8s.io/aggregate-to-edit=true
+</pre></div>
+  </div>
+  </details>
 
   <h3 id="ch14-b-referring-subjects">ارجاع به subjectها <small>(Referring to subjects)</small></h3>
   <p>RoleBinding یا ClusterRoleBinding یک role را به subjectها bind می‌کند. subject می‌تواند group،‏ کاربر یا ServiceAccount باشد.</p>
@@ -3552,6 +3588,8 @@ kubectl get clusterroles -l rbac.authorization.k8s.io/aggregate-to-edit=true
   apiGroup: rbac.authorization.k8s.io
 </pre></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">انتخاب نوع Role و Binding</span></summary>
   <div class="deep"><b>توضیح تکمیلی: انتخاب نوع Role و Binding</b>
     <div class="tbl"><table><thead><tr><th>هدف</th><th>Role یا ClusterRole</th><th>Binding</th></tr></thead><tbody>
       <tr><td>دسترسی محدود به یک namespace</td><td>Role در همان namespace</td><td>RoleBinding در همان namespace</td></tr>
@@ -3561,6 +3599,7 @@ kubectl get clusterroles -l rbac.authorization.k8s.io/aggregate-to-edit=true
     </tbody></table></div>
     <p>یک اشتباه رایج این است که فکر کنیم ClusterRole همیشه یعنی دسترسی در کل cluster؛‏ وقتی ClusterRole با RoleBinding (نه ClusterRoleBinding)،‏ bind شود،‏ دامنه‌اش به namespace همان RoleBinding محدود است؛‏ درست مثل نمونه‌ی dave.</p>
   </div>
+  </details>
 
   <h3 id="ch14-b-default-roles">نقش‌ها و bindingهای پیش‌فرض <small>(Default roles and role bindings)</small></h3>
   <p>API server مجموعه‌ای از اشیای پیش‌فرض ClusterRole و ClusterRoleBinding می‌سازد. بیشتر آن‌ها پیشوند <code>system:</code> دارند؛‏ یعنی control plane مستقیم مدیریتشان می‌کند. همه‌ی ClusterRoleها و ClusterRoleBindingهای پیش‌فرض label <code>kubernetes.io/bootstrapping=rbac-defaults</code> دارند.</p>
@@ -3574,13 +3613,6 @@ kubectl get clusterrolebindings -l kubernetes.io/bootstrapping=rbac-defaults
   <p>API server در هر بار شروع،‏ permissionهای جاافتاده را به ClusterRoleهای پیش‌فرض و subjectهای جاافتاده را به ClusterRoleBindingهای پیش‌فرض برمی‌گرداند. به این ترتیب cluster تغییرهای تصادفی را ترمیم می‌کند و نقش‌ها و bindingها با تغییر permissionها و subjectها در نسخه‌های تازه‌ی کوبرنتیز به‌روز می‌مانند.</p>
   <p>برای خارج کردن یک نقش یا binding پیش‌فرض از این reconciliation،‏ annotation به نام <code>rbac.authorization.kubernetes.io/autoupdate</code> را روی آن برابر <code>false</code> بگذارید. یادتان باشد نبود permissionها و subjectهای پیش‌فرض ممکن است cluster را از کار بیندازد.</p>
   <p>اگر RBAC authorizer فعال باشد،‏ reconcile خودکار به‌طور پیش‌فرض فعال است.</p>
-  <div class="deep"><b>توضیح تکمیلی: reconcile فقط «اضافه» می‌کند</b>
-    <p>مستندات می‌گوید permissionها و subjectهای <b>جاافتاده</b> اضافه می‌شوند. پس اگر کسی اشتباهی قاعده‌ای را از <code>system:node-proxier</code> پاک کند،‏ restart بعدی API server آن را برمی‌گرداند؛‏ ولی اگر قاعده‌ای <b>اضافه</b> به <code>view</code> یا subjectی اضافه به یک binding پیش‌فرض بیفزاید،‏ reconcile آن را حذف نمی‌کند. پس reconcile خودکار ابزار ترمیم است،‏ نه ابزار audit؛‏ تغییرهای اضافه را باید با بازبینی دوره‌ای پیدا کرد.</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># which default roles are excluded from auto-reconciliation?
-kubectl get clusterroles -o jsonpath='{range .items[?(@.metadata.annotations.rbac\.authorization\.kubernetes\.io/autoupdate=="false")]}{.metadata.name}{"\n"}{end}'
-</pre></div>
-  </div>
-
   <h4>نقش‌های API discovery <small>(API discovery roles)</small></h4>
   <p>bindingهای پیش‌فرض به کاربران authenticated و unauthenticated اجازه می‌دهند اطلاعاتی از API را بخوانند که برای دسترسی عمومی امن شمرده می‌شود (از جمله CustomResourceDefinitionها). برای غیرفعال کردن دسترسی anonymous،‏ flag <code>--anonymous-auth=false</code> را به پیکربندی API server اضافه کنید.</p>
   <p>برای دیدن پیکربندی این نقش‌ها:</p>
@@ -3592,27 +3624,6 @@ kubectl get clusterroles -o jsonpath='{range .items[?(@.metadata.annotations.rba
     <tr><td><b>system:discovery</b></td><td>group <b>system:authenticated</b></td><td>اجازه‌ی خواندن endpointهای API discovery که برای پیدا کردن و توافق بر سطح API لازم‌اند. پیش از v1.14 به‌طور پیش‌فرض به <code>system:unauthenticated</code> هم bind بود.</td></tr>
     <tr><td><b>system:public-info-viewer</b></td><td>groupهای <b>system:authenticated</b> و <b>system:unauthenticated</b></td><td>اجازه‌ی خواندن اطلاعات غیرحساس درباره‌ی cluster؛‏ از v1.14 اضافه شد.</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی: public-info-viewer دقیقاً چه چیزی را باز می‌کند؟</b>
-    <p>با <code>kubectl get clusterrole system:public-info-viewer -o yaml</code> می‌بینید این نقش فقط <code>nonResourceURLs</code>هایی مثل <code>/healthz</code> و <code>/livez</code> و <code>/readyz</code> و <code>/version</code> را با verb به نام <code>get</code> مجاز می‌کند. برای همین load balancer بدون credential می‌تواند <code>/readyz</code> را health check کند. آزمایش روی kind:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl -sk https://127.0.0.1:6443/version        # no token: works (anonymous -&gt; system:unauthenticated)
-curl -sk https://127.0.0.1:6443/api/v1/pods    # no token: 403
-</pre></div>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">{
-  "major": "1",
-  "minor": "37",
-  ...
-}
-{
-  "kind": "Status",
-  "apiVersion": "v1",
-  "status": "Failure",
-  "message": "pods is forbidden: User \"system:anonymous\" cannot list resource \"pods\" in API group \"\" at the cluster scope",
-  "reason": "Forbidden",
-  "code": 403
-}
-</pre></div>
-  </div>
-
   <h4 id="ch14-b-user-facing-roles">نقش‌های کاربری <small>(User-facing roles)</small></h4>
   <p>بعضی ClusterRoleهای پیش‌فرض پیشوند <code>system:</code> ندارند و برای استفاده‌ی کاربران طراحی شده‌اند: نقش superuser (<code>cluster-admin</code>)،‏ نقش‌هایی که در کل cluster با ClusterRoleBinding داده می‌شوند،‏ و نقش‌هایی که در namespaceهای مشخص با RoleBinding داده می‌شوند (<code>admin</code> و <code>edit</code> و <code>view</code>).</p>
   <p>این نقش‌ها از <a href="#ch14-b-aggregated-clusterroles">ClusterRole aggregation</a> استفاده می‌کنند تا مدیران بتوانند قاعده‌های custom resourceها را به آن‌ها اضافه کنند. برای افزودن قاعده به <code>admin</code> یا <code>edit</code> یا <code>view</code>،‏ یک ClusterRole با یک یا چند label زیر بسازید:</p>
@@ -3628,31 +3639,6 @@ curl -sk https://127.0.0.1:6443/api/v1/pods    # no token: 403
     <tr><td><b>edit</b></td><td>ندارد</td><td>خواندن و نوشتن بیشتر اشیای یک namespace. اجازه‌ی دیدن یا تغییر Role و RoleBinding را نمی‌دهد،‏ ولی اجازه‌ی دسترسی به Secretها و اجرای Pod با هر ServiceAccount آن namespace را می‌دهد؛‏ پس با آن می‌توان به سطح دسترسی API هر ServiceAccount همان namespace رسید. در clusterهای ساخته‌شده با v1.22 یا بالاتر اجازه‌ی نوشتن EndpointSlice را نمی‌دهد (<a href="#ch14-b-endpointslices-write">بخش دسترسی نوشتن به EndpointSlice</a>).</td></tr>
     <tr><td><b>view</b></td><td>ندارد</td><td>فقط خواندن بیشتر اشیای یک namespace. اجازه‌ی دیدن Role و RoleBinding را نمی‌دهد. اجازه‌ی دیدن Secret را هم نمی‌دهد،‏ چون خواندن Secretها یعنی دسترسی به credentialهای ServiceAccountهای آن namespace و در نتیجه دسترسی به API با هویت هر کدام (نوعی privilege escalation).</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی عملی admin و edit و view در یک namespace</b>
-    <div class="tbl"><table><thead><tr><th>توانایی</th><th>view</th><th>edit</th><th>admin</th><th>cluster-admin (با RoleBinding)</th></tr></thead><tbody>
-      <tr><td>get و list روی Pod و Deployment و ConfigMap</td><td>بله</td><td>بله</td><td>بله</td><td>بله</td></tr>
-      <tr><td>خواندن Secretها</td><td>خیر</td><td>بله</td><td>بله</td><td>بله</td></tr>
-      <tr><td>ساخت و تغییر Deployment و Pod (و در نتیجه mount کردن هر Secret و اجرا با هر ServiceAccount)</td><td>خیر</td><td>بله</td><td>بله</td><td>بله</td></tr>
-      <tr><td><code>pods/exec</code>،‏ <code>pods/attach</code>،‏ <code>pods/portforward</code></td><td>خیر</td><td>بله</td><td>بله</td><td>بله</td></tr>
-      <tr><td>دیدن و ساخت Role و RoleBinding</td><td>خیر</td><td>خیر</td><td>بله</td><td>بله</td></tr>
-      <tr><td>تغییر ResourceQuota و خود Namespace</td><td>خیر</td><td>خیر</td><td>خیر</td><td>بله</td></tr>
-      <tr><td>resourceهای cluster-scoped (Nodeها و ClusterRoleها و …)</td><td>خیر</td><td>خیر</td><td>خیر</td><td>خیر (RoleBinding فقط namespace را پوشش می‌دهد)</td></tr>
-    </tbody></table></div>
-    <p>با <code>kubectl auth can-i</code> و impersonation می‌توانید این جدول را خودتان بازتولید کنید:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create ns team-a
-kubectl create rolebinding alice-edit --clusterrole=edit --user=alice -n team-a
-kubectl auth can-i get secrets -n team-a --as alice
-kubectl auth can-i create rolebindings -n team-a --as alice
-kubectl auth can-i create pods --subresource=exec -n team-a --as alice
-kubectl auth can-i list nodes --as alice
-</pre></div>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">yes
-no
-yes
-no
-</pre></div>
-  </div>
-
   <h4>نقش‌های اجزای اصلی <small>(Core component roles)</small></h4>
   <div class="tbl"><table><thead><tr><th>ClusterRole پیش‌فرض</th><th>ClusterRoleBinding پیش‌فرض</th><th>توضیح</th></tr></thead><tbody>
     <tr><td><b>system:kube-scheduler</b></td><td>user <b>system:kube-scheduler</b></td><td>دسترسی به resourceهای لازم برای scheduler.</td></tr>
@@ -3661,10 +3647,6 @@ no
     <tr><td><b>system:node</b></td><td>ندارد</td><td>دسترسی به resourceهای لازم برای kubelet،‏ <b>از جمله خواندن همه‌ی Secretها و نوشتن status همه‌ی Podها</b>. به‌جای این نقش از <a href="https://kubernetes.io/docs/reference/access-authn-authz/node/">Node authorizer</a> و <a href="#ch14-b-adm-noderestriction">NodeRestriction admission plugin</a> استفاده کنید تا هر kubelet فقط بر اساس Podهای schedule‌شده روی خودش به API دسترسی داشته باشد. نقش <code>system:node</code> فقط برای سازگاری با clusterهایی مانده که از نسخه‌های پیش از v1.8 ارتقا یافته‌اند.</td></tr>
     <tr><td><b>system:node-proxier</b></td><td>user <b>system:kube-proxy</b></td><td>دسترسی به resourceهای لازم برای kube-proxy.</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا system:node هیچ binding پیش‌فرضی ندارد؟</b>
-    <p>اگر همه‌ی kubeletها نقش <code>system:node</code> را داشتند،‏ نفوذ به فقط یک Node (مثلاً با container escape) کافی بود تا مهاجم با credential همان kubelet همه‌ی Secretهای cluster را بخواند. Node authorizer این دسترسی را به «فقط Secretهایی که Podهای همین Node به آن‌ها ارجاع می‌دهند» محدود می‌کند و NodeRestriction مانع می‌شود kubelet،‏ Node دیگر یا Podهای Nodeهای دیگر را تغییر دهد. این دو با هم blast radius یک Node آلوده را به خود آن Node محدود می‌کنند.</p>
-  </div>
-
   <h4>نقش‌های اجزای دیگر <small>(Other component roles)</small></h4>
   <div class="tbl"><table><thead><tr><th>ClusterRole پیش‌فرض</th><th>ClusterRoleBinding پیش‌فرض</th><th>توضیح</th></tr></thead><tbody>
     <tr><td><b>system:auth-delegator</b></td><td>ندارد</td><td>اجازه‌ی سپردن بررسی authentication و authorization به API server؛‏ معمولاً API serverهای افزوده (add-on) برای authentication و authorization یکپارچه از آن استفاده می‌کنند.</td></tr>
@@ -3677,10 +3659,6 @@ no
     <tr><td><b>system:persistent-volume-provisioner</b></td><td>ندارد</td><td>دسترسی به resourceهای لازم برای بیشتر <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/#dynamic">dynamic volume provisionerها</a>.</td></tr>
     <tr><td><b>system:monitoring</b></td><td>group <b>system:monitoring</b></td><td>اجازه‌ی خواندن endpointهای پایش control plane:‏ endpointهای liveness و readiness در kube-apiserver (<code>/healthz</code> و <code>/livez</code> و <code>/readyz</code>)،‏ health checkهای جداگانه (<code>/healthz/*</code> و <code>/livez/*</code> و <code>/readyz/*</code>) و <code>/metrics</code>. همچنین باعث می‌شود kube-apiserver،‏ header به نام <code>traceparent</code> درخواست‌ها را برای tracing بپذیرد. health checkهای جداگانه و endpoint مربوط به metrics ممکن است اطلاعات حساس آشکار کنند.</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی: system:kubelet-api-admin و رابطه‌اش با nodes/proxy</b>
-    <p>نقش <code>system:kubelet-api-admin</code> شامل دسترسی به <code>nodes/proxy</code> و <code>nodes/log</code> و <code>nodes/stats</code> و <code>nodes/metrics</code> است. همان‌طور که در <a href="#ch14-b-gp-risks">بخش ریسک‌های privilege escalation</a> می‌بینیم،‏ <code>nodes/proxy</code> یعنی اجرای دستور در هر container روی Node و دور زدن audit و admission. این نقش را فقط به هویت خود API server (برای <code>kubectl exec</code> و <code>logs</code>) یا ابزارهای کاملاً مورد اعتماد bind کنید. برای یک Prometheus معمولی <code>nodes/metrics</code> و <code>nodes/stats</code> کافی است.</p>
-  </div>
-
   <h4 id="ch14-b-controller-roles">نقش‌های controllerهای داخلی <small>(Roles for built-in controllers)</small></h4>
   <p>controller manager کوبرنتیز controllerهای داخلی control plane را اجرا می‌کند. وقتی kube-controller-manager با <code>--use-service-account-credentials</code> اجرا شود،‏ هر controller را با service account جداگانه‌ای راه می‌اندازد و برای هر controller داخلی نقشی با پیشوند <code>system:controller:</code> وجود دارد. اگر این flag داده نشود،‏ همه‌ی control loopها (حلقه‌هایی که مدام current state را می‌خوانند و آن را به سمت desired state می‌برند) با credential خود controller manager اجرا می‌شوند و باید همه‌ی نقش‌های مربوط را به آن داد. این نقش‌ها از جمله این‌هایند:</p>
   <ul>
@@ -3712,6 +3690,64 @@ no
     <li><code>system:controller:statefulset-controller</code></li>
     <li><code>system:controller:ttl-controller</code></li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۶)</small> <span class="m-t">reconcile فقط «اضافه» می‌کند · public-info-viewer دقیقاً چه چیزی را باز می‌کند؟ · مقایسه‌ی عملی admin و edit و view در یک namespace · چرا system:node هیچ binding پیش‌فرضی ندارد؟ · system:kubelet-api-admin و رابطه‌اش با nodes/proxy · چرا --use-service-account-credentials مهم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: reconcile فقط «اضافه» می‌کند</b>
+    <p>مستندات می‌گوید permissionها و subjectهای <b>جاافتاده</b> اضافه می‌شوند. پس اگر کسی اشتباهی قاعده‌ای را از <code>system:node-proxier</code> پاک کند،‏ restart بعدی API server آن را برمی‌گرداند؛‏ ولی اگر قاعده‌ای <b>اضافه</b> به <code>view</code> یا subjectی اضافه به یک binding پیش‌فرض بیفزاید،‏ reconcile آن را حذف نمی‌کند. پس reconcile خودکار ابزار ترمیم است،‏ نه ابزار audit؛‏ تغییرهای اضافه را باید با بازبینی دوره‌ای پیدا کرد.</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># which default roles are excluded from auto-reconciliation?
+kubectl get clusterroles -o jsonpath='{range .items[?(@.metadata.annotations.rbac\.authorization\.kubernetes\.io/autoupdate=="false")]}{.metadata.name}{"\n"}{end}'
+</pre></div>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: public-info-viewer دقیقاً چه چیزی را باز می‌کند؟</b>
+    <p>با <code>kubectl get clusterrole system:public-info-viewer -o yaml</code> می‌بینید این نقش فقط <code>nonResourceURLs</code>هایی مثل <code>/healthz</code> و <code>/livez</code> و <code>/readyz</code> و <code>/version</code> را با verb به نام <code>get</code> مجاز می‌کند. برای همین load balancer بدون credential می‌تواند <code>/readyz</code> را health check کند. آزمایش روی kind:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl -sk https://127.0.0.1:6443/version        # no token: works (anonymous -&gt; system:unauthenticated)
+curl -sk https://127.0.0.1:6443/api/v1/pods    # no token: 403
+</pre></div>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">{
+  "major": "1",
+  "minor": "37",
+  ...
+}
+{
+  "kind": "Status",
+  "apiVersion": "v1",
+  "status": "Failure",
+  "message": "pods is forbidden: User \"system:anonymous\" cannot list resource \"pods\" in API group \"\" at the cluster scope",
+  "reason": "Forbidden",
+  "code": 403
+}
+</pre></div>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی عملی admin و edit و view در یک namespace</b>
+    <div class="tbl"><table><thead><tr><th>توانایی</th><th>view</th><th>edit</th><th>admin</th><th>cluster-admin (با RoleBinding)</th></tr></thead><tbody>
+      <tr><td>get و list روی Pod و Deployment و ConfigMap</td><td>بله</td><td>بله</td><td>بله</td><td>بله</td></tr>
+      <tr><td>خواندن Secretها</td><td>خیر</td><td>بله</td><td>بله</td><td>بله</td></tr>
+      <tr><td>ساخت و تغییر Deployment و Pod (و در نتیجه mount کردن هر Secret و اجرا با هر ServiceAccount)</td><td>خیر</td><td>بله</td><td>بله</td><td>بله</td></tr>
+      <tr><td><code>pods/exec</code>،‏ <code>pods/attach</code>،‏ <code>pods/portforward</code></td><td>خیر</td><td>بله</td><td>بله</td><td>بله</td></tr>
+      <tr><td>دیدن و ساخت Role و RoleBinding</td><td>خیر</td><td>خیر</td><td>بله</td><td>بله</td></tr>
+      <tr><td>تغییر ResourceQuota و خود Namespace</td><td>خیر</td><td>خیر</td><td>خیر</td><td>بله</td></tr>
+      <tr><td>resourceهای cluster-scoped (Nodeها و ClusterRoleها و …)</td><td>خیر</td><td>خیر</td><td>خیر</td><td>خیر (RoleBinding فقط namespace را پوشش می‌دهد)</td></tr>
+    </tbody></table></div>
+    <p>با <code>kubectl auth can-i</code> و impersonation می‌توانید این جدول را خودتان بازتولید کنید:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create ns team-a
+kubectl create rolebinding alice-edit --clusterrole=edit --user=alice -n team-a
+kubectl auth can-i get secrets -n team-a --as alice
+kubectl auth can-i create rolebindings -n team-a --as alice
+kubectl auth can-i create pods --subresource=exec -n team-a --as alice
+kubectl auth can-i list nodes --as alice
+</pre></div>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">yes
+no
+yes
+no
+</pre></div>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا system:node هیچ binding پیش‌فرضی ندارد؟</b>
+    <p>اگر همه‌ی kubeletها نقش <code>system:node</code> را داشتند،‏ نفوذ به فقط یک Node (مثلاً با container escape) کافی بود تا مهاجم با credential همان kubelet همه‌ی Secretهای cluster را بخواند. Node authorizer این دسترسی را به «فقط Secretهایی که Podهای همین Node به آن‌ها ارجاع می‌دهند» محدود می‌کند و NodeRestriction مانع می‌شود kubelet،‏ Node دیگر یا Podهای Nodeهای دیگر را تغییر دهد. این دو با هم blast radius یک Node آلوده را به خود آن Node محدود می‌کنند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: system:kubelet-api-admin و رابطه‌اش با nodes/proxy</b>
+    <p>نقش <code>system:kubelet-api-admin</code> شامل دسترسی به <code>nodes/proxy</code> و <code>nodes/log</code> و <code>nodes/stats</code> و <code>nodes/metrics</code> است. همان‌طور که در <a href="#ch14-b-gp-risks">بخش ریسک‌های privilege escalation</a> می‌بینیم،‏ <code>nodes/proxy</code> یعنی اجرای دستور در هر container روی Node و دور زدن audit و admission. این نقش را فقط به هویت خود API server (برای <code>kubectl exec</code> و <code>logs</code>) یا ابزارهای کاملاً مورد اعتماد bind کنید. برای یک Prometheus معمولی <code>nodes/metrics</code> و <code>nodes/stats</code> کافی است.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: چرا --use-service-account-credentials مهم است؟</b>
     <p>با این flag هر controller با service account خودش در <code>kube-system</code> کار می‌کند (مثلاً <code>system:serviceaccount:kube-system:deployment-controller</code>). دو فایده دارد: ۱) least privilege: باگ یا آسیب‌پذیری در یک controller فقط به permissionهای همان controller می‌رسد؛‏ ۲) audit log دقیق‌تر: می‌بینید کدام controller کدام تغییر را داده،‏ نه یک هویت کلی. kubeadm این flag را به‌طور پیش‌فرض فعال می‌کند.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl -n kube-system get pod -l component=kube-controller-manager -o yaml | grep use-service-account
@@ -3722,6 +3758,7 @@ NAME                                      ROLE                                  
 system:controller:deployment-controller   ClusterRole/system:controller:deployment-controller   12d                    kube-system/deployment-controller
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch14-b-privilege-escalation">جلوگیری از privilege escalation و bootstrap <small>(Privilege escalation prevention and bootstrapping)</small></h3>
   <p>RBAC API جلوی این را می‌گیرد که کاربران با ویرایش Role یا RoleBinding،‏ اختیار خود را افزایش دهند. چون این کنترل در سطح API اعمال می‌شود،‏ حتی وقتی RBAC authorizer استفاده نمی‌شود هم برقرار است.</p>
@@ -3888,9 +3925,12 @@ kubectl create clusterrole steal-secrets --verb=list --resource=secrets --as use
       <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl auth reconcile -f my-rbac-rules.yaml --remove-extra-subjects --remove-extra-permissions
 </pre></div></li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا auth reconcile و نه apply؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا auth reconcile و نه apply؟</b>
     <p>دو تفاوت کلیدی دارد: ۱) <code>roleRef</code> در RoleBinding و ClusterRoleBinding تغییرناپذیر است؛‏ <code>kubectl apply</code> با تغییر roleRef خطا می‌دهد،‏ ولی <code>auth reconcile</code> در این حالت binding را حذف می‌کند و دوباره می‌سازد. ۲) <code>auth reconcile</code> قاعده‌ها را از نظر معنا مقایسه می‌کند (نه متنی)؛‏ پس ترتیب verbها یا تقسیم قاعده‌ها diff کاذب نمی‌سازد. در pipeline مربوط به CI،‏ اجرای آن با <code>--dry-run=client</code> پیش از merge روش خوبی برای بازبینی تغییرات RBAC است.</p>
   </div>
+  </details>
 
   <h3 id="ch14-b-sa-permissions">permissionهای ServiceAccount <small>(ServiceAccount permissions)</small></h3>
   <p>policyهای پیش‌فرض RBAC به اجزای control plane،‏ Nodeها و controllerها permissionهای محدودی می‌دهند،‏ ولی به service accountهای بیرون از namespace به نام <code>kube-system</code> <i>هیچ permissionی</i> نمی‌دهند (جز آنچه <a href="#ch14-b-default-roles">نقش‌های API discovery</a> می‌دهند).</p>
@@ -3937,6 +3977,8 @@ kubectl create clusterrole steal-secrets --verb=list --resource=secrets --as use
   --group=system:serviceaccounts
 </pre></div></li>
   </ol>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">هویت ServiceAccount در RBAC</span></summary>
   <div class="deep"><b>توضیح تکمیلی: هویت ServiceAccount در RBAC</b>
     <p>هر ServiceAccount با username به شکل <code>system:serviceaccount:&lt;namespace&gt;:&lt;name&gt;</code>،‏ authenticate می‌شود و عضو دو group است: <code>system:serviceaccounts</code> (همه‌ی ServiceAccountها) و <code>system:serviceaccounts:&lt;namespace&gt;</code>. برای همین روش‌های ۳ تا ۵ از <code>--group</code> استفاده می‌کنند. با impersonation می‌توانید دقیقاً همان دیدی را داشته باشید که Pod دارد:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl auth can-i --list -n my-namespace --as system:serviceaccount:my-namespace:my-sa
@@ -3947,6 +3989,7 @@ Username                                            system:serviceaccount:my-nam
 Groups                                              [system:serviceaccounts system:serviceaccounts:my-namespace system:authenticated]
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch14-b-endpointslices-write">دسترسی نوشتن به EndpointSlice <small>(Write access for EndpointSlices)</small></h3>
   <p>clusterهایی که پیش از Kubernetes v1.22 ساخته شده‌اند،‏ در نقش‌های تجمیعی <code>edit</code> و <code>admin</code> اجازه‌ی نوشتن EndpointSlice (و Endpoints API که حالا منسوخ است) را دارند. برای کاهش اثر <a href="https://github.com/kubernetes/kubernetes/issues/103675">CVE-2021-25740</a>،‏ این دسترسی در clusterهایی که با v1.22 یا بالاتر ساخته می‌شوند بخشی از نقش‌های تجمیعی نیست.</p>
@@ -3973,9 +4016,12 @@ rules:
     resources: ["endpoints"]
     verbs: ["create", "delete", "deletecollection", "patch", "update"]
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">CVE-2021-25740 به زبان ساده</span></summary>
   <div class="deep"><b>توضیح تکمیلی: CVE-2021-25740 به زبان ساده</b>
     <p>Service بدون selector،‏ endpointهایش را از اشیای Endpoints یا EndpointSlice می‌گیرد که کاربر دستی می‌سازد. اگر کاربری با نقش edit در namespace خودش بتواند Endpoints بنویسد،‏ می‌تواند IP یک Pod در namespace دیگر (مثلاً پایگاه داده‌ی داخلی) را در آن بگذارد و آن backend را از راه Ingress controller یا load balancer مشترک (که معمولاً به همه‌ی Podها دسترسی شبکه دارد) در دسترس قرار دهد. NetworkPolicyی که فقط ترافیک Ingress controller را مجاز کرده هم دور زده می‌شود،‏ چون از دید شبکه ترافیک از خود Ingress controller می‌آید. برای همین annotation در manifest بالا این ریسک را صریحاً توضیح می‌دهد.</p>
   </div>
+  </details>
 
   <h3 id="ch14-b-abac-upgrade">مهاجرت از ABAC <small>(Upgrading from ABAC)</small></h3>
   <p>clusterهایی که در اصل نسخه‌های قدیمی کوبرنتیز را اجرا می‌کردند،‏ اغلب ABAC policyهای سهل‌گیر داشتند؛‏ از جمله دسترسی کامل API برای همه‌ی service accountها.</p>
@@ -4053,10 +4099,6 @@ kubectl delete ns payments --as breakglass-admin      # (succeeds when ops-alice
     <li>تعداد Nodeهایی را که Podهای پراختیار اجرا می‌کنند محدود کنید. مطمئن شوید هر DaemonSetی که اجرا می‌کنید لازم است و با least privilege اجرا می‌شود تا blast radius در container escape محدود بماند.</li>
     <li>Podهای پراختیار را کنار Podهای غیرقابل‌اعتماد یا در دسترس عموم اجرا نکنید. با <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/">taint و toleration</a>،‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity">node affinity</a> یا <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity">pod anti-affinity</a> مطمئن شوید این Podها کنار Podهای کم‌اعتمادتر اجرا نمی‌شوند (فصل ۹)؛‏ به‌ویژه وقتی Podهای کم‌اعتمادتر با Pod Security Standard در سطح <b>Restricted</b> سازگار نیستند.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: چرا Node واحد امنیتی است؟</b>
-    <p>هر Pod روی هر Node،‏ token مربوط به ServiceAccount خودش را در filesystem همان Node (زیر <code>/var/lib/kubelet/pods/...</code>) دارد. مهاجمی که از یک container عمومی (مثلاً یک frontend آسیب‌پذیر) به Node فرار کند،‏ tokenهای همه‌ی Podهای دیگر همان Node را می‌خواند. اگر یک operator با حق ساخت ClusterRoleBinding هم روی همان Node باشد،‏ مهاجم عملاً cluster-admin می‌شود. جدا کردن workloadهای پراختیار روی یک node pool اختصاصی با taint (مثلاً <code>dedicated=platform:NoSchedule</code>) این زنجیره را قطع می‌کند.</p>
-  </div>
-
   <h4>مقاوم‌سازی <small>(Hardening)</small></h4>
   <p>کوبرنتیز به‌طور پیش‌فرض دسترسی‌هایی می‌دهد که شاید در هر clusterی لازم نباشند. بررسی حقوق پیش‌فرض RBAC فرصت‌هایی برای مقاوم‌سازی فراهم می‌کند. به‌طور کلی حقوق حساب‌های <code>system:</code> را نباید تغییر داد،‏ ولی این گزینه‌ها برای مقاوم‌سازی هست:</p>
   <ul>
@@ -4072,9 +4114,15 @@ kubectl get clusterrolebindings,rolebindings -A -o json \
 
   <h4>بازبینی دوره‌ای <small>(Periodic review)</small></h4>
   <p>تنظیمات RBAC را باید به‌طور دوره‌ای برای موارد زائد و privilege escalationهای ممکن بازبینی کرد. اگر مهاجمی بتواند حسابی با همان نام یک کاربر حذف‌شده بسازد،‏ خودکار همه‌ی حقوق آن کاربر را به ارث می‌برد؛‏ به‌ویژه حقوقی که مستقیماً به آن کاربر داده شده بود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا Node واحد امنیتی است؟ · چرا bindingهای بی‌صاحب خطرناک‌اند؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا Node واحد امنیتی است؟</b>
+    <p>هر Pod روی هر Node،‏ token مربوط به ServiceAccount خودش را در filesystem همان Node (زیر <code>/var/lib/kubelet/pods/...</code>) دارد. مهاجمی که از یک container عمومی (مثلاً یک frontend آسیب‌پذیر) به Node فرار کند،‏ tokenهای همه‌ی Podهای دیگر همان Node را می‌خواند. اگر یک operator با حق ساخت ClusterRoleBinding هم روی همان Node باشد،‏ مهاجم عملاً cluster-admin می‌شود. جدا کردن workloadهای پراختیار روی یک node pool اختصاصی با taint (مثلاً <code>dedicated=platform:NoSchedule</code>) این زنجیره را قطع می‌کند.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: چرا bindingهای بی‌صاحب خطرناک‌اند؟</b>
     <p>کوبرنتیز شیء User ندارد و RoleBinding فقط رشته‌ای مثل <code>name: bob</code> نگه می‌دارد. اگر bob از شرکت برود و فقط از IdP (مثلاً OIDC) حذف شود،‏ binding باقی می‌ماند. اگر بعداً کس دیگری با همان username یا ایمیل در IdP ساخته شود،‏ دقیقاً همان حقوق را خواهد داشت. در خروج افراد (offboarding)،‏ هم IdP و هم bindingها را پاک کنید؛‏ یک script دوره‌ای که subjectهای همه‌ی bindingها را با فهرست IdP مقایسه کند،‏ ارزش زیادی دارد.</p>
   </div>
+  </details>
 
   <h3 id="ch14-b-gp-risks">ریسک‌های privilege escalation در RBAC <small>(Kubernetes RBAC - privilege escalation risks)</small></h3>
   <p>در RBAC چند privilege هست که اگر داده شوند،‏ به کاربر یا service account اجازه می‌دهند اختیار خود را در cluster افزایش دهد یا روی سیستم‌های بیرون از cluster اثر بگذارد.</p>
@@ -4114,12 +4162,6 @@ S3cr3t
   <h4>دسترسی به subresource به نام <code>proxy</code> در Nodeها <small>(Access to proxy subresource of Nodes)</small></h4>
   <p>کاربرانی که به subresource به نام <code>nodes/proxy</code> دسترسی دارند،‏ به kubelet API دسترسی دارند و می‌توانند روی هر Pod در Nodeهای مجاز دستور اجرا کنند. این دسترسی audit logging و admission control را دور می‌زند؛‏ پس پیش از دادن هر حقی روی این resource دقت کنید. این APIها با درخواست‌های websocket از نوع HTTP <code>GET</code> قابل استفاده‌اند که فقط به verb به نام <b>get</b> نیاز دارند؛‏ یعنی <b>get</b> روی <code>nodes/proxy</code> یک permission فقط‌خواندنی نیست. مثلاً با آن می‌توان به APIهای پراختیار kubelet دسترسی داشت که log مربوط به container را می‌خوانند یا به processهای Pod،‏ exec و attach می‌کنند؛‏ حتی وقتی فرستنده از راه Kubernetes API چنین permissionهایی ندارد.</p>
   <p>اطلاعات بیشتر در صفحه‌ی <a href="https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/#get-nodes-proxy-warning">Kubelet authentication/authorization</a> آمده است.</p>
-  <div class="deep"><b>توضیح تکمیلی: مسیر حمله با nodes/proxy</b>
-    <p>درخواست به <code>https://&lt;apiserver&gt;/api/v1/nodes/&lt;node&gt;/proxy/...</code> را API server بی‌تغییر به kubelet می‌فرستد. API server فقط اجازه‌ی <code>get nodes/proxy</code> را بررسی می‌کند و مسیر (مثلاً <code>/exec/&lt;ns&gt;/&lt;pod&gt;/&lt;container&gt;?command=sh</code> یا <code>/run/...</code>) را تفسیر نمی‌کند؛‏ پس نه admission pluginی مثل Pod Security روی آن اجرا می‌شود و نه audit log رویدادی برای <code>pods/exec</code> ثبت می‌کند (فقط یک درخواست به nodes/proxy ثبت می‌شود). ابزارهای پایش که فقط metric لازم دارند باید <code>nodes/metrics</code> و <code>nodes/stats</code> بگیرند،‏ نه <code>nodes/proxy</code>.</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># who has nodes/proxy?
-kubectl get clusterroles -o json | jq -r '.items[] | select(any(.rules[]?; (.resources // [] | index("nodes/proxy") or index("*")))) | .metadata.name'
-</pre></div>
-  </div>
   <h4>verb به نام escalate <small>(Escalate verb)</small></h4>
   <p>RBAC به‌طور کلی نمی‌گذارد کاربر ClusterRoleی با حقوقی بیشتر از حقوق خودش بسازد. استثنای این قاعده verb به نام <code>escalate</code> است؛‏ همان‌طور که در <a href="#ch14-b-privilege-escalation">بخش جلوگیری از escalation</a> آمد،‏ کاربری که این حق را دارد عملاً می‌تواند اختیارش را افزایش دهد.</p>
   <h4>verb به نام bind <small>(Bind verb)</small></h4>
@@ -4134,6 +4176,14 @@ kubectl get clusterroles -o json | jq -r '.items[] | select(any(.rules[]?; (.res
   <p>کاربرانی که <code>validatingwebhookconfigurations</code> یا <code>mutatingwebhookconfigurations</code> را کنترل می‌کنند،‏ webhookهایی را کنترل می‌کنند که می‌توانند هر شیء پذیرفته‌شده در cluster را بخوانند و در mutating webhook حتی تغییرش دهند.</p>
   <h4>تغییر namespace <small>(Namespace modification)</small></h4>
   <p>کاربرانی که می‌توانند روی شیء Namespace،‏ <b>patch</b> انجام دهند (مثلاً با RoleBindingی در همان namespace به Roleی با این دسترسی)،‏ می‌توانند labelهای آن namespace را تغییر دهند. در clusterهایی که Pod Security Admission دارند،‏ این ممکن است اجازه دهد namespace برای policyی سهل‌گیرتر از نظر مدیران پیکربندی شود. در clusterهایی که NetworkPolicy دارند،‏ کاربر ممکن است labelهایی بگذارد که به‌طور غیرمستقیم دسترسی به سرویس‌هایی را باز کند که مدیر نمی‌خواست. در clusterهایی که Dynamic Resource Allocation دارند،‏ label زدن namespace با <code>resource.kubernetes.io/admin-access: "true"</code> به هر کسی که بتواند در آن namespace،‏ ResourceClaim بسازد اجازه می‌دهد دسترسی مدیریتی به deviceهایی بخواهد که قبلاً به claimهای دیگر در هر namespace اختصاص یافته‌اند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">مسیر حمله با nodes/proxy · خلاصه‌ی permissionهای خطرناک برای بازبینی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: مسیر حمله با nodes/proxy</b>
+    <p>درخواست به <code>https://&lt;apiserver&gt;/api/v1/nodes/&lt;node&gt;/proxy/...</code> را API server بی‌تغییر به kubelet می‌فرستد. API server فقط اجازه‌ی <code>get nodes/proxy</code> را بررسی می‌کند و مسیر (مثلاً <code>/exec/&lt;ns&gt;/&lt;pod&gt;/&lt;container&gt;?command=sh</code> یا <code>/run/...</code>) را تفسیر نمی‌کند؛‏ پس نه admission pluginی مثل Pod Security روی آن اجرا می‌شود و نه audit log رویدادی برای <code>pods/exec</code> ثبت می‌کند (فقط یک درخواست به nodes/proxy ثبت می‌شود). ابزارهای پایش که فقط metric لازم دارند باید <code>nodes/metrics</code> و <code>nodes/stats</code> بگیرند،‏ نه <code>nodes/proxy</code>.</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># who has nodes/proxy?
+kubectl get clusterroles -o json | jq -r '.items[] | select(any(.rules[]?; (.resources // [] | index("nodes/proxy") or index("*")))) | .metadata.name'
+</pre></div>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: خلاصه‌ی permissionهای خطرناک برای بازبینی</b>
     <div class="tbl"><table><thead><tr><th>permission</th><th>چرا خطرناک است</th><th>جایگزین امن‌تر</th></tr></thead><tbody>
       <tr><td><code>get</code> و <code>list</code> و <code>watch</code> روی secrets</td><td>آشکار شدن همه‌ی credentialها،‏ از جمله tokenهای قدیمی ServiceAccount</td><td>resourceNames محدود؛‏ جدا کردن namespace</td></tr>
@@ -4148,6 +4198,7 @@ kubectl get clusterroles -o json | jq -r '.items[] | select(any(.rules[]?; (.res
       <tr><td><code>patch namespaces</code></td><td>تغییر labelهای PSA و NetworkPolicy و DRA</td><td>مدیریت namespace توسط تیم پلتفرم (GitOps)</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch14-b-gp-dos">ریسک‌های denial of service در RBAC <small>(Kubernetes RBAC - denial of service risks)</small></h3>
   <h4>denial of service با ساختن شیء <small>(Object creation denial-of-service)</small></h4>
@@ -4416,10 +4467,6 @@ metadata:
   </ul>
   <p>پروژه‌ی کوبرنتیز TokenReview API را توصیه می‌کند،‏ چون tokenهایی را که به اشیایی مثل Secret یا ServiceAccount یا Pod یا Node،‏ bound هستند،‏ با حذف آن اشیا نامعتبر می‌کند. مثلاً اگر Pod دارای projected ServiceAccount token را حذف کنید،‏ cluster بی‌درنگ آن token را نامعتبر می‌کند و TokenReview فوراً رد می‌شود. اگر از OIDC validation استفاده کنید،‏ clientها تا رسیدن token به زمان انقضا آن را معتبر می‌دانند.</p>
   <p>برنامه‌ی شما همیشه باید audienceهای پذیرفتنی را تعریف کند و بررسی کند audience مربوط به token با آن‌ها بخواند؛‏ تا token فقط در برنامه‌ی شما قابل استفاده باشد و نه هیچ جای دیگر.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا audience این‌قدر مهم است؟</b>
-    <p>فرض کنید سرویس داخلی billing هر tokenی با امضای معتبر را بپذیرد. آن وقت یک Pod آلوده در هر namespace می‌تواند token پیش‌فرض خودش (با audience برابر API server) را به billing بفرستد و پذیرفته شود؛‏ برعکس،‏ اگر billing،‏ tokenی را که گرفته به API server بفرستد (token replay)،‏ API server آن را می‌پذیرد. با audience اختصاصی (مثلاً <code>billing</code> در projected volume)،‏ بررسی آن در billing و <code>spec.audiences</code> در TokenReview،‏ token هر سرویس فقط برای همان سرویس معتبر است.</p>
-  </div>
-
   <h4>جایگزین‌ها <small>(Alternatives)</small></h4>
   <ul>
     <li>tokenهای خودتان را با سازوکار دیگری صادر کنید و با <a href="#ch14-a-webhook-authn">Webhook Token Authentication</a> و سرویس validation خودتان bearer tokenها را بررسی کنید.</li>
@@ -4437,6 +4484,13 @@ metadata:
     <li><a href="https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider/">kubelet را طوری پیکربندی کنید که credential مربوط به image registry را از یک credential provider بگیرد</a>.</li>
     <li>با یک Device Plugin به virtual Trusted Platform Module (TPM) دسترسی بدهید تا authentication با private key ممکن شود.</li>
   </ul>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا audience این‌قدر مهم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا audience این‌قدر مهم است؟</b>
+    <p>فرض کنید سرویس داخلی billing هر tokenی با امضای معتبر را بپذیرد. آن وقت یک Pod آلوده در هر namespace می‌تواند token پیش‌فرض خودش (با audience برابر API server) را به billing بفرستد و پذیرفته شود؛‏ برعکس،‏ اگر billing،‏ tokenی را که گرفته به API server بفرستد (token replay)،‏ API server آن را می‌پذیرد. با audience اختصاصی (مثلاً <code>billing</code> در projected volume)،‏ بررسی آن در billing و <code>spec.audiences</code> در TokenReview،‏ token هر سرویس فقط برای همان سرویس معتبر است.</p>
+  </div>
+  </details>
 
   <h3 id="ch14-b-sa-admin">مدیریت ServiceAccountها <small>(Managing Service Accounts)</small></h3>
   <p>یک <i>ServiceAccount</i> برای processهایی که در Pod اجرا می‌شوند هویت فراهم می‌کند. process داخل Pod می‌تواند با هویت service account مربوط به خودش به API server،‏ authenticate شود.</p>
@@ -4735,11 +4789,6 @@ kubectl get secrets -A --field-selector type=kubernetes.io/service-account-token
     <li>source از نوع <code>downwardAPI</code> که نام namespace دربرگیرنده‌ی Pod را در اختیار کد برنامه‌ی داخل Pod می‌گذارد.</li>
   </ol>
   <p>هر container داخل Pod که این volume را mount کند به این اطلاعات دسترسی دارد.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا expirationSeconds برابر 3607 است و نه 3600؟</b>
-    <p>این عدد عمدی است و یک سازوکار سازگاری برای client libraryهای قدیمی است که token را دوباره از فایل نمی‌خوانند. وقتی kube-apiserver با <code>--service-account-extend-token-expiration=true</code> (پیش‌فرض) اجرا می‌شود و TokenRequestی برای token مربوط به Pod با audience خود API server و دقیقاً 3607 ثانیه می‌رسد،‏ claim به نام <code>exp</code> در JWT تا یک سال (یا مقدار <code>--service-account-max-token-expiration</code> اگر کمتر باشد) جلو برده می‌شود؛‏ ولی <code>status.expirationTimestamp</code> در پاسخ همان یک ساعت را نشان می‌دهد. استفاده از token پس از یک ساعت پذیرفته می‌شود،‏ اما به‌عنوان stale token در audit و metric ثبت می‌شود تا مدیر cluster،‏ clientهای قدیمی را پیدا کند.</p>
-    <p>kubelet بر اساس همان یک ساعت کار می‌کند: token را وقتی کمتر از ۲۰٪ عمرش (به‌علاوه‌ی کمی jitter) باقی مانده باشد یا عمرش از ۲۴ ساعت گذشته باشد refresh می‌کند. این جزئیات در کد kubelet (token manager) و کد TokenRequest در API server آمده است.</p>
-  </div>
-
   <h4 id="ch14-b-create-token">ساختن API tokenهای بیشتر <small>(Create additional API tokens)</small></h4>
   <div class="warn"><b>هشدار</b><p>فقط وقتی API token بلندمدت بسازید که سازوکار token request مناسب نباشد. سازوکار token request،‏ tokenهای محدود به زمان می‌دهد و چون این tokenها منقضی می‌شوند،‏ ریسک کمتری برای امنیت اطلاعات دارند.</p></div>
   <p>برای ساختن API token بدون انقضا و ماندگار برای ServiceAccount،‏ یک Secret از نوع <code>kubernetes.io/service-account-token</code> با annotationی بسازید که به ServiceAccount ارجاع می‌دهد. control plane یک token بلندمدت می‌سازد و داده‌ی آن را در همان Secret می‌نویسد.</p>
@@ -4806,16 +4855,6 @@ secrets:
   <h4>token کوتاه‌عمر <small>(Delete/invalidate a short-lived ServiceAccount token)</small></h4>
   <p>ServiceAccount tokenهای کوتاه‌عمر پس از مدتی که هنگام ساختن تعیین شده خودکار منقضی می‌شوند. هیچ فهرست مرکزی از tokenهای صادرشده وجود ندارد،‏ پس راهی برای revoke کردن tokenها به‌تنهایی نیست.</p>
   <p>اگر ناچارید token کوتاه‌عمری را پیش از انقضا revoke کنید،‏ می‌توانید ServiceAccount مربوط را حذف کنید و دوباره بسازید. این کار UID آن را عوض می‌کند و <b>همه‌ی</b> ServiceAccount tokenهایی را که برایش ساخته شده بود باطل می‌کند.</p>
-  <div class="deep"><b>توضیح تکمیلی: جدول راه‌های revoke</b>
-    <div class="tbl"><table><thead><tr><th>نوع token</th><th>راه revoke</th><th>اثر جانبی</th></tr></thead><tbody>
-      <tr><td>legacy (مبتنی بر Secret)</td><td>حذف Secret</td><td>فقط همان token</td></tr>
-      <tr><td>Pod-bound (projected)</td><td>حذف Pod</td><td>controller،‏ Pod را با token تازه دوباره می‌سازد</td></tr>
-      <tr><td>Secret-bound</td><td>حذف همان Secret</td><td>فقط tokenهای bound به آن Secret</td></tr>
-      <tr><td>unbound</td><td>حذف و ساختن دوباره‌ی ServiceAccount</td><td>همه‌ی tokenهای آن ServiceAccount،‏ از جمله token مربوط به Podهای در حال اجرا،‏ باطل می‌شوند و Podها باید از نو ساخته شوند</td></tr>
-    </tbody></table></div>
-    <p>token از نوع Secret-bound با <code>kubectl create token --bound-object-kind=Secret</code> ساخته می‌شود و token از نوع unbound با <code>kubectl create token</code> بدون bound object. نتیجه‌ی عملی: برای tokenهایی که بیرون از cluster (مثلاً در CI) به کار می‌روند،‏ از <code>--bound-object-kind=Secret</code> یا <code>--duration</code> کوتاه استفاده کنید تا revoke هدفمند ممکن باشد.</p>
-  </div>
-
   <h4 id="ch14-b-ext-signer">امضای external ServiceAccount token و مدیریت کلید <small>(External ServiceAccount token signing and key management)</small></h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.36 [stable]</span> (feature gate <code>ExternalServiceAccountTokenSigner</code>،‏ پیش‌فرض فعال)</p>
   <p>می‌توان kube-apiserver را طوری پیکربندی کرد که برای امضای token و مدیریت کلیدهای verify از یک external signer استفاده کند. با این قابلیت توزیع‌های کوبرنتیز می‌توانند با راه‌حل‌های مدیریت کلید دلخواهشان (مثلاً HSM یا cloud KMS) برای امضا و verify کردن credential مربوط به service account یکپارچه شوند. برای این کار flag به نام <code>--service-account-signing-endpoint</code> را برابر مسیر یک Unix domain socket (UDS) روی filesystem بگذارید،‏ یا با پیشوند @ نام یک UDS در abstract socket namespace را بدهید. روی آن UDS باید RPC serverی باشد که gRPC service به نام <code>ExternalJWTSigner</code> را پیاده‌سازی می‌کند.</p>
@@ -4909,6 +4948,23 @@ message SignJWTResponse {
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete namespace examplens
 </pre></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا expirationSeconds برابر 3607 است و نه 3600؟ · جدول راه‌های revoke</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا expirationSeconds برابر 3607 است و نه 3600؟</b>
+    <p>این عدد عمدی است و یک سازوکار سازگاری برای client libraryهای قدیمی است که token را دوباره از فایل نمی‌خوانند. وقتی kube-apiserver با <code>--service-account-extend-token-expiration=true</code> (پیش‌فرض) اجرا می‌شود و TokenRequestی برای token مربوط به Pod با audience خود API server و دقیقاً 3607 ثانیه می‌رسد،‏ claim به نام <code>exp</code> در JWT تا یک سال (یا مقدار <code>--service-account-max-token-expiration</code> اگر کمتر باشد) جلو برده می‌شود؛‏ ولی <code>status.expirationTimestamp</code> در پاسخ همان یک ساعت را نشان می‌دهد. استفاده از token پس از یک ساعت پذیرفته می‌شود،‏ اما به‌عنوان stale token در audit و metric ثبت می‌شود تا مدیر cluster،‏ clientهای قدیمی را پیدا کند.</p>
+    <p>kubelet بر اساس همان یک ساعت کار می‌کند: token را وقتی کمتر از ۲۰٪ عمرش (به‌علاوه‌ی کمی jitter) باقی مانده باشد یا عمرش از ۲۴ ساعت گذشته باشد refresh می‌کند. این جزئیات در کد kubelet (token manager) و کد TokenRequest در API server آمده است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: جدول راه‌های revoke</b>
+    <div class="tbl"><table><thead><tr><th>نوع token</th><th>راه revoke</th><th>اثر جانبی</th></tr></thead><tbody>
+      <tr><td>legacy (مبتنی بر Secret)</td><td>حذف Secret</td><td>فقط همان token</td></tr>
+      <tr><td>Pod-bound (projected)</td><td>حذف Pod</td><td>controller،‏ Pod را با token تازه دوباره می‌سازد</td></tr>
+      <tr><td>Secret-bound</td><td>حذف همان Secret</td><td>فقط tokenهای bound به آن Secret</td></tr>
+      <tr><td>unbound</td><td>حذف و ساختن دوباره‌ی ServiceAccount</td><td>همه‌ی tokenهای آن ServiceAccount،‏ از جمله token مربوط به Podهای در حال اجرا،‏ باطل می‌شوند و Podها باید از نو ساخته شوند</td></tr>
+    </tbody></table></div>
+    <p>token از نوع Secret-bound با <code>kubectl create token --bound-object-kind=Secret</code> ساخته می‌شود و token از نوع unbound با <code>kubectl create token</code> بدون bound object. نتیجه‌ی عملی: برای tokenهایی که بیرون از cluster (مثلاً در CI) به کار می‌روند،‏ از <code>--bound-object-kind=Secret</code> یا <code>--duration</code> کوتاه استفاده کنید تا revoke هدفمند ممکن باشد.</p>
+  </div>
+  </details>
+
   <h3 id="ch14-b-bypass">ریسک‌های دور زدن Kubernetes API server <small>(Kubernetes API Server Bypass Risks)</small></h3>
   <p>Kubernetes API server درِ ورودی اصلی cluster برای طرف‌های بیرونی (کاربران و سرویس‌ها) است که با آن کار می‌کنند.</p>
   <p>API server در همین نقش چند security control داخلی کلیدی دارد؛‏ مثل audit logging و admission controllerها. با این حال راه‌هایی برای تغییر پیکربندی یا محتوای cluster وجود دارد که این controlها را دور می‌زنند (bypass).</p>
@@ -4996,6 +5052,18 @@ staticPodPath: ""        # only if the node needs no static Pods
     <li>دسترسی به private key مربوط به etcd server certificate و به client certificate و key مربوط به API server را کنترل کنید.</li>
     <li>محدود کردن دسترسی شبکه‌ای به پورت etcd را در نظر بگیرید تا فقط از محدوده‌های IP مشخص و مورد اعتماد ممکن باشد.</li>
   </ul>
+  <h4>socket مربوط به container runtime <small>(Container runtime socket)</small></h4>
+  <p>روی هر Node،‏ container runtime (یا runtimeها،‏ اگر بیش از یکی پیکربندی کرده باشید) دسترسی به کار با containerها را کنترل می‌کند. container runtime معمولاً یک Unix socket در دسترس می‌گذارد که kubelet به آن دسترسی دارد. مهاجمی با دسترسی به این socket می‌تواند container تازه اجرا کند یا با containerهای در حال اجرا کار کند.</p>
+  <p>اثر این دسترسی در سطح cluster به این بستگی دارد که containerهای Node آسیب‌دیده به Secretها یا داده‌های محرمانه‌ی دیگری دسترسی داشته باشند که مهاجم با آن‌ها بتواند privilege خود را به worker Nodeهای دیگر یا اجزای control plane گسترش دهد.</p>
+  <h4>راه‌های کاهش ریسک <small>(Mitigations: Container runtime socket)</small></h4>
+  <ul>
+    <li>دسترسی filesystem به socketهای container runtime را سخت کنترل کنید و در صورت امکان به کاربر <code>root</code> محدودش کنید.</li>
+    <li>kubelet را با سازوکارهایی مثل Linux kernel namespaceها از اجزای دیگری که روی Node اجرا می‌شوند جدا کنید.</li>
+    <li>استفاده از <a href="https://kubernetes.io/docs/concepts/storage/volumes/#hostpath">mountهای <code>hostPath</code></a> را که socket مربوط به container runtime را در بر می‌گیرند،‏ چه مستقیم و چه با mount کردن پوشه‌ی والد،‏ محدود یا ممنوع کنید. mountهای <code>hostPath</code> هم باید read-only باشند تا ریسک دور زدن محدودیت پوشه‌ها کم شود.</li>
+    <li>دسترسی کاربران به Nodeها،‏ به‌ویژه دسترسی superuser،‏ را محدود کنید.</li>
+  </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا CA جداگانه برای etcd مهم است؟ · جمع‌بندی مسیرهای bypass</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا CA جداگانه برای etcd مهم است؟</b>
     <p>در kubeadm،‏ etcd یک CA اختصاصی (<code>/etc/kubernetes/pki/etcd/ca.crt</code>) دارد که با CA اصلی cluster (<code>/etc/kubernetes/pki/ca.crt</code>) فرق می‌کند. اگر etcd به CA اصلی cluster اعتماد می‌کرد،‏ هر client certificateی که cluster صادر می‌کند (مثلاً certificate یک کاربر یا certificateی که با CSR API و signer به نام <code>kubernetes.io/kube-apiserver-client</code> صادر شده) برای خواندن کل etcd کافی بود؛‏ این همان mitigation اول بالاست. certificate به نام <code>healthcheck-client</code> در kubeadm هم با همان CA مربوط به etcd صادر شده و دسترسی کامل دارد؛‏ مصداق جمله‌ی آخر مستندات. (مسیرهای فایل‌ها از چیدمان kubeadm است.)</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># on a control plane node: even the health-check certificate can read Secrets
@@ -5007,17 +5075,6 @@ ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 \
 </pre></div>
     <p>اگر encryption at rest (<a href="#ch14-c-secrets-gp">بخش سوم همین فصل</a>) فعال نباشد،‏ مقدار Secret به شکل plaintext دیده می‌شود و هیچ اثری از این خواندن در audit log مربوط به cluster نمی‌ماند.</p>
   </div>
-
-  <h4>socket مربوط به container runtime <small>(Container runtime socket)</small></h4>
-  <p>روی هر Node،‏ container runtime (یا runtimeها،‏ اگر بیش از یکی پیکربندی کرده باشید) دسترسی به کار با containerها را کنترل می‌کند. container runtime معمولاً یک Unix socket در دسترس می‌گذارد که kubelet به آن دسترسی دارد. مهاجمی با دسترسی به این socket می‌تواند container تازه اجرا کند یا با containerهای در حال اجرا کار کند.</p>
-  <p>اثر این دسترسی در سطح cluster به این بستگی دارد که containerهای Node آسیب‌دیده به Secretها یا داده‌های محرمانه‌ی دیگری دسترسی داشته باشند که مهاجم با آن‌ها بتواند privilege خود را به worker Nodeهای دیگر یا اجزای control plane گسترش دهد.</p>
-  <h4>راه‌های کاهش ریسک <small>(Mitigations: Container runtime socket)</small></h4>
-  <ul>
-    <li>دسترسی filesystem به socketهای container runtime را سخت کنترل کنید و در صورت امکان به کاربر <code>root</code> محدودش کنید.</li>
-    <li>kubelet را با سازوکارهایی مثل Linux kernel namespaceها از اجزای دیگری که روی Node اجرا می‌شوند جدا کنید.</li>
-    <li>استفاده از <a href="https://kubernetes.io/docs/concepts/storage/volumes/#hostpath">mountهای <code>hostPath</code></a> را که socket مربوط به container runtime را در بر می‌گیرند،‏ چه مستقیم و چه با mount کردن پوشه‌ی والد،‏ محدود یا ممنوع کنید. mountهای <code>hostPath</code> هم باید read-only باشند تا ریسک دور زدن محدودیت پوشه‌ها کم شود.</li>
-    <li>دسترسی کاربران به Nodeها،‏ به‌ویژه دسترسی superuser،‏ را محدود کنید.</li>
-  </ul>
   <div class="deep"><b>توضیح تکمیلی: جمع‌بندی مسیرهای bypass</b>
     <div class="tbl"><table><thead><tr><th>مسیر</th><th>پورت یا محل</th><th>audit؟</th><th>admission؟</th><th>کنترل اصلی</th></tr></thead><tbody>
       <tr><td>static Pod</td><td><code>staticPodPath</code> یا <code>staticPodURL</code> در kubelet</td><td>خیر</td><td>فقط روی mirror Pod؛‏ خود Pod در هر حال اجرا می‌شود</td><td>دسترسی filesystem به Node</td></tr>
@@ -5026,6 +5083,7 @@ ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 \
       <tr><td>socket مربوط به container runtime</td><td><code>/run/containerd/containerd.sock</code></td><td>خیر</td><td>خیر</td><td>ممنوع کردن hostPath (سطح Baseline در Pod Security)؛‏ دسترسی فقط برای root</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch14-b-admission">admission control در کوبرنتیز <small>(Admission Control in Kubernetes)</small></h3>
   <p>این بخش نمای کلی <i>admission controller</i>ها را ارائه می‌دهد.</p>
@@ -5046,22 +5104,8 @@ ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 \
   <p>admission controllerها گذشته از mutate کردن خود object،‏ گاهی side effect هم دارند؛‏ یعنی هنگام پردازش درخواست،‏ resourceهای مرتبط را تغییر می‌دهند. افزایش مصرف quota نمونه‌ی کلاسیک ضرورت این کار است. هر side effectی از این نوع به فرایند متناظری برای پس‌گیری یا reconciliation نیاز دارد،‏ چون هیچ admission controllerی مطمئن نیست درخواست از همه‌ی admission controllerهای دیگر هم بگذرد.</p>
   <p>ترتیب این فراخوانی‌ها در شکل زیر آمده است.</p>
   <figure><div class="plate"><img loading="lazy" decoding="async" src="img/548586fd82.svg" alt="نمودار ترتیب فازهای admission control در Kubernetes API server"></div><figcaption><b>شکل ۱۴-۳.</b> <span style="flex:1 1 0;min-width:0">ترتیب فراخوانی‌ها در admission control: درخواست کاربر (مثلاً ساختن Pod) اول authenticate و authorize می‌شود؛‏ بعد در فاز mutating،‏ mutating policyها و mutating webhookها فراخوانی می‌شوند و می‌توانند object را تغییر دهند یا رد کنند؛‏ بعد در فاز validating،‏ validating policyها و validating webhookها (به‌طور موازی) فقط می‌توانند object را رد کنند؛‏ و در پایان پاسخ (موفقیت یا خطا) برمی‌گردد. منبع: reference/access-authn-authz/admission-controllers</span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: چرا mutating پیش از validating؟</b>
-    <p>اگر validating controllerها اول اجرا می‌شدند،‏ mutating webhook بعدی می‌توانست object را به حالتی برساند که policy ردش می‌کرد (مثلاً sidecarی با <code>privileged: true</code> تزریق کند) و کسی متوجه نمی‌شد. با این ترتیب validating controllerها همیشه شکل <b>نهایی</b> object را می‌بینند. برای همین PodSecurity یک validating controller است: sidecarهایی که service mesh تزریق می‌کند هم باید با policy مربوط به namespace سازگار باشند.</p>
-  </div>
-
   <h4>چرا به آن‌ها نیاز دارم؟ <small>(Why do I need them?)</small></h4>
   <p>چند قابلیت مهم کوبرنتیز فقط با admission controller فعال درست کار می‌کنند؛‏ پس Kubernetes API server بدون مجموعه‌ی درست admission controllerها،‏ server ناقصی است و همه‌ی قابلیت‌های مورد انتظار را پشتیبانی نمی‌کند.</p>
-  <div class="deep"><b>توضیح تکمیلی: نمونه‌هایی از قابلیت‌هایی که بدون admission کار نمی‌کنند</b>
-    <ul>
-      <li>بدون <b>ServiceAccount</b>،‏ Podها token خودکار نمی‌گیرند و فیلد <code>serviceAccountName</code> مقدار پیش‌فرض نمی‌گیرد.</li>
-      <li>بدون <b>ResourceQuota</b>،‏ اشیای ResourceQuota ساخته می‌شوند ولی هیچ اثری ندارند.</li>
-      <li>بدون <b>LimitRanger</b>،‏ مقدارهای پیش‌فرض LimitRange روی Podها اعمال نمی‌شوند.</li>
-      <li>بدون <b>Priority</b>،‏ فیلد <code>priorityClassName</code> به عدد priority تبدیل نمی‌شود و preemption درست کار نمی‌کند (فصل ۹).</li>
-      <li>بدون <b>NamespaceLifecycle</b>،‏ می‌توان در namespace در حال حذف object ساخت و حذف namespace ممکن است هیچ‌وقت تمام نشود.</li>
-    </ul>
-  </div>
-
   <h4>فعال کردن admission controller <small>(How do I turn on an admission controller?)</small></h4>
   <p>flag مربوط به Kubernetes API server به نام <code>enable-admission-plugins</code> فهرستی جداشده با ویرگول از admission control pluginهایی را می‌گیرد که پیش از تغییر objectها در cluster فراخوانی می‌شوند. مثلاً دستور زیر pluginهای <code>NamespaceLifecycle</code> و <code>LimitRanger</code> را فعال می‌کند:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kube-apiserver --enable-admission-plugins=NamespaceLifecycle,LimitRanger ...
@@ -5102,6 +5146,22 @@ Always
 </pre></div>
     <p>با وجود درخواست <code>IfNotPresent</code>،‏ AlwaysPullImages آن را به <code>Always</code>،‏ mutate کرد.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا mutating پیش از validating؟ · نمونه‌هایی از قابلیت‌هایی که بدون admission کار نمی‌کنند</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا mutating پیش از validating؟</b>
+    <p>اگر validating controllerها اول اجرا می‌شدند،‏ mutating webhook بعدی می‌توانست object را به حالتی برساند که policy ردش می‌کرد (مثلاً sidecarی با <code>privileged: true</code> تزریق کند) و کسی متوجه نمی‌شد. با این ترتیب validating controllerها همیشه شکل <b>نهایی</b> object را می‌بینند. برای همین PodSecurity یک validating controller است: sidecarهایی که service mesh تزریق می‌کند هم باید با policy مربوط به namespace سازگار باشند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: نمونه‌هایی از قابلیت‌هایی که بدون admission کار نمی‌کنند</b>
+    <ul>
+      <li>بدون <b>ServiceAccount</b>،‏ Podها token خودکار نمی‌گیرند و فیلد <code>serviceAccountName</code> مقدار پیش‌فرض نمی‌گیرد.</li>
+      <li>بدون <b>ResourceQuota</b>،‏ اشیای ResourceQuota ساخته می‌شوند ولی هیچ اثری ندارند.</li>
+      <li>بدون <b>LimitRanger</b>،‏ مقدارهای پیش‌فرض LimitRange روی Podها اعمال نمی‌شوند.</li>
+      <li>بدون <b>Priority</b>،‏ فیلد <code>priorityClassName</code> به عدد priority تبدیل نمی‌شود و preemption درست کار نمی‌کند (فصل ۹).</li>
+      <li>بدون <b>NamespaceLifecycle</b>،‏ می‌توان در namespace در حال حذف object ساخت و حذف namespace ممکن است هیچ‌وقت تمام نشود.</li>
+    </ul>
+  </div>
+  </details>
   <h3 id="ch14-b-adm-list">هر admission controller چه می‌کند؟ <small>(What does each admission controller do?)</small></h3>
 
   <h4 id="ch14-b-adm-alwaysadmit">AlwaysAdmit</h4>
@@ -5117,10 +5177,6 @@ Always
   <h4 id="ch14-b-adm-alwayspullimages">AlwaysPullImages</h4>
   <p><b>نوع</b>: Mutating و Validating.</p>
   <p>این admission controller هر Pod تازه را تغییر می‌دهد تا image pull policy را به <code>Always</code> مجبور کند. این کار در cluster چندمستأجری (multitenant) مفید است تا کاربران مطمئن باشند image خصوصی‌شان فقط به‌دست کسانی استفاده می‌شود که credential لازم برای pull آن را دارند. بدون این admission controller،‏ وقتی imageی یک بار روی Node،‏ pull شد،‏ هر Podی از هر کاربری که نام image را بداند می‌تواند بدون هیچ بررسی authorization روی image از آن استفاده کند (به شرط اینکه Pod روی همان Node،‏ schedule شود). با فعال بودن این admission controller،‏ imageها همیشه پیش از start شدن containerها pull می‌شوند و این یعنی credential معتبر لازم است.</p>
-  <div class="deep"><b>توضیح تکمیلی: هزینه‌ی AlwaysPullImages</b>
-    <p>با این plugin،‏ هر start شدن container یک درخواست به registry می‌فرستد (حتی اگر image در cache باشد،‏ دست‌کم manifest بررسی می‌شود). اگر registry در دسترس نباشد،‏ Podهای تازه و Podهایی که از نو اجرا می‌شوند روی همه‌ی Nodeها در <code>ErrImagePull</code> می‌مانند؛‏ پس در clusterهای multitenant آن را همراه registry با دسترس‌پذیری بالا یا pull-through cache فعال کنید (این توصیه از تجربه‌ی عملی است و در این صفحه‌ی مستندات نیامده). در نسخه‌های جدید،‏ feature gate به نام <code>KubeletEnsureSecretPulledImages</code> (از v1.35 در مرحله‌ی beta و پیش‌فرض فعال) به kubelet امکان می‌دهد همین تضمین را بدون pull دوباره بدهد (فصل ۲).</p>
-  </div>
-
   <h4 id="ch14-b-adm-certificateapproval">CertificateApproval</h4>
   <p><b>نوع</b>: Validating.</p>
   <p>این admission controller درخواست‌های approve کردن CertificateSigningRequestها را زیر نظر می‌گیرد و authorization اضافه‌ای انجام می‌دهد تا مطمئن شود کاربر تأییدکننده permission لازم برای <b>approve</b> کردن certificate requestهایی با <code>spec.signerName</code> درخواست‌شده را دارد.</p>
@@ -5152,8 +5208,6 @@ rules:
   <h4 id="ch14-b-adm-certificatesubjectrestriction">CertificateSubjectRestriction</h4>
   <p><b>نوع</b>: Validating.</p>
   <p>این admission controller ساخته شدن CertificateSigningRequestهایی را که <code>spec.signerName</code> آن‌ها <code>kubernetes.io/kube-apiserver-client</code> است زیر نظر می‌گیرد و هر درخواستی را که group (یا organization attribute) برابر <code>system:masters</code> بخواهد reject می‌کند.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>این plugin آخرین خط دفاع در برابر ریسک «CSRها و صدور certificate» است: حتی اگر کسی حق create و approve روی CSR داشته باشد،‏ نمی‌تواند certificateی با <code>O=system:masters</code> بگیرد که همه‌ی RBAC را دور می‌زند. اما certificate با نام <code>system:kube-controller-manager</code> یا گروه‌های دیگر هنوز ممکن است؛‏ پس محدود کردن approve همچنان لازم است.</p></div>
-
   <h4 id="ch14-b-adm-defaultingressclass">DefaultIngressClass</h4>
   <p><b>نوع</b>: Mutating.</p>
   <p>این admission controller ساخته شدن اشیای <code>Ingress</code> را که ingress class مشخصی نخواسته‌اند زیر نظر می‌گیرد و خودکار default ingress class را به آن‌ها اضافه می‌کند. این‌طور کاربرانی که ingress class خاصی نمی‌خواهند اصلاً لازم نیست به آن فکر کنند و پیش‌فرض را می‌گیرند.</p>
@@ -5181,8 +5235,6 @@ node.kubernetes.io/unreachable NoExecute 300
   <p>این admission controller هر استفاده‌ی تازه (net-new) از فیلد <code>externalIPs</code> در <code>Service</code> را reject می‌کند. این قابلیت بسیار قدرتمند است (رهگیری ترافیک شبکه را ممکن می‌کند) و با policy به‌خوبی کنترل نمی‌شود. با فعال بودن این plugin،‏ کاربران cluster نمی‌توانند Service تازه‌ای با <code>externalIPs</code> بسازند یا مقدار تازه‌ای به <code>externalIPs</code> در Serviceهای موجود اضافه کنند. استفاده‌های موجود از <code>externalIPs</code> دست نمی‌خورند و کاربران می‌توانند مقدارها را از <code>externalIPs</code> در Serviceهای موجود حذف کنند.</p>
   <p>بیشتر کاربران اصلاً به این قابلیت نیاز ندارند و مدیران cluster باید غیرفعال کردنش را در نظر بگیرند. clusterهایی که به آن نیاز دارند باید برای مدیریت استفاده از آن policy سفارشی به کار ببرند.</p>
   <p>این admission controller به‌طور پیش‌فرض غیرفعال است.</p>
-  <div class="deep"><b>توضیح تکمیلی: حمله‌ی externalIPs (CVE-2020-8554)</b><p>کاربری با حق ساختن Service در namespace خودش می‌تواند <code>externalIPs: ["8.8.8.8"]</code> بگذارد؛‏ kube-proxy روی همه‌ی Nodeها قاعده‌ای نصب می‌کند که ترافیک Podهای cluster به 8.8.8.8 روی آن پورت را به Podهای مهاجم می‌فرستد (حمله‌ی man-in-the-middle). DenyServiceExternalIPs راه‌حل رسمی این مشکل است. شماره‌ی CVE در این صفحه‌ی مستندات نیامده و از اعلان امنیتی پروژه است.</p></div>
-
   <h4 id="ch14-b-adm-eventratelimit">EventRateLimit</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.13 [alpha]</span></p>
   <p><b>نوع</b>: Validating.</p>
@@ -5338,14 +5390,10 @@ users:
     <li>راهنمایی برای policy server درباره‌ی imageID مربوط به image،‏ تا یک lookup کمتر لازم شود.</li>
   </ul>
   <p>در هر حال این annotationها را کاربر می‌دهد و کوبرنتیز هیچ validationی روی آن‌ها انجام نمی‌دهد.</p>
-  <div class="deep"><b>توضیح تکمیلی: خطر defaultAllow:‏ true</b><p>در نمونه‌ی بالا <code>defaultAllow: true</code> است؛‏ یعنی اگر backend در دسترس نباشد (timeout یا crash)،‏ همه‌ی imageها پذیرفته می‌شوند (fail-open). برای policy امنیتی (مثلاً «فقط imageهای امضاشده‌ی registry داخلی»)،‏ این یعنی مهاجم با از کار انداختن backend،‏ policy را دور می‌زند. <code>defaultAllow: false</code> (fail-closed) امن‌تر است،‏ ولی با خرابی backend هیچ Pod تازه‌ای ساخته نمی‌شود؛‏ پس backend باید HA باشد. همین trade-off برای <code>failurePolicy</code> در admission webhookها هم وجود دارد.</p></div>
-
   <h4 id="ch14-b-adm-limitpodhardantiaffinitytopology">LimitPodHardAntiAffinityTopology</h4>
   <p><b>نوع</b>: Validating.</p>
   <p>این admission controller هر Podی را که در <code>requiredDuringSchedulingIgnoredDuringExecution</code> برای <code>AntiAffinity</code>،‏ topology keyی غیر از <code>kubernetes.io/hostname</code> تعریف کند،‏ deny می‌کند.</p>
   <p>این admission controller به‌طور پیش‌فرض غیرفعال است.</p>
-  <div class="deep"><b>توضیح تکمیلی: سوءاستفاده از hard anti-affinity در cluster مشترک</b><p>required anti-affinity در scheduler متقارن است: Pod تازه‌ای که با selector یک Pod موجود مطابقت دارد،‏ در topology domain آن Pod،‏ schedule نمی‌شود. پس tenantی که Podی با required anti-affinity روی <code>topology.kubernetes.io/zone</code> و selectorی بسازد که همه‌ی Podها را در همه‌ی namespaceها می‌گیرد (<code>namespaceSelector: {}</code>)،‏ عملاً کل یک zone را به روی Podهای تازه‌ی بقیه می‌بندد. این plugin دامنه‌ی hard anti-affinity را به یک Node محدود می‌کند تا اثر چنین قاعده‌ای کوچک بماند. این سناریو برداشت نویسنده از رفتار scheduler است و در این صفحه‌ی مستندات نیامده.</p></div>
-
   <h4 id="ch14-b-adm-limitranger">LimitRanger</h4>
   <p><b>نوع</b>: Mutating و Validating.</p>
   <p>این admission controller درخواست ورودی را بررسی می‌کند و مطمئن می‌شود هیچ‌یک از محدودیت‌های شیء <code>LimitRange</code> در <code>Namespace</code> را نقض نکند. اگر در cluster از اشیای <code>LimitRange</code> استفاده می‌کنید،‏ <b>باید (MUST)</b> این admission controller را برای اعمال آن محدودیت‌ها فعال کنید. LimitRanger همچنین می‌تواند resource requestهای پیش‌فرض را به Podهایی بدهد که هیچ مقداری تعیین نکرده‌اند؛‏ به گفته‌ی مستندات،‏ LimitRanger پیش‌فرض در حال حاضر 0.1 CPU را به همه‌ی Podهای namespace به نام <code>default</code> اعمال می‌کند.</p>
@@ -5395,8 +5443,6 @@ Error from server (Forbidden): pods "b" is forbidden: maximum memory usage per C
       <ul><li>پر کردن فیلدهایی که از اول تنظیم نشده‌اند کمتر از بازنویسی فیلدهای تنظیم‌شده در درخواست اصلی مشکل‌ساز است؛‏ از دومی پرهیز کنید.</li></ul></li>
     <li>تغییرات آینده در control loopهای resourceهای داخلی یا third-party ممکن است webhookهایی را که امروز درست کار می‌کنند خراب کند. حتی پس از نهایی شدن API نصب webhook،‏ همه‌ی رفتارهای ممکن webhook برای همیشه پشتیبانی نمی‌شوند.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: نمونه‌ی واقعی بازنویسی فیلد</b><p>فرض کنید mutating webhook همیشه <code>replicas</code> در Deployment را 3 کند. HPA مقدار را 10 می‌کند،‏ webhook دوباره 3 می‌کند و این رقابت بی‌پایان ادامه می‌یابد؛‏ یا Deployment controller مدام ReplicaSet تازه می‌سازد،‏ چون template خوانده‌شده با آنچه نوشته فرق دارد. برای همین مستندات می‌گوید فقط فیلدهای تنظیم‌نشده را پر کنید (مثل افزودن label یا sidecar در صورت نبودن).</p></div>
-
   <h4 id="ch14-b-adm-namespaceautoprovision">NamespaceAutoProvision</h4>
   <p><b>نوع</b>: Mutating.</p>
   <p>این admission controller همه‌ی درخواست‌های ورودی روی resourceهای namespaced را بررسی می‌کند و اگر namespace ارجاع‌شده وجود نداشته باشد،‏ آن را می‌سازد. در deploymentهایی مفید است که نمی‌خواهند ساختن namespace پیش از استفاده را محدود کنند.</p>
@@ -5419,8 +5465,6 @@ Error from server (Forbidden): pods "b" is forbidden: maximum memory usage per C
   <p><b>نوع</b>: Validating.</p>
   <p>این admission controller نوشتن روی Podهای bound را رهگیری می‌کند تا مطمئن شود تغییرات با قابلیت‌هایی که Node اجراکننده‌ی Pod اعلام کرده سازگارند. از فیلد <code>.status.declaredFeatures</code> مربوط به Node برای تعیین قابلیت‌های فعال استفاده می‌کند. اگر update روی Pod به قابلیتی نیاز داشته باشد که در فهرست قابلیت‌های Node فعلی‌اش نیست،‏ آن update را reject می‌کند. این کار جلوی خرابی‌های runtime ناشی از ناسازگاری قابلیت‌ها پس از schedule شدن Pod را می‌گیرد.</p>
   <p>این admission controller وقتی feature gate به نام <a href="https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#NodeDeclaredFeatures"><code>NodeDeclaredFeatures</code></a> فعال باشد،‏ به‌طور پیش‌فرض فعال است؛‏ در v1.37 این gate قفل‌شده است،‏ پس plugin همیشه فعال است.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>نمونه‌ی رایج: in-place Pod resize (تغییر resources در Pod در حال اجرا). اگر Pod روی Nodeی با kubelet قدیمی‌تر اجرا شود که این قابلیت را اعلام نکرده،‏ بدون این plugin،‏ update در API پذیرفته می‌شد اما kubelet نمی‌توانست اعمالش کند و spec با واقعیت ناسازگار می‌ماند. ارزش این plugin در دوره‌ی upgrade تدریجی Nodeها (version skew) است. این مثال برداشت نویسنده است و در مستندات نیامده.</p></div>
-
   <h4 id="ch14-b-adm-noderestriction">NodeRestriction</h4>
   <p><b>نوع</b>: Validating.</p>
   <p>این admission controller اشیای <code>Node</code> و <code>Pod</code> را که kubelet می‌تواند تغییر دهد محدود می‌کند. kubeletها برای قرار گرفتن زیر این محدودیت باید credentialی در group به نام <code>system:nodes</code> و با username به شکل <code>system:node:&lt;nodeName&gt;</code> داشته باشند. چنین kubeletهایی فقط می‌توانند شیء <code>Node</code> خودشان را تغییر دهند و فقط اشیای <code>Pod</code> که به Node خودشان bound هستند. kubeletها اجازه ندارند taintها را از شیء <code>Node</code> خود update یا حذف کنند.</p>
@@ -5449,25 +5493,9 @@ Error from server (Forbidden): pods "b" is forbidden: maximum memory usage per C
   </ul>
   <p>وقتی <a href="https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/">feature gate</a> به نام <code>ServiceAccountNodeAudienceRestriction</code> فعال باشد،‏ این admission plugin محدود می‌کند kubelet با <code>TokenRequest</code> API برای کدام audienceها service account token بگیرد. kubelet فقط برای audienceهایی token می‌گیرد که Podهای همان Node به آن‌ها ارجاع داده‌اند (با projected service account token volume یا token requestهای CSI driver)،‏ یا audienceهایی که صریحاً با RBAC و verb به نام <code>request-serviceaccounts-token-audience</code> داده شده‌اند. جزئیات در <a href="https://kubernetes.io/docs/reference/access-authn-authz/node/#service-account-token-audience-restriction">Service account token audience restriction</a> آمده است.</p>
   <p>نسخه‌های آینده ممکن است محدودیت‌های بیشتری اضافه کنند تا kubeletها فقط کمترین permission لازم برای کار درست را داشته باشند.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا پیشوند node-restriction.kubernetes.io/ مهم است؟</b>
-    <p>فرض کنید Podهای حساس (مثلاً پردازش پرداخت) با nodeSelector به Nodeهایی با label برابر <code>secure=true</code> فرستاده می‌شوند. مهاجمی که یک Node عادی را تسخیر کرده،‏ با credential همان kubelet می‌تواند label برابر <code>secure=true</code> را روی Node خودش بگذارد و Podهای حساس (و Secretهایشان) را به سمت خودش بکشد. اگر به‌جای آن label برابر <code>node-restriction.kubernetes.io/secure=true</code> استفاده شود،‏ NodeRestriction اجازه نمی‌دهد kubelet آن را روی Node خودش بگذارد و فقط مدیر می‌تواند اضافه‌اش کند.</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># from a kind worker, with the kubelet's own kubeconfig:
-docker exec kind-worker kubectl --kubeconfig /etc/kubernetes/kubelet.conf \
-  label node kind-worker node-restriction.kubernetes.io/secure=true
-docker exec kind-worker kubectl --kubeconfig /etc/kubernetes/kubelet.conf \
-  label node kind-worker2 foo=bar
-</pre></div>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Error from server (Forbidden): nodes "kind-worker" is forbidden: is not allowed to modify labels: node-restriction.kubernetes.io/secure
-Error from server (Forbidden): nodes "kind-worker2" is forbidden: node "kind-worker" is not allowed to modify node "kind-worker2"
-</pre></div>
-    <p>(اگر kubectl روی image مربوط به Node در kind نبود،‏ فایل kubelet.conf و certificateهایش را کپی کنید و دستور را از میزبان اجرا کنید.)</p>
-  </div>
-
   <h4 id="ch14-b-adm-ownerreferencespermissionenforcement">OwnerReferencesPermissionEnforcement</h4>
   <p><b>نوع</b>: Validating.</p>
   <p>این admission controller از <code>metadata.ownerReferences</code> در object محافظت می‌کند تا فقط کاربرانی که روی آن object،‏ permission از نوع <b>delete</b> دارند بتوانند تغییرش دهند. همچنین از <code>metadata.ownerReferences[x].blockOwnerDeletion</code> محافظت می‌کند تا فقط کاربرانی که روی subresource به نام <code>finalizers</code> در <i>owner</i> ارجاع‌شده permission از نوع <b>update</b> دارند بتوانند تغییرش دهند.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>چرا؟ اگر کاربر بتواند owner reference (فیلدی در metadata که مالک object را مشخص می‌کند) به object دیگری اضافه کند،‏ garbage collector با حذف owner آن object را هم حذف می‌کند؛‏ یعنی حذف غیرمستقیم بدون permission از نوع delete. <code>blockOwnerDeletion: true</code> هم در foreground deletion جلوی حذف owner را می‌گیرد؛‏ یعنی کاربر می‌تواند حذف objectی را که مال او نیست متوقف کند. این plugin هر دو مسیر را به permissionهای متناظر گره می‌زند (فصل ۸،‏ garbage collection).</p></div>
-
   <h4 id="ch14-b-adm-persistentvolumeclaimresize">PersistentVolumeClaimResize</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.24 [stable]</span></p>
   <p><b>نوع</b>: Validating.</p>
@@ -5558,8 +5586,6 @@ metadata:
     scheduler.alpha.kubernetes.io/tolerationsWhitelist: '[{"operator": "Exists", "effect": "NoSchedule", "key": "dedicated-node"}]'
 </pre></div>
   <p>این admission controller به‌طور پیش‌فرض غیرفعال است.</p>
-  <div class="deep"><b>توضیح تکمیلی: PodNodeSelector همراه PodTolerationRestriction یعنی node pool اختصاصی واقعی</b><p>taint به‌تنهایی جلوی ورود Podهای دیگر به Nodeهای اختصاصی را نمی‌گیرد،‏ چون هر کسی می‌تواند toleration مناسب را در Pod خودش بنویسد. با PodTolerationRestriction،‏ tenantهای دیگر فقط tolerationهای موجود در whitelist مربوط به namespace خودشان را می‌توانند داشته باشند؛‏ و با PodNodeSelector،‏ Podهای tenant صاحب pool مجبورند روی pool خودشان بمانند. اگر tenant بتواند annotationهای namespace خودش را patch کند (ریسک تغییر namespace)،‏ کل این طراحی می‌شکند.</p></div>
-
   <h4 id="ch14-b-adm-podtopologylabels">PodTopologyLabels</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.35 [beta]</span> (feature gate <code>PodTopologyLabelsAdmission</code>،‏ پیش‌فرض فعال)</p>
   <p><b>نوع</b>: Mutating.</p>
@@ -5631,6 +5657,32 @@ spec:
 
   <h4>مجموعه‌ی توصیه‌شده‌ی admission controllerها <small>(Is there a recommended set of admission controllers to use?)</small></h4>
   <p>بله. admission controllerهای توصیه‌شده به‌طور پیش‌فرض فعال‌اند (<a href="https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/#options">اینجا</a> فهرست شده‌اند)،‏ پس لازم نیست صریحاً تعیینشان کنید. admission controllerهای بیشتر را با flag به نام <code>--enable-admission-plugins</code> فعال کنید (<b>ترتیب مهم نیست</b>).</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱۱)</small> <span class="m-t">هزینه‌ی AlwaysPullImages · حمله‌ی externalIPs (CVE-2020-8554) · خطر defaultAllow:‏ true · سوءاستفاده از hard anti-affinity در cluster مشترک · نمونه‌ی واقعی بازنویسی فیلد · چرا پیشوند node-restriction.kubernetes.io/ مهم است؟ · PodNodeSelector همراه PodTolerationRestriction یعنی node pool اختصاصی واقعی · خلاصه‌ی همه‌ی pluginها</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: هزینه‌ی AlwaysPullImages</b>
+    <p>با این plugin،‏ هر start شدن container یک درخواست به registry می‌فرستد (حتی اگر image در cache باشد،‏ دست‌کم manifest بررسی می‌شود). اگر registry در دسترس نباشد،‏ Podهای تازه و Podهایی که از نو اجرا می‌شوند روی همه‌ی Nodeها در <code>ErrImagePull</code> می‌مانند؛‏ پس در clusterهای multitenant آن را همراه registry با دسترس‌پذیری بالا یا pull-through cache فعال کنید (این توصیه از تجربه‌ی عملی است و در این صفحه‌ی مستندات نیامده). در نسخه‌های جدید،‏ feature gate به نام <code>KubeletEnsureSecretPulledImages</code> (از v1.35 در مرحله‌ی beta و پیش‌فرض فعال) به kubelet امکان می‌دهد همین تضمین را بدون pull دوباره بدهد (فصل ۲).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>این plugin آخرین خط دفاع در برابر ریسک «CSRها و صدور certificate» است: حتی اگر کسی حق create و approve روی CSR داشته باشد،‏ نمی‌تواند certificateی با <code>O=system:masters</code> بگیرد که همه‌ی RBAC را دور می‌زند. اما certificate با نام <code>system:kube-controller-manager</code> یا گروه‌های دیگر هنوز ممکن است؛‏ پس محدود کردن approve همچنان لازم است.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: حمله‌ی externalIPs (CVE-2020-8554)</b><p>کاربری با حق ساختن Service در namespace خودش می‌تواند <code>externalIPs: ["8.8.8.8"]</code> بگذارد؛‏ kube-proxy روی همه‌ی Nodeها قاعده‌ای نصب می‌کند که ترافیک Podهای cluster به 8.8.8.8 روی آن پورت را به Podهای مهاجم می‌فرستد (حمله‌ی man-in-the-middle). DenyServiceExternalIPs راه‌حل رسمی این مشکل است. شماره‌ی CVE در این صفحه‌ی مستندات نیامده و از اعلان امنیتی پروژه است.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: خطر defaultAllow:‏ true</b><p>در نمونه‌ی بالا <code>defaultAllow: true</code> است؛‏ یعنی اگر backend در دسترس نباشد (timeout یا crash)،‏ همه‌ی imageها پذیرفته می‌شوند (fail-open). برای policy امنیتی (مثلاً «فقط imageهای امضاشده‌ی registry داخلی»)،‏ این یعنی مهاجم با از کار انداختن backend،‏ policy را دور می‌زند. <code>defaultAllow: false</code> (fail-closed) امن‌تر است،‏ ولی با خرابی backend هیچ Pod تازه‌ای ساخته نمی‌شود؛‏ پس backend باید HA باشد. همین trade-off برای <code>failurePolicy</code> در admission webhookها هم وجود دارد.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: سوءاستفاده از hard anti-affinity در cluster مشترک</b><p>required anti-affinity در scheduler متقارن است: Pod تازه‌ای که با selector یک Pod موجود مطابقت دارد،‏ در topology domain آن Pod،‏ schedule نمی‌شود. پس tenantی که Podی با required anti-affinity روی <code>topology.kubernetes.io/zone</code> و selectorی بسازد که همه‌ی Podها را در همه‌ی namespaceها می‌گیرد (<code>namespaceSelector: {}</code>)،‏ عملاً کل یک zone را به روی Podهای تازه‌ی بقیه می‌بندد. این plugin دامنه‌ی hard anti-affinity را به یک Node محدود می‌کند تا اثر چنین قاعده‌ای کوچک بماند. این سناریو برداشت نویسنده از رفتار scheduler است و در این صفحه‌ی مستندات نیامده.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: نمونه‌ی واقعی بازنویسی فیلد</b><p>فرض کنید mutating webhook همیشه <code>replicas</code> در Deployment را 3 کند. HPA مقدار را 10 می‌کند،‏ webhook دوباره 3 می‌کند و این رقابت بی‌پایان ادامه می‌یابد؛‏ یا Deployment controller مدام ReplicaSet تازه می‌سازد،‏ چون template خوانده‌شده با آنچه نوشته فرق دارد. برای همین مستندات می‌گوید فقط فیلدهای تنظیم‌نشده را پر کنید (مثل افزودن label یا sidecar در صورت نبودن).</p></div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>نمونه‌ی رایج: in-place Pod resize (تغییر resources در Pod در حال اجرا). اگر Pod روی Nodeی با kubelet قدیمی‌تر اجرا شود که این قابلیت را اعلام نکرده،‏ بدون این plugin،‏ update در API پذیرفته می‌شد اما kubelet نمی‌توانست اعمالش کند و spec با واقعیت ناسازگار می‌ماند. ارزش این plugin در دوره‌ی upgrade تدریجی Nodeها (version skew) است. این مثال برداشت نویسنده است و در مستندات نیامده.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: چرا پیشوند node-restriction.kubernetes.io/ مهم است؟</b>
+    <p>فرض کنید Podهای حساس (مثلاً پردازش پرداخت) با nodeSelector به Nodeهایی با label برابر <code>secure=true</code> فرستاده می‌شوند. مهاجمی که یک Node عادی را تسخیر کرده،‏ با credential همان kubelet می‌تواند label برابر <code>secure=true</code> را روی Node خودش بگذارد و Podهای حساس (و Secretهایشان) را به سمت خودش بکشد. اگر به‌جای آن label برابر <code>node-restriction.kubernetes.io/secure=true</code> استفاده شود،‏ NodeRestriction اجازه نمی‌دهد kubelet آن را روی Node خودش بگذارد و فقط مدیر می‌تواند اضافه‌اش کند.</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># from a kind worker, with the kubelet's own kubeconfig:
+docker exec kind-worker kubectl --kubeconfig /etc/kubernetes/kubelet.conf \
+  label node kind-worker node-restriction.kubernetes.io/secure=true
+docker exec kind-worker kubectl --kubeconfig /etc/kubernetes/kubelet.conf \
+  label node kind-worker2 foo=bar
+</pre></div>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Error from server (Forbidden): nodes "kind-worker" is forbidden: is not allowed to modify labels: node-restriction.kubernetes.io/secure
+Error from server (Forbidden): nodes "kind-worker2" is forbidden: node "kind-worker" is not allowed to modify node "kind-worker2"
+</pre></div>
+    <p>(اگر kubectl روی image مربوط به Node در kind نبود،‏ فایل kubelet.conf و certificateهایش را کپی کنید و دستور را از میزبان اجرا کنید.)</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>چرا؟ اگر کاربر بتواند owner reference (فیلدی در metadata که مالک object را مشخص می‌کند) به object دیگری اضافه کند،‏ garbage collector با حذف owner آن object را هم حذف می‌کند؛‏ یعنی حذف غیرمستقیم بدون permission از نوع delete. <code>blockOwnerDeletion: true</code> هم در foreground deletion جلوی حذف owner را می‌گیرد؛‏ یعنی کاربر می‌تواند حذف objectی را که مال او نیست متوقف کند. این plugin هر دو مسیر را به permissionهای متناظر گره می‌زند (فصل ۸،‏ garbage collection).</p></div>
+  <div class="deep"><b>توضیح تکمیلی: PodNodeSelector همراه PodTolerationRestriction یعنی node pool اختصاصی واقعی</b><p>taint به‌تنهایی جلوی ورود Podهای دیگر به Nodeهای اختصاصی را نمی‌گیرد،‏ چون هر کسی می‌تواند toleration مناسب را در Pod خودش بنویسد. با PodTolerationRestriction،‏ tenantهای دیگر فقط tolerationهای موجود در whitelist مربوط به namespace خودشان را می‌توانند داشته باشند؛‏ و با PodNodeSelector،‏ Podهای tenant صاحب pool مجبورند روی pool خودشان بمانند. اگر tenant بتواند annotationهای namespace خودش را patch کند (ریسک تغییر namespace)،‏ کل این طراحی می‌شکند.</p></div>
   <div class="deep"><b>توضیح تکمیلی: خلاصه‌ی همه‌ی pluginها</b>
     <div class="tbl"><table><thead><tr><th>Plugin</th><th>نوع</th><th>پیش‌فرض در 1.37</th><th>کاربرد امنیتی یا عملیاتی</th></tr></thead><tbody>
       <tr><td>AlwaysAdmit و AlwaysDeny</td><td>Validating</td><td>خیر (deprecated)</td><td>بی‌معنا</td></tr>
@@ -5667,9 +5719,10 @@ spec:
     </tbody></table></div>
     <p>ستون پیش‌فرض بر اساس کد kube-apiserver در v1.37 است. سه plugin پیش‌فرض دیگر هم در کد هست که این صفحه‌ی مستندات توضیحشان نداده: ClusterTrustBundleAttest و PodGroupProtection و PodResizeValidator.</p>
   </div>
+  </details>
 
-  <div id="ch14-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۴،‏ بخش دوم <small>۱۸ تمرین</small></div>
+  <details id="ch14-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۴،‏ بخش دوم <small>۱۸ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>چرا ClusterRole به نام <code>view</code> اجازه‌ی خواندن Secretها را نمی‌دهد،‏ ولی مستندات درباره‌ی <code>edit</code> می‌گوید می‌تواند برای رسیدن به سطح دسترسی هر ServiceAccount در namespace استفاده شود؟ این نکته چه پیامدی برای طراحی namespaceها دارد؟
         <details class="ans"><summary>پاسخ</summary>
@@ -5909,7 +5962,7 @@ spec:
           <p>و admission controller به نام <code>ResourceQuota</code> باید فعال باشد تا این محدودیت‌ها enforce شوند (بدون آن،‏ ResourceQuota object ساخته می‌شود اما اثری ندارد). برای Eventها می‌توان EventRateLimit را هم فعال کرد. این‌ها را با boundaryهای namespace و least privilege ترکیب کنید.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <h3 id="ch14-c-pss">استانداردهای امنیتی Pod <small>(Pod Security Standards)</small></h3>
   <p>تا اینجا دیدیم چه کسی می‌تواند Pod بسازد (authentication و RBAC). اما RBAC نمی‌تواند بگوید Pod ساخته‌شده <i>چه چیزی</i> بخواهد؛‏ کسی که اجازه‌ی <code>create pods</code> دارد می‌تواند Podی با <code>privileged: true</code> یا <code>hostPath: /</code> بسازد و عملاً Node را در اختیار بگیرد (بخش <a href="#ch14-a-escalation">افزایش اختیار با ساخت workload</a>). Pod Security Standards همین شکاف را پر می‌کند: سه policy تعریف می‌کند که طیف امنیتی را از کاملاً آزاد تا بسیار سخت‌گیرانه پوشش می‌دهند. این policyها <i>تجمعی</i> هستند؛‏ یعنی هر سطح همه‌ی محدودیت‌های سطح پایین‌تر را هم دارد.</p>
@@ -5960,6 +6013,24 @@ spec:
     <tr><td>seccomp (از v1.19)</td><td><code>seccompProfile.type</code> در سطح Pod و همه‌ی containerها</td><td><code>RuntimeDefault</code> یا <code>Localhost</code>؛‏ هم <code>Unconfined</code> و هم نبودن profile ممنوع است. اگر در سطح Pod درست تعیین شده باشد،‏ فیلدهای container می‌توانند تعریف‌نشده بمانند و برعکس. این policy از v1.25 فقط برای Linux است</td></tr>
     <tr><td>capabilityها (از v1.22)</td><td><code>capabilities.drop</code> و <code>capabilities.add</code> در همه‌ی containerها</td><td>فهرست drop باید <code>ALL</code> را داشته باشد و add فقط می‌تواند <code>NET_BIND_SERVICE</code> باشد؛‏ این policy از v1.25 فقط برای Linux است</td></tr>
   </tbody></table></div>
+  <h4>نمونه‌سازی policy <small>(Policy Instantiation)</small></h4>
+  <p>جدا کردن تعریف policy از نحوه‌ی اعمال آن،‏ زبان مشترک و یکسانی بین clusterها می‌سازد که به سازوکار اعمال وابسته نیست. سازوکار داخلی کوبرنتیز برای اعمال این سه سطح،‏ <a href="#ch14-c-psa">Pod Security Admission</a> است که در بخش بعد می‌آید. ابزارهای دیگری هم در اکوسیستم کوبرنتیز برای اعمال policy وجود دارند؛‏ مثل <a href="https://github.com/kubewarden">Kubewarden</a> و <a href="https://kyverno.io/policies">Kyverno</a> و <a href="https://github.com/open-policy-agent/gatekeeper">OPA Gatekeeper</a>.</p>
+
+  <h4>فیلد OS در Pod <small>(Pod OS field)</small></h4>
+  <p>کوبرنتیز اجازه می‌دهد Nodeهای Linux و Windows را در یک cluster کنار هم داشته باشید. Windows محدودیت‌ها و تفاوت‌هایی با workloadهای Linux دارد؛‏ به‌ویژه بسیاری از فیلدهای <code>securityContext</code> در Pod روی Windows <a href="https://kubernetes.io/docs/concepts/windows/intro/#compatibility-v1-pod-spec-containers-securitycontext">اثری ندارند</a>.</p>
+  <p>از v1.25،‏ policy به نام Restricted از فیلد <code>pod.spec.os.name</code> استفاده می‌کند و بر اساس آن،‏ کنترل‌های مخصوص یک سیستم‌عامل را برای سیستم‌عامل دیگر سست می‌کند. سه کنترل privilege escalation و seccomp و Linux capabilityها فقط وقتی لازم‌اند که <code>.spec.os.name</code> برابر <code>windows</code> نباشد.</p>
+  <div class="note"><b>نکته</b><p>kubeletهای پیش از v1.24 فیلد OS در Pod را اعمال نمی‌کنند؛‏ اگر cluster،‏ Nodeهایی با نسخه‌ی پیش از v1.24 دارد،‏ policyهای Restricted را روی نسخه‌ای پیش از v1.25 ثابت (pin) کنید.</p></div>
+
+  <h4>user namespaceها <small>(User namespaces)</small></h4>
+  <p>user namespace قابلیتی فقط برای Linux است که workloadها را با جداسازی بیشتری اجرا می‌کند: root داخل container به یک UID بدون privilege روی host نگاشت می‌شود (جزئیات در <a href="#ch3-b-userns">فصل ۳</a>). برای Podهایی که <code>hostUsers: false</code> دارند،‏ کوبرنتیز اعمال Pod Security Standards را به شکل کنترل‌شده سست می‌کند: فیلدهای <code>runAsNonRoot</code> و <code>runAsUser</code> (در سطح Pod و همه‌ی containerها) حتی در Baseline و Restricted بررسی نمی‌شوند،‏ چون root داخل این Pod هرگز به کاربر privileged روی host نگاشت نمی‌شود. در Baseline،‏ بررسی <code>procMount</code> هم برای این Podها سست می‌شود؛‏ اما Restricted همچنان فقط <code>procMount</code> پیش‌فرض یا خالی را می‌پذیرد.</p>
+
+  <h4>پرسش‌های رایج <small>(FAQ)</small></h4>
+  <p><b>چرا سطحی بین Privileged و Baseline نیست؟</b> سه سطح تعریف‌شده پیشرفت خطی روشنی از امن‌ترین (Restricted) تا ناامن‌ترین (Privileged) دارند و گستره‌ی وسیعی از workloadها را پوشش می‌دهند. privilegeهایی که بالاتر از Baseline لازم می‌شوند معمولاً بسیار وابسته به برنامه‌اند،‏ پس profile استانداردی برای آن‌ها ارائه نمی‌شود. این به آن معنا نیست که در این حالت همیشه باید Privileged را به کار ببرید؛‏ policyها در این محدوده باید مورد به مورد تعریف شوند. SIG Auth (گروه کاری مسئول authentication و authorization در پروژه) ممکن است در آینده در این تصمیم بازنگری کند.</p>
+  <p><b>فرق security profile با security context چیست؟</b> <a href="#ch14-c-security-context">security context</a> تنظیمات Pod و container در زمان اجراست؛‏ بخشی از مشخصات Pod و container در manifest است و پارامترهایی برای container runtime به شمار می‌رود. security profileها سازوکارهای control plane هستند که تنظیمات مشخصی را در security context و پارامترهای مرتبط بیرون از آن اعمال می‌کنند. از ژوئیه‌ی ۲۰۲۱،‏ Pod Security Policy به نفع Pod Security Admission داخلی deprecated شد.</p>
+  <p><b>تکلیف Podهای sandboxed چیست؟</b> فعلاً هیچ API استانداردی تعیین نمی‌کند Podی sandboxed هست یا نه. Podهای sandboxed را ممکن است با استفاده از runtime مخصوص sandbox (مثل gVisor یا Kata Containers) تشخیص داد،‏ اما تعریف استانداردی از sandboxed runtime وجود ندارد. محافظت لازم برای این workloadها با بقیه فرق دارد؛‏ مثلاً وقتی workload از kernel زیرین جدا شده،‏ محدود کردن permissionهای privileged اهمیت کمتری دارد و workloadهای نیازمند permission بیشتر همچنان جدا می‌مانند. چون محافظت از workloadهای sandboxed به روش sandboxing وابسته است،‏ profile واحدی برای همه‌ی آن‌ها توصیه نمی‌شود.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">حداقل Pod سازگار با Restricted</span></summary>
   <div class="deep"><b>توضیح تکمیلی: حداقل Pod سازگار با Restricted</b>
     <p>بیشترین خطای تیم‌ها این است که خیال می‌کنند «container ما root نیست» کافی است. Restricted چهار چیز را صریح می‌خواهد و هر کدام جلوی یک مسیر حمله را می‌گیرد:</p>
     <div class="code"><div class="lbl"><span>yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -5984,22 +6055,7 @@ spec:
 </pre></div>
     <p><code>runAsNonRoot: true</code> فقط بررسی می‌کند؛‏ اگر image با کاربر root (UID 0) شروع شود،‏ kubelet،‏ container را اجرا نمی‌کند و Pod در <code>CreateContainerConfigError</code> می‌ماند. برای همین یا image باید USER عددی غیر صفر داشته باشد،‏ یا <code>runAsUser</code> را تعیین کنید.</p>
   </div>
-
-  <h4>نمونه‌سازی policy <small>(Policy Instantiation)</small></h4>
-  <p>جدا کردن تعریف policy از نحوه‌ی اعمال آن،‏ زبان مشترک و یکسانی بین clusterها می‌سازد که به سازوکار اعمال وابسته نیست. سازوکار داخلی کوبرنتیز برای اعمال این سه سطح،‏ <a href="#ch14-c-psa">Pod Security Admission</a> است که در بخش بعد می‌آید. ابزارهای دیگری هم در اکوسیستم کوبرنتیز برای اعمال policy وجود دارند؛‏ مثل <a href="https://github.com/kubewarden">Kubewarden</a> و <a href="https://kyverno.io/policies">Kyverno</a> و <a href="https://github.com/open-policy-agent/gatekeeper">OPA Gatekeeper</a>.</p>
-
-  <h4>فیلد OS در Pod <small>(Pod OS field)</small></h4>
-  <p>کوبرنتیز اجازه می‌دهد Nodeهای Linux و Windows را در یک cluster کنار هم داشته باشید. Windows محدودیت‌ها و تفاوت‌هایی با workloadهای Linux دارد؛‏ به‌ویژه بسیاری از فیلدهای <code>securityContext</code> در Pod روی Windows <a href="https://kubernetes.io/docs/concepts/windows/intro/#compatibility-v1-pod-spec-containers-securitycontext">اثری ندارند</a>.</p>
-  <p>از v1.25،‏ policy به نام Restricted از فیلد <code>pod.spec.os.name</code> استفاده می‌کند و بر اساس آن،‏ کنترل‌های مخصوص یک سیستم‌عامل را برای سیستم‌عامل دیگر سست می‌کند. سه کنترل privilege escalation و seccomp و Linux capabilityها فقط وقتی لازم‌اند که <code>.spec.os.name</code> برابر <code>windows</code> نباشد.</p>
-  <div class="note"><b>نکته</b><p>kubeletهای پیش از v1.24 فیلد OS در Pod را اعمال نمی‌کنند؛‏ اگر cluster،‏ Nodeهایی با نسخه‌ی پیش از v1.24 دارد،‏ policyهای Restricted را روی نسخه‌ای پیش از v1.25 ثابت (pin) کنید.</p></div>
-
-  <h4>user namespaceها <small>(User namespaces)</small></h4>
-  <p>user namespace قابلیتی فقط برای Linux است که workloadها را با جداسازی بیشتری اجرا می‌کند: root داخل container به یک UID بدون privilege روی host نگاشت می‌شود (جزئیات در <a href="#ch3-b-userns">فصل ۳</a>). برای Podهایی که <code>hostUsers: false</code> دارند،‏ کوبرنتیز اعمال Pod Security Standards را به شکل کنترل‌شده سست می‌کند: فیلدهای <code>runAsNonRoot</code> و <code>runAsUser</code> (در سطح Pod و همه‌ی containerها) حتی در Baseline و Restricted بررسی نمی‌شوند،‏ چون root داخل این Pod هرگز به کاربر privileged روی host نگاشت نمی‌شود. در Baseline،‏ بررسی <code>procMount</code> هم برای این Podها سست می‌شود؛‏ اما Restricted همچنان فقط <code>procMount</code> پیش‌فرض یا خالی را می‌پذیرد.</p>
-
-  <h4>پرسش‌های رایج <small>(FAQ)</small></h4>
-  <p><b>چرا سطحی بین Privileged و Baseline نیست؟</b> سه سطح تعریف‌شده پیشرفت خطی روشنی از امن‌ترین (Restricted) تا ناامن‌ترین (Privileged) دارند و گستره‌ی وسیعی از workloadها را پوشش می‌دهند. privilegeهایی که بالاتر از Baseline لازم می‌شوند معمولاً بسیار وابسته به برنامه‌اند،‏ پس profile استانداردی برای آن‌ها ارائه نمی‌شود. این به آن معنا نیست که در این حالت همیشه باید Privileged را به کار ببرید؛‏ policyها در این محدوده باید مورد به مورد تعریف شوند. SIG Auth (گروه کاری مسئول authentication و authorization در پروژه) ممکن است در آینده در این تصمیم بازنگری کند.</p>
-  <p><b>فرق security profile با security context چیست؟</b> <a href="#ch14-c-security-context">security context</a> تنظیمات Pod و container در زمان اجراست؛‏ بخشی از مشخصات Pod و container در manifest است و پارامترهایی برای container runtime به شمار می‌رود. security profileها سازوکارهای control plane هستند که تنظیمات مشخصی را در security context و پارامترهای مرتبط بیرون از آن اعمال می‌کنند. از ژوئیه‌ی ۲۰۲۱،‏ Pod Security Policy به نفع Pod Security Admission داخلی deprecated شد.</p>
-  <p><b>تکلیف Podهای sandboxed چیست؟</b> فعلاً هیچ API استانداردی تعیین نمی‌کند Podی sandboxed هست یا نه. Podهای sandboxed را ممکن است با استفاده از runtime مخصوص sandbox (مثل gVisor یا Kata Containers) تشخیص داد،‏ اما تعریف استانداردی از sandboxed runtime وجود ندارد. محافظت لازم برای این workloadها با بقیه فرق دارد؛‏ مثلاً وقتی workload از kernel زیرین جدا شده،‏ محدود کردن permissionهای privileged اهمیت کمتری دارد و workloadهای نیازمند permission بیشتر همچنان جدا می‌مانند. چون محافظت از workloadهای sandboxed به روش sandboxing وابسته است،‏ profile واحدی برای همه‌ی آن‌ها توصیه نمی‌شود.</p>
+  </details>
 
   <h3 id="ch14-c-psa">Pod Security Admission</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.25 [stable]</span></p>
@@ -6033,23 +6089,6 @@ pod-security.kubernetes.io/&lt;MODE&gt;-version: &lt;VERSION&gt;
 
   <h4>workload resourceها و Pod template <small>(Workload resources and Pod templates)</small></h4>
   <p>Podها اغلب غیرمستقیم ساخته می‌شوند؛‏ با ساختن workload objectی مثل Deployment یا Job. workload object یک <i>Pod template</i> تعریف می‌کند و controller مربوط به آن workload resource،‏ Podها را از روی template می‌سازد. برای اینکه نقض‌ها زود دیده شوند،‏ حالت‌های audit و warn روی workload resourceها هم اعمال می‌شوند. اما حالت enforce روی workload resourceها اعمال <b>نمی‌شود</b> و فقط روی Podهای ساخته‌شده اعمال می‌شود.</p>
-  <div class="deep"><b>توضیح تکمیلی: Deploymentی که ساخته می‌شود ولی Podی ندارد</b>
-    <p>اگر namespace فقط <code>enforce=restricted</code> داشته باشد و Deployment ناسازگاری apply کنید،‏ <code>kubectl apply</code> موفق است و هیچ خطایی نمی‌بینید؛‏ ReplicaSet ساخته می‌شود ولی ساختن Podها رد می‌شود. نشانه را فقط در eventهای ReplicaSet می‌بینید:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl -n payments get deploy,rs
-kubectl -n payments describe rs web-6d4cf56db6 | tail -3
-</pre></div>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/web   0/2     0            0           40s
-
-NAME                             DESIRED   CURRENT   READY   AGE
-replicaset.apps/web-6d4cf56db6   2         0         0       40s
-  Type     Reason        Age                From                   Message
-  ----     ------        ----               ----                   -------
-  Warning  FailedCreate  12s (x5 over 40s)  replicaset-controller  Error creating: pods "web-6d4cf56db6-9xk2p" is forbidden: violates PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "web" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "web" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "web" must set securityContext.runAsNonRoot=true), seccompProfile (pod or container "web" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
-</pre></div>
-    <p>برای همین توصیه می‌شود <code>warn</code> را هم روی همان سطح enforce بگذارید تا کاربر همان لحظه‌ی apply هشدار را ببیند.</p>
-  </div>
-
   <h4>استثناها <small>(Exemptions)</small></h4>
   <p>می‌توانید برای اعمال Pod Security <i>استثنا</i> تعریف کنید تا Podهایی ساخته شوند که policy مربوط به namespace در غیر این صورت ردشان می‌کرد. استثناها را به‌طور ثابت در <a href="https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-admission-controller/#configure-the-admission-controller">پیکربندی admission controller</a> تعریف می‌کنید و باید صریحاً فهرست شوند. درخواست‌هایی که با معیار استثنا مطابقت دارند،‏ از admission controller کاملاً <i>نادیده گرفته</i> می‌شوند (همه‌ی رفتارهای enforce و audit و warn کنار گذاشته می‌شوند). ابعاد استثنا:</p>
   <ul>
@@ -6136,6 +6175,26 @@ namespace/psa-demo labeled (server dry run)
     <p>Pod معمولی nginx از Baseline می‌گذرد (هیچ چیز خطرناکی نخواسته) ولی چهار هشدار Restricted می‌گیرد. Pod از نوع privileged در enforce رد می‌شود. Pod سازگار بدون هشدار ساخته می‌شود. dry-run سمت server نشان می‌دهد اگر enforce را روی restricted ببریم،‏ Pod موجود <code>web</code> ناسازگار است؛‏ تغییر label هیچ Pod در حال اجرایی را حذف نمی‌کند.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Deploymentی که ساخته می‌شود ولی Podی ندارد</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: Deploymentی که ساخته می‌شود ولی Podی ندارد</b>
+    <p>اگر namespace فقط <code>enforce=restricted</code> داشته باشد و Deployment ناسازگاری apply کنید،‏ <code>kubectl apply</code> موفق است و هیچ خطایی نمی‌بینید؛‏ ReplicaSet ساخته می‌شود ولی ساختن Podها رد می‌شود. نشانه را فقط در eventهای ReplicaSet می‌بینید:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl -n payments get deploy,rs
+kubectl -n payments describe rs web-6d4cf56db6 | tail -3
+</pre></div>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/web   0/2     0            0           40s
+
+NAME                             DESIRED   CURRENT   READY   AGE
+replicaset.apps/web-6d4cf56db6   2         0         0       40s
+  Type     Reason        Age                From                   Message
+  ----     ------        ----               ----                   -------
+  Warning  FailedCreate  12s (x5 over 40s)  replicaset-controller  Error creating: pods "web-6d4cf56db6-9xk2p" is forbidden: violates PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "web" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "web" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "web" must set securityContext.runAsNonRoot=true), seccompProfile (pod or container "web" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+</pre></div>
+    <p>برای همین توصیه می‌شود <code>warn</code> را هم روی همان سطح enforce بگذارید تا کاربر همان لحظه‌ی apply هشدار را ببیند.</p>
+  </div>
+  </details>
+
   <h3 id="ch14-b-enforcing-pss">اعمال Pod Security Standards <small>(Enforcing Pod Security Standards)</small></h3>
   <p>این بخش بهترین شیوه‌های اعمال <a href="#ch14-c-pss">Pod Security Standards</a> را مرور می‌کند.</p>
 
@@ -6177,6 +6236,8 @@ kubectl get namespaces --selector='!pod-security.kubernetes.io/enforce'
     <li><a href="https://github.com/open-policy-agent/gatekeeper">OPA Gatekeeper</a></li>
   </ul>
   <p>انتخاب بین راه‌حل داخلی (مثل PodSecurity admission controller) و ابزار third-party کاملاً به شرایط شما بستگی دارد. در ارزیابی هر راه‌حل،‏ اعتماد به supply chain آن حیاتی است. در نهایت،‏ استفاده از <i>هر کدام</i> از این روش‌ها بهتر از هیچ کاری نکردن است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">راهبرد چندحالته در عمل</span></summary>
   <div class="deep"><b>توضیح تکمیلی: راهبرد چندحالته در عمل</b>
     <p>فرض کنید namespace به نام <code>payments</code> باید در نهایت در سطح <code>restricted</code> کار کند،‏ ولی workloadهای فعلی هنوز آماده نیستند. labelها را این‌طور بگذارید: <code>enforce=baseline</code> (تا Podهای واقعاً پرخطر رد شوند) و <code>warn=restricted</code> و <code>audit=restricted</code>. تیم توسعه با هر <code>kubectl apply</code> بی‌درنگ هشدارهای نقض <code>restricted</code> را می‌بیند،‏ بدون اینکه deploy شکست بخورد. پیشرفت را هم از annotation به نام <code>pod-security.kubernetes.io/audit-violations</code> در audit log دنبال می‌کنید (Pod Security Admission شیء Event نمی‌سازد). پیش از بالا بردن enforce،‏ اثرش را روی Podهای موجود بی‌خطر بیازمایید:</p>
     <div class="code"><div class="lbl"><span>آزمودن سطح جدید بدون اعمال</span><button type="button">کپی</button></div><pre class="sh">kubectl label --dry-run=server --overwrite ns payments \
@@ -6185,6 +6246,7 @@ kubectl get namespaces --selector='!pod-security.kubernetes.io/enforce'
 </pre></div>
     <p>وقتی هشداری نماند،‏ <code>enforce</code> را هم به <code>restricted</code> ببرید. تغییر label مربوط به enforce،‏ Podهای در حال اجرا را بیرون نمی‌کند و فقط ساختن Podهای تازه را کنترل می‌کند.</p>
   </div>
+  </details>
 
   <h3 id="ch14-c-psp">PodSecurityPolicy (حذف‌شده) <small>(Pod Security Policies)</small></h3>
   <p>PodSecurityPolicy در Kubernetes v1.21 <a href="https://kubernetes.io/blog/2021/04/08/kubernetes-1-21-release-announcement/#podsecuritypolicy-deprecation">deprecated</a> شد و در v1.25 از کوبرنتیز حذف شد. به‌جای آن می‌توانید محدودیت‌های مشابهی را با یکی یا هر دوی این‌ها روی Podها اعمال کنید:</p>
@@ -6731,13 +6793,17 @@ secret/secret1 replaced
     <li>با کاربر privileged،‏ <code>kubectl get secrets --all-namespaces -o json | kubectl replace -f -</code> را اجرا کنید تا همه‌ی Secretهای موجود با کلید تازه رمزنگاری شوند.</li>
     <li>پس از به‌روز شدن همه‌ی Secretها و backup امن از کلید تازه،‏ کلید قدیمی را از پیکربندی حذف کنید.</li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: چرا ترتیب rotate این‌قدر مهم است؟</b>
-    <p>اگر کلید تازه را مستقیم اول فهرست بگذارید و API serverها را یکی‌یکی از نو اجرا کنید،‏ در میانه‌ی rollout،‏ API server تازه داده را با کلید جدید می‌نویسد و API server قدیمی که هنوز کلید جدید را نمی‌شناسد نمی‌تواند همان داده را بخواند. مرحله‌ی اول (افزودن کلید به‌عنوان کلید دوم) دقیقاً برای این است که پیش از شروع نوشتن با کلید تازه،‏ همه‌ی API serverها خواندنش را بلد باشند.</p>
-  </div>
   <h4>رمزگشایی همه‌ی داده‌ها <small>(Decrypt all data)</small></h4>
   <p>برای متوقف کردن encryption at rest،‏ provider به نام <code>identity</code> را اول فهرست بگذارید و provider قبلی را <b>پس از آن</b> نگه دارید تا داده‌های رمزنگاری‌شده هنوز خوانده شوند. بعد با همان دستور replace همه‌ی Secretها را بازنویسی کنید تا رمزگشایی‌شده ذخیره شوند. پس از آن می‌توانید تنظیمات رمزنگاری را از kube-apiserver حذف کنید.</p>
   <h4>بارگذاری خودکار پیکربندی <small>(Configure automatic reloading)</small></h4>
   <p>با flag به نام <code>--encryption-provider-config-automatic-reload=true</code>،‏ API server فایل پیکربندی را به‌جای فقط یک بار هنگام startup،‏ هر بار که تغییر کند دوباره load می‌کند؛‏ تغییرات هر یک دقیقه بررسی می‌شوند. metric به نام <code>apiserver_encryption_config_controller_automatic_reload_last_timestamp_seconds</code> زمان اعمال پیکربندی تازه را نشان می‌دهد. این‌طور می‌توان کلیدها را بدون restart کردن API server،‏ rotate کرد.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا ترتیب rotate این‌قدر مهم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا ترتیب rotate این‌قدر مهم است؟</b>
+    <p>اگر کلید تازه را مستقیم اول فهرست بگذارید و API serverها را یکی‌یکی از نو اجرا کنید،‏ در میانه‌ی rollout،‏ API server تازه داده را با کلید جدید می‌نویسد و API server قدیمی که هنوز کلید جدید را نمی‌شناسد نمی‌تواند همان داده را بخواند. مرحله‌ی اول (افزودن کلید به‌عنوان کلید دوم) دقیقاً برای این است که پیش از شروع نوشتن با کلید تازه،‏ همه‌ی API serverها خواندنش را بلد باشند.</p>
+  </div>
+  </details>
 
   <h3 id="ch14-c-multi-tenancy">multi-tenancy <small>(Multi-tenancy)</small></h3>
   <p>این بخش گزینه‌های پیکربندی و بهترین شیوه‌های multi-tenancy (اشتراک یک cluster بین چند مستأجر یا tenant) را مرور می‌کند. اشتراک cluster هزینه را کم و مدیریت را ساده می‌کند،‏ اما چالش‌هایی مثل امنیت،‏ انصاف و مدیریت <i>noisy neighbor</i> (workloadی که با مصرف زیاد منابع،‏ کارایی بقیه را پایین می‌آورد) دارد. گاهی برنامه‌های مختلف در یک cluster اجرا می‌شوند و گاهی چند instance از یک برنامه،‏ یکی برای هر کاربر نهایی؛‏ همه‌ی این حالت‌ها معمولاً زیر عنوان multi-tenancy می‌آیند. کوبرنتیز مفهوم درجه‌یکی برای کاربر نهایی یا tenant ندارد،‏ اما چند قابلیت برای مدیریت نیازهای مختلف tenancy فراهم می‌کند.</p>
@@ -7143,8 +7209,8 @@ spec:
   <h4>جداسازی امنیتی در سطح Pod <small>(Pod-level security isolation)</small></h4>
   <p>سازوکارهای security context مخصوص Linux (مثل SELinux و AppArmor و seccomp یا POSIX capabilityهای سفارشی) روی Nodeهای Windows پشتیبانی نمی‌شوند و containerهای privileged هم روی Windows <a href="https://kubernetes.io/docs/concepts/windows/intro/#compatibility-v1-pod-spec-containers-securitycontext">پشتیبانی نمی‌شوند</a>. به‌جای آن،‏ <a href="https://kubernetes.io/docs/tasks/configure-pod-container/create-hostprocess-pod">HostProcess containerها</a> بسیاری از کارهای containerهای privileged در Linux را روی Windows انجام می‌دهند (از v1.26 در مرحله‌ی stable). HostProcess دسترسی privileged به host مربوط به Windows می‌دهد،‏ برای همین سطح Baseline در Pod Security Standards آن را ممنوع می‌کند و این Podها فقط در namespaceهای privileged قابل اجرا هستند. به همین دلیل هم سه کنترل privilege escalation و seccomp و capabilityها در Restricted برای Podهایی با <code>spec.os.name: windows</code> لازم نیستند (<a href="#ch14-c-pss">فیلد OS در Pod</a>).</p>
 
-  <div id="ch14-ex3" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۴،‏ بخش سوم <small>۱۵ تمرین</small></div>
+  <details id="ch14-ex3" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۴،‏ بخش سوم <small>۱۵ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>در namespaceی با <code>enforce=restricted</code>،‏ Podی با image رسمی <code>nginx:1.27</code> و <code>runAsNonRoot: true</code> و بقیه‌ی فیلدهای لازم Restricted ساخته می‌شود. admission آن را می‌پذیرد،‏ ولی Pod هیچ‌وقت Running نمی‌شود. چرا admission رد نکرد و چه کسی جلوی اجرا را گرفت؟
         <details class="ans"><summary>پاسخ</summary>
@@ -7273,14 +7339,14 @@ done
           <p>اصلاح: runtime آن Nodeها را ارتقا دهید؛‏ تا آن موقع Podها را با node affinity به Nodeهای پشتیبانی‌کننده بفرستید. برگرداندن به <code>Merge</code> مشکل امنیتی groupهای ضمنی از <code>/etc/group</code> را برمی‌گرداند.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   
   <h3 id="ch14-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این فصل،‏ حالا</b><p>دسترسی‌ها حالا شخصی،‏ حداقلی و قابل‌ممیزی‌اند:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>همه با یک kubeconfig مدیر کار می‌کنند</td><td>هویت شخصی برای هر نفر (مثلاً OIDC یا client certificate)،‏ نه kubeconfig مشترک</td><td><a href="#ch14-a-authenticating">authentication</a></td></tr><tr><td>حذف namespace مربوط به production با context اشتباه</td><td>RBAC با کمترین اختیار لازم: هویت روزمره فقط‌خواندنی است و کار مخرب فقط با impersonation به هویت break-glass انجام می‌شود که در audit log ثبت می‌شود</td><td><a href="#ch14-b-rbac-intro">RBAC</a> و <a href="#ch14-a-impersonation">impersonation</a></td></tr><tr><td>نشان دادن این‌که چه کسی به چه چیزی دسترسی دارد</td><td>بررسی با <code>kubectl auth can-i --list</code> و Roleها و Bindingها؛‏ سابقه در audit log</td><td><a href="#ch14-a-checking-access">بررسی دسترسی</a></td></tr><tr><td>برنامه‌ها با هویت پیش‌فرض</td><td>ServiceAccount جدا برای هر برنامه با Role محدود</td><td><a href="#ch14-b-service-accounts">ServiceAccount</a></td></tr><tr><td>هیچ Podی با root اجرا نشود</td><td>Pod Security Admission با سطح restricted روی namespaceها،‏ و securityContext با <code>runAsNonRoot: true</code></td><td><a href="#ch14-c-pss">Pod Security Standards</a> و <a href="#ch14-c-security-context">security context</a></td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> قانون‌های تیم،‏ مثل ممنوعیت tag به نام latest،‏ هنوز با بازبینی دستی رعایت می‌شوند (فصل ۱۵).</p><p><b>فصل بعد:</b> قانون‌ها و عملیات تکراری،‏ خودکار و درون cluster.</p></div>
 
-  <div id="ch14-ex4" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۴ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch14-ex4" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۴ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>درخواستی که به Kubernetes API می‌رسد از چه مراحلی می‌گذرد؟ فرق 401 و 403 چیست؟
         <details class="ans"><summary>پاسخ</summary>
@@ -7371,7 +7437,7 @@ done
           <p><b>نکته‌ی امتیازآور:</b> پیشگیری مهم‌تر است: <code>system:masters</code> فقط برای break-glass؛‏ مدیران روزمره با OIDC و ClusterRoleBinding به cluster-admin (قابل حذف) کار کنند؛‏ و CertificateSubjectRestriction جلوی صدور چنین certificateی را از راه CSR API می‌گیرد.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch14-recap">
     <div class="recap-h">خلاصه‌ی فصل ۱۴ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

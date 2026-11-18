@@ -215,7 +215,7 @@ base/shop-web.yaml
 base/shopify-ingress.yaml
 overlays/production/kustomization.yaml
 overlays/staging/kustomization.yaml
-</pre></div><p>هر شیء فروشگاه یک فایل دارد،‏ هر محیط یک overlay کوچک،‏ و هر تغییر پیش از اعمال با diff دیده می‌شود. این پایان بخش اول است: شاپیفای روی یک Node با k3s،‏ با انتشار بدون قطعی،‏ شبکه و Ingress،‏ پیکربندی و رمز بیرون از image،‏ داده‌ی ماندگار و backup،‏ و دو محیط جدا اجرا می‌شود.</p><div id="ch8-ex1" class="ex"><div class="ex-h">امتحان کنید <small>3 تمرین</small></div><ol><li><span class="lvl l1">عملی</span>فیلدهای Deployment را از خود cluster بپرسید: <code>kubectl explain deployment.spec.replicas</code>. این اطلاعات از کجا می‌آید؟<details class="ans"><summary>پاسخ</summary><p>از schema که خود API server منتشر می‌کند (OpenAPI؛‏ بخش Kubernetes API همین فصل). هر وقت نمی‌دانستید یک فیلد چیست،‏ <code>kubectl explain</code> بزنید؛‏ مثلاً <code>kubectl explain pod.spec.containers</code>. با <code>--recursive</code> کل درخت فیلدها را می‌بینید.</p></details></li><li><span class="lvl l2">مفهومی</span>چرا <code>shop-migrate.yaml</code> را در base نگذاشتیم و برای staging جدا apply کردیم؟<details class="ans"><summary>پاسخ</summary><p>Pod template مربوط به Job پس از ساخت تغییرناپذیر است. اگر Job در base باشد،‏ هر تغییر در template آن (مثلاً image تازه در انتشار بعدی) باعث می‌شود <code>kubectl apply -k</code> با خطای field is immutable شکست بخورد؛‏ و اگر Job قبلی با ttlSecondsAfterFinished پاک شده باشد،‏ هر apply یک migration تازه اجرا می‌کند. Job یک کار یک‌باره در هر انتشار است،‏ نه وضعیت ماندگار. ابزارهای GitOps برای همین hook دارند (مثل PreSync در Argo CD یا hook در Helm) که Job را در هر انتشار از نو می‌سازند.</p></details></li><li><span class="lvl l2">عملی</span>در namespace به نام shopify-staging،‏ شیء Deployment به نام shop-web را با <code>kubectl delete deployment shop-web --cascade=orphan</code> حذف کنید. ReplicaSet و Podها چه می‌شوند؟ بعد <code>kubectl apply -k overlays/staging</code> بزنید. چه اتفاقی می‌افتد؟<details class="ans"><summary>پاسخ</summary><p>Deployment حذف می‌شود ولی ReplicaSet و Pod آن می‌مانند و فرانت staging قطع نمی‌شود؛‏ ownerReferences مربوط به ReplicaSet پاک می‌شود و آن orphan می‌شود. با apply دوباره،‏ Deployment تازه (با UID تازه) ساخته می‌شود؛‏ controller آن ReplicaSetی را پیدا می‌کند که selector و template یکسان دارد و آن را تصاحب (adopt) می‌کند،‏ به‌جای ساختن ReplicaSet و Pod تازه. همین ترفند برای تغییر فیلدهای تغییرناپذیر (مثل selector) بدون قطع سرویس به کار می‌رود.</p></details></li></ol></div><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>هر شیء شاپیفای فایل دارد و هیچ شیئی فقط با دستور مستقیم ساخته نشده است.</li><li>با dry-run اسکلت YAML می‌سازید و پیش از apply از diff استفاده می‌کنید.</li><li>با exit code مربوط به diff تغییر پنهان در cluster را پیدا می‌کنید.</li><li>با -n و context در namespace دلخواه کار می‌کنید و می‌دانید کدام اشیا namespace ندارند.</li><li>دو محیط با یک base و دو overlay و بدون فایل کپی‌شده اجرا می‌شوند.</li><li>علت ماندن namespace در Terminating را از conditionهای آن پیدا می‌کنید.</li></ul></div>
+</pre></div><p>هر شیء فروشگاه یک فایل دارد،‏ هر محیط یک overlay کوچک،‏ و هر تغییر پیش از اعمال با diff دیده می‌شود. این پایان بخش اول است: شاپیفای روی یک Node با k3s،‏ با انتشار بدون قطعی،‏ شبکه و Ingress،‏ پیکربندی و رمز بیرون از image،‏ داده‌ی ماندگار و backup،‏ و دو محیط جدا اجرا می‌شود.</p><details id="ch8-ex1" class="ex"><summary class="ex-h">امتحان کنید <small>3 تمرین</small></summary><ol><li><span class="lvl l1">عملی</span>فیلدهای Deployment را از خود cluster بپرسید: <code>kubectl explain deployment.spec.replicas</code>. این اطلاعات از کجا می‌آید؟<details class="ans"><summary>پاسخ</summary><p>از schema که خود API server منتشر می‌کند (OpenAPI؛‏ بخش Kubernetes API همین فصل). هر وقت نمی‌دانستید یک فیلد چیست،‏ <code>kubectl explain</code> بزنید؛‏ مثلاً <code>kubectl explain pod.spec.containers</code>. با <code>--recursive</code> کل درخت فیلدها را می‌بینید.</p></details></li><li><span class="lvl l2">مفهومی</span>چرا <code>shop-migrate.yaml</code> را در base نگذاشتیم و برای staging جدا apply کردیم؟<details class="ans"><summary>پاسخ</summary><p>Pod template مربوط به Job پس از ساخت تغییرناپذیر است. اگر Job در base باشد،‏ هر تغییر در template آن (مثلاً image تازه در انتشار بعدی) باعث می‌شود <code>kubectl apply -k</code> با خطای field is immutable شکست بخورد؛‏ و اگر Job قبلی با ttlSecondsAfterFinished پاک شده باشد،‏ هر apply یک migration تازه اجرا می‌کند. Job یک کار یک‌باره در هر انتشار است،‏ نه وضعیت ماندگار. ابزارهای GitOps برای همین hook دارند (مثل PreSync در Argo CD یا hook در Helm) که Job را در هر انتشار از نو می‌سازند.</p></details></li><li><span class="lvl l2">عملی</span>در namespace به نام shopify-staging،‏ شیء Deployment به نام shop-web را با <code>kubectl delete deployment shop-web --cascade=orphan</code> حذف کنید. ReplicaSet و Podها چه می‌شوند؟ بعد <code>kubectl apply -k overlays/staging</code> بزنید. چه اتفاقی می‌افتد؟<details class="ans"><summary>پاسخ</summary><p>Deployment حذف می‌شود ولی ReplicaSet و Pod آن می‌مانند و فرانت staging قطع نمی‌شود؛‏ ownerReferences مربوط به ReplicaSet پاک می‌شود و آن orphan می‌شود. با apply دوباره،‏ Deployment تازه (با UID تازه) ساخته می‌شود؛‏ controller آن ReplicaSetی را پیدا می‌کند که selector و template یکسان دارد و آن را تصاحب (adopt) می‌کند،‏ به‌جای ساختن ReplicaSet و Pod تازه. همین ترفند برای تغییر فیلدهای تغییرناپذیر (مثل selector) بدون قطع سرویس به کار می‌رود.</p></details></li></ol></details><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>هر شیء شاپیفای فایل دارد و هیچ شیئی فقط با دستور مستقیم ساخته نشده است.</li><li>با dry-run اسکلت YAML می‌سازید و پیش از apply از diff استفاده می‌کنید.</li><li>با exit code مربوط به diff تغییر پنهان در cluster را پیدا می‌کنید.</li><li>با -n و context در namespace دلخواه کار می‌کنید و می‌دانید کدام اشیا namespace ندارند.</li><li>دو محیط با یک base و دو overlay و بدون فایل کپی‌شده اجرا می‌شوند.</li><li>علت ماندن namespace در Terminating را از conditionهای آن پیدا می‌کنید.</li></ul></div>
   </div>
 
   <div class="deep"><b>از این‌جا به بعد: مرجع عمیق‌تر</b><p>بخش‌های بعدی متن کامل مستندات است. لازم نیست پشت‌سرهم بخوانید؛‏ هر وقت سؤالی پیش آمد،‏ به بخش مربوط برگردید:</p><div class="tbl"><table><thead><tr><th>اگر می‌خواهید بدانید…</th><th>به این بخش بروید</th></tr></thead><tbody><tr><td>API و گروه‌ها و نسخه‌ها و explain (تمرین ۱)</td><td><a href="#ch8-a-api">Kubernetes API</a> و <a href="#ch8-a-groups-versioning">گروه‌ها و نسخه‌بندی</a></td></tr><tr><td>ساختار شیء و spec و status</td><td><a href="#ch8-a-objects">آشنایی با اشیای کوبرنتیز</a></td></tr><tr><td>namespace و اشیای بدون namespace (گام ۳)</td><td><a href="#ch8-a-namespaces">Namespaceها</a></td></tr><tr><td>label و selector و labelهای پیشنهادی (گام ۴)</td><td><a href="#ch8-a-labels">labelها و selectorها</a> و <a href="#ch8-a-common-labels">labelهای پیشنهادی</a></td></tr><tr><td>finalizer و Terminating (گام ۷)</td><td><a href="#ch8-a-finalizers">Finalizerها</a></td></tr><tr><td>owner reference و cascading deletion (تمرین ۳)</td><td><a href="#ch8-a-owners-dependents">مالک‌ها و وابسته‌ها</a></td></tr><tr><td>سه روش مدیریت و apply (گام‌های ۱ و ۲)</td><td><a href="#ch8-b-management-techniques">روش‌های مدیریت</a> و <a href="#ch8-b-apply-merge">محاسبه‌ی تفاوت در apply</a></td></tr><tr><td>Kustomize (گام‌های ۴ تا ۶)</td><td><a href="#ch8-b-kustomize">مدیریت اعلانی با Kustomize</a> و <a href="#ch8-b-bases-overlays">Base و Overlay</a></td></tr><tr><td>مالکیت فیلدها و Server-Side Apply</td><td><a href="#ch8-b-ssa">Server-Side Apply</a></td></tr></tbody></table></div></div>
@@ -229,6 +229,8 @@ overlays/staging/kustomization.yaml
     <li><b>Discovery API:</b> خلاصه‌ای از APIها ارائه می‌دهد: نام منابع،‏ نسخه‌ها و عملیات پشتیبانی‌شده. این اصطلاحی مخصوص کوبرنتیز و API جداگانه‌ای از OpenAPI است. هدفش یک فهرست کوتاه از منابع موجود است و ساختار (schema) دقیق منابع را توضیح نمی‌دهد.</li>
     <li><b>سند OpenAPI کوبرنتیز:</b> schema کامل OpenAPI نسخه‌ی 2.0 و 3.0 را برای همه‌ی endpointها ارائه می‌دهد. OpenAPI v3 روش ترجیحی است،‏ چون تصویر کامل‌تر و دقیق‌تری از API می‌دهد. این سند همه‌ی مسیرهای API و همه‌ی منابعی را که هر عملیات می‌گیرد یا برمی‌گرداند شامل می‌شود،‏ از جمله هر extensionی (مثل CRDها) که cluster پشتیبانی می‌کند. این داده خیلی بزرگ‌تر از داده‌ی Discovery است.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Discovery در برابر OpenAPI</span></summary>
   <div class="deep"><b>توضیح تکمیلی: Discovery در برابر OpenAPI</b>
     <p>Discovery به سؤال «<b>چه چیزهایی</b> در این cluster هست؟» جواب می‌دهد (کدام منابع،‏ در کدام گروه و نسخه،‏ در سطح namespace یا cluster،‏ با کدام عملیات).‏ OpenAPI به سؤال «<b>هر کدام دقیقاً چه شکلی دارد؟</b>» جواب می‌دهد (همه‌ی فیلدها،‏ نوع داده،‏ توضیحات). وقتی <code>kubectl get deploy</code> می‌زنید،‏ kubectl از Discovery می‌فهمد <code>deploy</code> short name (نام کوتاه منبع در kubectl،‏ مثل deploy) <code>deployments</code> در گروه <code>apps/v1</code> است؛‏ وقتی <code>kubectl explain deployment.spec.strategy</code> می‌زنید،‏ kubectl از OpenAPI توضیح فیلد را می‌آورد.</p>
     <p>هر کاری که kubectl انجام می‌دهد در نهایت یک درخواست HTTP به API server است. با flag <code>-v=6</code> (یا بیشتر) این درخواست‌ها را می‌بینید (قالب دقیق log بین نسخه‌های kubectl فرق دارد؛‏ نسخه‌های جدید log ساختاریافته چاپ می‌کنند):</p>
@@ -241,6 +243,7 @@ coredns-7db6d8ff4d-8kq2x                     1/1     Running   0          2d
 ...
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch8-a-discovery">Discovery API</h3>
   <p>کوبرنتیز فهرست همه‌ی group versionها (ترکیب گروه و نسخه‌ی API،‏ مثل apps/v1) و منابع پشتیبانی‌شده را از طریق Discovery API منتشر می‌کند. برای هر منبع این اطلاعات آمده است:</p>
@@ -296,9 +299,6 @@ coredns-7db6d8ff4d-8kq2x                     1/1     Running   0          2d
 }
 </pre></div>
   <p>برای گرفتن فهرست منابع هر group version،‏ باید درخواست جداگانه‌ای به <code>/apis/&lt;group&gt;/&lt;version&gt;</code> بفرستید (مثلاً <code>/apis/rbac.authorization.k8s.io/v1</code>). kubectl در حالت تجمیع‌نشده از همین endpointها فهرست منابع cluster را می‌گیرد.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا تجمیع مهم است؟</b>
-    <p>در حالت تجمیع‌نشده،‏ client برای کشف همه‌ی منابع باید اول <code>/api</code> و <code>/apis</code> را بخواند و بعد برای <b>هر</b> group version یک درخواست جدا بفرستد. در clusterی با ده‌ها CRD (مثلاً cert-manager،‏ Istio،‏ Prometheus Operator) یعنی ده‌ها یا صدها درخواست؛‏ برای همین در kubectlهای قدیمی گاهی پیام throttling در مرحله‌ی discovery دیده می‌شد. حالت تجمیع‌شده همین اطلاعات را در دو پاسخ می‌دهد. kubectl نتیجه‌ی discovery را در پوشه‌ی <code>~/.kube/cache/discovery</code> نگه می‌دارد؛‏ اگر CRD جدیدی نصب شد و kubectl آن را نمی‌شناخت،‏ پاک کردن این cache کمک می‌کند.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: مقایسه‌ی discovery تجمیع‌شده و تجمیع‌نشده</b>
     <p>روی cluster k3s یک proxy محلی باز کنید تا بدون درگیری با certificateها با <code>curl</code> درخواست بفرستید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl proxy --port=8001 &amp;
@@ -338,6 +338,13 @@ statefulsets          sts          apps/v1      true         StatefulSet        
     <p>ستون‌های این خروجی دقیقاً همان اطلاعاتی است که Discovery API برای هر منبع منتشر می‌کند: نام،‏ دامنه (NAMESPACED)،‏ عملیات (VERBS)،‏ نام‌های جایگزین (SHORTNAMES) و گروه/نسخه/نوع.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا تجمیع مهم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا تجمیع مهم است؟</b>
+    <p>در حالت تجمیع‌نشده،‏ client برای کشف همه‌ی منابع باید اول <code>/api</code> و <code>/apis</code> را بخواند و بعد برای <b>هر</b> group version یک درخواست جدا بفرستد. در clusterی با ده‌ها CRD (مثلاً cert-manager،‏ Istio،‏ Prometheus Operator) یعنی ده‌ها یا صدها درخواست؛‏ برای همین در kubectlهای قدیمی گاهی پیام throttling در مرحله‌ی discovery دیده می‌شد. حالت تجمیع‌شده همین اطلاعات را در دو پاسخ می‌دهد. kubectl نتیجه‌ی discovery را در پوشه‌ی <code>~/.kube/cache/discovery</code> نگه می‌دارد؛‏ اگر CRD جدیدی نصب شد و kubectl آن را نمی‌شناخت،‏ پاک کردن این cache کمک می‌کند.</p>
+  </div>
+  </details>
+
   <h3 id="ch8-a-openapi">تعریف interface OpenAPI <small>(OpenAPI interface definition)</small></h3>
   <p>جزئیات استاندارد OpenAPI را در openapis.org ببینید.</p>
   <p>کوبرنتیز هر دو نسخه‌ی OpenAPI v2.0 و v3.0 را ارائه می‌دهد. v3 روش ترجیحی است،‏ چون منابع را بدون از دست رفتن اطلاعات (lossless) توصیف می‌کند. به‌خاطر محدودیت‌های OpenAPI v2،‏ بعضی فیلدهای schema در آن منتشر نمی‌شوند؛‏ از جمله (نه فقط) <code>default</code>،‏ <code>nullable</code> و <code>oneOf</code>.</p>
@@ -351,14 +358,6 @@ statefulsets          sts          apps/v1      true         StatefulSet        
     <tr><td><code>‎*‎</code></td><td>پاسخ را به شکل <code>application/json</code> می‌دهد</td></tr>
   </tbody></table></div>
   <div class="warn"><b>هشدار</b><p>قواعد validation که در schemaهای OpenAPI منتشر می‌شوند ممکن است کامل نباشند و معمولاً هم نیستند؛‏ validation بیشتری داخل خود API server انجام می‌شود. برای بررسی دقیق و کامل،‏ <code>kubectl apply --dry-run=server</code> همه‌ی validationها (و بررسی‌های مرحله‌ی admission) را اجرا می‌کند،‏ بدون این‌که چیزی ذخیره شود.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: نتیجه‌ی عملی این هشدار</b>
-    <p>ابزارهایی که manifest را فقط در سمت client و با schema OpenAPI بررسی می‌کنند (مثل lint در CI) ممکن است manifestی را قبول کنند که API server رد می‌کند؛‏ مثلاً به‌خاطر قواعد نام،‏ تغییرناپذیر بودن بعضی فیلدها،‏ یا ValidatingAdmissionPolicy و webhookهایی که در cluster نصب شده‌اند. در یک pipeline CI/CD،‏ مرحله‌ی <code>kubectl apply --dry-run=server -f manifests/</code> روی cluster واقعی (یا staging) تنها راه اطمینان از پذیرفته شدن manifest است.</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply --dry-run=server -f deployment.yaml
-</pre></div>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">deployment.apps/nginx-deployment created (server dry run)
-</pre></div>
-  </div>
-
   <h4>OpenAPI V3</h4>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.27 [stable]</span></p>
   <p>کوبرنتیز توصیف APIهایش را به شکل OpenAPI v3 هم منتشر می‌کند. endpoint <code>/openapi/v3</code> فهرست همه‌ی group versionهای موجود را برمی‌گرداند (فقط JSON) و قالبش این است:</p>
@@ -384,6 +383,17 @@ statefulsets          sts          apps/v1      true         StatefulSet        
     <tr><td><code>‎*‎</code></td><td>پاسخ را به شکل <code>application/json</code> می‌دهد</td></tr>
   </tbody></table></div>
   <p>پیاده‌سازی Go برای دریافت OpenAPI V3 در بسته‌ی <code>k8s.io/client-go/openapi3</code> هست. کوبرنتیز 1.37 نسخه‌های 2.0 و 3.0 را منتشر می‌کند و فعلاً برنامه‌ای برای پشتیبانی از 3.1 ندارد.</p>
+  <h4>سریال‌سازی Protobuf</h4>
+  <p>کوبرنتیز یک قالب سریال‌سازی جایگزین مبتنی بر Protobuf دارد که بیشتر برای ارتباطات داخل cluster است. جزئیات را در طرح «Kubernetes Protobuf serialization» و فایل‌های IDL هر schema در بسته‌های Go تعریف‌کننده‌ی اشیای API ببینید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">نتیجه‌ی عملی این هشدار · چرا hash در نشانی؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: نتیجه‌ی عملی این هشدار</b>
+    <p>ابزارهایی که manifest را فقط در سمت client و با schema OpenAPI بررسی می‌کنند (مثل lint در CI) ممکن است manifestی را قبول کنند که API server رد می‌کند؛‏ مثلاً به‌خاطر قواعد نام،‏ تغییرناپذیر بودن بعضی فیلدها،‏ یا ValidatingAdmissionPolicy و webhookهایی که در cluster نصب شده‌اند. در یک pipeline CI/CD،‏ مرحله‌ی <code>kubectl apply --dry-run=server -f manifests/</code> روی cluster واقعی (یا staging) تنها راه اطمینان از پذیرفته شدن manifest است.</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply --dry-run=server -f deployment.yaml
+</pre></div>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">deployment.apps/nginx-deployment created (server dry run)
+</pre></div>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: چرا hash در نشانی؟</b>
     <p>محتوای مشخصات هر group version فقط وقتی عوض می‌شود که API آن گروه تغییر کند (مثلاً CRD جدیدی نصب یا به‌روز شود). با گذاشتن hash محتوا در نشانی،‏ هر نشانی همیشه به یک محتوای ثابت اشاره می‌کند و client می‌تواند تا یک سال آن را cache کند. اگر مشخصات عوض شود،‏ hash و در نتیجه نشانی هم عوض می‌شود و client در discovery بعدی نشانی جدید را می‌گیرد.</p>
     <p><code>kubectl explain</code> در نسخه‌های جدید از OpenAPI v3 استفاده می‌کند:</p>
@@ -409,18 +419,19 @@ DESCRIPTION:
 ]
 </pre></div>
   </div>
-
-  <h4>سریال‌سازی Protobuf</h4>
-  <p>کوبرنتیز یک قالب سریال‌سازی جایگزین مبتنی بر Protobuf دارد که بیشتر برای ارتباطات داخل cluster است. جزئیات را در طرح «Kubernetes Protobuf serialization» و فایل‌های IDL هر schema در بسته‌های Go تعریف‌کننده‌ی اشیای API ببینید.</p>
   <div class="deep"><b>توضیح تکمیلی</b>
     <p>اجزای control plane مثل kube-controller-manager و kube-scheduler و همچنین kubelet برای منابع داخلی به‌طور پیش‌فرض با Protobuf با API server ارتباط برقرار می‌کنند،‏ چون فشرده‌تر است و decode آن از JSON سریع‌تر است؛‏ در clusterهای بزرگ با هزاران Pod و watch فعال،‏ مصرف CPU و شبکه را کم می‌کند. kubectl و بیشتر ابزارها JSON به کار می‌برند. custom resourceها (CRD) Protobuf ندارند و با JSON کار می‌کنند.</p>
   </div>
+  </details>
 
   <h3 id="ch8-a-persistence">ماندگاری <small>(Persistence)</small></h3>
   <p>کوبرنتیز وضعیت سریال‌شده‌ی اشیا را با نوشتن در <b>etcd</b> ذخیره می‌کند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b>
     <p>نکته‌ی مهم معماری: فقط API server مستقیم با etcd ارتباط برقرار می‌کند. بقیه‌ی اجزا (scheduler،‏ controllerها،‏ kubelet،‏ kubectl) از طریق API server می‌خوانند و می‌نویسند. برای همین همه‌ی قواعد این فصل (validation نام،‏ finalizer،‏ نسخه‌بندی و تبدیل نسخه‌ها) در یک نقطه‌ی مرکزی اعمال می‌شوند،‏ و backup از etcd یعنی backup از کل وضعیت cluster (فصل ۱۲).</p>
   </div>
+  </details>
 
   <h3 id="ch8-a-groups-versioning">گروه‌ها و نسخه‌بندی API <small>(API groups and versioning)</small></h3>
   <p>برای این‌که حذف فیلدها یا بازسازی شکل منابع آسان‌تر شود،‏ کوبرنتیز چند نسخه‌ی API را هم‌زمان پشتیبانی می‌کند که هر کدام در مسیر جداگانه‌ای هستند،‏ مثل <code>/api/v1</code> یا <code>/apis/rbac.authorization.k8s.io/v1</code>.</p>
@@ -428,6 +439,15 @@ DESCRIPTION:
   <p>برای آسان‌تر کردن رشد و گسترش API،‏ کوبرنتیز <b>API groupها (دسته‌ای از منابع API،‏ مثل apps یا batch)</b> دارد که می‌توان آن‌ها را فعال یا غیرفعال کرد.</p>
   <p>هر منبع API با گروه،‏ نوع منبع،‏ namespace (برای منابع namespaced) و نام از بقیه متمایز می‌شود. API server تبدیل بین نسخه‌ها را به‌صورت شفاف انجام می‌دهد: همه‌ی نسخه‌ها در واقع نمایش‌های مختلفی از <b>همان داده‌ی ذخیره‌شده</b> هستند.</p>
   <p>مثلاً اگر یک منبع دو نسخه‌ی <code>v1</code> و <code>v1beta1</code> داشته باشد و شیئی را با <code>v1beta1</code> بسازید،‏ بعداً می‌توانید آن را با هر دو نسخه بخوانید،‏ به‌روز کنید یا حذف کنید،‏ تا وقتی که <code>v1beta1</code> منسوخ و حذف شود؛‏ از آن به بعد با <code>v1</code> به کار ادامه می‌دهید.</p>
+  <h4>تغییرات API</h4>
+  <p>هر سیستم موفقی با پیدا شدن کاربردهای جدید یا تغییر کاربردهای قبلی باید رشد کند. برای همین Kubernetes API طوری طراحی شده که مدام تغییر کند و رشد کند. هدف پروژه این است که سازگاری با clientهای موجود را <b>نشکند</b> و آن را مدتی حفظ کند تا پروژه‌های دیگر فرصت تطبیق داشته باشند.</p>
+  <p>به‌طور کلی،‏ منابع و فیلدهای جدید را می‌توان به‌دفعات اضافه کرد. اما حذف منبع یا فیلد باید از <b>سیاست منسوخ‌سازی API</b> (API deprecation policy) پیروی کند.</p>
+  <p>کوبرنتیز متعهد است سازگاری APIهای رسمی را پس از رسیدن به نسخه‌ی عمومی (GA،‏ معمولاً <code>v1</code>) حفظ کند. همچنین سازگاری داده‌هایی را که با نسخه‌های <i>beta</i> ذخیره شده‌اند حفظ می‌کند و تضمین می‌کند وقتی قابلیت پایدار شد،‏ این داده‌ها از طریق نسخه‌ی GA قابل تبدیل و دسترسی باشند.</p>
+  <p>اگر از نسخه‌ی beta یک API استفاده می‌کنید،‏ باید بعد از ارتقای آن API به beta بعدی یا نسخه‌ی پایدار،‏ به نسخه‌ی جدید مهاجرت کنید. بهترین زمان این کار دوره‌ی منسوخ بودن (deprecation) نسخه‌ی beta است،‏ چون در این دوره اشیا از هر دو نسخه در دسترس‌اند. وقتی این دوره تمام شود و نسخه‌ی beta دیگر ارائه نشود،‏ باید از نسخه‌ی جایگزین استفاده کنید.</p>
+  <div class="note"><b>نکته</b><p>کوبرنتیز تلاش می‌کند سازگاری نسخه‌های <i>alpha</i> را هم حفظ کند،‏ ولی گاهی ممکن نیست. اگر از API در مرحله‌ی alpha استفاده می‌کنید،‏ پیش از ارتقای cluster یادداشت‌های انتشار (release notes) را بخوانید؛‏ ممکن است API طوری تغییر کرده باشد که لازم شود همه‌ی اشیای آن API پیش از ارتقا حذف شوند.</p></div>
+  <p>تعریف سطوح نسخه‌ی API را در بخش «نسخه‌بندی API» در ادامه ببینید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">یک شیء،‏ چند نمایش · درس تاریخی 1.16 و 1.22</span></summary>
   <div class="deep"><b>توضیح تکمیلی: یک شیء،‏ چند نمایش</b>
     <p>HorizontalPodAutoscaler هم در <code>autoscaling/v1</code> و هم در <code>autoscaling/v2</code> ارائه می‌شود. HPAی که با <code>autoscaling/v2</code> و چند معیار ساخته شده با <code>autoscaling/v1</code> هم خوانده می‌شود؛‏ همان شیء است،‏ فقط نمایش دیگری دارد (فیلدهایی که در v1 جا ندارند در annotation نگه داشته می‌شوند):</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get horizontalpodautoscalers.v2.autoscaling web -o yaml | head -3
@@ -442,17 +462,10 @@ metadata:
 </pre></div>
     <p>قالب <code>resource.version.group</code> در <code>kubectl get</code> اجازه می‌دهد نسخه‌ی مشخصی را بخواهید؛‏ بدون آن،‏ kubectl از preferred version (نسخه‌ای که Discovery برای هر گروه پیش‌فرض اعلام می‌کند) که Discovery اعلام می‌کند استفاده می‌کند.</p>
   </div>
-
-  <h4>تغییرات API</h4>
-  <p>هر سیستم موفقی با پیدا شدن کاربردهای جدید یا تغییر کاربردهای قبلی باید رشد کند. برای همین Kubernetes API طوری طراحی شده که مدام تغییر کند و رشد کند. هدف پروژه این است که سازگاری با clientهای موجود را <b>نشکند</b> و آن را مدتی حفظ کند تا پروژه‌های دیگر فرصت تطبیق داشته باشند.</p>
-  <p>به‌طور کلی،‏ منابع و فیلدهای جدید را می‌توان به‌دفعات اضافه کرد. اما حذف منبع یا فیلد باید از <b>سیاست منسوخ‌سازی API</b> (API deprecation policy) پیروی کند.</p>
-  <p>کوبرنتیز متعهد است سازگاری APIهای رسمی را پس از رسیدن به نسخه‌ی عمومی (GA،‏ معمولاً <code>v1</code>) حفظ کند. همچنین سازگاری داده‌هایی را که با نسخه‌های <i>beta</i> ذخیره شده‌اند حفظ می‌کند و تضمین می‌کند وقتی قابلیت پایدار شد،‏ این داده‌ها از طریق نسخه‌ی GA قابل تبدیل و دسترسی باشند.</p>
-  <p>اگر از نسخه‌ی beta یک API استفاده می‌کنید،‏ باید بعد از ارتقای آن API به beta بعدی یا نسخه‌ی پایدار،‏ به نسخه‌ی جدید مهاجرت کنید. بهترین زمان این کار دوره‌ی منسوخ بودن (deprecation) نسخه‌ی beta است،‏ چون در این دوره اشیا از هر دو نسخه در دسترس‌اند. وقتی این دوره تمام شود و نسخه‌ی beta دیگر ارائه نشود،‏ باید از نسخه‌ی جایگزین استفاده کنید.</p>
-  <div class="note"><b>نکته</b><p>کوبرنتیز تلاش می‌کند سازگاری نسخه‌های <i>alpha</i> را هم حفظ کند،‏ ولی گاهی ممکن نیست. اگر از API در مرحله‌ی alpha استفاده می‌کنید،‏ پیش از ارتقای cluster یادداشت‌های انتشار (release notes) را بخوانید؛‏ ممکن است API طوری تغییر کرده باشد که لازم شود همه‌ی اشیای آن API پیش از ارتقا حذف شوند.</p></div>
-  <p>تعریف سطوح نسخه‌ی API را در بخش «نسخه‌بندی API» در ادامه ببینید.</p>
   <div class="deep"><b>توضیح تکمیلی: درس تاریخی 1.16 و 1.22</b>
     <p>در 1.16 ارائه‌ی <code>extensions/v1beta1</code> و <code>apps/v1beta1</code>/<code>apps/v1beta2</code> برای Deployment،‏ DaemonSet و ReplicaSet متوقف شد،‏ و در 1.22 نسخه‌های <code>v1beta1</code> برای Ingress و برای CRD (<code>apiextensions.k8s.io/v1beta1</code>) حذف شدند. اشیای موجود در cluster <b>سالم ماندند</b> (چون داده‌ی ذخیره‌شده با v1 قابل دسترسی بود)،‏ ولی manifestها و Helm chartهایی که هنوز <code>apiVersion</code> قدیمی داشتند بعد از ارتقا با خطایی مثل <code>no matches for kind "Ingress" in version "networking.k8s.io/v1beta1"</code> شکست می‌خوردند. برای همین توصیه می‌شود در دوره‌ی deprecation،‏ نه بعد از حذف،‏ مهاجرت کنید. API server برای درخواست‌هایی که از API منسوخ استفاده می‌کنند یک هدر هشدار برمی‌گرداند که kubectl آن را به شکل <code>Warning: ... is deprecated in v1.xx+, unavailable in v1.yy+; use ... instead</code> نشان می‌دهد؛‏ معیار <code>apiserver_requested_deprecated_apis</code> هم برای پایش (monitoring) در دسترس است.</p>
   </div>
+  </details>
 
   <h3 id="ch8-a-extension">گسترش API <small>(API Extension)</small></h3>
   <p>Kubernetes API را به دو روش می‌توان گسترش داد:</p>
@@ -460,9 +473,12 @@ metadata:
     <li><b>custom resourceها (منبعی که کاربر با CRD به API اضافه می‌کند)</b>: به‌صورت اعلانی تعریف می‌کنید API server منبع دلخواه شما را چطور ارائه دهد.</li>
     <li><b>aggregation layer (لایه‌ای که یک API server دیگر را پشت kube-apiserver قرار می‌دهد)</b>: یک API server جداگانه پیاده‌سازی می‌کنید که پشت kube-apiserver قرار می‌گیرد.</li>
   </ol>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b>
     <p>با CRD،‏ خود API server منبع جدید را در etcd ذخیره و ارائه می‌کند و شما فقط schema را تعریف می‌کنید؛‏ این روش برای بیشتر operatorها (cert-manager،‏ Prometheus Operator،‏ Argo CD) کافی است. با aggregation layer،‏ یک API server مستقل می‌نویسید که با شیئی از نوع <code>APIService</code> ثبت می‌شود و kube-apiserver درخواست‌های آن گروه را به آن proxy می‌کند؛‏ نمونه‌ی مشهورش metrics-server است که گروه <code>metrics.k8s.io</code> را ارائه می‌دهد و <code>kubectl top</code> به آن وابسته است. جزئیات در فصل ۱۵.</p>
   </div>
+  </details>
 
   <h3 id="ch8-a-using-api">مرجع API: نسخه‌بندی،‏ گروه‌ها و فعال/غیرفعال کردن <small>(reference/using-api)</small></h3>
   <p>REST API اسکلت اصلی کوبرنتیز است. همه‌ی عملیات و ارتباطات بین اجزا و فرمان‌های کاربران بیرونی درخواست‌های REST هستند که API server پردازش می‌کند. در نتیجه،‏ همه‌چیز در کوبرنتیز یک شیء API است و در API مدخلی دارد. مرجع API کوبرنتیز نسخه‌ی 1.37 را فهرست می‌کند. سند «Controlling Access to the Kubernetes API» هم توضیح می‌دهد clientها چطور authentication (تشخیص هویت درخواست‌دهنده) می‌شوند و درخواست‌هایشان چطور مجوز می‌گیرد (فصل ۱۴).</p>
@@ -627,12 +643,15 @@ db.internal 5432 []
   <p>وجود چند storage version برای یک منبع برای مدیران cluster دردسر دارد. مدیر نمی‌تواند نسخه‌های قدیمی یک CRD را که دیگر پشتیبانی نمی‌شوند حذف کند،‏ مگر مطمئن شود هیچ شیئی دیگر با آن نسخه ذخیره نشده است. با تعداد زیاد اشیا و ندانستن این‌که کدام‌ها هنوز با نسخه‌ی قدیمی ذخیره شده‌اند،‏ تشخیص زمان امن حذف دشوار است؛‏ اگر نسخه زودتر حذف شود،‏ ممکن است آن اشیا دیگر قابل خواندن نباشند.</p>
   <p>مسئله‌ی دیگر کلیدهای encryption است: هنگام rotate کردن کلید (key rotation) باید کلید قدیمی و جدید هر دو نگه داشته شوند تا مطمئن شوید همه‌ی اشیا دست‌کم یک بار دوباره نوشته شده‌اند. تا آن زمان کلید قدیمی را نمی‌توان کنار گذاشت که هم ریسک امنیتی دارد و هم دردسر عملیاتی.</p>
   <p>برای روش مهاجرتی که بدون دخالت دستی همه‌ی اشیا را به storage version جدید ببرد،‏ بخش «مهاجرت storage version» در بخش دوم همین فصل را ببینید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">روش دستی و قدیمی مهاجرت</span></summary>
   <div class="deep"><b>توضیح تکمیلی: روش دستی و قدیمی مهاجرت</b>
     <p>چون فقط <b>نوشتن</b> شیء را با storage version (یا کلید encryption) جاری دوباره ذخیره می‌کند،‏ روش سنتی این بود که همه‌ی اشیای یک منبع را بدون تغییر دوباره بنویسید. این روش در مستندات رسمی encryption Secretها آمده است:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get secrets --all-namespaces -o json | kubectl replace -f -
 </pre></div>
     <p>ترتیب درست rotate کردن کلید: (۱) کلید جدید را به‌عنوان کلید <b>دوم</b> در EncryptionConfiguration اضافه و همه‌ی API serverها را ری‌استارت کنید؛‏ (۲) کلید جدید را اول فهرست بگذارید و دوباره ری‌استارت کنید؛‏ (۳) همه‌ی Secretها را دوباره بنویسید؛‏ (۴) تازه بعد از آن کلید قدیمی را حذف کنید. گام اول برای cluster چند API server لازم است: اگر یک server با کلید جدید بنویسد و server دیگر هنوز آن کلید را نشناسد،‏ نمی‌تواند داده را بخواند. اگر گام ۳ جا بیفتد و کلید قدیمی حذف شود،‏ API server دیگر نمی‌تواند Secretهای قدیمی را رمزگشایی کند (فصل ۱۴).</p>
   </div>
+  </details>
 
   <!-- ================= Objects ================= -->
   <h3 id="ch8-a-objects">آشنایی با اشیای کوبرنتیز <small>(Understanding Kubernetes objects)</small></h3>
@@ -653,22 +672,6 @@ db.internal 5432 []
   <p>جزئیات بیشتر درباره‌ی spec،‏ status و metadata در سند «Kubernetes API Conventions» آمده است.</p>
   
 <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="100%" style="max-width:760px;height:auto" role="img" aria-label="spec را کاربر می‌نویسد، status را کنترلر، و reconciliation اختلاف را برطرف می‌کند"><defs><marker id="f4ss-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f4ss-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f4ss-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f4ss-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f4ss-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="250" y="20" width="260" height="285" rx="10" fill="#fff" stroke="#4a5672" stroke-width="1.8"></rect><text x="380" y="46" font-family="Vazirmatn, Tahoma, sans-serif" font-size="15" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">شیء Deployment</text><text x="380" y="72" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">apiVersion · kind</text><rect x="268" y="86" width="224" height="54" rx="10" fill="#eef2f9" stroke="#c9d3e6" stroke-width="1.4"></rect><text x="380" y="108" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">metadata</text><text x="380" y="128" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">name · labels · uid</text><rect x="268" y="152" width="224" height="60" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="380" y="176" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">spec</text><text x="380" y="198" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">replicas: 3</text><rect x="268" y="224" width="224" height="60" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="380" y="248" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">status</text><text x="380" y="270" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">readyReplicas: 2</text><rect x="560" y="150" width="180" height="64" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="650" y="176" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">شما / ابزار GitOps</text><text x="650" y="198" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">kubectl apply</text><line x1="558" y1="182" x2="494" y2="182" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f4ss-a326ce5)"></line><text x="526" y="172" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#326ce5" text-anchor="middle" direction="rtl">می‌نویسد</text><rect x="20" y="150" width="190" height="134" rx="10" fill="#fff" stroke="#12806f" stroke-width="1.6"></rect><text x="115" y="176" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">Deployment controller</text><text x="115" y="202" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">spec را می‌خواند</text><text x="115" y="228" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">Pod می‌سازد یا حذف می‌کند</text><text x="115" y="254" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">status را می‌نویسد</text><line x1="266" y1="182" x2="212" y2="182" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4ss-a4a5672)"></line><text x="239" y="172" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">می‌خواند</text><line x1="212" y1="254" x2="266" y2="254" stroke="#12806f" stroke-width="1.6" marker-end="url(#f4ss-a12806f)"></line><text x="239" y="244" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#12806f" text-anchor="middle" direction="ltr">/status</text><text x="115" y="312" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="rtl">تکرار تا وقتی status به spec برسد</text></svg></div><figcaption><b>شکل ۸-۳.</b> <span style="flex:1 1 0;min-width:0">تقسیم کار روی یک شیء: شما desired state را در <code>spec</code> می‌نویسید؛‏ controller آن را می‌خواند،‏ Podها را می‌سازد و current state را در <code>status</code> (از طریق subresource <code>/status</code>) گزارش می‌کند. این چرخه همان reconciliation است.</span></figcaption></figure>
-<div class="deep"><b>توضیح تکمیلی: چه کسی کدام را می‌نویسد؟</b>
-    <p>این تفکیک پایه‌ی مدل reconciliation (فرایند نزدیک کردن مداوم وضعیت واقعی به وضعیت خواسته‌شده) است (فصل ۱۲): شما (یا ابزار GitOps) فقط <code>spec</code> را می‌نویسید و controller فقط <code>status</code> را. بیشتر منابع <code>status</code> را به شکل یک subresource (بخش جداگانه‌ی یک منبع با endpoint خودش،‏ مثل /status یا /scale) جدا (<code>/status</code>) ارائه می‌دهند؛‏ پس یک <code>kubectl apply</code> معمولی نمی‌تواند status را تغییر دهد و controllerی که روی <code>/status</code> می‌نویسد هم تصادفاً spec را بازنویسی نمی‌کند. همه‌ی اشیا <code>spec</code> ندارند: ConfigMap و Secret داده را در <code>data</code> نگه می‌دارند و Event یا ServiceAccount ساختار دیگری دارند؛‏ برای همین مستندات می‌گوید «تقریباً هر شیء».</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment web --image=nginx:1.27 --replicas=3
-kubectl get deployment web -o jsonpath='{.spec.replicas} {.status.replicas} {.status.readyReplicas}{"\n"}'
-kubectl delete pod -l app=web --wait=false   # simulate instance failures
-kubectl get deployment web -o jsonpath='{.spec.replicas} {.status.replicas} {.status.readyReplicas}{"\n"}'
-</pre></div>
-    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">3 3 3
-pod "web-6d4cf56db6-7lq2m" deleted from shopify namespace
-pod "web-6d4cf56db6-b8wkt" deleted from shopify namespace
-pod "web-6d4cf56db6-xz9rp" deleted from shopify namespace
-3 3 1
-</pre></div>
-    <p>در لحظه‌ای که فقط یک Pod جدید آماده شده،‏ spec (۳) با status (<code>readyReplicas: 1</code>) فرق دارد؛‏ controller این اختلاف را می‌بیند و چند ثانیه بعد هر سه عدد دوباره ۳ می‌شوند.</p>
-  </div>
-
   <h4>توصیف یک شیء</h4>
   <p>برای ساختن شیء باید spec آن (desired state) را همراه با اطلاعات پایه‌ای مثل نام بدهید. وقتی از API استفاده می‌کنید (مستقیم یا با kubectl)،‏ درخواست باید این اطلاعات را به شکل JSON در بدنه داشته باشد. معمولاً این اطلاعات را در فایلی به نام <i>manifest</i> به kubectl می‌دهید. طبق قرارداد manifestها YAML هستند (JSON هم مجاز است) و kubectl هنگام ارسال،‏ آن را به JSON یا قالب سریال‌سازی دیگری تبدیل می‌کند.</p>
   <p>این یک manifest نمونه است که فیلدهای لازم و spec یک Deployment را نشان می‌دهد:</p>
@@ -698,6 +701,33 @@ spec:
   <p>خروجی:</p>
   <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">deployment.apps/nginx-deployment created
 </pre></div>
+  <h4>فیلدهای لازم</h4>
+  <p>در manifest هر شیء باید این فیلدها را مقدار دهید:</p>
+  <ul>
+    <li><code>apiVersion</code>: با کدام نسخه از Kubernetes API این شیء را می‌سازید؛‏</li>
+    <li><code>kind</code>: چه نوع شیئی می‌سازید؛‏</li>
+    <li><code>metadata</code>: داده‌هایی که شیء را یکتا شناسایی می‌کنند،‏ شامل <code>name</code>،‏ <code>UID</code> و <code>namespace</code> اختیاری؛‏</li>
+    <li><code>spec</code>: وضعیتی که برای شیء می‌خواهید.</li>
+  </ul>
+  <p>قالب دقیق <code>spec</code> برای هر نوع شیء فرق دارد و فیلدهای مخصوص آن را دارد. مرجع API کوبرنتیز قالب spec همه‌ی اشیا را نشان می‌دهد. مثلاً در Pod،‏ <code>.spec</code> desired state Pod را تعیین می‌کند (مثل image هر container). در StatefulSet،‏ <code>.spec</code> شامل یک <b>قالب</b> (template) برای Podهاست؛‏ قالبی که StatefulSet controller برای برآوردن spec،‏ Podها را از روی آن می‌سازد. انواع مختلف شیء <code>.status</code> متفاوتی هم دارند که ساختارش در مرجع API آمده است.</p>
+  <p>برای نوشتن فایل‌های YAML،‏ مقاله‌ی «Kubernetes Configuration Best Practices» را ببینید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">چه کسی کدام را می‌نویسد؟ · همان manifest به شکل JSON</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چه کسی کدام را می‌نویسد؟</b>
+    <p>این تفکیک پایه‌ی مدل reconciliation (فرایند نزدیک کردن مداوم وضعیت واقعی به وضعیت خواسته‌شده) است (فصل ۱۲): شما (یا ابزار GitOps) فقط <code>spec</code> را می‌نویسید و controller فقط <code>status</code> را. بیشتر منابع <code>status</code> را به شکل یک subresource (بخش جداگانه‌ی یک منبع با endpoint خودش،‏ مثل /status یا /scale) جدا (<code>/status</code>) ارائه می‌دهند؛‏ پس یک <code>kubectl apply</code> معمولی نمی‌تواند status را تغییر دهد و controllerی که روی <code>/status</code> می‌نویسد هم تصادفاً spec را بازنویسی نمی‌کند. همه‌ی اشیا <code>spec</code> ندارند: ConfigMap و Secret داده را در <code>data</code> نگه می‌دارند و Event یا ServiceAccount ساختار دیگری دارند؛‏ برای همین مستندات می‌گوید «تقریباً هر شیء».</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment web --image=nginx:1.27 --replicas=3
+kubectl get deployment web -o jsonpath='{.spec.replicas} {.status.replicas} {.status.readyReplicas}{"\n"}'
+kubectl delete pod -l app=web --wait=false   # simulate instance failures
+kubectl get deployment web -o jsonpath='{.spec.replicas} {.status.replicas} {.status.readyReplicas}{"\n"}'
+</pre></div>
+    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">3 3 3
+pod "web-6d4cf56db6-7lq2m" deleted from shopify namespace
+pod "web-6d4cf56db6-b8wkt" deleted from shopify namespace
+pod "web-6d4cf56db6-xz9rp" deleted from shopify namespace
+3 3 1
+</pre></div>
+    <p>در لحظه‌ای که فقط یک Pod جدید آماده شده،‏ spec (۳) با status (<code>readyReplicas: 1</code>) فرق دارد؛‏ controller این اختلاف را می‌بیند و چند ثانیه بعد هر سه عدد دوباره ۳ می‌شوند.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: همان manifest به شکل JSON</b>
     <p>برای دیدن آنچه kubectl واقعاً به API server می‌فرستد،‏ از <code>--dry-run=client -o json</code> استفاده کنید. به نقش <code>spec.template.metadata.labels</code> دقت کنید: این labelها روی Podهای ساخته‌شده قرار می‌گیرند و باید با <code>spec.selector.matchLabels</code> مطابقت داشته باشند؛‏ وگرنه API server Deployment را با خطای <code>selector does not match template labels</code> رد می‌کند.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/application/deployment.yaml --dry-run=client -o json | head -12
@@ -716,23 +746,13 @@ spec:
         "replicas": 2,
 </pre></div>
   </div>
-
-  <h4>فیلدهای لازم</h4>
-  <p>در manifest هر شیء باید این فیلدها را مقدار دهید:</p>
-  <ul>
-    <li><code>apiVersion</code>: با کدام نسخه از Kubernetes API این شیء را می‌سازید؛‏</li>
-    <li><code>kind</code>: چه نوع شیئی می‌سازید؛‏</li>
-    <li><code>metadata</code>: داده‌هایی که شیء را یکتا شناسایی می‌کنند،‏ شامل <code>name</code>،‏ <code>UID</code> و <code>namespace</code> اختیاری؛‏</li>
-    <li><code>spec</code>: وضعیتی که برای شیء می‌خواهید.</li>
-  </ul>
-  <p>قالب دقیق <code>spec</code> برای هر نوع شیء فرق دارد و فیلدهای مخصوص آن را دارد. مرجع API کوبرنتیز قالب spec همه‌ی اشیا را نشان می‌دهد. مثلاً در Pod،‏ <code>.spec</code> desired state Pod را تعیین می‌کند (مثل image هر container). در StatefulSet،‏ <code>.spec</code> شامل یک <b>قالب</b> (template) برای Podهاست؛‏ قالبی که StatefulSet controller برای برآوردن spec،‏ Podها را از روی آن می‌سازد. انواع مختلف شیء <code>.status</code> متفاوتی هم دارند که ساختارش در مرجع API آمده است.</p>
-  <p>برای نوشتن فایل‌های YAML،‏ مقاله‌ی «Kubernetes Configuration Best Practices» را ببینید.</p>
   <div class="deep"><b>توضیح تکمیلی</b>
     <p>دو نکته‌ی ظریف: (۱) <code>UID</code> در <code>metadata</code> هست،‏ ولی شما آن را <b>نمی‌نویسید</b>؛‏ سیستم تولیدش می‌کند (بخش UID).‏ (۲) <code>namespace</code> اختیاری است؛‏ اگر ننویسید،‏ kubectl از namespace context جاری (معمولاً <code>default</code>) استفاده می‌کند. برای دیدن ساختار <code>spec</code> بدون ترک ترمینال،‏ <code>kubectl explain</code> بهترین ابزار است:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl explain statefulset.spec.template
 kubectl explain pod.spec --recursive | head -20
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch8-a-field-validation">field validation در سمت server <small>(Server side field validation)</small></h3>
   <p>از کوبرنتیز 1.25،‏ API server <b>field validation (بررسی فیلدهای ناشناخته یا تکراری در server) در سمت server</b> دارد که فیلدهای ناشناخته یا تکراری را در شیء تشخیص می‌دهد. این قابلیت همه‌ی کارکرد <code>kubectl --validate</code> را در سمت server فراهم می‌کند.</p>
@@ -863,6 +883,25 @@ spec:
     - containerPort: 80
 </pre></div>
   <div class="note"><b>نکته</b><p>بعضی انواع منبع محدودیت‌های بیشتری روی نام دارند.</p></div>
+  <h4>شناسه‌ی یکتا <small>(UIDs)</small></h4>
+  <p>UID رشته‌ای است که سیستم کوبرنتیز برای شناسایی یکتای اشیا می‌سازد. هر شیئی که در کل عمر یک cluster ساخته شود UID متمایزی دارد؛‏ هدف،‏ تمایز گذاشتن بین نمونه‌های تاریخی موجودیت‌های مشابه است (مثلاً Pod امروز و Pod هم‌نام دیروز).</p>
+  <p>UIDهای کوبرنتیز شناسه‌های یکتای جهانی (UUID) هستند که در استانداردهای ISO/IEC 9834-8 و ITU-T X.667 تعریف شده‌اند.</p>
+  <div class="lab"><b>آزمایش عملی: نام یکسان،‏ UID متفاوت</b>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run uid-demo --image=nginx:1.27
+kubectl get pod uid-demo -o jsonpath='{.metadata.uid}{"\n"}'
+kubectl delete pod uid-demo
+kubectl run uid-demo --image=nginx:1.27
+kubectl get pod uid-demo -o jsonpath='{.metadata.uid}{"\n"}'
+</pre></div>
+    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">3f1c9a52-8a4e-4a53-9d0e-2b7f5c6e1a90
+pod "uid-demo" deleted from shopify namespace
+b72e04d1-61c3-4f0b-a8d2-9e5a7c3f4b18
+</pre></div>
+    <p>نام دوباره قابل استفاده است،‏ ولی UID هرگز تکرار نمی‌شود. برای همین owner reference علاوه بر نام،‏ UID مالک را هم نگه می‌دارد: اگر یک ReplicaSet حذف و ReplicaSet دیگری با همان نام ساخته شود،‏ Podهای قدیمی اشتباهاً به مالک جدید نسبت داده نمی‌شوند. kubelet هم UID Pod را در مسیرهای روی Node (مثل <code>/var/lib/kubelet/pods/&lt;uid&gt;/</code>) به کار می‌برد.</p>
+  </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام منبع از کدام قاعده پیروی می‌کند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کدام منبع از کدام قاعده پیروی می‌کند؟</b>
     <p>(برگرفته از validation در کد API server و مستندات هر منبع) چند نمونه‌ی مهم:</p>
     <div class="tbl"><table><thead><tr><th>منبع</th><th>قاعده‌ی نام</th><th>دلیل</th></tr></thead><tbody>
@@ -882,23 +921,7 @@ The Service "Payments-API" is invalid: metadata.name: Invalid value: "Payments-A
 </pre></div>
     <p>ConfigMap با نقطه پذیرفته می‌شود (زیردامنه‌ی DNS)،‏ ولی Namespace با نقطه و Service با حروف بزرگ رد می‌شوند. متن دقیق پیام‌ها ممکن است بین نسخه‌ها کمی فرق کند.</p>
   </div>
-
-  <h4>شناسه‌ی یکتا <small>(UIDs)</small></h4>
-  <p>UID رشته‌ای است که سیستم کوبرنتیز برای شناسایی یکتای اشیا می‌سازد. هر شیئی که در کل عمر یک cluster ساخته شود UID متمایزی دارد؛‏ هدف،‏ تمایز گذاشتن بین نمونه‌های تاریخی موجودیت‌های مشابه است (مثلاً Pod امروز و Pod هم‌نام دیروز).</p>
-  <p>UIDهای کوبرنتیز شناسه‌های یکتای جهانی (UUID) هستند که در استانداردهای ISO/IEC 9834-8 و ITU-T X.667 تعریف شده‌اند.</p>
-  <div class="lab"><b>آزمایش عملی: نام یکسان،‏ UID متفاوت</b>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run uid-demo --image=nginx:1.27
-kubectl get pod uid-demo -o jsonpath='{.metadata.uid}{"\n"}'
-kubectl delete pod uid-demo
-kubectl run uid-demo --image=nginx:1.27
-kubectl get pod uid-demo -o jsonpath='{.metadata.uid}{"\n"}'
-</pre></div>
-    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">3f1c9a52-8a4e-4a53-9d0e-2b7f5c6e1a90
-pod "uid-demo" deleted from shopify namespace
-b72e04d1-61c3-4f0b-a8d2-9e5a7c3f4b18
-</pre></div>
-    <p>نام دوباره قابل استفاده است،‏ ولی UID هرگز تکرار نمی‌شود. برای همین owner reference علاوه بر نام،‏ UID مالک را هم نگه می‌دارد: اگر یک ReplicaSet حذف و ReplicaSet دیگری با همان نام ساخته شود،‏ Podهای قدیمی اشتباهاً به مالک جدید نسبت داده نمی‌شوند. kubelet هم UID Pod را در مسیرهای روی Node (مثل <code>/var/lib/kubelet/pods/&lt;uid&gt;/</code>) به کار می‌برد.</p>
-  </div>
+  </details>
 
   <!-- ================= Namespaces ================= -->
   <h3 id="ch8-a-namespaces">Namespaceها <small>(Namespaces)</small></h3>
@@ -910,17 +933,6 @@ b72e04d1-61c3-4f0b-a8d2-9e5a7c3f4b18
   <p>namespace راهی برای تقسیم منابع cluster بین چند کاربر است (از طریق resource quota).</p>
   <p>برای جدا کردن منابعی که فرق کمی دارند (مثل نسخه‌های مختلف یک نرم‌افزار) لازم نیست چند namespace بسازید؛‏ از labelها برای تمایز داخل یک namespace استفاده کنید.</p>
   <div class="note"><b>نکته</b><p>در cluster عملیاتی بهتر است از namespace <code>default</code> استفاده <i>نکنید</i> و namespaceهای خودتان را بسازید.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: namespace مرز چه چیزی هست و چه چیزی نیست</b>
-    <p>namespace به‌تنهایی فقط یک محدوده‌ی نام است. قدرتش از سازوکارهایی می‌آید که به آن وصل می‌شوند:</p>
-    <div class="tbl"><table><thead><tr><th>سازوکار</th><th>نقش namespace</th><th>فصل</th></tr></thead><tbody>
-      <tr><td>RBAC (Role و RoleBinding)</td><td>دسترسی یک تیم را به یک namespace محدود می‌کند</td><td>۱۱</td></tr>
-      <tr><td>ResourceQuota و LimitRange</td><td>سهم CPU،‏ memory و تعداد اشیای هر namespace</td><td>۱۰</td></tr>
-      <tr><td>NetworkPolicy</td><td>ترافیک بین namespaceها را محدود می‌کند؛‏ بدون آن،‏ Podهای namespaceهای مختلف آزادانه با هم ارتباط برقرار می‌کنند</td><td>۸</td></tr>
-      <tr><td>Pod Security Admission</td><td>با label روی namespace،‏ سطح امنیت Podها را اعمال می‌کند</td><td>۱۱</td></tr>
-    </tbody></table></div>
-    <p>یعنی namespace به‌تنهایی <b>مرز امنیتی یا شبکه‌ای نیست</b>. Nodeها هم مشترک‌اند: Podهای دو namespace ممکن است روی یک Node اجرا شوند.</p>
-  </div>
-
   <h4>namespaceهای اولیه</h4>
   <p>کوبرنتیز با چهار namespace شروع می‌کند:</p>
   <div class="tbl"><table><thead><tr><th>namespace</th><th>توضیح</th></tr></thead><tbody>
@@ -929,15 +941,6 @@ b72e04d1-61c3-4f0b-a8d2-9e5a7c3f4b18
     <tr><td><code>kube-public</code></td><td>برای <b>همه‌ی</b> clientها (حتی unauthenticated) قابل خواندن است و بیشتر برای منابعی رزرو شده که باید در کل cluster عمومی باشند. عمومی بودن آن فقط یک قرارداد است،‏ نه الزام؛‏ در عمل دسترسی را RBAC تعیین می‌کند.</td></tr>
     <tr><td><code>kube-system</code></td><td>برای اشیایی که خود سیستم کوبرنتیز می‌سازد.</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی</b>
-    <p>در clusterهای kubeadm،‏ ConfigMap <code>cluster-info</code> در <code>kube-public</code> قرار دارد و kubeadm با یک Role فقط خواندن آن را برای کاربر ناشناس (anonymous) قابل خواندن می‌کند؛‏ <code>kubeadm join</code> در مرحله‌ی discovery از آن استفاده می‌کند. در <code>kube-node-lease</code> برای هر Node یک Lease هم‌نام با Node وجود دارد:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get leases -n kube-node-lease
-</pre></div>
-    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">NAME      HOLDER    AGE
-k3s-lab   k3s-lab   6d
-</pre></div>
-  </div>
-
   <h4>کار با namespaceها</h4>
   <p>ساختن و حذف namespace در راهنمای مدیریتی namespaceها توضیح داده شده است.</p>
   <div class="note"><b>نکته</b><p>namespaceی با پیشوند <code>kube-</code> نسازید؛‏ این پیشوند برای namespaceهای سیستمی کوبرنتیز رزرو شده است.</p></div>
@@ -984,6 +987,37 @@ staging      app-config   1      12s
   <p>در نتیجه نام همه‌ی namespaceها باید برچسب DNS معتبر طبق RFC 1123 باشد.</p>
   <div class="warn"><b>هشدار</b><p>اگر namespaceی هم‌نام با دامنه‌های سطح بالای عمومی (TLD) بسازید،‏ Serviceهای آن namespace می‌توانند نام DNS کوتاهی داشته باشند که با رکوردهای DNS عمومی هم‌پوشانی دارد. workloadهای هر namespaceی که نام را بدون <b>نقطه‌ی انتهایی</b> (trailing dot) جست‌وجو کنند،‏ به آن Serviceها هدایت می‌شوند و این بر DNS عمومی مقدم است.</p>
   <p>برای کاهش این خطر،‏ مجوز ساختن namespace را به کاربران مورد اعتماد محدود کنید و در صورت نیاز با کنترل‌های امنیتی (مثل admission webhook یا ValidatingAdmissionPolicy) جلوی ساختن namespace با نام TLDهای عمومی را بگیرید.</p></div>
+  <h4>همه‌ی اشیا در namespace نیستند</h4>
+  <p>بیشتر منابع (مثل Pod،‏ Service و Deployment) در یک namespace هستند. اما خود منبع Namespace در namespace نیست،‏ و منابع سطح پایین مثل Node و PersistentVolume هم در هیچ namespaceی نیستند. برای دیدن این‌که کدام منابع در namespace هستند:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># In a namespace
+kubectl api-resources --namespaced=true
+
+# Not in a namespace
+kubectl api-resources --namespaced=false
+</pre></div>
+  <h4>گذاشتن خودکار label</h4>
+  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.22 [stable]</span></p>
+  <p>control plane روی همه‌ی namespaceها یک label تغییرناپذیر به نام <code>kubernetes.io/metadata.name</code> می‌گذارد که مقدارش نام همان namespace است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۵)</small> <span class="m-t">namespace مرز چه چیزی هست و چه چیزی نیست · چرا این هشدار واقعی است · چرا این label مفید است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: namespace مرز چه چیزی هست و چه چیزی نیست</b>
+    <p>namespace به‌تنهایی فقط یک محدوده‌ی نام است. قدرتش از سازوکارهایی می‌آید که به آن وصل می‌شوند:</p>
+    <div class="tbl"><table><thead><tr><th>سازوکار</th><th>نقش namespace</th><th>فصل</th></tr></thead><tbody>
+      <tr><td>RBAC (Role و RoleBinding)</td><td>دسترسی یک تیم را به یک namespace محدود می‌کند</td><td>۱۱</td></tr>
+      <tr><td>ResourceQuota و LimitRange</td><td>سهم CPU،‏ memory و تعداد اشیای هر namespace</td><td>۱۰</td></tr>
+      <tr><td>NetworkPolicy</td><td>ترافیک بین namespaceها را محدود می‌کند؛‏ بدون آن،‏ Podهای namespaceهای مختلف آزادانه با هم ارتباط برقرار می‌کنند</td><td>۸</td></tr>
+      <tr><td>Pod Security Admission</td><td>با label روی namespace،‏ سطح امنیت Podها را اعمال می‌کند</td><td>۱۱</td></tr>
+    </tbody></table></div>
+    <p>یعنی namespace به‌تنهایی <b>مرز امنیتی یا شبکه‌ای نیست</b>. Nodeها هم مشترک‌اند: Podهای دو namespace ممکن است روی یک Node اجرا شوند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+    <p>در clusterهای kubeadm،‏ ConfigMap <code>cluster-info</code> در <code>kube-public</code> قرار دارد و kubeadm با یک Role فقط خواندن آن را برای کاربر ناشناس (anonymous) قابل خواندن می‌کند؛‏ <code>kubeadm join</code> در مرحله‌ی discovery از آن استفاده می‌کند. در <code>kube-node-lease</code> برای هر Node یک Lease هم‌نام با Node وجود دارد:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get leases -n kube-node-lease
+</pre></div>
+    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">NAME      HOLDER    AGE
+k3s-lab   k3s-lab   6d
+</pre></div>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: چرا این هشدار واقعی است</b>
     <p>فایل <code>/etc/resolv.conf</code> یک Pod در namespace <code>shop</code> معمولاً چنین است:</p>
     <div class="code"><div class="lbl"><span>/etc/resolv.conf داخل Pod</span><button type="button">کپی</button></div><pre class="out">search shop.svc.cluster.local svc.cluster.local cluster.local
@@ -996,22 +1030,9 @@ kubectl -n shop exec deploy/frontend -- nslookup payments.billing  # Service د�
 kubectl -n shop exec deploy/frontend -- nslookup payments.billing.svc.cluster.local
 </pre></div>
   </div>
-
-  <h4>همه‌ی اشیا در namespace نیستند</h4>
-  <p>بیشتر منابع (مثل Pod،‏ Service و Deployment) در یک namespace هستند. اما خود منبع Namespace در namespace نیست،‏ و منابع سطح پایین مثل Node و PersistentVolume هم در هیچ namespaceی نیستند. برای دیدن این‌که کدام منابع در namespace هستند:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># In a namespace
-kubectl api-resources --namespaced=true
-
-# Not in a namespace
-kubectl api-resources --namespaced=false
-</pre></div>
   <div class="deep"><b>توضیح تکمیلی</b>
     <p>نمونه‌هایی از منابع سطح cluster: <code>namespaces</code>،‏ <code>nodes</code>،‏ <code>persistentvolumes</code>،‏ <code>storageclasses</code>،‏ <code>clusterroles</code>،‏ <code>clusterrolebindings</code>،‏ <code>customresourcedefinitions</code>،‏ <code>priorityclasses</code>،‏ <code>ingressclasses</code>. flag <code>-n</code> روی این‌ها بی‌اثر است. نکته‌ی مهم: PersistentVolumeClaim در namespace است ولی PersistentVolume نیست؛‏ RoleBinding در namespace است ولی ClusterRole نیست. این تفاوت روی owner reference هم اثر دارد (بخش مالک‌ها و وابسته‌ها).</p>
   </div>
-
-  <h4>گذاشتن خودکار label</h4>
-  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.22 [stable]</span></p>
-  <p>control plane روی همه‌ی namespaceها یک label تغییرناپذیر به نام <code>kubernetes.io/metadata.name</code> می‌گذارد که مقدارش نام همان namespace است.</p>
   <div class="deep"><b>توضیح تکمیلی: چرا این label مفید است؟</b>
     <p>چون <code>namespaceSelector</code> در NetworkPolicy،‏ affinity و webhookها فقط با label کار می‌کند،‏ نه با نام. پیش از 1.22 برای انتخاب namespace <code>monitoring</code> باید خودتان labelی دستی رویش می‌گذاشتید (و ممکن بود کسی همان label را روی namespace دیگری هم بگذارد و از قاعده سوءاستفاده کند). حالا با اطمینان می‌نویسید:</p>
     <div class="code"><div class="lbl"><span>networkpolicy (بخش)</span><button type="button">کپی</button></div><pre class="yaml">ingress:
@@ -1021,6 +1042,7 @@ kubectl api-resources --namespaced=false
         kubernetes.io/metadata.name: monitoring
 </pre></div>
   </div>
+  </details>
 
   <!-- ================= Labels ================= -->
   <h3 id="ch8-a-labels">labelها و selectorها <small>(Labels and Selectors)</small></h3>
@@ -1072,20 +1094,6 @@ spec:
     ports:
     - containerPort: 80
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: labelهای معتبر و نامعتبر</b>
-    <div class="tbl"><table><thead><tr><th>label</th><th>معتبر؟</th><th>دلیل</th></tr></thead><tbody>
-      <tr><td><code>app: web</code></td><td>بله</td><td>بدون پیشوند،‏ خصوصی کاربر</td></tr>
-      <tr><td><code>app.kubernetes.io/name: web</code></td><td>بله</td><td>پیشوند یک زیردامنه‌ی DNS است</td></tr>
-      <tr><td><code>team: ""</code></td><td>بله</td><td>مقدار می‌تواند خالی باشد</td></tr>
-      <tr><td><code>version: 1.4.2_rc1</code></td><td>بله</td><td>نقطه و زیرخط در میانه مجازند</td></tr>
-      <tr><td><code>owner: ali@example.com</code></td><td>خیر</td><td><code>‎@‎</code> در مقدار مجاز نیست؛‏ این را در annotation بگذارید</td></tr>
-      <tr><td><code>commit: -abc123</code></td><td>خیر</td><td>مقدار باید با حرف یا رقم شروع شود</td></tr>
-      <tr><td><code>git-url: https://git.example.com/x</code></td><td>خیر</td><td><code>‎:‎</code> و <code>‎/‎</code> در مقدار مجاز نیستند</td></tr>
-      <tr><td><code>Example.com/tier: web</code></td><td>خیر</td><td>پیشوند باید زیردامنه‌ی DNS با حروف کوچک باشد</td></tr>
-    </tbody></table></div>
-    <p>یک دام رایج YAML: <code>version: 1.10</code> بدون گیومه یک عدد اعشاری است و <code>enabled: true</code> یک مقدار بولی؛‏ ولی مقدار label و annotation باید رشته باشد و API server چنین manifestی را رد می‌کند. همیشه آن‌ها را داخل گیومه بگذارید: <code>version: "1.10"</code>.</p>
-  </div>
-
   <h4>label selector <small>(Label selectors)</small></h4>
   <p>برخلاف نام و UID،‏ label یکتا نیست؛‏ انتظار می‌رود اشیای زیادی labelهای یکسان داشته باشند.</p>
   <p>با یک <i>label selector (شرطی برای انتخاب اشیا بر اساس جفت‌های کلید/مقدارشان)</i>،‏ client یا کاربر مجموعه‌ای از اشیا را مشخص می‌کند. label selector ابتدایی‌ترین ابزار گروه‌بندی در کوبرنتیز است.</p>
@@ -1182,15 +1190,6 @@ pod/p6
   <p>یا تطبیق منفی را با <i>notin</i> محدود کنند:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l 'environment,environment notin (frontend)'
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: فیلتر در سمت server</b>
-    <p>فیلتر label در <b>سمت server</b> اعمال می‌شود؛‏ یعنی API server فقط اشیای منطبق را برمی‌گرداند،‏ نه این‌که kubectl همه را بگیرد و خودش فیلتر کند. با <code>-v=6</code> می‌بینید:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l 'environment in (production, qa)' -v=6 2&gt;&amp;1 | grep GET
-</pre></div>
-    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">... GET https://127.0.0.1:6443/api/v1/namespaces/default/pods?labelSelector=environment+in+%28production%2C+qa%29&amp;limit=500 200 OK in 7 milliseconds
-</pre></div>
-    <p>controllerها و informerها هم watch خود را با labelSelector محدود می‌کنند تا فقط eventهای مرتبط را بگیرند.</p>
-  </div>
-
   <h4>ارجاع به مجموعه در اشیای API</h4>
   <p>بعضی اشیا،‏ مثل Service و ReplicationController،‏ با label selector مجموعه‌ای از منابع دیگر (مثل Podها) را مشخص می‌کنند.</p>
   <p><b>Service و ReplicationController:</b> مجموعه‌ی Podهایی که یک Service هدف می‌گیرد،‏ و Podهایی که یک ReplicationController مدیریت می‌کند،‏ با label selector تعیین می‌شوند. در این دو شیء selector یک map ساده است و فقط شرط <i>برابری</i> پشتیبانی می‌شود:</p>
@@ -1213,16 +1212,6 @@ pod/p6
 </pre></div>
   <p><code>matchLabels</code> یک map از جفت‌های <code>{key,value}</code> است. هر جفت در آن معادل یک عنصر در <code>matchExpressions</code> است با <code>key</code> همان کلید،‏ <code>operator</code> برابر <code>In</code> و آرایه‌ی <code>values</code> که فقط همان مقدار را دارد. <code>matchExpressions</code> فهرستی از شرط‌هاست با عملگرهای <code>In</code>،‏ <code>NotIn</code>،‏ <code>Exists</code> و <code>DoesNotExist</code>؛‏ در <code>In</code> و <code>NotIn</code> فهرست مقادیر نباید خالی باشد. همه‌ی شرط‌های <code>matchLabels</code> و <code>matchExpressions</code> با هم AND می‌شوند.</p>
   <p><b>انتخاب مجموعه‌ای از Nodeها:</b> یکی از کاربردهای label،‏ محدود کردن Nodeهایی است که یک Pod می‌تواند روی آن‌ها schedule شود (فصل ۹).</p>
-  <div class="deep"><b>توضیح تکمیلی: معادل دو شکل selector</b>
-    <div class="tbl"><table><thead><tr><th>رشته‌ی selector (CLI / URL)</th><th>شکل <code>matchExpressions</code></th></tr></thead><tbody>
-      <tr><td><code>tier=cache</code></td><td><code>{key: tier, operator: In, values: [cache]}</code></td></tr>
-      <tr><td><code>environment notin (dev)</code></td><td><code>{key: environment, operator: NotIn, values: [dev]}</code></td></tr>
-      <tr><td><code>partition</code></td><td><code>{key: partition, operator: Exists}</code></td></tr>
-      <tr><td><code>!partition</code></td><td><code>{key: partition, operator: DoesNotExist}</code></td></tr>
-    </tbody></table></div>
-    <p>نکته‌ی مهم درباره‌ی Deployment (فصل ۴): <code>spec.selector</code> در <code>apps/v1</code> بعد از ساخت <b>تغییرناپذیر</b> است و selector خالی <code>‎{}‎</code> در Deployment مجاز نیست. اما در NetworkPolicy،‏ <code>podSelector: {}</code> یعنی «همه‌ی Podهای namespace»؛‏ همان «معنای selector خالی به زمینه بستگی دارد».</p>
-  </div>
-
   <h4>استفاده‌ی مؤثر از labelها</h4>
   <p>می‌توانید به هر منبع فقط یک label بزنید،‏ ولی معمولاً بهتر است با چند label مجموعه‌ها را از هم جدا کنید.</p>
   <p>مثلاً برنامه‌های مختلف مقادیر متفاوتی برای label <code>app</code> دارند،‏ ولی یک برنامه‌ی چندلایه مثل guestbook باید لایه‌ها را هم از هم جدا کند.</p>
@@ -1312,6 +1301,40 @@ shop-7c9d8b6f5-pqrst   1/1     Running   0          5s    shop
     <p>با تغییر label <code>app</code>،‏ Pod دیگر با selector ReplicaSet منطبق نیست؛‏ ReplicaSet فقط ۲ Pod منطبق می‌بیند و یکی جدید می‌سازد،‏ و اگر Serviceی با selector <code>app=shop</code> داشته باشید،‏ آن هم دیگر ترافیکی به Pod جداشده نمی‌فرستد. Pod جداشده زنده می‌ماند تا با آرامش آن را عیب‌یابی (troubleshooting) کنید. پس عضویت در مجموعه فقط با label تعیین می‌شود. (ReplicaSet owner reference خود را هم از Pod رهاشده برمی‌دارد؛‏ بخش مالک‌ها و وابسته‌ها.)</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">labelهای معتبر و نامعتبر · فیلتر در سمت server · معادل دو شکل selector</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: labelهای معتبر و نامعتبر</b>
+    <div class="tbl"><table><thead><tr><th>label</th><th>معتبر؟</th><th>دلیل</th></tr></thead><tbody>
+      <tr><td><code>app: web</code></td><td>بله</td><td>بدون پیشوند،‏ خصوصی کاربر</td></tr>
+      <tr><td><code>app.kubernetes.io/name: web</code></td><td>بله</td><td>پیشوند یک زیردامنه‌ی DNS است</td></tr>
+      <tr><td><code>team: ""</code></td><td>بله</td><td>مقدار می‌تواند خالی باشد</td></tr>
+      <tr><td><code>version: 1.4.2_rc1</code></td><td>بله</td><td>نقطه و زیرخط در میانه مجازند</td></tr>
+      <tr><td><code>owner: ali@example.com</code></td><td>خیر</td><td><code>‎@‎</code> در مقدار مجاز نیست؛‏ این را در annotation بگذارید</td></tr>
+      <tr><td><code>commit: -abc123</code></td><td>خیر</td><td>مقدار باید با حرف یا رقم شروع شود</td></tr>
+      <tr><td><code>git-url: https://git.example.com/x</code></td><td>خیر</td><td><code>‎:‎</code> و <code>‎/‎</code> در مقدار مجاز نیستند</td></tr>
+      <tr><td><code>Example.com/tier: web</code></td><td>خیر</td><td>پیشوند باید زیردامنه‌ی DNS با حروف کوچک باشد</td></tr>
+    </tbody></table></div>
+    <p>یک دام رایج YAML: <code>version: 1.10</code> بدون گیومه یک عدد اعشاری است و <code>enabled: true</code> یک مقدار بولی؛‏ ولی مقدار label و annotation باید رشته باشد و API server چنین manifestی را رد می‌کند. همیشه آن‌ها را داخل گیومه بگذارید: <code>version: "1.10"</code>.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: فیلتر در سمت server</b>
+    <p>فیلتر label در <b>سمت server</b> اعمال می‌شود؛‏ یعنی API server فقط اشیای منطبق را برمی‌گرداند،‏ نه این‌که kubectl همه را بگیرد و خودش فیلتر کند. با <code>-v=6</code> می‌بینید:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l 'environment in (production, qa)' -v=6 2&gt;&amp;1 | grep GET
+</pre></div>
+    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">... GET https://127.0.0.1:6443/api/v1/namespaces/default/pods?labelSelector=environment+in+%28production%2C+qa%29&amp;limit=500 200 OK in 7 milliseconds
+</pre></div>
+    <p>controllerها و informerها هم watch خود را با labelSelector محدود می‌کنند تا فقط eventهای مرتبط را بگیرند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: معادل دو شکل selector</b>
+    <div class="tbl"><table><thead><tr><th>رشته‌ی selector (CLI / URL)</th><th>شکل <code>matchExpressions</code></th></tr></thead><tbody>
+      <tr><td><code>tier=cache</code></td><td><code>{key: tier, operator: In, values: [cache]}</code></td></tr>
+      <tr><td><code>environment notin (dev)</code></td><td><code>{key: environment, operator: NotIn, values: [dev]}</code></td></tr>
+      <tr><td><code>partition</code></td><td><code>{key: partition, operator: Exists}</code></td></tr>
+      <tr><td><code>!partition</code></td><td><code>{key: partition, operator: DoesNotExist}</code></td></tr>
+    </tbody></table></div>
+    <p>نکته‌ی مهم درباره‌ی Deployment (فصل ۴): <code>spec.selector</code> در <code>apps/v1</code> بعد از ساخت <b>تغییرناپذیر</b> است و selector خالی <code>‎{}‎</code> در Deployment مجاز نیست. اما در NetworkPolicy،‏ <code>podSelector: {}</code> یعنی «همه‌ی Podهای namespace»؛‏ همان «معنای selector خالی به زمینه بستگی دارد».</p>
+  </div>
+  </details>
+
   <!-- ================= Annotations ================= -->
   <h3 id="ch8-a-annotations">annotationها <small>(Annotations)</small></h3>
   <p>با annotation می‌توانید metadata دلخواه و <b>غیرشناسایی‌کننده</b> به اشیا متصل کنید. clientهایی مثل ابزارها و libraryها می‌توانند این metadata را بخوانند.</p>
@@ -1339,17 +1362,6 @@ shop-7c9d8b6f5-pqrst   1/1     Running   0          5s    shop
     <li>دستورهایی از کاربر به پیاده‌سازی‌ها برای تغییر رفتار یا فعال کردن قابلیت‌های غیراستاندارد.</li>
   </ul>
   <p>می‌شد این اطلاعات را در یک database یا دایرکتوری بیرونی نگه داشت،‏ ولی آن وقت ساختن libraryها و ابزارهای مشترک برای deployment،‏ مدیریت و بررسی بسیار سخت‌تر می‌شد.</p>
-  <div class="deep"><b>توضیح تکمیلی: نمونه‌های واقعی</b>
-    <p>(از فهرست Well-Known Labels, Annotations and Taints و ابزارهای رایج)</p>
-    <div class="tbl"><table><thead><tr><th>مورد در مستندات</th><th>annotation واقعی</th></tr></thead><tbody>
-      <tr><td>فیلدهای پیکربندی اعلانی</td><td><code>kubectl.kubernetes.io/last-applied-configuration</code> (apply سمت client؛‏ بخش دوم فصل)</td></tr>
-      <tr><td>metadata ابزار rollout</td><td><code>deployment.kubernetes.io/revision</code> روی Deployment و ReplicaSet،‏ <code>kubernetes.io/change-cause</code></td></tr>
-      <tr><td>دستور برای تغییر رفتار</td><td><code>kubectl.kubernetes.io/default-container</code>،‏ annotationهای ingress controllerها مثل <code>nginx.ingress.kubernetes.io/rewrite-target</code></td></tr>
-      <tr><td>rollout با تغییر Pod template</td><td><code>kubectl.kubernetes.io/restartedAt</code> که <code>kubectl rollout restart</code> روی Pod template می‌گذارد</td></tr>
-      <tr><td>اطلاعات build و مسئول</td><td>annotationهای سفارشی مثل <code>example.com/git-commit</code> و <code>example.com/oncall</code></td></tr>
-    </tbody></table></div>
-  </div>
-
   <h4>نحو و نویسه‌های مجاز</h4>
   <p>کلید annotation دقیقاً همان قواعد کلید label را دارد: پیشوند اختیاری (زیردامنه‌ی DNS،‏ حداکثر ۲۵۳ نویسه،‏ و بعد <code>‎/‎</code>) و نام الزامی (حداکثر ۶۳ نویسه،‏ شروع و پایان با حرف یا رقم،‏ و در میانه <code>‎-‎</code>،‏ <code>‎_‎</code>،‏ <code>‎.‎</code>).</p>
   <p>کلید بدون پیشوند خصوصیِ کاربر فرض می‌شود. اجزای خودکار سیستم (kube-scheduler،‏ kube-controller-manager،‏ kube-apiserver،‏ kubectl یا ابزارهای شخص ثالث) که روی اشیای کاربران annotation می‌گذارند باید پیشوند داشته باشند. پیشوندهای <code>kubernetes.io/</code> و <code>k8s.io/</code> برای هسته‌ی کوبرنتیز رزرو شده‌اند.</p>
@@ -1390,6 +1402,20 @@ No resources found in default namespace.
 </pre></div>
     <p>مقدار شامل ویرگول،‏ فاصله و <code>‎+‎</code> است که در label مجاز نبود. دستور آخر نتیجه‌ای ندارد،‏ چون <code>-l</code> فقط روی labelها کار می‌کند. در jsonpath،‏ نقطه‌های داخل کلید باید با <code>‎\.‎</code> escape شوند.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نمونه‌های واقعی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: نمونه‌های واقعی</b>
+    <p>(از فهرست Well-Known Labels, Annotations and Taints و ابزارهای رایج)</p>
+    <div class="tbl"><table><thead><tr><th>مورد در مستندات</th><th>annotation واقعی</th></tr></thead><tbody>
+      <tr><td>فیلدهای پیکربندی اعلانی</td><td><code>kubectl.kubernetes.io/last-applied-configuration</code> (apply سمت client؛‏ بخش دوم فصل)</td></tr>
+      <tr><td>metadata ابزار rollout</td><td><code>deployment.kubernetes.io/revision</code> روی Deployment و ReplicaSet،‏ <code>kubernetes.io/change-cause</code></td></tr>
+      <tr><td>دستور برای تغییر رفتار</td><td><code>kubectl.kubernetes.io/default-container</code>،‏ annotationهای ingress controllerها مثل <code>nginx.ingress.kubernetes.io/rewrite-target</code></td></tr>
+      <tr><td>rollout با تغییر Pod template</td><td><code>kubectl.kubernetes.io/restartedAt</code> که <code>kubectl rollout restart</code> روی Pod template می‌گذارد</td></tr>
+      <tr><td>اطلاعات build و مسئول</td><td>annotationهای سفارشی مثل <code>example.com/git-commit</code> و <code>example.com/oncall</code></td></tr>
+    </tbody></table></div>
+  </div>
+  </details>
 
   <h3 id="ch8-a-field-selectors">field selector <small>(Field Selectors)</small></h3>
   <p><i>field selector (شرطی که اشیا را بر اساس مقدار فیلدهایشان انتخاب می‌کند)</i> اجازه می‌دهد اشیا را بر اساس مقدار یک یا چند فیلد خود منبع انتخاب کنید. چند نمونه:</p>
@@ -1443,6 +1469,8 @@ No resources found in default namespace.
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default
 </pre></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">field selector در برابر label selector</span></summary>
   <div class="deep"><b>توضیح تکمیلی: field selector در برابر label selector</b>
     <p><b>label</b> یک کلید/مقدار دلخواه در <code>metadata.labels</code> است که هر شیء می‌تواند هر تعداد از آن داشته باشد. <b>فیلد</b> یک مسیر ثابت در schema خود منبع است (مثل <code>status.phase</code>) و فقط فیلدهایی که API server صریحاً پشتیبانی می‌کند قابل استفاده‌اند؛‏ حتی <code>spec.containers[0].image</code> در فهرست بالا نیست و قابل استفاده نیست. در عمل field selector بیشتر برای فیلتر بر اساس وضعیت (مثل <code>status.phase=Failed</code>) یا محل اجرا (<code>spec.nodeName=worker-3</code>) به کار می‌رود،‏ و label selector ابزار اصلی گروه‌بندی است.</p>
     <div class="lab"><b>آزمایش عملی: پیدا کردن Podهای گیرکرده یا Podهای یک Node</b>
@@ -1458,6 +1486,7 @@ kubectl get pods -n prod --field-selector status.phase=Running -l app=checkout
       <p>چون <code>spec.nodeName</code> برای Pod فیلد معتبری است،‏ این روش سریع‌تر از فیلتر کردن خروجی <code>-o wide</code> با <code>grep</code> است و کاملاً در سمت server اجرا می‌شود. kubelet هم دقیقاً با همین فیلتر (<code>spec.nodeName=&lt;نام خودش&gt;</code>) Podهای Node خودش را watch می‌کند.</p>
     </div>
   </div>
+  </details>
 
   <h3 id="ch8-a-finalizers">Finalizerها</h3>
   <p>Finalizerها کلیدهایی پیشونددار (namespaced keys؛‏ مثل <code>example.com/cleanup</code>) هستند که به کوبرنتیز می‌گویند پیش از حذف کامل منبعی که برای حذف علامت خورده،‏ منتظر برقرار شدن شرایط مشخصی بماند. finalizerها به controllerها خبر می‌دهند منابعی را که آن شیء مالکشان بوده پاک‌سازی کنند.</p>
@@ -1486,12 +1515,15 @@ kubectl get pods -n prod --field-selector status.phase=Running -l app=checkout
   <p>گاهی finalizerها جلوی حذف اشیای وابسته را می‌گیرند و در نتیجه شیء مالک بیشتر از انتظار در حالت نیمه‌حذف می‌ماند. در این حالت برای عیب‌یابی،‏ finalizerها و owner referenceها را هم روی مالک و هم روی وابسته‌ها بررسی کنید.</p>
   <div class="note"><b>نکته</b><p>اگر شیئی در حالت حذف گیر کرده،‏ از برداشتن دستی finalizerها برای ادامه‌ی حذف خودداری کنید. finalizer معمولاً دلیلی دارد و حذف اجباری آن ممکن است مشکل ایجاد کند. این کار فقط وقتی مجاز است که هدف finalizer را فهمیده باشید و آن را به روش دیگری برآورده کرده باشید (مثلاً پاک‌سازی دستی یک شیء وابسته).</p></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">namespaceی که در Terminating گیر کرده</span></summary>
   <div class="deep"><b>توضیح تکمیلی: namespaceی که در Terminating گیر کرده</b>
     <p>یکی از رایج‌ترین سناریوهای عملیاتی مربوط به finalizer،‏ namespaceی است که در <code>Terminating</code> گیر کرده. با <code>kubectl delete namespace foo</code>،‏ namespace وارد <code>Terminating</code> می‌شود و namespace controller شروع به حذف همه‌ی منابع داخلش می‌کند. اگر یکی از آن‌ها حذف نشود (مثلاً یک custom resource که controller مسئول finalizerش دیگر اجرا نمی‌شود،‏ یا یک APIService خراب که discovery را ناقص می‌کند)،‏ namespace برای همیشه در <code>Terminating</code> می‌ماند. این دستور finalizer خود namespace و شرط‌هایی را نشان می‌دهد که می‌گویند چه چیزی مانده است (مثل <code>NamespaceContentRemaining</code> و <code>NamespaceFinalizersRemaining</code>):</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get namespace foo -o json | jq '.spec.finalizers, .status.conditions'
 </pre></div>
     <p>راه درست،‏ پیدا کردن و رفع علت ریشه‌ای است (مثلاً اجرای دوباره‌ی controller مربوط،‏ یا درست کردن APIService خراب)،‏ نه پاک کردن دستی finalizer؛‏ چون همان‌طور که نکته‌ی بالا هشدار می‌دهد،‏ این کار ممکن است منابع واقعی بیرونی (مثل load balancer cloud یا disk) را بی‌مالک رها کند و منابع نشت کنند.</p>
   </div>
+  </details>
 
   <h3 id="ch8-a-owners-dependents">مالک‌ها و وابسته‌ها <small>(Owners and Dependents)</small></h3>
   <p>در کوبرنتیز،‏ بعضی اشیا <i>مالک</i> (owner) اشیای دیگرند؛‏ مثلاً ReplicaSet مالک مجموعه‌ای از Podهاست. این اشیا <i>وابسته</i> (dependent) مالک خود هستند.</p>
@@ -1665,6 +1697,8 @@ metadata:
 </pre></div>
   <p>در StatefulSet و Service مربوط به MySQL،‏ هم اطلاعات خود MySQL و هم اطلاعات برنامه‌ی بزرگ‌تر (WordPress) آمده است.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">ارزش عملی این labelها</span></summary>
   <div class="deep"><b>توضیح تکمیلی: ارزش عملی این labelها</b>
     <p>ارزش این labelها وقتی معلوم می‌شود که بخواهید در clusterی با صدها شیء،‏ همه‌ی منابع یک برنامه یا یک نمونه‌ی مشخص را پیدا کنید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># all resources of the "wordpress" application (any instance)
@@ -1690,9 +1724,10 @@ kubectl get all -A -l app.kubernetes.io/component=database
 </pre></div>
     <p><b>یک هشدار عملیاتی:</b> labelهای متغیر مثل <code>app.kubernetes.io/version</code> را در <code>spec.selector</code> Deployment یا StatefulSet نگذارید. selector این منابع تغییرناپذیر است و با هر ارتقای نسخه مجبور می‌شوید منبع را حذف و از نو بسازید. selector را روی labelهای پایدار (<code>name</code> و <code>instance</code>) بسازید.</p>
   </div>
+  </details>
 
-  <div id="ch8-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۸،‏ بخش اول <small>۲۱ تمرین</small></div>
+  <details id="ch8-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۸،‏ بخش اول <small>۲۱ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>تفاوت Discovery API و سند OpenAPI چیست؟ kubectl هر کدام را برای چه به کار می‌برد؟
         <details class="ans"><summary>پاسخ</summary><p>Discovery فهرست کوتاهی از منابع موجود می‌دهد: نام،‏ گروه/نسخه،‏ namespaced یا سطح cluster بودن،‏ عملیات مجاز و short nameها؛‏ schema فیلدها را ندارد. OpenAPI (v2 یا v3) schema کامل هر منبع،‏ همه‌ی فیلدها،‏ نوع داده و توضیحات را دارد و بسیار بزرگ‌تر است. kubectl با Discovery short nameها را به منبع و endpoint درست تبدیل می‌کند (مثلاً <code>kubectl get deploy</code>)؛‏ با OpenAPI دستور <code>kubectl explain</code> را اجرا می‌کند و در apply سمت client اطلاعات ادغام (merge) فیلدها را از آن می‌گیرد.</p></details></li>
@@ -1918,7 +1953,7 @@ deployment.apps/typo-demo unchanged
         <p><b>نکته‌ی دقیق‌تر:</b> Argo CD با تنظیم پیش‌فرض (apply سمت client و three-way merge) معمولاً فیلدهایی را که فقط روی شیء زنده اضافه شده‌اند و هیچ‌وقت در Git نبوده‌اند حذف نمی‌کند؛‏ ولی اگر sync با گزینه‌هایی مثل <code>Replace=true</code> یا از نو ساختن منبع انجام شود،‏ یا annotation در فیلدی باشد که Git آن را تعیین می‌کند،‏ بازنویسی می‌شود. در هر حال annotation روی Pod عمر Pod را دارد.</p>
         <p><b>راه درست:</b> annotationهای دائمی را در Pod template در Git تعریف کنید. برای گذاشتن label موقت عیب‌یابی از یک سامانه‌ی ثبت حادثه استفاده کنید،‏ یا اگر باید روی cluster باشد،‏ روی شیء پایدارتر (Deployment) بگذارید و در Argo CD آن مسیر را با <code>ignoreDifferences</code> مستثنا کنید تا sync با آن درگیر نشود.</p></details></li>
     </ol>
-  </div>
+  </details>
 
 <!-- chapter 4 part b -->
 <h3 id="ch8-b-object-management">مدیریت اشیای کوبرنتیز <small>(Kubernetes Object Management)</small></h3>
@@ -1938,8 +1973,11 @@ deployment.apps/typo-demo unchanged
 <li><b>تعداد نویسنده:</b> چند «نویسنده» (شخص یا نرم‌افزاری که شیء را تغییر می‌دهد) هم‌زمان پشتیبانی می‌شود. پیکربندی دستوری فقط <b>۱</b> نویسنده را پشتیبانی می‌کند،‏ چون <code>replace</code> هر تغییری را که در فایل نباشد پاک می‌کند. دو روش دیگر <b>1+</b> هستند.</li>
 <li><b>سختی یادگیری:</b> دستورهای دستوری ساده‌ترین و پیکربندی اعلانی سخت‌ترین است.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: «رفتار تعریف‌نشده» در عمل یعنی چه؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«رفتار تعریف‌نشده» در عمل یعنی چه؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: «رفتار تعریف‌نشده» در عمل یعنی چه؟</b>
 <p>فرض کنید Deploymentی را با <code>kubectl create -f</code> ساخته‌اید (پس annotation <code>last-applied-configuration</code> ندارد) و بعد با <code>kubectl apply</code> به‌روزش می‌کنید. <code>apply</code> برای فهمیدن این‌که کدام فیلدها را باید پاک کند به آن annotation نیاز دارد؛‏ چون وجود ندارد،‏ فیلدهایی که از فایل حذف کرده‌اید پاک نمی‌شوند (kubectl فقط هشدار می‌دهد و annotation را از این به بعد می‌گذارد). یا برعکس: شیء را با <code>apply</code> ساخته‌اید و بعد با <code>replace</code> جایگزین می‌کنید؛‏ <code>replace</code> تغییرات نویسنده‌های دیگر (مثلاً HPA) را از بین می‌برد. نتیجه به ترتیب دستورها و محتوای annotation بستگی دارد و قابل پیش‌بینی نیست. سازوکار دقیق هر کدام را در ادامه می‌بینید.</p></div>
+  </details>
 
 <h3 id="ch8-b-imperative-commands">دستورهای دستوری <small>(Imperative commands)</small></h3>
 <p>در این روش کاربر مستقیم روی اشیای زنده‌ی cluster کار می‌کند و عملیات را با آرگومان یا flag به kubectl می‌دهد.</p>
@@ -1961,8 +1999,11 @@ deployment.apps/typo-demo unchanged
 <li>هیچ منبع ثبتی جز خود شیء زنده ندارند.</li>
 <li>قالبی برای ساختن اشیای جدید فراهم نمی‌کنند.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: audit log server در برابر ردپای تغییرات</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">audit log server در برابر ردپای تغییرات</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: audit log server در برابر ردپای تغییرات</b>
 <p>ممکن است بپرسید «مگر kube-apiserver خودش audit log ندارد؟» دارد (فصل ۱۱ و ۱۴)،‏ ولی audit log فقط می‌گوید <i>چه کسی</i> در <i>چه زمانی</i> درخواستی زده؛‏ نمی‌گوید <i>چرا</i>،‏ چه کسی آن را بازبینی کرده و نسخه‌ی قبلی «درست» چه بوده. منظور مستندات از ردپای ممیزی همان چیزی است که یک commit در Git با پیام،‏ نویسنده،‏ بازبینی و امکان revert فراهم می‌کند.</p></div>
+  </details>
 
 <h3 id="ch8-b-imperative-object-config">پیکربندی دستوری اشیا <small>(Imperative object configuration)</small></h3>
 <p>در این روش،‏ دستور kubectl عملیات (<code>create</code>،‏ <code>replace</code> و …)،‏ flagهای اختیاری و دست‌کم یک نام فایل را مشخص می‌کند. فایل باید <b>تعریف کامل</b> شیء را به شکل YAML یا JSON داشته باشد. تعریف اشیا را در <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/">مرجع API</a> ببینید.</p>
@@ -2023,16 +2064,21 @@ kubectl apply -R -f configs/
 <li>وقتی نتیجه غیرمنتظره است،‏ عیب‌یابی و فهمیدنش سخت‌تر است.</li>
 <li>به‌روزرسانی جزئی با diff،‏ عملیات ادغام و patch پیچیده‌ای می‌سازد.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: یک Deployment،‏ سه روش</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">یک Deployment،‏ سه روش</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: یک Deployment،‏ سه روش</b>
 <p>یک کار را با هر سه روش انجام می‌دهیم: «image را به <code>nginx:1.16.1</code> عوض کن».</p>
 <div class="tbl"><table><thead><tr><th>روش</th><th>دستور</th><th>عملیات API پشت صحنه</th><th>کجا ثبت می‌شود؟</th><th>اگر HPA تعداد replicas را عوض کرده باشد؟</th></tr></thead><tbody>
 <tr><td>دستورهای دستوری</td><td><code>kubectl set image deploy/web nginx=nginx:1.16.1</code></td><td><code>PATCH</code></td><td>فقط در شیء زنده (و audit log server)</td><td>دست نمی‌خورد</td></tr>
 <tr><td>پیکربندی دستوری</td><td>ویرایش فایل و <code>kubectl replace -f web.yaml</code></td><td><code>PUT</code> (کل شیء)</td><td>فایل در Git</td><td>به مقدار فایل برمی‌گردد (تغییر HPA از بین می‌رود)</td></tr>
 <tr><td>پیکربندی اعلانی</td><td>ویرایش فایل و <code>kubectl apply -f web/</code></td><td><code>PATCH</code> محاسبه‌شده از سه منبع</td><td>فایل در Git + annotation <code>last-applied-configuration</code> یا <code>managedFields</code></td><td>اگر <code>replicas</code> در فایل نباشد،‏ دست نمی‌خورد</td></tr>
 </tbody></table></div></div>
+  </details>
 
 <h3 id="ch8-b-gitops-view">مقایسه‌ی سه روش با نگاه GitOps <small>(خارج از مستندات رسمی)</small></h3>
-<div class="deep"><b>توضیح تکمیلی: GitOps چیست و به کدام روش تکیه دارد؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">GitOps چیست و به کدام روش تکیه دارد؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: GitOps چیست و به کدام روش تکیه دارد؟</b>
 <p>GitOps الگویی است که در آن Git تنها منبع حقیقت برای desired state است و یک عامل داخل cluster (مثل Argo CD یا Flux) مدام manifestهای Git را با وضعیت زنده مقایسه و همگام (sync) می‌کند. این همان ایده‌ی reconciliation در controllerهای کوبرنتیز (فصل ۱ و ۱۲) است که یک لایه بالاتر اجرا می‌شود. از دید مستندات بالا،‏ GitOps یعنی <b>پیکربندی اعلانی</b> که نویسنده‌ی اصلی‌اش یک نرم‌افزار است،‏ نه انسان.</p>
 <ul>
 <li><b>Flux</b> (جزء kustomize-controller) manifestها را با Server-Side Apply اعمال می‌کند و field manager (نام نویسنده‌ای که مالک فیلدهاست) مخصوص خودش را دارد.</li>
@@ -2046,6 +2092,7 @@ kubectl apply -R -f configs/
 <tr><td>پیکربندی اعلانی</td><td>روش پیش‌فرض: CI/CD یا عامل GitOps که <code>kubectl apply</code> (ترجیحاً <code>--server-side</code>) یا <code>kubectl apply -k</code> اجرا می‌کند</td><td>اجرای دستی از لپ‌تاپ افراد با فایل‌هایی که در Git نیستند</td></tr>
 </tbody></table></div>
 <p><b>قاعده‌ی عملی:</b> در cluster عملیاتی،‏ دسترسی نوشتن انسان‌ها را با RBAC محدود کنید (فصل ۱۴) تا تنها نویسنده‌های اعلانی همان pipeline یا عامل باشند و تغییرات اضطراری هم از مسیر Git (یا دست‌کم با commit بعدی) عبور کنند. هر تغییر دستوری که در Git منعکس نشود یا توسط عامل پاک می‌شود یا به انحراف ماندگار تبدیل می‌شود؛‏ سازوکار دقیق هر دو را در بخش «apply چطور تفاوت‌ها را حساب و ادغام می‌کند» می‌بینید.</p></div>
+  </details>
 
 <h3 id="ch8-b-imperative-command-task">مدیریت اشیا با دستورهای دستوری <small>(Managing Kubernetes Objects Using Imperative Commands)</small></h3>
 <p>با دستورهای دستوری که در kubectl تعبیه شده‌اند می‌توانید اشیا را سریع و مستقیم بسازید،‏ به‌روز کنید و حذف کنید. این قسمت نشان می‌دهد این دستورها چطور سازمان‌دهی شده‌اند و چطور با آن‌ها اشیای زنده را مدیریت کنید.</p>
@@ -2095,14 +2142,6 @@ web-np   NodePort    10.43.200.7    &lt;none&gt;        80:31522/TCP   8s    app
 <li><code>edit</code>: پیکربندی خام شیء زنده را در یک ویرایشگر باز می‌کند تا مستقیم ویرایشش کنید.</li>
 <li><code>patch</code>: فیلدهای مشخصی از شیء زنده را با یک رشته‌ی patch تغییر می‌دهد. جزئیات در بخش patch سند <a href="https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#patch-operations">API Conventions</a> و بخش <a href="#ch8-b-patch">kubectl patch</a> همین فصل.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: «جنبه» یعنی چه؟</b>
-<p>مثال روشن: <code>kubectl set image</code>. در Deployment فیلد <code>spec.template.spec.containers[*].image</code> را عوض می‌کند،‏ در Pod فیلد <code>spec.containers[*].image</code> و در CronJob فیلد <code>spec.jobTemplate.spec.template.spec.containers[*].image</code>. «image» یک جنبه است که بسته به نوع شیء به فیلدهای مختلفی نگاشت می‌شود. بقیه‌ی دستورهای <code>set</code> هم همین‌طورند: <code>set env</code>،‏ <code>set resources</code>،‏ <code>set selector</code>،‏ <code>set serviceaccount</code>،‏ <code>set subject</code>.</p>
-<div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl set image deployment/web nginx=nginx:1.26
-kubectl set resources deployment/web -c nginx --limits=cpu=500m,memory=256Mi
-kubectl set env deployment/web LOG_LEVEL=debug
-</pre></div>
-</div>
-
 <h4>حذف اشیا</h4>
 <p>با <code>delete</code> شیء را از cluster حذف می‌کنید:</p>
 <ul><li><code>delete &lt;type&gt;/&lt;name&gt;</code></li></ul>
@@ -2126,13 +2165,6 @@ kubectl set env deployment/web LOG_LEVEL=debug
 <li><code>kubectl set selector --local -f - -o yaml</code> پیکربندی را از stdin می‌خواند و نسخه‌ی تغییریافته را به شکل YAML روی stdout می‌نویسد.</li>
 <li><code>kubectl create -f -</code> شیء را با پیکربندی دریافتی از stdin می‌سازد.</li>
 </ol>
-<div class="deep"><b>توضیح تکمیلی: نقش <code>--local</code> و <code>--dry-run=client</code></b>
-<p><code>--dry-run=client</code> باعث می‌شود kubectl شیء را فقط در سمت client بسازد و چاپ کند؛‏ هیچ درخواستی به API server نمی‌رود. <code>--local</code> در <code>set</code> یعنی «سراغ server نرو؛‏ ورودی را از فایل (<code>-f -</code> یعنی stdin) بخوان و تغییر را محلی اعمال کن». پس کل pipeline تا گام سوم با cluster تماسی ندارد و فقط <code>kubectl create -f -</code> آخر شیء را می‌سازد. همین الگو برای ساختن اسکلت manifest و commit آن در Git بسیار پرکاربرد است:</p>
-<div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment api --image=registry.example.com/api:1.4.2 --replicas=3 \
-  --dry-run=client -o yaml &gt; deploy/api/deployment.yaml
-</pre></div>
-</div>
-
 <h4>تغییر اشیا با <code>--edit</code> پیش از ساخت</h4>
 <p>با <code>kubectl create --edit</code> می‌توانید پیش از ساخته شدن شیء،‏ تغییرات دلخواه را اعمال کنید:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create service clusterip my-svc --clusterip="None" -o yaml --dry-run=client &gt; /tmp/srv.yaml
@@ -2142,6 +2174,23 @@ kubectl create --edit -f /tmp/srv.yaml
 <li><code>kubectl create service</code> پیکربندی Service را می‌سازد و در <code>/tmp/srv.yaml</code> ذخیره می‌کند.</li>
 <li><code>kubectl create --edit</code> پیش از ساخت شیء،‏ فایل را برای ویرایش باز می‌کند.</li>
 </ol>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">«جنبه» یعنی چه؟ · نقش --local و --dry-run=client</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: «جنبه» یعنی چه؟</b>
+<p>مثال روشن: <code>kubectl set image</code>. در Deployment فیلد <code>spec.template.spec.containers[*].image</code> را عوض می‌کند،‏ در Pod فیلد <code>spec.containers[*].image</code> و در CronJob فیلد <code>spec.jobTemplate.spec.template.spec.containers[*].image</code>. «image» یک جنبه است که بسته به نوع شیء به فیلدهای مختلفی نگاشت می‌شود. بقیه‌ی دستورهای <code>set</code> هم همین‌طورند: <code>set env</code>،‏ <code>set resources</code>،‏ <code>set selector</code>،‏ <code>set serviceaccount</code>،‏ <code>set subject</code>.</p>
+<div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl set image deployment/web nginx=nginx:1.26
+kubectl set resources deployment/web -c nginx --limits=cpu=500m,memory=256Mi
+kubectl set env deployment/web LOG_LEVEL=debug
+</pre></div>
+</div>
+  <div class="deep"><b>توضیح تکمیلی: نقش <code>--local</code> و <code>--dry-run=client</code></b>
+<p><code>--dry-run=client</code> باعث می‌شود kubectl شیء را فقط در سمت client بسازد و چاپ کند؛‏ هیچ درخواستی به API server نمی‌رود. <code>--local</code> در <code>set</code> یعنی «سراغ server نرو؛‏ ورودی را از فایل (<code>-f -</code> یعنی stdin) بخوان و تغییر را محلی اعمال کن». پس کل pipeline تا گام سوم با cluster تماسی ندارد و فقط <code>kubectl create -f -</code> آخر شیء را می‌سازد. همین الگو برای ساختن اسکلت manifest و commit آن در Git بسیار پرکاربرد است:</p>
+<div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment api --image=registry.example.com/api:1.4.2 --replicas=3 \
+  --dry-run=client -o yaml &gt; deploy/api/deployment.yaml
+</pre></div>
+</div>
+  </details>
 
 <h3 id="ch8-b-imperative-config-task">مدیریت دستوری اشیا با فایل پیکربندی <small>(Imperative Management Using Configuration Files)</small></h3>
 <p>اشیا را می‌توان با kubectl و یک فایل پیکربندی YAML یا JSON ساخت،‏ به‌روز کرد و حذف کرد. این قسمت نشان می‌دهد چطور.</p>
@@ -2159,8 +2208,6 @@ kubectl create --edit -f /tmp/srv.yaml
 kubectl delete &lt;type&gt; -l &lt;label&gt;
 </pre></div>
 </div>
-<div class="deep"><b>توضیح تکمیلی: چرا <code>generateName</code> با <code>delete -f</code> کار نمی‌کند؟</b>
-<p>با <code>generateName: job-run-</code> server یک پسوند تصادفی اضافه می‌کند (مثلاً <code>job-run-x7k2p</code>). فایل هیچ‌وقت نام واقعی را نمی‌داند،‏ پس <code>delete -f</code> نمی‌تواند شیء را پیدا کند. به همین دلیل <code>kubectl apply</code> هم برای اشیای دارای <code>generateName</code> کار نمی‌کند و باید از <code>kubectl create -f</code> استفاده کرد. راه‌حل عملی: همیشه یک label مشخص روی این اشیا بگذارید تا <code>kubectl delete job -l run-group=nightly</code> ممکن باشد.</p></div>
 <h4>دیدن اشیا</h4>
 <ul><li><code>kubectl get -f &lt;filename|url&gt; -o yaml</code></li></ul>
 <p>flag <code>-o yaml</code> پیکربندی کامل شیء را چاپ می‌کند (گزینه‌ها با <code>kubectl get -h</code>).</p>
@@ -2202,8 +2249,6 @@ deployment.apps/web replaced
 </pre></div>
 </li>
 </ol>
-<div class="deep"><b>توضیح تکمیلی: پاک‌سازی بیشتر فایل export‌شده</b>
-<p>خروجی <code>kubectl get -o yaml</code> علاوه بر <code>status</code>،‏ فیلدهای سیستمی دارد که بهتر است پیش از commit حذف شوند: <code>metadata.uid</code>،‏ <code>metadata.resourceVersion</code>،‏ <code>metadata.creationTimestamp</code>،‏ <code>metadata.generation</code>،‏ <code>metadata.managedFields</code> و annotationهایی مثل <code>deployment.kubernetes.io/revision</code>. اگر <code>resourceVersion</code> در فایل بماند،‏ <code>replace</code> بعدی بعد از هر تغییر دیگری در شیء با خطای Conflict روبه‌رو می‌شود،‏ چون server کنترل هم‌زمانی خوش‌بینانه را با آن انجام می‌دهد (بخش اول همین فصل).</p></div>
 <h4>تعریف selector در controller و labelهای Pod template</h4>
 <div class="warn"><b>هشدار</b><p>تغییر selector در controllerها به‌شدت توصیه نمی‌شود.</p></div>
 <p>رویکرد توصیه‌شده این است که یک label واحد و تغییرناپذیر در Pod template تعریف کنید که فقط selector در controller از آن استفاده کند و معنای دیگری نداشته باشد. مثال:</p>
@@ -2215,8 +2260,15 @@ template:
     labels:
       controller-selector: "apps/v1/deployment/nginx"
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: چرا یک label جدا فقط برای selector؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">چرا generateName با delete -f کار نمی‌کند؟ · پاک‌سازی بیشتر فایل export‌شده · چرا یک label جدا فقط برای selector؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا <code>generateName</code> با <code>delete -f</code> کار نمی‌کند؟</b>
+<p>با <code>generateName: job-run-</code> server یک پسوند تصادفی اضافه می‌کند (مثلاً <code>job-run-x7k2p</code>). فایل هیچ‌وقت نام واقعی را نمی‌داند،‏ پس <code>delete -f</code> نمی‌تواند شیء را پیدا کند. به همین دلیل <code>kubectl apply</code> هم برای اشیای دارای <code>generateName</code> کار نمی‌کند و باید از <code>kubectl create -f</code> استفاده کرد. راه‌حل عملی: همیشه یک label مشخص روی این اشیا بگذارید تا <code>kubectl delete job -l run-group=nightly</code> ممکن باشد.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: پاک‌سازی بیشتر فایل export‌شده</b>
+<p>خروجی <code>kubectl get -o yaml</code> علاوه بر <code>status</code>،‏ فیلدهای سیستمی دارد که بهتر است پیش از commit حذف شوند: <code>metadata.uid</code>،‏ <code>metadata.resourceVersion</code>،‏ <code>metadata.creationTimestamp</code>،‏ <code>metadata.generation</code>،‏ <code>metadata.managedFields</code> و annotationهایی مثل <code>deployment.kubernetes.io/revision</code>. اگر <code>resourceVersion</code> در فایل بماند،‏ <code>replace</code> بعدی بعد از هر تغییر دیگری در شیء با خطای Conflict روبه‌رو می‌شود،‏ چون server کنترل هم‌زمانی خوش‌بینانه را با آن انجام می‌دهد (بخش اول همین فصل).</p></div>
+  <div class="deep"><b>توضیح تکمیلی: چرا یک label جدا فقط برای selector؟</b>
 <p>در <code>apps/v1</code>،‏ <code>spec.selector</code> یک Deployment بعد از ساخت تغییرناپذیر است (فصل ۴). اگر selector را روی labelهای «معنادار» مثل <code>version: v2</code> یا <code>team: payments</code> بسازید،‏ روزی که این معنا عوض شود مجبورید Deployment را حذف و از نو بسازید. labelی که فقط هویت controller را نشان می‌دهد هیچ‌وقت دلیلی برای تغییر ندارد،‏ و labelهای معنادار را می‌توان آزادانه اضافه یا عوض کرد بدون این‌که selector تحت تأثیر قرار گیرد.</p></div>
+  </details>
 
 <h3 id="ch8-b-declarative-config-task">مدیریت اعلانی اشیا با فایل پیکربندی <small>(Declarative Management Using Configuration Files)</small></h3>
 <p>می‌توانید چند فایل پیکربندی را در یک پوشه نگه دارید و با <code>kubectl apply</code> اشیا را در صورت نیاز (به‌صورت بازگشتی) بسازید و به‌روز کنید. این روش تغییراتی را که روی اشیای زنده نوشته شده حفظ می‌کند،‏ بدون این‌که آن‌ها را به فایل‌ها برگرداند. <code>kubectl diff</code> هم پیش‌نمایش تغییراتی را که <code>apply</code> خواهد داد نشان می‌دهد.</p>
@@ -2304,11 +2356,14 @@ spec:
     # ...
   # ...
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: annotation دقیقاً چه چیزی را ذخیره می‌کند؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">annotation دقیقاً چه چیزی را ذخیره می‌کند؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: annotation دقیقاً چه چیزی را ذخیره می‌کند؟</b>
 <p>annotation نسخه‌ی JSON <b>فایل شما</b> است،‏ نه شیء زنده. برای همین فیلدهایی مثل <code>replicas</code> (که در فایل نیست) یا مقادیر پیش‌فرض مثل <code>strategy</code> در آن نیستند. این annotation «memory» apply است: apply در اجرای بعدی از آن می‌فهمد «دفعه‌ی قبل من کدام فیلدها را مدیریت می‌کردم». مجموع annotationهای یک شیء حداکثر 256 KiB جا دارد؛‏ برای اشیای خیلی بزرگ (مثلاً یک CRD بزرگ یا ConfigMap حجیم) apply سمت client با خطای <code>metadata.annotations: Too long</code> شکست می‌خورد و Server-Side Apply راه‌حل است (چون این annotation را نمی‌سازد). این دستور محتوای annotation را خواناتر نشان می‌دهد:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply view-last-applied deployment/nginx-deployment -o yaml
 </pre></div>
 </div>
+  </details>
 
 <h3 id="ch8-b-apply-update">به‌روزرسانی اشیا با apply <small>(How to update objects)</small></h3>
 <p>با <code>kubectl apply</code> می‌توانید همه‌ی اشیای یک پوشه را،‏ حتی اگر از قبل وجود داشته باشند،‏ به‌روز کنید. این کار:</p>
@@ -2503,7 +2558,9 @@ spec:
   # ...
 </pre></div>
 <div class="warn"><b>هشدار</b><p>ترکیب <code>kubectl apply</code> با دستورهای پیکربندی دستوری <code>create</code> و <code>replace</code> پشتیبانی نمی‌شود،‏ چون <code>create</code> و <code>replace</code> annotation <code>last-applied-configuration</code> را که apply برای محاسبه‌ی تغییرات لازم دارد حفظ نمی‌کنند.</p></div>
-<div class="deep"><b>توضیح تکمیلی: خروجی واقعی <code>kubectl diff</code></b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">خروجی واقعی kubectl diff</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: خروجی واقعی <code>kubectl diff</code></b>
 <p><code>kubectl diff</code> یک diff یکپارچه (unified) بین شیء زنده و نتیجه‌ی dry-run چاپ می‌کند و کد خروجش معنادار است: ۰ یعنی تفاوتی نیست،‏ ۱ یعنی تفاوت هست و بیشتر از ۱ یعنی خطا. در pipelineهای CI از همین کد برای «تشخیص انحراف» (drift detection) استفاده می‌شود. خروجی تقریبی برای گام بالا:</p>
 <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">diff -u -N /tmp/LIVE-1234/apps.v1.Deployment.default.nginx-deployment /tmp/MERGED-5678/apps.v1.Deployment.default.nginx-deployment
 --- /tmp/LIVE-1234/apps.v1.Deployment.default.nginx-deployment
@@ -2519,6 +2576,7 @@ spec:
 +        image: nginx:1.16.1
 </pre></div>
 <p>دقت کنید <code>replicas: 2</code> در diff نیامده؛‏ یعنی apply به آن دست نمی‌زند.</p></div>
+  </details>
 
 <h3 id="ch8-b-apply-delete">حذف اشیای مدیریت‌شده با apply <small>(How to delete objects)</small></h3>
 <p>برای حذف اشیایی که با apply مدیریت می‌شوند دو راه هست.</p>
@@ -2580,8 +2638,11 @@ configmap/a unchanged
 configmap/b pruned
 </pre></div>
 <p>بعد با <code>kubectl get secret demo-set -n demo -o yaml</code> annotationهای والد (فهرست GroupKindها و namespaceها) و با <code>kubectl get cm a -n demo --show-labels</code> label <code>applyset.kubernetes.io/part-of</code> را ببینید.</p></div>
-<div class="deep"><b>توضیح تکمیلی: prune در GitOps</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">prune در GitOps</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: prune در GitOps</b>
 <p>ابزارهای GitOps معمولاً prune را خودشان پیاده می‌کنند و به <code>--prune</code> در kubectl تکیه ندارند: Argo CD هر منبع را با label یا annotation ردیابی می‌کند (<code>app.kubernetes.io/instance</code> یا <code>argocd.argoproj.io/tracking-id</code>) و با <code>prune: true</code> در <code>syncPolicy.automated</code> (یا گزینه‌ی Prune در sync دستی) منابعی را که از Git حذف شده‌اند پاک می‌کند؛‏ Flux یک فهرست موجودی (inventory) در status شیء Kustomization نگه می‌دارد. ایده‌ی همه همان ApplySet است: «عضویت در مجموعه را صریح ثبت کن،‏ نه با حدس از روی discovery».</p></div>
+  </details>
 
 <h3 id="ch8-b-apply-view">دیدن شیء <small>(How to view an object)</small></h3>
 <p>با <code>kubectl get</code> و <code>-o yaml</code> پیکربندی شیء زنده را ببینید:</p>
@@ -2704,22 +2765,6 @@ spec:
     # ...
   # ...
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: patch واقعی که به server می‌رود</b>
-<p>نتیجه‌ی چهار گام بالا عملاً یک strategic merge patch شبیه این است (با <code>kubectl apply -v=8</code> بدنه‌ی واقعی درخواست را در log می‌بینید):</p>
-<div class="code"><div class="lbl"><span>patch محاسبه‌شده (نمایش ساده‌شده)</span><button type="button">کپی</button></div><pre class="yaml">{
-  "metadata": {"annotations": {"kubectl.kubernetes.io/last-applied-configuration": "{...nginx:1.16.1...}"}},
-  "spec": {
-    "minReadySeconds": null,
-    "template": {"spec": {
-      "$setElementOrder/containers": [{"name": "nginx"}],
-      "containers": [{"name": "nginx", "image": "nginx:1.16.1"}]
-    }}
-  }
-}
-</pre></div>
-<p><code>"minReadySeconds": null</code> همان «حذف» است (گام ۱)،‏ <code>image</code> همان «تنظیم» (گام ۲) و annotation همان گام ۳. <code>replicas</code> اصلاً در patch نیست،‏ پس server به آن دست نمی‌زند. دستور ویژه‌ی <code>$setElementOrder</code> ترتیب عناصر فهرست را حفظ می‌کند.</p>
-<p><b>خلاصه به زبان three-way merge (ادغام بر اساس فایل جدید،‏ آخرین پیکربندی اعمال‌شده و شیء زنده):</b> «حذف» = در last-applied هست،‏ در فایل نیست. «تنظیم» = در فایل هست و با زنده فرق دارد. «دست نزن» = نه در فایل هست نه در last-applied (مال نویسنده‌ی دیگری است).</p></div>
-
 <h4>ادغام انواع مختلف فیلد</h4>
 <p>نحوه‌ی ادغام هر فیلد به نوع آن بستگی دارد:</p>
 <ul>
@@ -2746,9 +2791,6 @@ spec:
 <tr><td>خیر</td><td>-</td><td>بله</td><td>از live configuration حذف کن</td></tr>
 <tr><td>خیر</td><td>-</td><td>خیر</td><td>کاری نکن؛‏ مقدار زنده را نگه دار</td></tr>
 </tbody></table></div>
-<div class="deep"><b>توضیح تکمیلی: جدول map روی labelها</b>
-<p>فرض کنید فایل labelهای <code>{app: web, tier: fe}</code> دارد،‏ last-applied <code>{app: web, owner: alice}</code> و زنده <code>{app: web, owner: alice, team-cost: "42"}</code> (که یک ابزار FinOps اضافه کرده). نتیجه: <code>app</code> مقایسه می‌شود و بی‌تغییر می‌ماند (ردیف ۱)،‏ <code>tier</code> اضافه می‌شود (ردیف ۲)،‏ <code>owner</code> حذف می‌شود (ردیف ۳) و <code>team-cost</code> حفظ می‌شود (ردیف ۴). یعنی map برای هر کلید جداگانه مثل جدول فیلدهای ساده رفتار می‌کند.</p></div>
-
 <h4>ادغام فیلدهای فهرستی</h4>
 <p>ادغام فهرست یکی از سه راهبرد را به کار می‌برد و انتخاب راهبرد برای هر فیلد جداگانه است:</p>
 <ul>
@@ -2832,7 +2874,26 @@ spec:
 <h4>ادغام فهرستی از عناصر ساده</h4>
 <p>از کوبرنتیز 1.5،‏ ادغام فهرست‌هایی از عناصر ساده پشتیبانی نمی‌شود. (این جمله‌ی قدیمی مستندات است؛‏ امروزه فهرست ساده‌ای که <code>patchStrategy</code> آن merge باشد،‏ مثل <code>metadata.finalizers</code>،‏ در strategic merge patch عنصربه‌عنصر ادغام می‌شود.)</p>
 <div class="note"><b>نکته</b><p>این‌که کدام راهبرد برای هر فیلد انتخاب شود با label <code>patchStrategy</code> در <a href="https://github.com/kubernetes/api/blob/d04500c8c3dda9c980b668c57abc2ca61efcf5c4/core/v1/types.go#L2748">types.go</a> کنترل می‌شود. اگر فیلد فهرستی <code>patchStrategy</code> نداشته باشد،‏ کل فهرست جایگزین می‌شود.</p></div>
-<div class="deep"><b>توضیح تکمیلی: کدام فهرست‌ها ادغام و کدام جایگزین می‌شوند؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">patch واقعی که به server می‌رود · جدول map روی labelها · کدام فهرست‌ها ادغام و کدام جایگزین می‌شوند؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: patch واقعی که به server می‌رود</b>
+<p>نتیجه‌ی چهار گام بالا عملاً یک strategic merge patch شبیه این است (با <code>kubectl apply -v=8</code> بدنه‌ی واقعی درخواست را در log می‌بینید):</p>
+<div class="code"><div class="lbl"><span>patch محاسبه‌شده (نمایش ساده‌شده)</span><button type="button">کپی</button></div><pre class="yaml">{
+  "metadata": {"annotations": {"kubectl.kubernetes.io/last-applied-configuration": "{...nginx:1.16.1...}"}},
+  "spec": {
+    "minReadySeconds": null,
+    "template": {"spec": {
+      "$setElementOrder/containers": [{"name": "nginx"}],
+      "containers": [{"name": "nginx", "image": "nginx:1.16.1"}]
+    }}
+  }
+}
+</pre></div>
+<p><code>"minReadySeconds": null</code> همان «حذف» است (گام ۱)،‏ <code>image</code> همان «تنظیم» (گام ۲) و annotation همان گام ۳. <code>replicas</code> اصلاً در patch نیست،‏ پس server به آن دست نمی‌زند. دستور ویژه‌ی <code>$setElementOrder</code> ترتیب عناصر فهرست را حفظ می‌کند.</p>
+<p><b>خلاصه به زبان three-way merge (ادغام بر اساس فایل جدید،‏ آخرین پیکربندی اعمال‌شده و شیء زنده):</b> «حذف» = در last-applied هست،‏ در فایل نیست. «تنظیم» = در فایل هست و با زنده فرق دارد. «دست نزن» = نه در فایل هست نه در last-applied (مال نویسنده‌ی دیگری است).</p></div>
+  <div class="deep"><b>توضیح تکمیلی: جدول map روی labelها</b>
+<p>فرض کنید فایل labelهای <code>{app: web, tier: fe}</code> دارد،‏ last-applied <code>{app: web, owner: alice}</code> و زنده <code>{app: web, owner: alice, team-cost: "42"}</code> (که یک ابزار FinOps اضافه کرده). نتیجه: <code>app</code> مقایسه می‌شود و بی‌تغییر می‌ماند (ردیف ۱)،‏ <code>tier</code> اضافه می‌شود (ردیف ۲)،‏ <code>owner</code> حذف می‌شود (ردیف ۳) و <code>team-cost</code> حفظ می‌شود (ردیف ۴). یعنی map برای هر کلید جداگانه مثل جدول فیلدهای ساده رفتار می‌کند.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: کدام فهرست‌ها ادغام و کدام جایگزین می‌شوند؟</b>
 <p>راهبرد هر فیلد را می‌توانید در OpenAPI خود server ببینید (extensionهای <code>x-kubernetes-patch-strategy</code> و <code>x-kubernetes-patch-merge-key</code>). دستور زیر فیلدهای PodSpec را نشان می‌دهد؛‏ برای <code>env</code> و <code>ports</code> همین کار را روی <code>io.k8s.api.core.v1.Container</code> انجام دهید:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get --raw /openapi/v2 | jq '.definitions["io.k8s.api.core.v1.PodSpec"].properties
   | to_entries[] | select(.value["x-kubernetes-patch-strategy"])
@@ -2847,6 +2908,7 @@ spec:
 <tr><td><code>containers[].args</code>،‏ <code>command</code></td><td>(ندارد)</td><td>-</td><td>کل فهرست جایگزین می‌شود</td></tr>
 </tbody></table></div>
 <p>یک پیامد مهم: چون کلید ادغام <code>ports</code> فقط <code>containerPort</code> است،‏ دو port با containerPort یکسان و پروتکل متفاوت (مثلاً TCP و UDP روی 53) در apply سمت client و strategic merge patch با هم تداخل می‌کنند. Server-Side Apply این را با کلید دوتایی (<code>containerPort</code> + <code>protocol</code>) در <code>x-kubernetes-list-map-keys</code> حل کرده است (بخش Server-Side Apply).</p></div>
+  </details>
 
 <h3 id="ch8-b-default-field-values">مقادیر پیش‌فرض فیلدها <small>(Default field values)</small></h3>
 <p>API server بعضی فیلدها را اگر هنگام ساخت شیء تعیین نشده باشند،‏ در live configuration با مقدار پیش‌فرض (default) پر می‌کند.</p>
@@ -2991,9 +3053,6 @@ spec:
 <li>selectorها و labelهای Pod template در workloadها مثل Deployment،‏ StatefulSet،‏ Job،‏ DaemonSet،‏ ReplicaSet و ReplicationController؛‏</li>
 <li>راهبرد rollout در Deployment.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: این مثال امروز چقدر واقعی است؟</b>
-<p>مقادیر پیش‌فرض واقعی <code>apps/v1</code> برای Deployment،‏ <code>maxSurge: 25%</code> و <code>maxUnavailable: 25%</code> است (در نسخه‌ی اصلی مستندات عدد 1 آمده و اینجا اصلاح شد). اما نکته‌ی مهم‌تر: در کد فعلی،‏ فیلد <code>strategy</code> در Deployment patch strategy (قاعده‌ی ادغام یا جایگزینی هر فیلد در patch) از نوع <code>retainKeys</code> دارد و three-way merge در <code>kubectl apply</code> برای چنین فیلدهایی خودکار دستور <code>$retainKeys</code> را می‌فرستد؛‏ یعنی فقط کلیدهای موجود در فایل (<code>type</code>) نگه داشته می‌شوند و <code>rollingUpdate</code> پاک می‌شود. پس با kubectl امروزی این مثال مشخص معمولاً شکست نمی‌خورد و بیشتر یک نمونه‌ی آموزشی از اصل کلی است. اصل کلی همچنان درست است: هر فیلد پیش‌فرض‌شده‌ای که از فیلد دیگری مشتق شده و راهبرد <code>retainKeys</code> ندارد،‏ در patch بعدی خودکار اصلاح نمی‌شود. راه‌حل‌های عمومی: (۱) نوشتن صریح <code>null</code> برای فیلد در فایل (بخش بعد)؛‏ (۲) استفاده از <code>$retainKeys</code> در یک strategic merge patch دستی (بخش kubectl patch)؛‏ (۳) Server-Side Apply که مالکیت فیلدها را دقیق‌تر ردیابی می‌کند.</p></div>
-
 <h4>پاک کردن فیلدهای پیش‌فرض‌شده یا فیلدهای نویسنده‌های دیگر</h4>
 <p>فیلدهایی را که در فایل نیستند می‌توان با گذاشتن مقدار <code>null</code> در فایل و apply کردن پاک کرد. برای فیلدهایی که server پیش‌فرض داده،‏ این کار باعث می‌شود دوباره پیش‌فرض بگیرند:</p>
 <div class="code"><div class="lbl"><span>YAML (مثال: پاک کردن rollingUpdate هنگام رفتن به Recreate)</span><button type="button">کپی</button></div><pre class="yaml">spec:
@@ -3001,6 +3060,12 @@ spec:
     type: Recreate
     rollingUpdate: null   # explicitly cleared
 </pre></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">این مثال امروز چقدر واقعی است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: این مثال امروز چقدر واقعی است؟</b>
+<p>مقادیر پیش‌فرض واقعی <code>apps/v1</code> برای Deployment،‏ <code>maxSurge: 25%</code> و <code>maxUnavailable: 25%</code> است (در نسخه‌ی اصلی مستندات عدد 1 آمده و اینجا اصلاح شد). اما نکته‌ی مهم‌تر: در کد فعلی،‏ فیلد <code>strategy</code> در Deployment patch strategy (قاعده‌ی ادغام یا جایگزینی هر فیلد در patch) از نوع <code>retainKeys</code> دارد و three-way merge در <code>kubectl apply</code> برای چنین فیلدهایی خودکار دستور <code>$retainKeys</code> را می‌فرستد؛‏ یعنی فقط کلیدهای موجود در فایل (<code>type</code>) نگه داشته می‌شوند و <code>rollingUpdate</code> پاک می‌شود. پس با kubectl امروزی این مثال مشخص معمولاً شکست نمی‌خورد و بیشتر یک نمونه‌ی آموزشی از اصل کلی است. اصل کلی همچنان درست است: هر فیلد پیش‌فرض‌شده‌ای که از فیلد دیگری مشتق شده و راهبرد <code>retainKeys</code> ندارد،‏ در patch بعدی خودکار اصلاح نمی‌شود. راه‌حل‌های عمومی: (۱) نوشتن صریح <code>null</code> برای فیلد در فایل (بخش بعد)؛‏ (۲) استفاده از <code>$retainKeys</code> در یک strategic merge patch دستی (بخش kubectl patch)؛‏ (۳) Server-Side Apply که مالکیت فیلدها را دقیق‌تر ردیابی می‌کند.</p></div>
+  </details>
 
 <h3 id="ch8-b-change-ownership">جابه‌جایی مالکیت یک فیلد بین فایل پیکربندی و نویسنده‌های دستوری <small>(How to change ownership of a field)</small></h3>
 <p>برای تغییر یک فیلد تکی شیء فقط این دو روش را به کار ببرید:</p>
@@ -3016,13 +3081,16 @@ spec:
 <li>فیلد را از فایل حذف کنید؛‏</li>
 <li>فیلد را از annotation <code>kubectl.kubernetes.io/last-applied-configuration</code> روی شیء زنده حذف کنید.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: چرا گام دوم لازم است؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا گام دوم لازم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا گام دوم لازم است؟</b>
 <p>اگر فقط <code>replicas</code> را از فایل حذف کنید،‏ در apply بعدی <code>replicas</code> در last-applied هست و در فایل نیست؛‏ پس طبق جدول فیلدهای ساده (ردیف سوم) از شیء زنده پاک می‌شود و server آن را به 1 برمی‌گرداند. یعنی Deploymentی با ۱۰ replica ناگهان به ۱ می‌رسد! این خطای رایج هنگام فعال کردن HPA برای Deploymentهایی است که با apply مدیریت می‌شوند. راه عملی: اول annotation را با <code>kubectl apply set-last-applied</code> از روی فایلی که <code>replicas</code> ندارد به‌روز کنید و بعد apply کنید:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># new file without replicas
 kubectl apply set-last-applied -f deployment-no-replicas.yaml
 kubectl apply -f deployment-no-replicas.yaml     # replicas is left untouched now
 </pre></div>
 <p>Server-Side Apply همین مسئله را با سازوکار «انتقال مالکیت» حل کرده که در ادامه‌ی فصل می‌بینید.</p></div>
+  </details>
 
 <h3 id="ch8-b-changing-methods">تغییر روش مدیریت <small>(Changing management methods)</small></h3>
 <p>هر شیء در هر لحظه باید فقط با یک روش مدیریت شود. جابه‌جایی بین روش‌ها ممکن است،‏ ولی دستی است.</p>
@@ -3049,11 +3117,14 @@ kubectl apply -f deployment-no-replicas.yaml     # replicas is left untouched no
 </li>
 <li>فرایندها را طوری تغییر دهید که شیء فقط با <code>kubectl apply</code> مدیریت شود.</li>
 </ol>
-<div class="deep"><b>توضیح تکمیلی: <code>--save-config</code> و هشدار «missing annotation»</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">--save-config و هشدار «missing annotation»</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: <code>--save-config</code> و هشدار «missing annotation»</b>
 <p>اگر روی شیئی که با <code>create</code> ساخته شده مستقیم <code>kubectl apply</code> بزنید،‏ kubectl هشداری شبیه این چاپ می‌کند و annotation را خودکار اضافه می‌کند:</p>
 <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Warning: resource deployments/web is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
 </pre></div>
 <p>در این حالت apply اول هیچ فیلدی را حذف نمی‌کند (last-applied خالی بود)،‏ پس فیلدهای اضافه در شیء زنده باقی می‌مانند. برای همین مستندات <code>replace --save-config</code> را توصیه می‌کند: شیء زنده را دقیقاً مطابق فایل می‌کند <b>و</b> هم‌زمان annotation را می‌نویسد.</p></div>
+  </details>
 
 <h3 id="ch8-b-declarative-selectors">تعریف selector در controller و labelهای Pod template <small>(در روش اعلانی)</small></h3>
 <div class="warn"><b>هشدار</b><p>تغییر selector در controllerها به‌شدت توصیه نمی‌شود.</p></div>
@@ -3075,8 +3146,11 @@ template:
 <p>برای اعمال آن منابع،‏ <code>kubectl apply</code> را با flag <code>--kustomize</code> یا <code>-k</code> اجرا کنید:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -k &lt;kustomization_directory&gt;
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: Kustomize کجای سه روش است؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Kustomize کجای سه روش است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: Kustomize کجای سه روش است؟</b>
 <p><code>kubectl apply -k</code> همچنان پیکربندی اعلانی است: Kustomize فقط یک مرحله‌ی «render» پیش از apply اضافه می‌کند و YAML نهایی با همان منطق <code>kubectl apply</code> (سه‌طرفه،‏ یا Server-Side با <code>--server-side</code>) اعمال می‌شود. Kustomize برخلاف Helm از قالب (template) استفاده نمی‌کند؛‏ ورودی‌اش YAML معتبر کوبرنتیز است و خروجی‌اش هم YAML معتبر (سفارشی‌سازی بدون قالب). نسخه‌ی Kustomize تعبیه‌شده در kubectl را با <code>kubectl version --client</code> ببینید؛‏ ممکن است از نسخه‌ی مستقل عقب‌تر باشد.</p></div>
+  </details>
 
 <h3 id="ch8-b-kustomize-overview">مرور Kustomize <small>(Overview of Kustomize)</small></h3>
 <p>Kustomize ابزاری برای سفارشی‌سازی پیکربندی‌های کوبرنتیز است و برای مدیریت فایل‌های پیکربندی برنامه این قابلیت‌ها را دارد:</p>
@@ -3351,8 +3425,11 @@ metadata:
     type: generated
   name: example-configmap-3
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: چرا پسوند hash در production ارزشمند است؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا پسوند hash در production ارزشمند است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا پسوند hash در production ارزشمند است؟</b>
 <p>تغییر محتوای ConfigMapی که به شکل volume یا env در Pod استفاده شده،‏ به‌خودی‌خود rollout ایجاد نمی‌کند: env فقط هنگام شروع container خوانده می‌شود و volumeها با تأخیر به‌روز می‌شوند (فصل ۶). با پسوند hash: تغییر محتوا ← نام جدید ConfigMap ← تغییر <code>spec.template</code> در Deployment ← یک rollout کنترل‌شده با readiness probe و امکان <code>kubectl rollout undo</code> که ConfigMap قبلی را هم برمی‌گرداند (چون نام قدیمی هنوز وجود دارد). هزینه‌اش: ConfigMapهای قدیمی می‌مانند،‏ مگر prune داشته باشید (ApplySet یا prune در GitOps). با <code>disableNameSuffixHash: true</code> همه‌ی این مزایا از دست می‌رود.</p></div>
+  </details>
 
 <h3 id="ch8-b-kustomize-crosscutting">تنظیم فیلدهای مشترک <small>(Setting cross-cutting fields)</small></h3>
 <p>تنظیم فیلدهای مشترک برای همه‌ی منابع یک پروژه بسیار رایج است؛‏ مثلاً:</p>
@@ -3424,10 +3501,6 @@ spec:
       - image: nginx
         name: nginx
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: <code>includeSelectors</code> و خطر selector تغییرناپذیر</b>
-<p>در خروجی بالا label <code>app: bingo</code> نه‌تنها به metadata بلکه به <code>spec.selector.matchLabels</code> و labelهای Pod template هم رسیده؛‏ این اثر <code>includeSelectors: true</code> است. اگر آن را false بگذارید (یا ننویسید)،‏ label فقط به metadata اضافه می‌شود و selectorها دست نمی‌خورند. در جدول قابلیت‌ها هم می‌بینید <code>commonLabels</code> label را «به همه‌ی منابع و selectorها» اضافه می‌کند ولی <code>labels</code> «بدون تزریق خودکار selectorها».</p>
-<p>پیامد عملیاتی: اگر روی Deploymentی که از قبل در cluster هست یک label جدید با <code>includeSelectors: true</code> (یا <code>commonLabels</code>) اضافه کنید،‏ <code>spec.selector</code> تغییر می‌کند و چون در <code>apps/v1</code> تغییرناپذیر است،‏ apply با خطایی مثل <code>spec.selector: Invalid value: ...: field is immutable</code> شکست می‌خورد. قاعده: labelهای selector را از روز اول ثابت نگه دارید و labelهای تازه (team،‏ cost-center،‏ env) را با <code>labels</code> بدون includeSelectors اضافه کنید. در Kustomize v5،‏ <code>commonLabels</code> منسوخ شده و <code>labels</code> جایگزین آن است.</p></div>
-
 <h4>ترکیب و سفارشی‌سازی منابع</h4>
 <p>رایج است که مجموعه‌ای از منابع یک پروژه در یک فایل یا پوشه مدیریت شوند. Kustomize اجازه می‌دهد منابع را از فایل‌های مختلف ترکیب کنید و روی آن‌ها patch یا سفارشی‌سازی دیگری اعمال کنید.</p>
 
@@ -3768,8 +3841,14 @@ spec:
         image: nginx
         name: my-nginx
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: چرا <code>replacements</code> به‌جای hardcode؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">includeSelectors و خطر selector تغییرناپذیر · چرا replacements به‌جای hardcode؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: <code>includeSelectors</code> و خطر selector تغییرناپذیر</b>
+<p>در خروجی بالا label <code>app: bingo</code> نه‌تنها به metadata بلکه به <code>spec.selector.matchLabels</code> و labelهای Pod template هم رسیده؛‏ این اثر <code>includeSelectors: true</code> است. اگر آن را false بگذارید (یا ننویسید)،‏ label فقط به metadata اضافه می‌شود و selectorها دست نمی‌خورند. در جدول قابلیت‌ها هم می‌بینید <code>commonLabels</code> label را «به همه‌ی منابع و selectorها» اضافه می‌کند ولی <code>labels</code> «بدون تزریق خودکار selectorها».</p>
+<p>پیامد عملیاتی: اگر روی Deploymentی که از قبل در cluster هست یک label جدید با <code>includeSelectors: true</code> (یا <code>commonLabels</code>) اضافه کنید،‏ <code>spec.selector</code> تغییر می‌کند و چون در <code>apps/v1</code> تغییرناپذیر است،‏ apply با خطایی مثل <code>spec.selector: Invalid value: ...: field is immutable</code> شکست می‌خورد. قاعده: labelهای selector را از روز اول ثابت نگه دارید و labelهای تازه (team،‏ cost-center،‏ env) را با <code>labels</code> بدون includeSelectors اضافه کنید. در Kustomize v5،‏ <code>commonLabels</code> منسوخ شده و <code>labels</code> جایگزین آن است.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: چرا <code>replacements</code> به‌جای hardcode؟</b>
 <p><code>replacements</code> جایگزین مدرن و دقیق‌تر قابلیت قدیمی <code>vars</code> است (که منسوخ شده). مقدار از یک منبع واحد (اینجا <code>metadata.name</code> سرویس) خوانده و در هر جایی که <code>fieldPaths</code> مشخص کرده تزریق می‌شود؛‏ اگر بعداً <code>namePrefix</code> یا <code>nameSuffix</code> عوض شود،‏ لازم نیست دستی چیزی را تغییر دهید. در عمل برای ارجاع به نام Service،‏ ConfigMap یا Secretی که در overlay تغییر می‌کند بسیار رایج است.</p></div>
+  </details>
 
 <h3 id="ch8-b-bases-overlays">Base و Overlay</h3>
 <p>Kustomize مفاهیم <b>base</b> و <b>overlay</b> را دارد. <b>base</b> پوشه‌ای با یک <code>kustomization.yaml</code> است که مجموعه‌ای از منابع و سفارشی‌سازی‌های مربوط را دارد و می‌تواند محلی یا از یک repository راه دور باشد. <b>overlay</b> پوشه‌ای با یک <code>kustomization.yaml</code> است که به پوشه‌های kustomization دیگر به‌عنوان base ارجاع می‌دهد. base از وجود overlay خبر ندارد و در چند overlay قابل استفاده است.</p>
@@ -3837,8 +3916,11 @@ EOF
 </pre></div>
 
 <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="100%" style="max-width:760px;height:auto" role="img" aria-label="base مشترک، دو overlay و خروجی در دو namespace"><defs><marker id="f4kz-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f4kz-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f4kz-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f4kz-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f4kz-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="560" y="95" width="185" height="140" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.4"></rect><text x="652" y="122" font-family="'JetBrains Mono', Consolas, monospace" font-size="15" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">base/</text><text x="652" y="150" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">deployment.yaml</text><text x="652" y="174" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">service.yaml</text><text x="652" y="198" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">kustomization.yaml</text><rect x="300" y="20" width="200" height="120" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="400" y="46" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">overlays/dev</text><text x="400" y="72" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">resources: [../../base]</text><text x="400" y="93" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">namePrefix: dev-</text><text x="400" y="114" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">replicas: 1  # patch</text><line x1="502" y1="80" x2="558" y2="165" stroke="#4a5672" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#f4kz-a4a5672)"></line><rect x="300" y="190" width="200" height="120" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="400" y="216" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">overlays/prod</text><text x="400" y="242" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">resources: [../../base]</text><text x="400" y="263" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">namePrefix: prod-</text><text x="400" y="284" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">replicas: 5  # patch</text><line x1="502" y1="250" x2="558" y2="165" stroke="#4a5672" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#f4kz-a4a5672)"></line><text x="530" y="90" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">ارجاع</text><rect x="15" y="20" width="225" height="290" rx="10" fill="#fff" stroke="#c9d3e6" stroke-width="1.4"></rect><text x="127" y="44" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">cluster</text><rect x="35" y="62" width="185" height="100" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="127" y="94" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">namespace: dev</text><text x="127" y="126" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">dev-web  1/1</text><line x1="298" y1="80" x2="222" y2="112" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f4kz-a326ce5)"></line><rect x="35" y="190" width="185" height="100" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="127" y="222" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">namespace: prod</text><text x="127" y="254" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">prod-web  5/5</text><line x1="298" y1="250" x2="222" y2="240" stroke="#12806f" stroke-width="1.6" marker-end="url(#f4kz-a12806f)"></line><text x="260" y="175" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">apply -k</text></svg></div><figcaption><b>شکل ۸-۸.</b> <span style="flex:1 1 0;min-width:0">الگوی base/overlay:‏ YAML مشترک فقط یک بار در <code>base</code> نوشته می‌شود و هر overlay فقط تفاوت‌های محیط خودش را دارد. <code>kubectl apply -k</code> هر overlay را render و اعمال می‌کند.</span></figcaption></figure>
-<div class="deep"><b>توضیح تکمیلی: الگوی base/overlay در عمل</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">الگوی base/overlay در عمل</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: الگوی base/overlay در عمل</b>
 <p>الگوی معمول یک repository چندمحیطه: <code>base/</code> به‌علاوه‌ی <code>overlays/dev</code>،‏ <code>overlays/staging</code> و <code>overlays/prod</code>. base آنچه را که بین همه‌ی محیط‌ها مشترک است دارد (نوع منابع،‏ containerها،‏ probeها،‏ portها)؛‏ overlayها فقط تفاوت‌ها را دارند: تعداد replicas،‏ requests و limits،‏ namespace،‏ labelها و annotationهای مشترک و image tag (با فیلد <code>images</code>). فرقش با یک Helm chart پارامتری این است که قالبی وجود ندارد؛‏ پس <code>git diff</code> بین <code>overlays/staging</code> و <code>overlays/prod</code> دقیقاً نشان می‌دهد چه چیزی فرق دارد. Argo CD و Flux مستقیماً از Kustomize پشتیبانی می‌کنند و می‌توانند به یک پوشه‌ی overlay اشاره کنند (فصل ۱۶).</p></div>
+  </details>
 
 <h3 id="ch8-b-kustomize-apply">اعمال،‏ دیدن و حذف اشیا با Kustomize <small>(How to apply/view/delete objects using Kustomize)</small></h3>
 <p>در دستورهای kubectl از <code>--kustomize</code> یا <code>-k</code> استفاده کنید تا منابع مدیریت‌شده با <code>kustomization.yaml</code> شناسایی شوند. <code>-k</code> باید به پوشه‌ی kustomization اشاره کند:</p>
@@ -4119,9 +4201,6 @@ patch-demo-1081991389-jmg7b   2/2       Running   0          1m
   ...
 }
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: چرا این تفاوت مهم است؟</b>
-<p>این یکی از رایج‌ترین منابع سردرگمی در کار با <code>kubectl patch</code> است: تیم انتظار دارد patch روی <code>tolerations</code> یا <code>args</code> فقط یک مورد اضافه کند،‏ ولی چون این فیلدها راهبرد <code>merge</code> ندارند،‏ کل فهرست جایگزین می‌شود و موارد قبلی از بین می‌روند. در مقابل،‏ <code>containers</code>،‏ <code>volumes</code> و <code>env</code> راهبرد merge با کلید <code>name</code> دارند. قاعده‌ی عملی: پیش از patch کردن هر فهرست،‏ مقدار فعلی آن را ببینید و اگر مطمئن نیستید فیلد راهبرد merge دارد،‏ در patch کل مقدار دلخواه (نه فقط بخش تغییریافته) را بنویسید. برای افزودن یک مورد به فهرست بدون دانستن بقیه،‏ JSON patch با <code>"op": "add", "path": ".../tolerations/-"</code> ابزار دقیق‌تری است.</p></div>
-
 <h4>به‌روزرسانی Deployment با JSON merge patch</h4>
 <p>strategic merge patch با <a href="https://tools.ietf.org/html/rfc7386">JSON merge patch</a> فرق دارد. در JSON merge patch برای به‌روز کردن یک فهرست باید کل فهرست جدید را بدهید و فهرست جدید کاملاً جایگزین فهرست قبلی می‌شود.</p>
 <p>دستور <code>kubectl patch</code> پارامتری به نام <code>type</code> دارد:</p>
@@ -4338,6 +4417,12 @@ status:
 <h4>جمع‌بندی</h4>
 <p>در این تمرین‌ها با <code>kubectl patch</code> live configuration یک Deployment را تغییر دادید،‏ بدون این‌که فایل اولیه را عوض کنید. دستورهای دیگر برای به‌روزرسانی اشیا: <code>kubectl annotate</code>،‏ <code>kubectl edit</code>،‏ <code>kubectl replace</code>،‏ <code>kubectl scale</code> و <code>kubectl apply</code>. (یادتان باشد اگر شیء با GitOps یا apply مدیریت می‌شود،‏ تغییر با patch در apply بعدی ممکن است برگردد.)</p>
 <div class="note"><b>نکته</b><p>strategic merge patch برای custom resourceها (CR) پشتیبانی نمی‌شود،‏ چون API server labelهای patch strategy را برای آن‌ها ندارد؛‏ برای CRها از <code>--type=merge</code> یا <code>--type=json</code> (یا Server-Side Apply) استفاده کنید.</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا این تفاوت مهم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا این تفاوت مهم است؟</b>
+<p>این یکی از رایج‌ترین منابع سردرگمی در کار با <code>kubectl patch</code> است: تیم انتظار دارد patch روی <code>tolerations</code> یا <code>args</code> فقط یک مورد اضافه کند،‏ ولی چون این فیلدها راهبرد <code>merge</code> ندارند،‏ کل فهرست جایگزین می‌شود و موارد قبلی از بین می‌روند. در مقابل،‏ <code>containers</code>،‏ <code>volumes</code> و <code>env</code> راهبرد merge با کلید <code>name</code> دارند. قاعده‌ی عملی: پیش از patch کردن هر فهرست،‏ مقدار فعلی آن را ببینید و اگر مطمئن نیستید فیلد راهبرد merge دارد،‏ در patch کل مقدار دلخواه (نه فقط بخش تغییریافته) را بنویسید. برای افزودن یک مورد به فهرست بدون دانستن بقیه،‏ JSON patch با <code>"op": "add", "path": ".../tolerations/-"</code> ابزار دقیق‌تری است.</p></div>
+  </details>
 
 <h3 id="ch8-b-storage-version-migration">storage version migration</h3>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.37 [stable]</span> (feature gate <code>StorageVersionMigrator</code>: alpha از 1.30،‏ beta با پیش‌فرض غیرفعال در 1.35،‏ پایدار و پیش‌فرض فعال در 1.37)</p>
@@ -4634,8 +4719,11 @@ status:
 </pre></div>
 </li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: چرا فقط عوض کردن <code>storage: true</code> کافی نیست؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا فقط عوض کردن storage: true کافی نیست؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا فقط عوض کردن <code>storage: true</code> کافی نیست؟</b>
 <p>تغییر <code>storage: true</code> از v1 به v2 فقط تعیین می‌کند اشیای <em>جدید</em> از این به بعد با کدام نسخه در etcd نوشته شوند؛‏ اشیای قدیمی دست‌نخورده می‌مانند تا نوشتن بعدی (مثلاً یک update) روی آن‌ها انجام شود. اگر مهاجرت را اجرا نکنید،‏ این اشیا با نسخه‌ی قدیمی می‌مانند و <code>status.storedVersions</code> هنوز v1 را نشان می‌دهد؛‏ API server هم اجازه نمی‌دهد v1 را از <code>spec.versions</code> حذف کنید تا وقتی در storedVersions است. StorageVersionMigration همه‌ی اشیای موجود را فعالانه بازنویسی می‌کند (نه تنبل و در نوشتن بعدی)،‏ درست مثل کاری که encryption دوباره برای Secretها می‌کند. بعد از موفقیت،‏ مهاجرت‌گر storedVersions را هم به‌روز می‌کند (در ابزار قدیمی‌تر kube-storage-version-migrator باید این کار را دستی انجام می‌دادید).</p></div>
+  </details>
 
 <h3 id="ch8-b-ssa">apply سمت server <small>(Server-Side Apply)</small></h3>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.22 [stable]</span></p>
@@ -4761,9 +4849,6 @@ data:
 <tr><td><code>//+structType</code></td><td><code>x-kubernetes-map-type</code></td><td><code>atomic</code>/<code>granular</code></td><td>برای structها؛‏ مثل <code>mapType</code>.</td></tr>
 </tbody></table></div>
 <p>اگر <code>listType</code> تعیین نشده باشد،‏ API server نشانگر <code>patchStrategy=merge</code> را معادل <code>listType=map</code> و <code>patchMergeKey</code> را معادل <code>listMapKey</code> تفسیر می‌کند. نوع atomic بازگشتی است (کل زیرساختار را در بر می‌گیرد). در کد Go این نشانگرها به شکل comment نوشته می‌شوند.</p>
-<div class="deep"><b>توضیح تکمیلی: چرا این جدول اهمیت دارد؟</b>
-<p>بیشتر فهرست‌های مهم API کوبرنتیز (مثل <code>spec.containers</code> با <code>listType=map</code> و <code>listMapKey=name</code>) طوری تعریف شده‌اند که Server-Side Apply بداند «عنصری با این name» را با عنصر متناظر ادغام کند،‏ نه این‌که کل فهرست را بازنویسی کند؛‏ همان رفتاری که در strategic merge patch دیدید. در مقابل،‏ در CRDهای خودتان اگر <code>x-kubernetes-list-type</code> را تعریف نکنید،‏ پیش‌فرض <code>atomic</code> است؛‏ یعنی هر apply کل فهرست را جایگزین می‌کند و دو controller که هر کدام یک عنصر جدا از فهرست را مدیریت می‌کنند مدام به تعارض می‌خورند. هنگام طراحی CRD برای فهرست‌هایی که چند نویسنده دارند،‏ <code>listType: map</code> با کلید مناسب بگذارید.</p></div>
-
 <h4 id="ch8-b-ssa-crd">custom resourceها و Server-Side Apply</h4>
 <p>به‌طور پیش‌فرض Server-Side Apply با custom resourceها مثل داده‌ی بی‌ساختار رفتار می‌کند: همه‌ی کلیدها مثل فیلدهای struct و همه‌ی فهرست‌ها atomic حساب می‌شوند. اگر schema CRD نشانگرهای بخش <a href="#ch8-b-ssa-merge">راهبرد ادغام</a> را داشته باشد،‏ از آن‌ها استفاده می‌شود.</p>
 
@@ -4905,9 +4990,6 @@ spec:
 <p>اگر منبعی را با <code>kubectl apply --server-side</code> مدیریت می‌کنید،‏ می‌توانید مستقیم با <code>kubectl apply</code> به حالت سمت client برگردید؛‏ چون kubectl در Server-Side Apply هم annotation <code>last-applied-configuration</code> را به‌روز نگه می‌دارد. این هم فقط برای مدیر پیش‌فرض <code>kubectl</code> است و با مدیر دیگر می‌توانید از آن خارج شوید:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply --server-side --field-manager=my-manager [--dry-run=server]
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: چرا انتقال مالکیت مهم‌ترین بخش عملی SSA است؟</b>
-<p>سناریوی HPA نمونه‌ی کوچکی از الگوی رایج در production است: چند عامل (کاربر یا GitOps،‏ autoscaler،‏ admission webhook،‏ operator) روی یک فیلد نظر دارند. با apply سمت client هیچ نشانه‌ای از تداخل نیست و هر کدام دیگری را بازنویسی می‌کند («دعوا سر یک فیلد») که معمولاً به شکل rolloutهای مکرر و بی‌دلیل دیده می‌شود. با Server-Side Apply و مدیرهای جداگانه (مثلاً Argo CD با مدیر خودش و HPA با مدیر داخلی‌اش)،‏ این تداخل به یک تعارض صریح تبدیل می‌شود که می‌توانید ببینید و آگاهانه حل کنید. با <code>kubectl get ... --show-managed-fields</code> می‌توانید ببینید دقیقاً کدام مدیر آخرین بار کدام فیلد را نوشته است.</p></div>
-
 <h4 id="ch8-b-ssa-api">پیاده‌سازی API</h4>
 <p>فعل <code>PATCH</code> (برای اشیایی که Server-Side Apply را پشتیبانی می‌کنند) نوع محتوای <code>application/apply-patch+yaml</code> را می‌پذیرد. کاربران می‌توانند اشیای نیمه‌مشخص را به شکل YAML در بدنه‌ی <code>PATCH</code> به نشانی منبع بفرستند. هنگام apply همیشه همه‌ی فیلدهایی را که برای نتیجه‌ی مطلوب مهم‌اند بیاورید. بدنه‌ی JSON هم مجاز است (چون YAML معتبر است)،‏ ولی نوع رسانه همان <code>application/apply-patch+yaml</code> است.</p>
 <h5>کنترل دسترسی</h5>
@@ -4938,14 +5020,22 @@ If-Match: 1234567890123456789
 <p>اگر ریست با تغییر فیلدهای دیگر ترکیب شود،‏ اول managedFields ریست می‌شود و بعد تغییرات دیگر پردازش می‌شوند؛‏ در نتیجه applier مالک هر فیلدی می‌شود که در همان درخواست تغییر داده است.</p>
 <div class="note"><b>نکته</b><p>Server-Side Apply مالکیت را روی subresourceهایی که نوع شیء منبع را دریافت نمی‌کنند (مثل <code>scale</code>) درست ردیابی نمی‌کند؛‏ اگر با چنین subresourceی از SSA استفاده کنید،‏ ممکن است فیلدهای تغییریافته ردیابی نشوند.</p></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا این جدول اهمیت دارد؟ · چرا انتقال مالکیت مهم‌ترین بخش عملی SSA است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا این جدول اهمیت دارد؟</b>
+<p>بیشتر فهرست‌های مهم API کوبرنتیز (مثل <code>spec.containers</code> با <code>listType=map</code> و <code>listMapKey=name</code>) طوری تعریف شده‌اند که Server-Side Apply بداند «عنصری با این name» را با عنصر متناظر ادغام کند،‏ نه این‌که کل فهرست را بازنویسی کند؛‏ همان رفتاری که در strategic merge patch دیدید. در مقابل،‏ در CRDهای خودتان اگر <code>x-kubernetes-list-type</code> را تعریف نکنید،‏ پیش‌فرض <code>atomic</code> است؛‏ یعنی هر apply کل فهرست را جایگزین می‌کند و دو controller که هر کدام یک عنصر جدا از فهرست را مدیریت می‌کنند مدام به تعارض می‌خورند. هنگام طراحی CRD برای فهرست‌هایی که چند نویسنده دارند،‏ <code>listType: map</code> با کلید مناسب بگذارید.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: چرا انتقال مالکیت مهم‌ترین بخش عملی SSA است؟</b>
+<p>سناریوی HPA نمونه‌ی کوچکی از الگوی رایج در production است: چند عامل (کاربر یا GitOps،‏ autoscaler،‏ admission webhook،‏ operator) روی یک فیلد نظر دارند. با apply سمت client هیچ نشانه‌ای از تداخل نیست و هر کدام دیگری را بازنویسی می‌کند («دعوا سر یک فیلد») که معمولاً به شکل rolloutهای مکرر و بی‌دلیل دیده می‌شود. با Server-Side Apply و مدیرهای جداگانه (مثلاً Argo CD با مدیر خودش و HPA با مدیر داخلی‌اش)،‏ این تداخل به یک تعارض صریح تبدیل می‌شود که می‌توانید ببینید و آگاهانه حل کنید. با <code>kubectl get ... --show-managed-fields</code> می‌توانید ببینید دقیقاً کدام مدیر آخرین بار کدام فیلد را نوشته است.</p></div>
+  </details>
+
 <h3 id="ch8-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>فایل‌های شاپیفای حالا منبع حقیقت‌اند و فروشگاه دو محیط جدا دارد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>محیط staging با فایل‌های کپی‌شده</td><td>namespace جدا؛‏ Kustomize با یک base و دو overlay؛‏ Secretها دستی در هر namespace</td><td>گام‌های ۳ تا ۶</td></tr><tr><td>frontend بدون فایل</td><td>اسکلت با dry-run و سپردن شیء زنده به apply</td><td>گام‌های ۰ و ۱</td></tr><tr><td>تغییر پنهان replicaها</td><td>پیدا کردن با <code>kubectl diff</code> و exit code آن؛‏ برگرداندن با apply؛‏ audit log برای یافتن عامل</td><td>گام ۲</td></tr><tr><td>namespace در Terminating</td><td>خواندن conditionهای namespace؛‏ پیدا کردن شیء با finalizer بی‌صاحب</td><td>گام ۷</td></tr></tbody></table></div><p><b>ساختار تازه‌ی پروژه:</b> فایل‌های مشترک در <code>base/</code>؛‏ دو overlay در <code>overlays/production</code> و <code>overlays/staging</code>؛‏ و بیرون از آن‌ها <code>shop-migrate.yaml</code> برای هر انتشار و فایل‌های سطح cluster مثل <code>shopify-dev.yaml</code>.</p><p><b>هنوز حل نشده:</b> همه‌چیز روی یک Node است و با خرابی آن فروشگاه از دسترس خارج می‌شود؛‏ اعمال تغییرات هنوز دستی است،‏ نه با pipeline یا GitOps؛‏ مقیاس در برابر ترافیک اوج دستی است؛‏ و فروشگاه هنوز HTTPS ندارد.</p><p><b>بخش بعد:</b> Node دوم به cluster اضافه می‌شود؛‏ scheduling (انتخاب Node مناسب برای اجرای هر Pod) و مقیاس خودکار و پایش شروع می‌شوند (فصل‌های ۹ تا ۱۱).</p></div>
 
   <h3 id="ch8-project">پروژه‌ی پایان بخش اول</h3>
-  <p>شما حالا چرخه‌ی کامل یک برنامه روی کوبرنتیز را انجام داده‌اید: از image و Pod تا Deployment،‏ شبکه،‏ پیکربندی،‏ storage و مدیریت فایل‌ها. برای محکم شدن،‏ این پروژه‌ی کوچک را <b>بدون نگاه به فصل‌ها</b> انجام دهید:</p><div id="ch8-ex3" class="ex"><div class="ex-h">پروژه‌ی پایان بخش اول <small>1 تمرین</small></div><ol><li><span class="lvl l1">پروژه</span>در namespace به نام <code>blog</code>،‏ با یک فایل YAML: یک Deployment با ۲ replica از <code>nginx:1.27</code>،‏ یک ConfigMap با کلید <code>TITLE</code> که به env برسد،‏ یک Service و یک Ingress برای <code>blog.lab.local</code>. بعد image را به <code>nginx:1.26</code> ببرید و برگردید،‏ و در پایان کل پروژه را با یک دستور پاک کنید.<details class="ans"><summary>پاسخ</summary><p><b>نکته‌های کلیدی پاسخ:</b></p><ol><li>همه‌ی اشیا را در یک فایل بنویسید و با خط <code>‎---‎</code> از هم جدا کنید.</li><li>namespace را یا در خود فایل با <code>metadata.namespace: blog</code> تعیین کنید،‏ یا هنگام اجرا با <code>-n blog</code>.</li><li>label مربوط به Pod template باید با selector مربوط به Deployment و Service یکی باشد.</li><li>در Ingress مقدار <code>ingressClassName: traefik</code> را بنویسید.</li><li>برای آزمایش: <code>curl -H "Host: blog.lab.local" http://IP/</code></li><li>برای تغییر image،‏ فایل را ویرایش و دوباره <code>kubectl apply</code> کنید؛‏ برای برگشت: <code>kubectl rollout undo deployment -n blog NAME</code></li><li>برای پاک کردن کل پروژه: <code>kubectl delete namespace blog</code></li></ol></details></li></ol></div>
+  <p>شما حالا چرخه‌ی کامل یک برنامه روی کوبرنتیز را انجام داده‌اید: از image و Pod تا Deployment،‏ شبکه،‏ پیکربندی،‏ storage و مدیریت فایل‌ها. برای محکم شدن،‏ این پروژه‌ی کوچک را <b>بدون نگاه به فصل‌ها</b> انجام دهید:</p><details id="ch8-ex3" class="ex"><summary class="ex-h">پروژه‌ی پایان بخش اول <small>1 تمرین</small></summary><ol><li><span class="lvl l1">پروژه</span>در namespace به نام <code>blog</code>،‏ با یک فایل YAML: یک Deployment با ۲ replica از <code>nginx:1.27</code>،‏ یک ConfigMap با کلید <code>TITLE</code> که به env برسد،‏ یک Service و یک Ingress برای <code>blog.lab.local</code>. بعد image را به <code>nginx:1.26</code> ببرید و برگردید،‏ و در پایان کل پروژه را با یک دستور پاک کنید.<details class="ans"><summary>پاسخ</summary><p><b>نکته‌های کلیدی پاسخ:</b></p><ol><li>همه‌ی اشیا را در یک فایل بنویسید و با خط <code>‎---‎</code> از هم جدا کنید.</li><li>namespace را یا در خود فایل با <code>metadata.namespace: blog</code> تعیین کنید،‏ یا هنگام اجرا با <code>-n blog</code>.</li><li>label مربوط به Pod template باید با selector مربوط به Deployment و Service یکی باشد.</li><li>در Ingress مقدار <code>ingressClassName: traefik</code> را بنویسید.</li><li>برای آزمایش: <code>curl -H "Host: blog.lab.local" http://IP/</code></li><li>برای تغییر image،‏ فایل را ویرایش و دوباره <code>kubectl apply</code> کنید؛‏ برای برگشت: <code>kubectl rollout undo deployment -n blog NAME</code></li><li>برای پاک کردن کل پروژه: <code>kubectl delete namespace blog</code></li></ol></details></li></ol></details>
 
-  <div id="ch8-ex4" class="ex">
-<div class="ex-h">تمرین‌های فصل ۸،‏ بخش دوم <small>۱۴ تمرین</small></div>
+  <details id="ch8-ex4" class="ex">
+<summary class="ex-h">تمرین‌های فصل ۸،‏ بخش دوم <small>۱۴ تمرین</small></summary>
 <ol>
 
 <li><span class="lvl l1">مفهومی</span>چرا Kustomize زیرمجموعه‌ی «پیکربندی اعلانی» است و نه یک روش چهارم؟ فرقش با Helm چیست؟
@@ -5214,10 +5304,10 @@ kubectl kustomize ecom/overlays/prod | grep -A2 replicas
 </details></li>
 
 </ol>
-</div>
+</details>
 
-  <div id="ch8-ex5" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۸ <small>۱۷ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch8-ex5" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۸ <small>۱۷ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>فرق <code>spec</code> و <code>status</code> چیست و چه کسی هر کدام را می‌نویسد؟
         <details class="ans"><summary>پاسخ</summary>
@@ -5306,7 +5396,7 @@ kubectl kustomize ecom/overlays/prod | grep -A2 replicas
           <p>پیدا کردن: <code>kubectl diff -f</code> یا <code>-k</code> روی فایل‌های Git؛‏ exit code برابر ۱ یعنی تفاوت (در pipeline یا CronJob قابل استفاده است). در managedFields نام مدیری که فیلد را نوشته پیداست (مثلاً kubectl با subresource به نام scale)،‏ و audit log مربوط به API server نشان می‌دهد چه کسی و کی. جلوگیری: ابزار GitOps مثل Argo CD یا Flux که مدام cluster را با Git مقایسه و تفاوت را برمی‌گرداند (self-heal)؛‏ و RBAC که اجازه‌ی نوشتن مستقیم در production را فقط به حساب ابزار deployment می‌دهد.</p><p><b>نکته‌ی امتیازآور:</b> بعضی تفاوت‌ها عمدی‌اند (مثل replicas زیر کنترل HPA)؛‏ آن فیلدها را از manifest حذف کنید یا در ابزار GitOps نادیده بگیرید،‏ وگرنه ابزار و HPA با هم می‌جنگند.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch8-recap">
     <div class="recap-h">خلاصه‌ی فصل ۸ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

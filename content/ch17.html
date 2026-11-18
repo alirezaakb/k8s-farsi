@@ -35,9 +35,6 @@
     <li>بزرگ‌کردن مقیاس برنامه (Scale up your app)</li>
     <li>به‌روزرسانی برنامه (Update your app)</li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی</b>
-    <p>این شش بخش دقیقاً همان چرخه‌ی عمر یک سرویس در production است: محیط را بساز،‏ برنامه را deploy کن،‏ وضعیتش را بررسی و عیب‌یابی کن،‏ آن را در دسترس کاربران بگذار،‏ با زیادشدن بار مقیاسش را بالا ببر و بدون قطعی به‌روزش کن. آزمایش عملی شاپیفای در فصل ۱ همه‌ی این مراحل را فشرده نشان داد؛‏ مراحل deployment،‏ بررسی و در دسترس گذاشتن در فصل‌های ۳ تا ۵،‏ و مقیاس‌دهی و به‌روزرسانی در فصل‌های ۴ و ۱۰ کامل می‌شوند.</p>
-  </div>
   <p class="next">ادامه‌ی مسیر: محیط یادگیری (فصل ۱۳) · ساختن cluster با Minikube</p>
 
   
@@ -89,6 +86,13 @@ CoreDNS is running at https://192.168.49.2:8443/api/v1/namespaces/kube-system/se
   </div>
   <p class="next">ادامه‌ی مسیر: deploy کردن یک برنامه · معماری cluster (فصل ۱۲)</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
+    <p>این شش بخش دقیقاً همان چرخه‌ی عمر یک سرویس در production است: محیط را بساز،‏ برنامه را deploy کن،‏ وضعیتش را بررسی و عیب‌یابی کن،‏ آن را در دسترس کاربران بگذار،‏ با زیادشدن بار مقیاسش را بالا ببر و بدون قطعی به‌روزش کن. آزمایش عملی شاپیفای در فصل ۱ همه‌ی این مراحل را فشرده نشان داد؛‏ مراحل deployment،‏ بررسی و در دسترس گذاشتن در فصل‌های ۳ تا ۵،‏ و مقیاس‌دهی و به‌روزرسانی در فصل‌های ۴ و ۱۰ کامل می‌شوند.</p>
+  </div>
+  </details>
+
   
   <h3 id="ch17-install-tools">نصب ابزارها <small>(Install Tools)</small></h3>
   <div class="note"><b>نکته</b><p>برای راه‌اندازی یک محیط تمرینی،‏ صفحه‌ی <a href="https://kubernetes.io/docs/setup/learning-environment/">Learning environment</a> را ببینید.</p></div>
@@ -113,17 +117,6 @@ CoreDNS is running at https://192.168.49.2:8443/api/v1/namespaces/kube-system/se
 <h3 id="ch17-kubectl-linux">نصب و راه‌اندازی kubectl روی Linux <small>(Install and Set Up kubectl on Linux)</small></h3>
   <h4>پیش از شروع</h4>
   <p>نسخه‌ی kubectl باید حداکثر یک نسخه‌ی minor با cluster شما فاصله داشته باشد. مثلاً client v1.37 با control plane v1.36،‏ v1.37 و v1.38 کار می‌کند. استفاده از آخرین نسخه‌ی سازگار kubectl جلوی مشکلات پیش‌بینی‌نشده را می‌گیرد.</p>
-  <div class="deep"><b>توضیح تکمیلی: قاعده‌ی اختلاف نسخه در عمل</b>
-    <p>قاعده «یک minor بالاتر یا پایین‌تر» است. فرض کنید تیم شما سه cluster دارد: dev روی v1.38،‏ staging روی v1.37 و prod روی v1.36. kubectl نسخه‌ی v1.37 با هر سه سازگار است،‏ اما kubectl نسخه‌ی v1.38 با prod (v1.36) دو minor فاصله دارد و خارج از محدوده‌ی پشتیبانی است؛‏ ممکن است فیلدهایی بفرستد که API server قدیمی نمی‌شناسد یا خروجی را متفاوت تفسیر کند. برای همین تیم‌های DevOps معمولاً نسخه‌ی kubectl را در image ابزارهای CI ثابت (pin) می‌کنند. بررسی سریع:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl version
-</pre></div>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Client Version: v1.37.0
-Kustomize Version: v5.x.x
-Server Version: v1.36.4
-</pre></div>
-    <p>اگر فاصله بیش از یک minor باشد،‏ kubectl هشداری (WARNING:‏ version difference ...) هم چاپ می‌کند.</p>
-  </div>
-
   <h4>روش‌های نصب kubectl روی Linux</h4>
   <ul>
     <li>نصب فایل اجرایی kubectl با curl</li>
@@ -176,16 +169,6 @@ mv ./kubectl ~/.local/bin/kubectl
       <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl version --client --output=yaml
 </pre></div></li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: هر بخش از این دستورها چه می‌کند؟</b>
-    <ul>
-      <li><code>https://dl.k8s.io/release/stable.txt</code> فقط یک خط متن برمی‌گرداند،‏ مثلاً <code>v1.37.0</code>،‏ یعنی آخرین نسخه‌ی پایدار. <code>‎$(...)‎</code> در shell این متن را داخل آدرس قرار می‌دهد.</li>
-      <li><code>curl -L</code> تغییر مسیرها (redirect) را دنبال می‌کند (dl.k8s.io به CDN هدایت می‌کند) و <code>-O</code> فایل را با همان نام اصلی ذخیره می‌کند.</li>
-      <li>ورودی <code>sha256sum --check</code> باید به شکل «hash،‏ دو فاصله،‏ نام فایل» باشد؛‏ برای همین در دستور <code>echo</code> بین hash و <code>kubectl</code> دو فاصله هست.</li>
-      <li><code>install -o root -g root -m 0755</code> در یک قدم فایل را کپی می‌کند،‏ مالکش (owner) را root می‌گذارد و مجوز اجرا (rwxr-xr-x) می‌دهد.</li>
-    </ul>
-    <p>چرا checksum در production مهم است؟ اگر در خط لوله‌ی CI فایل از یک mirror داخلی یا proxy دانلود شود،‏ تطبیق checksum تضمین می‌کند فایل دستکاری یا ناقص نشده؛‏ ابزاری که قرار است اطلاعات ورود به cluster production را در دست بگیرد باید قابل‌اعتماد باشد.</p>
-  </div>
-
   <h4>نصب با مدیر بسته‌ی بومی</h4>
   <p><b>توزیع‌های مبتنی بر Debian</b></p>
   <ol>
@@ -273,11 +256,6 @@ Do you want to reject the key, trust temporarily, or trust always? [r/t/a/?] (r)
       <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">sudo zypper install -y kubectl
 </pre></div></li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: چرا هر repository به یک نسخه‌ی minor بسته است؟</b>
-    <p>مخازن <code>pkgs.k8s.io</code> برای هر نسخه‌ی minor یک repository جدا دارند (<code>core:/stable:/v1.37</code>). یعنی <code>apt-get upgrade</code> هیچ‌وقت kubectl را از 1.37 به 1.38 نمی‌برد و فقط وصله‌های 1.37.x را می‌گیرد. این طراحی عمدی است: ارتقای minor باید تصمیمی آگاهانه باشد (به‌خاطر قاعده‌ی اختلاف نسخه و ارتقای مرحله‌به‌مرحله‌ی cluster). در production این رفتار جلوی ارتقای ناخواسته‌ی kubelet و kubeadm روی Nodeها را هم می‌گیرد (فصل ۱۳).</p>
-    <p><b>نکته‌ی تاریخی مهم:</b> مخازن قدیمی <code>apt.kubernetes.io</code> و <code>yum.kubernetes.io</code> (میزبانی‌شده توسط گوگل) از سال ۲۰۲۴ از کار افتاده‌اند؛‏ اگر در راهنماهای قدیمی اینترنت آن‌ها را دیدید،‏ از <code>pkgs.k8s.io</code> استفاده کنید.</p>
-  </div>
-
   <h4>نصب با مدیرهای بسته‌ی دیگر</h4>
   <p><b>Snap:</b> اگر روی Ubuntu یا توزیع دیگری هستید که از <a href="https://snapcraft.io/docs/core/install">snap</a> پشتیبانی می‌کند،‏ kubectl به شکل برنامه‌ی snap در دسترس است:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">snap install kubectl --classic
@@ -399,9 +377,36 @@ sha256sum: WARNING: 1 computed checksum did NOT match
       <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">rm kubectl-convert kubectl-convert.sha256
 </pre></div></li>
   </ol>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">قاعده‌ی اختلاف نسخه در عمل · هر بخش از این دستورها چه می‌کند؟ · چرا هر repository به یک نسخه‌ی minor بسته است؟ · plugin چطور پیدا می‌شود؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: قاعده‌ی اختلاف نسخه در عمل</b>
+    <p>قاعده «یک minor بالاتر یا پایین‌تر» است. فرض کنید تیم شما سه cluster دارد: dev روی v1.38،‏ staging روی v1.37 و prod روی v1.36. kubectl نسخه‌ی v1.37 با هر سه سازگار است،‏ اما kubectl نسخه‌ی v1.38 با prod (v1.36) دو minor فاصله دارد و خارج از محدوده‌ی پشتیبانی است؛‏ ممکن است فیلدهایی بفرستد که API server قدیمی نمی‌شناسد یا خروجی را متفاوت تفسیر کند. برای همین تیم‌های DevOps معمولاً نسخه‌ی kubectl را در image ابزارهای CI ثابت (pin) می‌کنند. بررسی سریع:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl version
+</pre></div>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Client Version: v1.37.0
+Kustomize Version: v5.x.x
+Server Version: v1.36.4
+</pre></div>
+    <p>اگر فاصله بیش از یک minor باشد،‏ kubectl هشداری (WARNING:‏ version difference ...) هم چاپ می‌کند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: هر بخش از این دستورها چه می‌کند؟</b>
+    <ul>
+      <li><code>https://dl.k8s.io/release/stable.txt</code> فقط یک خط متن برمی‌گرداند،‏ مثلاً <code>v1.37.0</code>،‏ یعنی آخرین نسخه‌ی پایدار. <code>‎$(...)‎</code> در shell این متن را داخل آدرس قرار می‌دهد.</li>
+      <li><code>curl -L</code> تغییر مسیرها (redirect) را دنبال می‌کند (dl.k8s.io به CDN هدایت می‌کند) و <code>-O</code> فایل را با همان نام اصلی ذخیره می‌کند.</li>
+      <li>ورودی <code>sha256sum --check</code> باید به شکل «hash،‏ دو فاصله،‏ نام فایل» باشد؛‏ برای همین در دستور <code>echo</code> بین hash و <code>kubectl</code> دو فاصله هست.</li>
+      <li><code>install -o root -g root -m 0755</code> در یک قدم فایل را کپی می‌کند،‏ مالکش (owner) را root می‌گذارد و مجوز اجرا (rwxr-xr-x) می‌دهد.</li>
+    </ul>
+    <p>چرا checksum در production مهم است؟ اگر در خط لوله‌ی CI فایل از یک mirror داخلی یا proxy دانلود شود،‏ تطبیق checksum تضمین می‌کند فایل دستکاری یا ناقص نشده؛‏ ابزاری که قرار است اطلاعات ورود به cluster production را در دست بگیرد باید قابل‌اعتماد باشد.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا هر repository به یک نسخه‌ی minor بسته است؟</b>
+    <p>مخازن <code>pkgs.k8s.io</code> برای هر نسخه‌ی minor یک repository جدا دارند (<code>core:/stable:/v1.37</code>). یعنی <code>apt-get upgrade</code> هیچ‌وقت kubectl را از 1.37 به 1.38 نمی‌برد و فقط وصله‌های 1.37.x را می‌گیرد. این طراحی عمدی است: ارتقای minor باید تصمیمی آگاهانه باشد (به‌خاطر قاعده‌ی اختلاف نسخه و ارتقای مرحله‌به‌مرحله‌ی cluster). در production این رفتار جلوی ارتقای ناخواسته‌ی kubelet و kubeadm روی Nodeها را هم می‌گیرد (فصل ۱۳).</p>
+    <p><b>نکته‌ی تاریخی مهم:</b> مخازن قدیمی <code>apt.kubernetes.io</code> و <code>yum.kubernetes.io</code> (میزبانی‌شده توسط گوگل) از سال ۲۰۲۴ از کار افتاده‌اند؛‏ اگر در راهنماهای قدیمی اینترنت آن‌ها را دیدید،‏ از <code>pkgs.k8s.io</code> استفاده کنید.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: plugin چطور پیدا می‌شود؟</b>
     <p>kubectl هر فایل اجرایی در <code>PATH</code> را که نامش با <code>kubectl-</code> شروع شود plugin می‌شناسد؛‏ پس <code>kubectl-convert</code> با دستور <code>kubectl convert</code> اجرا می‌شود (سازوکار pluginها در فصل ۱ و ۱۵). کاربرد واقعی: پیش از ارتقای cluster،‏ manifestهای قدیمی repository GitOps را که هنوز نسخه‌ی API حذف‌شده دارند،‏ با <code>kubectl convert -f old.yaml --output-version &lt;group&gt;/&lt;version&gt;</code> به نسخه‌ی جدید تبدیل می‌کنید.</p>
   </div>
+  </details>
 <h3 id="ch17-kubectl-macos">نصب و راه‌اندازی kubectl روی macOS</h3>
   <p>قاعده‌ی اختلاف نسخه دقیقاً مثل Linux است (یک minor بالاتر یا پایین‌تر). روش‌های نصب روی macOS:</p>
   <ul>
@@ -515,20 +520,6 @@ kubectl completion powershell &gt;&gt; $PROFILE
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">minikube start
 </pre></div>
   <div class="note"><b>نکته</b><p><code>minikube start</code> یک cluster تک‌Node می‌سازد که هم نقش control plane را دارد و هم نقش worker Node. این با بیشتر production clusterها فرق دارد؛‏ در آن‌ها Nodeهای control plane معمولاً با <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/">taintها</a> از worker Nodeها جدا می‌شوند یا کاملاً از دید کاربر پنهان‌اند.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: minikube start دقیقاً چه می‌کند؟</b>
-    <p>(این جزئیات مربوط به رفتار minikube است.) <code>minikube start</code> بر اساس driver انتخاب‌شده (docker،‏ virtualbox،‏ hyperkit،‏ kvm2 و…) یک «ماشین» می‌سازد،‏ container runtime و kubelet را داخلش راه می‌اندازد،‏ control plane را اجرا می‌کند و در نهایت یک cluster،‏ یک user و یک context به نام <code>minikube</code> به فایل <code>~/.kube/config</code> اضافه می‌کند و current-context را روی آن می‌گذارد. خروجی شبیه این است:</p>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">* minikube v1.xx.x on Ubuntu 24.04
-* Automatically selected the docker driver
-* Starting "minikube" primary control-plane node in "minikube" cluster
-* Creating docker container (CPUs=2, Memory=4000MB) ...
-* Preparing Kubernetes v1.37.0 on Docker ...
-* Verifying Kubernetes components...
-* Enabled addons: storage-provisioner, default-storageclass
-* Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
-</pre></div>
-    <p>خط آخر مهم‌ترین خط است: <i>kubectl is now configured to use "minikube"</i>؛‏ یعنی minikube context فعلی شما را <b>عوض کرده</b>. اگر پیش از این context شما روی cluster دیگری (مثلاً staging) بود،‏ از این به بعد دستورهایتان به minikube می‌رود؛‏ و برعکس،‏ اگر بعداً ابزار دیگری context را عوض کند،‏ ممکن است بی‌آنکه بفهمید روی cluster دیگری کار کنید (بخش kubeconfig در فصل ۱۳ و بخش context در همین پیوست).</p>
-  </div>
-
   <h4>بررسی وضعیت cluster minikube</h4>
   <p>وضعیت cluster را بررسی کنید تا مطمئن شوید همه‌ی اجزا در حال اجرا هستند:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">minikube status
@@ -541,15 +532,6 @@ kubelet: Running
 apiserver: Running
 kubeconfig: Configured
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: هر خط یعنی چه؟</b>
-    <div class="tbl"><table><thead><tr><th>فیلد</th><th>معنی</th><th>اگر Running/Configured نباشد</th></tr></thead><tbody>
-      <tr><td><code>host</code></td><td>ماشین minikube (VM یا container) روشن است</td><td>با <code>minikube start</code> دوباره روشنش کنید</td></tr>
-      <tr><td><code>kubelet</code></td><td>سرویس kubelet روی Node اجرا می‌شود</td><td>Podها ساخته یا نگهداری نمی‌شوند</td></tr>
-      <tr><td><code>apiserver</code></td><td>kube-apiserver پاسخ می‌دهد</td><td>همه‌ی دستورهای kubectl شکست می‌خورند</td></tr>
-      <tr><td><code>kubeconfig</code></td><td>ورودی minikube در kubeconfig درست است (آدرس و port فعلی)</td><td>مثلاً <code>Misconfigured</code>؛‏ با <code>minikube update-context</code> درست می‌شود</td></tr>
-    </tbody></table></div>
-  </div>
-
   <h4>باز کردن داشبورد</h4>
   <p>داشبورد کوبرنتیز را به دو روش می‌توانید باز کنید:</p>
   <p><b>روش ۱: باز شدن خودکار مرورگر.</b> یک ترمینال <b>جدید</b> باز کنید و اجرا کنید:</p>
@@ -603,21 +585,6 @@ I0911 09:19:26.677586       1 log.go:195] Started UDP server on port  8081
 </pre></div></li>
   </ol>
   <div class="note"><b>نکته</b><p>برای اطلاعات بیشتر درباره‌ی دستورهای <code>kubectl</code>،‏ <a href="https://kubernetes.io/docs/reference/kubectl/">kubectl overview</a> را ببینید.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: نام Pod از کجا می‌آید و خروجی events و config view چه شکلی است؟</b>
-    <p>نام <code>hello-node-5f76cf6ccf-br9b5</code> سه بخش دارد: نام Deployment (<code>hello-node</code>)،‏ یک hash از Pod template (الگویی که controller،‏ Podها را از روی آن می‌سازد) که نام ReplicaSet را می‌سازد (<code>5f76cf6ccf</code>)،‏ و یک پسوند تصادفی برای خود Pod (<code>br9b5</code>). یعنی زنجیره‌ی مالکیت Deployment ←‏ ReplicaSet ←‏ Pod است (فصل ۴). بخش <code>-- /agnhost netexec --http-port=8080</code> در دستور create هم فرمان container را عوض می‌کند؛‏ هر چیزی بعد از <code>‎--‎</code> به‌عنوان command و args در Pod template قرار می‌گیرد.</p>
-    <p>خروجی <code>kubectl get events</code> معمولاً شبیه این است (نمونه):</p>
-    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">LAST SEEN   TYPE     REASON              OBJECT                             MESSAGE
-60s         Normal   Scheduled           pod/hello-node-5f76cf6ccf-br9b5    Successfully assigned default/hello-node-5f76cf6ccf-br9b5 to minikube
-59s         Normal   Pulling             pod/hello-node-5f76cf6ccf-br9b5    Pulling image "registry.k8s.io/e2e-test-images/agnhost:2.53"
-55s         Normal   Pulled              pod/hello-node-5f76cf6ccf-br9b5    Successfully pulled image ...
-55s         Normal   Created             pod/hello-node-5f76cf6ccf-br9b5    Created container: agnhost
-55s         Normal   Started             pod/hello-node-5f76cf6ccf-br9b5    Started container agnhost
-60s         Normal   SuccessfulCreate    replicaset/hello-node-5f76cf6ccf   Created pod: hello-node-5f76cf6ccf-br9b5
-60s         Normal   ScalingReplicaSet   deployment/hello-node              Scaled up replica set hello-node-5f76cf6ccf from 0 to 1
-</pre></div>
-    <p>این eventها کل مسیر را نشان می‌دهند: Deployment یک ReplicaSet را بزرگ کرد،‏ ReplicaSet یک Pod ساخت،‏ scheduler (جزئی که برای هر Pod،‏ Node مناسب را انتخاب می‌کند) آن را به Node <code>minikube</code> سپرد و kubelet image را گرفت و container را اجرا کرد. خروجی <code>kubectl config view</code> هم (با پنهان‌کردن داده‌های حساس به شکل <code>DATA+OMITTED</code> یا <code>REDACTED</code>) cluster،‏ user و context به نام <code>minikube</code> را نشان می‌دهد؛‏ ساختار این فایل در بخش kubeconfig در فصل ۱۳ آمده است.</p>
-  </div>
-
   <h4>ساختن یک Service</h4>
   <p>Pod به‌طور پیش‌فرض فقط با IP داخلی‌اش و از داخل cluster در دسترس است. برای اینکه container <code>hello-node</code> از بیرون شبکه‌ی مجازی کوبرنتیز در دسترس باشد،‏ باید Pod را با یک <a href="https://kubernetes.io/docs/concepts/services-networking/service/"><i>Service</i></a> در دسترس بگذارید.</p>
   <div class="warn"><b>هشدار</b><p>container agnhost یک آدرس <code>/shell</code> دارد که برای عیب‌یابی مفید است،‏ اما در دسترس گذاشتنش روی اینترنت عمومی خطرناک است. این آموزش را روی clusterی که به اینترنت باز است یا production cluster اجرا نکنید.</p></div>
@@ -640,11 +607,6 @@ kubernetes   ClusterIP      10.96.0.1       &lt;none&gt;        443/TCP         
 </pre></div>
       <p>پنجره‌ای از مرورگر باز می‌شود که پاسخ برنامه را نشان می‌دهد.</p></li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: خواندن ستون PORT(S) و چرا EXTERNAL-IP در حالت pending می‌ماند</b>
-    <p>در <code>8080:30369/TCP</code>،‏ عدد اول port خود Service روی ClusterIP است و عدد دوم nodePort است که کوبرنتیز از بازه‌ی پیش‌فرض 30000 تا 32767 تخصیص داده؛‏ چون LoadBalancer در واقع روی NodePort ساخته می‌شود (فصل ۵). <code>&lt;pending&gt;</code> یعنی هیچ controllerی (برنامه‌ای که مدام current state را به desired state نزدیک می‌کند) در cluster نیست که load balancer واقعی بسازد و آدرسش را در <code>status.loadBalancer</code> بنویسد. در minikube می‌توانید با اجرای <code>minikube tunnel</code> در ترمینال جدا چنین IPی بگیرید. در clusterهای داخل سازمان (bare-metal) هم دقیقاً همین اتفاق می‌افتد،‏ مگر اینکه پیاده‌سازی load balancer مثل MetalLB نصب شده باشد (فصل ۵).</p>
-    <p>Service به نام <code>kubernetes</code> در namespace <code>default</code> خودکار ساخته می‌شود و به API server اشاره می‌کند؛‏ Podها از طریق آن (<code>kubernetes.default.svc</code>) به API دسترسی دارند.</p>
-  </div>
-
   <h4>فعال‌کردن addonها</h4>
   <p>minikube مجموعه‌ای از addonهای داخلی دارد که می‌توانید فعال،‏ غیرفعال و باز کنید.</p>
   <ol>
@@ -717,10 +679,6 @@ hello-node-5f76cf6ccf-br9b5  1m           6Mi
       <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">metrics-server was successfully disabled
 </pre></div></li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: چرا kubectl top بلافاصله کار نمی‌کند؟</b>
-    <p><code>kubectl top</code> داده‌ها را از Metrics API (<code>metrics.k8s.io</code>) می‌خواند؛‏ یک API تجمیعی (aggregated) که metrics-server ارائه‌اش می‌دهد. metrics-server هر چند ثانیه از kubeletها آمار CPU و memory جمع می‌کند؛‏ تا اولین دور جمع‌آوری کامل نشود و APIService آن در وضعیت Available نباشد،‏ پیام <code>Metrics API not available</code> را می‌بینید. همین API ورودی HorizontalPodAutoscaler هم هست (فصل ۱۰ و ۱۱)؛‏ پس اگر در production HPA کار نکرد،‏ اولین بررسی <code>kubectl get apiservice v1beta1.metrics.k8s.io</code> است.</p>
-  </div>
-
   <h4>پاک‌سازی</h4>
   <p>منابعی را که در cluster ساختید پاک کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete service hello-node
@@ -736,9 +694,55 @@ minikube delete
   <p>اگر می‌خواهید باز هم با minikube تمرین کنید،‏ لازم نیست حذفش کنید.</p>
   <h4>جمع‌بندی</h4>
   <p>این بخش مبانی بالا آوردن و اجرای cluster minikube را پوشش داد. حالا آماده‌اید برنامه deploy کنید.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۶)</small> <span class="m-t">minikube start دقیقاً چه می‌کند؟ · هر خط یعنی چه؟ · نام Pod از کجا می‌آید و خروجی events و config view چه شکلی است؟ · خواندن ستون PORT(S) و چرا EXTERNAL-IP در حالت pending می‌ماند · چرا kubectl top بلافاصله کار نمی‌کند؟ · stop در برابر delete</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: minikube start دقیقاً چه می‌کند؟</b>
+    <p>(این جزئیات مربوط به رفتار minikube است.) <code>minikube start</code> بر اساس driver انتخاب‌شده (docker،‏ virtualbox،‏ hyperkit،‏ kvm2 و…) یک «ماشین» می‌سازد،‏ container runtime و kubelet را داخلش راه می‌اندازد،‏ control plane را اجرا می‌کند و در نهایت یک cluster،‏ یک user و یک context به نام <code>minikube</code> به فایل <code>~/.kube/config</code> اضافه می‌کند و current-context را روی آن می‌گذارد. خروجی شبیه این است:</p>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">* minikube v1.xx.x on Ubuntu 24.04
+* Automatically selected the docker driver
+* Starting "minikube" primary control-plane node in "minikube" cluster
+* Creating docker container (CPUs=2, Memory=4000MB) ...
+* Preparing Kubernetes v1.37.0 on Docker ...
+* Verifying Kubernetes components...
+* Enabled addons: storage-provisioner, default-storageclass
+* Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+</pre></div>
+    <p>خط آخر مهم‌ترین خط است: <i>kubectl is now configured to use "minikube"</i>؛‏ یعنی minikube context فعلی شما را <b>عوض کرده</b>. اگر پیش از این context شما روی cluster دیگری (مثلاً staging) بود،‏ از این به بعد دستورهایتان به minikube می‌رود؛‏ و برعکس،‏ اگر بعداً ابزار دیگری context را عوض کند،‏ ممکن است بی‌آنکه بفهمید روی cluster دیگری کار کنید (بخش kubeconfig در فصل ۱۳ و بخش context در همین پیوست).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: هر خط یعنی چه؟</b>
+    <div class="tbl"><table><thead><tr><th>فیلد</th><th>معنی</th><th>اگر Running/Configured نباشد</th></tr></thead><tbody>
+      <tr><td><code>host</code></td><td>ماشین minikube (VM یا container) روشن است</td><td>با <code>minikube start</code> دوباره روشنش کنید</td></tr>
+      <tr><td><code>kubelet</code></td><td>سرویس kubelet روی Node اجرا می‌شود</td><td>Podها ساخته یا نگهداری نمی‌شوند</td></tr>
+      <tr><td><code>apiserver</code></td><td>kube-apiserver پاسخ می‌دهد</td><td>همه‌ی دستورهای kubectl شکست می‌خورند</td></tr>
+      <tr><td><code>kubeconfig</code></td><td>ورودی minikube در kubeconfig درست است (آدرس و port فعلی)</td><td>مثلاً <code>Misconfigured</code>؛‏ با <code>minikube update-context</code> درست می‌شود</td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: نام Pod از کجا می‌آید و خروجی events و config view چه شکلی است؟</b>
+    <p>نام <code>hello-node-5f76cf6ccf-br9b5</code> سه بخش دارد: نام Deployment (<code>hello-node</code>)،‏ یک hash از Pod template (الگویی که controller،‏ Podها را از روی آن می‌سازد) که نام ReplicaSet را می‌سازد (<code>5f76cf6ccf</code>)،‏ و یک پسوند تصادفی برای خود Pod (<code>br9b5</code>). یعنی زنجیره‌ی مالکیت Deployment ←‏ ReplicaSet ←‏ Pod است (فصل ۴). بخش <code>-- /agnhost netexec --http-port=8080</code> در دستور create هم فرمان container را عوض می‌کند؛‏ هر چیزی بعد از <code>‎--‎</code> به‌عنوان command و args در Pod template قرار می‌گیرد.</p>
+    <p>خروجی <code>kubectl get events</code> معمولاً شبیه این است (نمونه):</p>
+    <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">LAST SEEN   TYPE     REASON              OBJECT                             MESSAGE
+60s         Normal   Scheduled           pod/hello-node-5f76cf6ccf-br9b5    Successfully assigned default/hello-node-5f76cf6ccf-br9b5 to minikube
+59s         Normal   Pulling             pod/hello-node-5f76cf6ccf-br9b5    Pulling image "registry.k8s.io/e2e-test-images/agnhost:2.53"
+55s         Normal   Pulled              pod/hello-node-5f76cf6ccf-br9b5    Successfully pulled image ...
+55s         Normal   Created             pod/hello-node-5f76cf6ccf-br9b5    Created container: agnhost
+55s         Normal   Started             pod/hello-node-5f76cf6ccf-br9b5    Started container agnhost
+60s         Normal   SuccessfulCreate    replicaset/hello-node-5f76cf6ccf   Created pod: hello-node-5f76cf6ccf-br9b5
+60s         Normal   ScalingReplicaSet   deployment/hello-node              Scaled up replica set hello-node-5f76cf6ccf from 0 to 1
+</pre></div>
+    <p>این eventها کل مسیر را نشان می‌دهند: Deployment یک ReplicaSet را بزرگ کرد،‏ ReplicaSet یک Pod ساخت،‏ scheduler (جزئی که برای هر Pod،‏ Node مناسب را انتخاب می‌کند) آن را به Node <code>minikube</code> سپرد و kubelet image را گرفت و container را اجرا کرد. خروجی <code>kubectl config view</code> هم (با پنهان‌کردن داده‌های حساس به شکل <code>DATA+OMITTED</code> یا <code>REDACTED</code>) cluster،‏ user و context به نام <code>minikube</code> را نشان می‌دهد؛‏ ساختار این فایل در بخش kubeconfig در فصل ۱۳ آمده است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: خواندن ستون PORT(S) و چرا EXTERNAL-IP در حالت pending می‌ماند</b>
+    <p>در <code>8080:30369/TCP</code>،‏ عدد اول port خود Service روی ClusterIP است و عدد دوم nodePort است که کوبرنتیز از بازه‌ی پیش‌فرض 30000 تا 32767 تخصیص داده؛‏ چون LoadBalancer در واقع روی NodePort ساخته می‌شود (فصل ۵). <code>&lt;pending&gt;</code> یعنی هیچ controllerی (برنامه‌ای که مدام current state را به desired state نزدیک می‌کند) در cluster نیست که load balancer واقعی بسازد و آدرسش را در <code>status.loadBalancer</code> بنویسد. در minikube می‌توانید با اجرای <code>minikube tunnel</code> در ترمینال جدا چنین IPی بگیرید. در clusterهای داخل سازمان (bare-metal) هم دقیقاً همین اتفاق می‌افتد،‏ مگر اینکه پیاده‌سازی load balancer مثل MetalLB نصب شده باشد (فصل ۵).</p>
+    <p>Service به نام <code>kubernetes</code> در namespace <code>default</code> خودکار ساخته می‌شود و به API server اشاره می‌کند؛‏ Podها از طریق آن (<code>kubernetes.default.svc</code>) به API دسترسی دارند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا kubectl top بلافاصله کار نمی‌کند؟</b>
+    <p><code>kubectl top</code> داده‌ها را از Metrics API (<code>metrics.k8s.io</code>) می‌خواند؛‏ یک API تجمیعی (aggregated) که metrics-server ارائه‌اش می‌دهد. metrics-server هر چند ثانیه از kubeletها آمار CPU و memory جمع می‌کند؛‏ تا اولین دور جمع‌آوری کامل نشود و APIService آن در وضعیت Available نباشد،‏ پیام <code>Metrics API not available</code> را می‌بینید. همین API ورودی HorizontalPodAutoscaler هم هست (فصل ۱۰ و ۱۱)؛‏ پس اگر در production HPA کار نکرد،‏ اولین بررسی <code>kubectl get apiservice v1beta1.metrics.k8s.io</code> است.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: stop در برابر delete</b>
     <p><code>minikube stop</code> ماشین را خاموش می‌کند اما disk،‏ imageهای دانلودشده و همه‌ی objectهای cluster (در etcd) حفظ می‌شوند؛‏ <code>minikube start</code> بعدی همان cluster را برمی‌گرداند. <code>minikube delete</code> ماشین و داده‌ها را کاملاً پاک می‌کند و ورودی‌های <code>minikube</code> را از kubeconfig حذف می‌کند. اگر cluster به حالت عجیبی رفت (مثلاً بعد از تغییر driver یا نسخه)،‏ <code>delete</code> و <code>start</code> ساده‌ترین راه برگشت به حالت تمیز است؛‏ همان فلسفه‌ی «محیط یادگیری را بی‌نگرانی بساز و خراب کن».</p>
   </div>
+  </details>
 <h3 id="ch17-basics-deploy">آموزش مبانی – بخش ۲: ساختن Deployment با kubectl <small>(Using kubectl to create a Deployment)</small></h3>
   <p>مسیر «آموزش مبانی کوبرنتیز» یک دوره‌ی عملی کامل است: بخش ۲ یک Deployment می‌سازد،‏ بخش ۳ Podها و Nodeها را بررسی می‌کند،‏ بخش ۴ برنامه را با Service در دسترس می‌گذارد،‏ بخش ۵ آن را مقیاس می‌دهد و بخش ۶ rolling update (جایگزینی تدریجی Podهای قدیمی با Podهای جدید بدون قطعی) و برگشت را انجام می‌دهد. همه‌ی این بخش‌ها را پشت سر هم روی همان cluster minikube (یا هر cluster دیگری) اجرا کنید.</p>
   <h4>اهداف</h4>
@@ -794,6 +798,27 @@ minikube   Ready    control-plane   10m   v1.37.0
   <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
 kubernetes-bootcamp   1/1     1            1           30s
 </pre></div>
+  <h4>دیدن برنامه</h4>
+  <p><a href="https://kubernetes.io/docs/concepts/workloads/pods/">Pod</a>ها روی یک شبکه‌ی خصوصی و ایزوله اجرا می‌شوند. به‌طور پیش‌فرض از Podها و Serviceهای دیگر همان cluster دیده می‌شوند،‏ اما از بیرون آن شبکه نه. وقتی از <code>kubectl</code> استفاده می‌کنیم،‏ از طریق یک آدرس API با برنامه ارتباط می‌گیریم.</p>
+  <p>راه‌های دیگر در دسترس گذاشتن برنامه بیرون از cluster را در <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/">بخش ۴</a> می‌بینیم. توضیح مفصل Pod هم در فصل‌های بعد می‌آید.</p>
+  <p>دستور <code>kubectl proxy</code> proxyی می‌سازد که ارتباط را به شبکه‌ی خصوصی cluster هدایت می‌کند. proxy با Ctrl+C بسته می‌شود و در حین اجرا خروجی‌ای نشان نمی‌دهد.</p>
+  <p><b>برای اجرای proxy،‏ یک ترمینال دوم باز کنید.</b></p>
+  <div class="code"><div class="lbl"><span>shell (terminal دوم)</span><button type="button">کپی</button></div><pre class="sh">kubectl proxy
+</pre></div>
+  <p>حالا بین ترمینال ما و cluster یک اتصال داریم و proxy دسترسی مستقیم به API را از این ترمینال‌ها ممکن می‌کند. مثلاً می‌توانیم نسخه را مستقیماً از API با <code>curl</code> بپرسیم:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl http://localhost:8001/version
+</pre></div>
+  <div class="note"><b>نکته</b><p>اگر port 8001 در دسترس نیست،‏ مطمئن شوید <code>kubectl proxy</code> در ترمینال دوم هنوز اجرا می‌شود.</p></div>
+  <p>API server برای هر Pod بر اساس نامش یک آدرس می‌سازد که از طریق proxy هم در دسترس است. اول نام Pod را در environment variable <code>POD_NAME</code> ذخیره کنیم:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">export POD_NAME=$(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+echo Name of the Pod: $POD_NAME
+</pre></div>
+  <p>با این دستور از طریق API proxy‌شده به Pod دسترسی پیدا می‌کنید:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl http://localhost:8001/api/v1/namespaces/default/pods/$POD_NAME:8080/proxy/
+</pre></div>
+  <p>برای اینکه Deployment بدون proxy در دسترس باشد،‏ به یک Service نیاز داریم که در <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/">بخش ۴</a> توضیح داده می‌شود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">دستوری (imperative) در برابر اعلانی (declarative) · مسیر یک درخواست از طریق kubectl proxy</span></summary>
   <div class="deep"><b>توضیح تکمیلی: دستوری (imperative) در برابر اعلانی (declarative)</b>
     <p><code>kubectl create deployment</code> یک دستور <b>دستوری</b> است: به کوبرنتیز می‌گویید «این را بساز». پشت صحنه،‏ kubectl یک object از نوع Deployment می‌سازد و به API server می‌فرستد. می‌توانید manifest معادل را بدون ساختن object ببینید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment kubernetes-bootcamp --image=gcr.io/google-samples/kubernetes-bootcamp:v1 --dry-run=client -o yaml
@@ -823,26 +848,6 @@ status: {}
 </pre></div>
     <p>به دو نکته دقت کنید که در بخش‌های بعد مهم می‌شوند: (۱) label (جفت کلید/مقدار روی اشیا برای گروه‌بندی و انتخاب آن‌ها) <code>app: kubernetes-bootcamp</code> خودکار ساخته شده و selector (شرطی برای انتخاب اشیا بر اساس جفت‌های کلید/مقدارشان) از آن استفاده می‌کند (بخش ۴ از همین label برای Service استفاده می‌کند)؛‏ (۲) نام container برابر نام Deployment است (بخش ۶ در <code>kubectl set image</code> از همین نام استفاده می‌کند). در production این YAML را در Git نگه می‌دارید و با <code>kubectl apply -f</code> اعمالش می‌کنید تا desired state (وضعیتی که کاربر اعلام می‌کند می‌خواهد) قابل بازبینی و برگشت‌پذیر باشد (فصل ۸).</p>
   </div>
-
-  <h4>دیدن برنامه</h4>
-  <p><a href="https://kubernetes.io/docs/concepts/workloads/pods/">Pod</a>ها روی یک شبکه‌ی خصوصی و ایزوله اجرا می‌شوند. به‌طور پیش‌فرض از Podها و Serviceهای دیگر همان cluster دیده می‌شوند،‏ اما از بیرون آن شبکه نه. وقتی از <code>kubectl</code> استفاده می‌کنیم،‏ از طریق یک آدرس API با برنامه ارتباط می‌گیریم.</p>
-  <p>راه‌های دیگر در دسترس گذاشتن برنامه بیرون از cluster را در <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/">بخش ۴</a> می‌بینیم. توضیح مفصل Pod هم در فصل‌های بعد می‌آید.</p>
-  <p>دستور <code>kubectl proxy</code> proxyی می‌سازد که ارتباط را به شبکه‌ی خصوصی cluster هدایت می‌کند. proxy با Ctrl+C بسته می‌شود و در حین اجرا خروجی‌ای نشان نمی‌دهد.</p>
-  <p><b>برای اجرای proxy،‏ یک ترمینال دوم باز کنید.</b></p>
-  <div class="code"><div class="lbl"><span>shell (terminal دوم)</span><button type="button">کپی</button></div><pre class="sh">kubectl proxy
-</pre></div>
-  <p>حالا بین ترمینال ما و cluster یک اتصال داریم و proxy دسترسی مستقیم به API را از این ترمینال‌ها ممکن می‌کند. مثلاً می‌توانیم نسخه را مستقیماً از API با <code>curl</code> بپرسیم:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl http://localhost:8001/version
-</pre></div>
-  <div class="note"><b>نکته</b><p>اگر port 8001 در دسترس نیست،‏ مطمئن شوید <code>kubectl proxy</code> در ترمینال دوم هنوز اجرا می‌شود.</p></div>
-  <p>API server برای هر Pod بر اساس نامش یک آدرس می‌سازد که از طریق proxy هم در دسترس است. اول نام Pod را در environment variable <code>POD_NAME</code> ذخیره کنیم:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">export POD_NAME=$(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
-echo Name of the Pod: $POD_NAME
-</pre></div>
-  <p>با این دستور از طریق API proxy‌شده به Pod دسترسی پیدا می‌کنید:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl http://localhost:8001/api/v1/namespaces/default/pods/$POD_NAME:8080/proxy/
-</pre></div>
-  <p>برای اینکه Deployment بدون proxy در دسترس باشد،‏ به یک Service نیاز داریم که در <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/expose/">بخش ۴</a> توضیح داده می‌شود.</p>
   <div class="deep"><b>توضیح تکمیلی: مسیر یک درخواست از طریق kubectl proxy</b>
     <p><code>kubectl proxy</code> روی <code>‎127.0.0.1:8001‎</code> گوش می‌دهد و هر درخواست را با اطلاعات ورود kubeconfig شما (certificate یا token) به API server می‌فرستد؛‏ پس <code>curl</code> لازم نیست خودش authenticate کند. خروجی <code>curl http://localhost:8001/version</code> شبیه این است:</p>
     <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">{
@@ -859,6 +864,7 @@ echo Name of the Pod: $POD_NAME
     <p>قالب go-template فقط روی <code>.items</code> (فهرست Podها) حلقه می‌زند و نام هر Pod را در یک خط چاپ می‌کند؛‏ اگر بیش از یک Pod داشته باشید،‏ <code>POD_NAME</code> چند خطی می‌شود و آدرس خراب می‌شود. معادل دقیق‌تر برای clusterهای شلوغ: <code>kubectl get pods -l app=kubernetes-bootcamp -o jsonpath='{.items[0].metadata.name}'</code>.</p>
     <p><b>هشدار امنیتی:</b> <code>kubectl proxy</code> هر کسی را که به <code>localhost:8001</code> دسترسی دارد با <b>هویت شما</b> به API server وصل می‌کند. هرگز آن را با <code>--address=0.0.0.0</code> روی server مشترک اجرا نکنید؛‏ برای عیب‌یابی یک Pod خاص،‏ <code>kubectl port-forward</code> محدودتر و امن‌تر است.</p>
   </div>
+  </details>
 
   <h3 id="ch17-basics-explore">بخش ۳: دیدن Podها و Nodeها <small>(Viewing Pods and Nodes)</small></h3>
   <h4>اهداف</h4>
@@ -890,10 +896,6 @@ echo Name of the Pod: $POD_NAME
   </ul>
   <h4>نمای کلی Nodeها</h4>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/e162564bb8.svg" alt="یک Node با kubelet، container runtime و چند Pod"></div><figcaption><b>شکل ۱۷-۳.</b> <span style="flex:1 1 0;min-width:0">نمای کلی یک Node:‏ kubelet و container runtime روی Node اجرا می‌شوند و Podها را میزبانی می‌کنند. منبع: <span class="en">tutorials/kubernetes-basics/explore</span></span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: چرا Pod و نه container؟</b>
-    <p>فرض کنید یک web server و یک container کمکی (sidecar) دارید که هر دقیقه فایل‌های سایت را از Git می‌گیرد و روی یک volume مشترک می‌نویسد. اگر این دو در دو Pod جدا باشند،‏ ممکن است روی دو Node مختلف بروند و دیگر disk مشترکی نداشته باشند. قرار دادنشان در یک Pod تضمین می‌کند کنار هم باشند،‏ یک volume را ببینند و از طریق <code>localhost</code> با هم ارتباط برقرار کنند. اما قرار دادن frontend و backend در یک Pod اشتباه است: نمی‌توانید جداگانه مقیاسشان دهید و خرابی یکی روی دیگری اثر می‌گذارد (فصل ۳). ستون READY در <code>kubectl get pods</code> هم به همین دلیل به شکل <code>‎1/1‎</code> یا <code>‎2/2‎</code> است: تعداد containerهای آماده از کل containerهای Pod.</p>
-  </div>
-
   <h4>عیب‌یابی با kubectl</h4>
   <p>در <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/deploy-app/deploy-intro/">بخش ۲</a> از kubectl استفاده کردید؛‏ در این بخش هم برای گرفتن اطلاعات برنامه‌ها و محیطشان از آن استفاده می‌کنید. رایج‌ترین عملیات با این زیردستورها انجام می‌شود:</p>
   <ul>
@@ -914,32 +916,6 @@ echo Name of the Pod: $POD_NAME
 </pre></div>
   <p>اینجا جزئیات container داخل Pod را می‌بینیم: آدرس IP،‏ portها و فهرست eventهای چرخه‌ی عمر Pod. خروجی <code>describe</code> مفصل است و مفاهیمی دارد که هنوز توضیح نداده‌ایم؛‏ نگران نباشید،‏ تا پایان این آموزش با آن‌ها آشنا می‌شوید.</p>
   <div class="note"><b>نکته</b><p><code>describe</code> برای گرفتن اطلاعات مفصل بیشتر منابع کوبرنتیز،‏ از جمله Node،‏ Pod و Deployment،‏ به کار می‌رود. خروجی آن برای خواندن انسان طراحی شده،‏ نه برای اسکریپت‌نویسی.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: خواندن خروجی describe</b>
-    <div class="code"><div class="lbl"><span>output (خلاصه‌شده،‏ نمونه)</span><button type="button">کپی</button></div><pre class="out">Name:             kubernetes-bootcamp-9bc58d867-x4wqc
-Namespace:        default
-Node:             minikube/192.168.49.2
-Labels:           app=kubernetes-bootcamp
-                  pod-template-hash=9bc58d867
-Status:           Running
-IP:               10.244.0.5
-Controlled By:    ReplicaSet/kubernetes-bootcamp-9bc58d867
-Containers:
-  kubernetes-bootcamp:
-    Image:          gcr.io/google-samples/kubernetes-bootcamp:v1
-    Port:           &lt;none&gt;
-    State:          Running
-    Ready:          True
-    Restart Count:  0
-Events:
-  Type    Reason     Age   From               Message
-  ----    ------     ----  ----               -------
-  Normal  Scheduled  2m    default-scheduler  Successfully assigned default/kubernetes-bootcamp-9bc58d867-x4wqc to minikube
-  Normal  Pulled     2m    kubelet            Container image "gcr.io/google-samples/kubernetes-bootcamp:v1" already present on machine
-  Normal  Started    2m    kubelet            Started container kubernetes-bootcamp
-</pre></div>
-    <p>برای عیب‌یابی سه بخش مهم‌ترند: <code>Node</code> (Pod کجاست)،‏ <code>Controlled By</code> (چه کسی آن را ساخته؛‏ اگر Pod را حذف کنید همین ReplicaSet یکی دیگر می‌سازد) و <code>Events</code> (آخرین اتفاق‌ها؛‏ خطاهایی مثل <code>ImagePullBackOff</code> یا <code>FailedScheduling</code> اول اینجا دیده می‌شوند). چون خروجی describe برای انسان است،‏ در scriptها از <code>-o jsonpath</code> یا <code>-o json</code> استفاده کنید.</p>
-  </div>
-
   <h4>نمایش برنامه در ترمینال</h4>
   <p>یادآوری: Podها در شبکه‌ای ایزوله و خصوصی اجرا می‌شوند،‏ پس برای عیب‌یابی و کار با آن‌ها باید دسترسی را proxy کنیم. با <code>kubectl proxy</code> در یک <b>ترمینال دوم</b> proxy اجرا کنید:</p>
   <div class="code"><div class="lbl"><span>shell (terminal دوم)</span><button type="button">کپی</button></div><pre class="sh">kubectl proxy
@@ -969,11 +945,43 @@ echo Name of the Pod: $POD_NAME
 </pre></div>
   <div class="note"><b>نکته</b><p>اینجا از <code>localhost</code> استفاده کردیم چون دستور را داخل Pod اجرا می‌کنیم. اگر به <code>localhost:8080</code> وصل نمی‌شوید،‏ مطمئن شوید <code>kubectl exec</code> را اجرا کرده‌اید و داخل Pod هستید.</p></div>
   <p>برای بستن اتصال به container،‏ <code>exit</code> را تایپ کنید.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">چرا Pod و نه container؟ · خواندن خروجی describe · flagهای -ti و جداکننده‌ی --</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا Pod و نه container؟</b>
+    <p>فرض کنید یک web server و یک container کمکی (sidecar) دارید که هر دقیقه فایل‌های سایت را از Git می‌گیرد و روی یک volume مشترک می‌نویسد. اگر این دو در دو Pod جدا باشند،‏ ممکن است روی دو Node مختلف بروند و دیگر disk مشترکی نداشته باشند. قرار دادنشان در یک Pod تضمین می‌کند کنار هم باشند،‏ یک volume را ببینند و از طریق <code>localhost</code> با هم ارتباط برقرار کنند. اما قرار دادن frontend و backend در یک Pod اشتباه است: نمی‌توانید جداگانه مقیاسشان دهید و خرابی یکی روی دیگری اثر می‌گذارد (فصل ۳). ستون READY در <code>kubectl get pods</code> هم به همین دلیل به شکل <code>‎1/1‎</code> یا <code>‎2/2‎</code> است: تعداد containerهای آماده از کل containerهای Pod.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: خواندن خروجی describe</b>
+    <div class="code"><div class="lbl"><span>output (خلاصه‌شده،‏ نمونه)</span><button type="button">کپی</button></div><pre class="out">Name:             kubernetes-bootcamp-9bc58d867-x4wqc
+Namespace:        default
+Node:             minikube/192.168.49.2
+Labels:           app=kubernetes-bootcamp
+                  pod-template-hash=9bc58d867
+Status:           Running
+IP:               10.244.0.5
+Controlled By:    ReplicaSet/kubernetes-bootcamp-9bc58d867
+Containers:
+  kubernetes-bootcamp:
+    Image:          gcr.io/google-samples/kubernetes-bootcamp:v1
+    Port:           &lt;none&gt;
+    State:          Running
+    Ready:          True
+    Restart Count:  0
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  2m    default-scheduler  Successfully assigned default/kubernetes-bootcamp-9bc58d867-x4wqc to minikube
+  Normal  Pulled     2m    kubelet            Container image "gcr.io/google-samples/kubernetes-bootcamp:v1" already present on machine
+  Normal  Started    2m    kubelet            Started container kubernetes-bootcamp
+</pre></div>
+    <p>برای عیب‌یابی سه بخش مهم‌ترند: <code>Node</code> (Pod کجاست)،‏ <code>Controlled By</code> (چه کسی آن را ساخته؛‏ اگر Pod را حذف کنید همین ReplicaSet یکی دیگر می‌سازد) و <code>Events</code> (آخرین اتفاق‌ها؛‏ خطاهایی مثل <code>ImagePullBackOff</code> یا <code>FailedScheduling</code> اول اینجا دیده می‌شوند). چون خروجی describe برای انسان است،‏ در scriptها از <code>-o jsonpath</code> یا <code>-o json</code> استفاده کنید.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: flagهای -ti و جداکننده‌ی --</b>
     <p><code>-t</code> یک ترمینال (TTY) اختصاص می‌دهد و <code>-i</code> ورودی استاندارد را باز نگه می‌دارد؛‏ بدون این دو،‏ bash تعاملی فوراً بسته می‌شود. <code>‎--‎</code> مرز بین flagهای kubectl و دستوری است که داخل container اجرا می‌شود؛‏ بدون آن،‏ flagهایی مثل <code>-la</code> در <code>ls -la</code> ممکن است توسط خود kubectl تفسیر شوند. اگر Pod چند container داشت،‏ با <code>-c &lt;container-name&gt;</code> container را انتخاب می‌کردید.</p>
     <p><b>نکته‌ی عملیاتی:</b> <code>kubectl exec</code> روی production باید با RBAC محدود (subresource <code>pods/exec</code>) و ممیزی (audit) شود،‏ چون عملاً یک shell روی برنامه‌ی زنده است (فصل ۱۴). همچنین بسیاری از imageهای production (مثل distroless) اصلاً bash ندارند؛‏ برای آن‌ها ephemeral container (container موقتی که برای عیب‌یابی به Pod در حال اجرا اضافه می‌شود) و <code>kubectl debug</code> مناسب است (فصل ۱۱).</p>
     <p>نمونه‌ی خروجی <code>kubectl exec "$POD_NAME" -- env</code>: متغیرهایی مثل <code>HOSTNAME=kubernetes-bootcamp-9bc58d867-x4wqc</code>،‏ <code>KUBERNETES_SERVICE_HOST=10.96.0.1</code> و <code>KUBERNETES_SERVICE_PORT=443</code> که کوبرنتیز برای service discovery (پیدا کردن نشانی سرویس‌ها از روی نامشان) از طریق environment variable به container تزریق می‌کند (فصل ۵).</p>
   </div>
+  </details>
 <h3 id="ch17-basics-expose">بخش ۴: در دسترس گذاشتن برنامه با Service <small>(Using a Service to Expose Your App)</small></h3>
   <h4>اهداف</h4>
   <ul>
@@ -996,16 +1004,6 @@ echo Name of the Pod: $POD_NAME
   <p>اطلاعات بیشتر در آموزش <a href="https://kubernetes.io/docs/tutorials/services/source-ip/">Using Source IP</a> و <a href="https://kubernetes.io/docs/tutorials/services/connect-applications-service/">Connecting Applications with Services</a> (فصل ۵).</p>
   <p>بعضی کاربردهای Service بدون <code>selector</code> تعریف می‌شوند. Service بدون selector،‏ EndpointSlice متناظر (و object قدیمی Endpoints که از v1.33 منسوخ شده است) را خودکار نمی‌سازد؛‏ این اجازه می‌دهد Service را دستی به مقصدهای مشخصی نگاشت کنید (مثلاً یک پایگاه داده‌ی بیرون از cluster). حالت دیگر بدون selector،‏ استفاده از <code>type: ExternalName</code> است.</p>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/abc9b1d2c1.svg" alt="یک Service که ترافیک را به مجموعه‌ای از Podها روی چند Node هدایت می‌کند"></div><figcaption><b>شکل ۱۷-۴.</b> <span style="flex:1 1 0;min-width:0">Service مجموعه‌ای منطقی از Podها را (که ممکن است روی Nodeهای مختلف باشند) پشت یک IP ثابت قرار می‌دهد. منبع: <span class="en">tutorials/kubernetes-basics/expose</span></span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: نوع‌های Service لایه‌به‌لایه</b>
-    <div class="tbl"><table><thead><tr><th>نوع</th><th>چه چیزی ساخته می‌شود</th><th>از کجا در دسترس است</th><th>کاربرد نمونه در production</th></tr></thead><tbody>
-      <tr><td>ClusterIP</td><td>یک IP مجازی داخلی + نام DNS</td><td>فقط داخل cluster</td><td>ارتباط frontend با backend یا پایگاه داده‌ی داخلی</td></tr>
-      <tr><td>NodePort</td><td>ClusterIP + یک port (پیش‌فرض 30000 تا 32767) روی همه‌ی Nodeها</td><td><code>NodeIP:NodePort</code></td><td>پشت یک load balancer سخت‌افزاری یا HAProxy در دیتاسنتر</td></tr>
-      <tr><td>LoadBalancer</td><td>NodePort + یک load balancer خارجی (از cloud یا MetalLB)</td><td>IP یا نام خارجی</td><td>API عمومی</td></tr>
-      <tr><td>ExternalName</td><td>فقط یک رکورد CNAME در DNS cluster</td><td>نام DNS داخلی که به نامی بیرونی اشاره می‌کند</td><td>پایگاه داده‌ی مدیریت‌شده بیرون از cluster (مثلاً <code>db.prod.example.com</code>)</td></tr>
-    </tbody></table></div>
-    <p>«شامل بودن» (superset) یعنی هر LoadBalancer یک NodePort و یک ClusterIP هم دارد؛‏ برای همین در خروجی hello-node ستون PORT(S) عبارت <code>8080:30369/TCP</code> را نشان داد.</p>
-  </div>
-
   <h4>Serviceها و labelها</h4>
   <p>Service ترافیک را بین مجموعه‌ای از Podها پخش می‌کند و اجازه می‌دهد Podها بمیرند و تکثیر شوند بی‌آنکه برنامه آسیب ببیند. کشف و مسیریابی بین Podهای وابسته (مثل frontend و backend) را Serviceها انجام می‌دهند.</p>
   <p>Service مجموعه‌ی Podهایش را با <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels">labelها و selectorها</a> پیدا می‌کند؛‏ ابزار پایه‌ای برای گروه‌بندی که عملیات منطقی روی objectها را ممکن می‌کند. labelها زوج‌های کلید/مقدارند که به objectها وصل می‌شوند و کاربردهای زیادی دارند:</p>
@@ -1069,11 +1067,6 @@ echo "NODE_PORT=$NODE_PORT"
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl 127.0.0.1:51082
 </pre></div></div>
   <p>و پاسخی از server می‌گیریم؛‏ Service در دسترس است.</p>
-  <div class="deep"><b>توضیح تکمیلی: دو فیلد مهم در describe</b>
-    <p><code>Selector: app=kubernetes-bootcamp</code> همان labelی است که <code>kubectl create deployment</code> خودکار روی Podها گذاشت؛‏ <code>kubectl expose deployment</code> selector را از Deployment کپی کرد. <code>Endpoints: 10.244.0.5:8080</code> فهرست IP:port Podهای آماده‌ای است که selector با آن‌ها مطابقت دارد.</p>
-    <p><b>قاعده‌ی طلایی عیب‌یابی (و سؤال محبوب مصاحبه):</b> اگر Service پاسخ نمی‌دهد و <code>Endpoints</code> خالی است (<code>&lt;none&gt;</code>)،‏ مشکل تقریباً همیشه ناهمخوانی selector با labelهای Pod یا آماده نبودن Podهاست،‏ نه شبکه (فصل ۵ و ۱۱). عبارت go-template <code>{{(index .spec.ports 0).nodePort}}</code> هم یعنی «از آرایه‌ی <code>spec.ports</code> عضو صفرم را بردار و فیلد <code>nodePort</code> آن را چاپ کن».</p>
-  </div>
-
   <h4>گام ۲: استفاده از labelها</h4>
   <p>Deployment خودکار یک label برای Pod ساخت. با <code>describe deployment</code> نام (<i>کلید</i>) آن را ببینید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl describe deployment
@@ -1125,6 +1118,23 @@ kubernetes-bootcamp-abcde   IPv4          8080    10.244.0.5   5m
 </pre></div>
   <p>برنامه بالاست،‏ چون Deployment آن را مدیریت می‌کند. برای خاموش‌کردن برنامه باید Deployment را هم حذف کنید.</p>
   <div class="warn"><b>هشدار</b><p><code>kubectl delete service -l app=kubernetes-bootcamp</code> <b>همه‌ی</b> Serviceهای دارای این label را در namespace فعلی حذف می‌کند،‏ نه فقط یکی. در production،‏ پیش از هر حذف مبتنی بر label،‏ اول همان selector را با <code>kubectl get</code> اجرا کنید تا ببینید دقیقاً چه چیزی حذف می‌شود،‏ و مطمئن شوید context و namespace درست است (بخش context در همین پیوست).</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">نوع‌های Service لایه‌به‌لایه · دو فیلد مهم در describe</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: نوع‌های Service لایه‌به‌لایه</b>
+    <div class="tbl"><table><thead><tr><th>نوع</th><th>چه چیزی ساخته می‌شود</th><th>از کجا در دسترس است</th><th>کاربرد نمونه در production</th></tr></thead><tbody>
+      <tr><td>ClusterIP</td><td>یک IP مجازی داخلی + نام DNS</td><td>فقط داخل cluster</td><td>ارتباط frontend با backend یا پایگاه داده‌ی داخلی</td></tr>
+      <tr><td>NodePort</td><td>ClusterIP + یک port (پیش‌فرض 30000 تا 32767) روی همه‌ی Nodeها</td><td><code>NodeIP:NodePort</code></td><td>پشت یک load balancer سخت‌افزاری یا HAProxy در دیتاسنتر</td></tr>
+      <tr><td>LoadBalancer</td><td>NodePort + یک load balancer خارجی (از cloud یا MetalLB)</td><td>IP یا نام خارجی</td><td>API عمومی</td></tr>
+      <tr><td>ExternalName</td><td>فقط یک رکورد CNAME در DNS cluster</td><td>نام DNS داخلی که به نامی بیرونی اشاره می‌کند</td><td>پایگاه داده‌ی مدیریت‌شده بیرون از cluster (مثلاً <code>db.prod.example.com</code>)</td></tr>
+    </tbody></table></div>
+    <p>«شامل بودن» (superset) یعنی هر LoadBalancer یک NodePort و یک ClusterIP هم دارد؛‏ برای همین در خروجی hello-node ستون PORT(S) عبارت <code>8080:30369/TCP</code> را نشان داد.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: دو فیلد مهم در describe</b>
+    <p><code>Selector: app=kubernetes-bootcamp</code> همان labelی است که <code>kubectl create deployment</code> خودکار روی Podها گذاشت؛‏ <code>kubectl expose deployment</code> selector را از Deployment کپی کرد. <code>Endpoints: 10.244.0.5:8080</code> فهرست IP:port Podهای آماده‌ای است که selector با آن‌ها مطابقت دارد.</p>
+    <p><b>قاعده‌ی طلایی عیب‌یابی (و سؤال محبوب مصاحبه):</b> اگر Service پاسخ نمی‌دهد و <code>Endpoints</code> خالی است (<code>&lt;none&gt;</code>)،‏ مشکل تقریباً همیشه ناهمخوانی selector با labelهای Pod یا آماده نبودن Podهاست،‏ نه شبکه (فصل ۵ و ۱۱). عبارت go-template <code>{{(index .spec.ports 0).nodePort}}</code> هم یعنی «از آرایه‌ی <code>spec.ports</code> عضو صفرم را بردار و فیلد <code>nodePort</code> آن را چاپ کن».</p>
+  </div>
+  </details>
 
   <h3 id="ch17-basics-scale">بخش ۵: اجرای چند instance از برنامه <small>(Running Multiple Instances of Your App)</small></h3>
   <h4>اهداف</h4>
@@ -1188,26 +1198,6 @@ kubernetes-bootcamp-9bc58d867   1         1         1       11m
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl describe deployments/kubernetes-bootcamp
 </pre></div>
   <p>در خروجی این دستور هم ۴ replica را می‌بینید.</p>
-  <div class="deep"><b>توضیح تکمیلی: خروجی‌های نمونه پس از مقیاس‌دهی</b>
-    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
-kubernetes-bootcamp   4/4     4            4           12m
-
-NAME                                  READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
-kubernetes-bootcamp-9bc58d867-4hjvf   1/1     Running   0          20s   10.244.0.8   minikube   &lt;none&gt;           &lt;none&gt;
-kubernetes-bootcamp-9bc58d867-hs9dj   1/1     Running   0          20s   10.244.0.7   minikube   &lt;none&gt;           &lt;none&gt;
-kubernetes-bootcamp-9bc58d867-wp67j   1/1     Running   0          12m   10.244.0.5   minikube   &lt;none&gt;           &lt;none&gt;
-kubernetes-bootcamp-9bc58d867-zq2mn   1/1     Running   0          20s   10.244.0.6   minikube   &lt;none&gt;           &lt;none&gt;
-
-Events:
-  Type    Reason             Age   From                   Message
-  ----    ------             ----  ----                   -------
-  Normal  ScalingReplicaSet  12m   deployment-controller  Scaled up replica set kubernetes-bootcamp-9bc58d867 from 0 to 1
-  Normal  ScalingReplicaSet  20s   deployment-controller  Scaled up replica set kubernetes-bootcamp-9bc58d867 from 1 to 4
-</pre></div>
-    <p><code>kubectl scale</code> فقط فیلد <code>spec.replicas</code> را عوض می‌کند؛‏ بقیه‌ی کار (به‌روزکردن ReplicaSet،‏ ساختن Pod،‏ scheduling) را controllerها و scheduler انجام می‌دهند. در minikube همه‌ی Podها روی یک Node هستند؛‏ در cluster چند Node،‏ ستون NODE توزیع Podها را نشان می‌دهد.</p>
-    <p><b>هشدار عملیاتی:</b> اگر Deployment شما با GitOps یا یک HorizontalPodAutoscaler مدیریت می‌شود،‏ <code>kubectl scale</code> دستی موقت است؛‏ ابزار GitOps آن را به مقدار Git برمی‌گرداند یا HPA بازنویسی‌اش می‌کند (فصل ۱۰).</p>
-  </div>
-
   <h4>توزیع بار</h4>
   <p>بررسی کنیم Service بار را پخش می‌کند. برای پیدا کردن IP و port،‏ مثل بخش قبل از <code>describe service</code> استفاده می‌کنیم:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl describe services/kubernetes-bootcamp
@@ -1236,11 +1226,6 @@ Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-9bc58d867-4hjvf | v
     <p>سپس از آدرس داده‌شده استفاده کنید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl 127.0.0.1:51082
 </pre></div></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا توزیع دقیقاً نوبتی (round-robin) نیست؟</b>
-    <p>در خروجی نمونه،‏ یک Pod دو بار و Pod دیگری دو بار دیده شده و یکی از چهار Pod اصلاً دیده نشده. در حالت پیش‌فرض (kube-proxy در حالت iptables یا nftables)،‏ هر اتصال جدید به‌صورت تصادفی بین مقصدها پخش می‌شود،‏ نه نوبتی دقیق؛‏ با تعداد درخواست زیاد،‏ توزیع تقریباً یکنواخت می‌شود (فصل ۵).</p>
-    <p><b>پیامد مهم عملیاتی:</b> توزیع بار Service در سطح <b>اتصال</b> (لایه‌ی ۴) است،‏ نه درخواست. clientهایی که اتصال طولانی دارند (keep-alive،‏ gRPC،‏ WebSocket) بعد از افزایش مقیاس خودبه‌خود به Podهای جدید نمی‌روند؛‏ برای توزیع در سطح درخواست به یک proxy لایه‌ی ۷ (Ingress/Gateway یا service mesh) یا توزیع بار سمت client نیاز دارید.</p>
-  </div>
-
   <h4>کاهش مقیاس</h4>
   <p>برای رساندن Deployment به ۲ replica،‏ دوباره <code>scale</code> را اجرا کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl scale deployments/kubernetes-bootcamp --replicas=2
@@ -1252,9 +1237,36 @@ Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-9bc58d867-4hjvf | v
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -o wide
 </pre></div>
   <p>این تأیید می‌کند ۲ Pod خاتمه یافتند.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">خروجی‌های نمونه پس از مقیاس‌دهی · چرا توزیع دقیقاً نوبتی (round-robin) نیست؟ · هنگام کاهش مقیاس کدام Podها حذف می‌شوند؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: خروجی‌های نمونه پس از مقیاس‌دهی</b>
+    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+kubernetes-bootcamp   4/4     4            4           12m
+
+NAME                                  READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+kubernetes-bootcamp-9bc58d867-4hjvf   1/1     Running   0          20s   10.244.0.8   minikube   &lt;none&gt;           &lt;none&gt;
+kubernetes-bootcamp-9bc58d867-hs9dj   1/1     Running   0          20s   10.244.0.7   minikube   &lt;none&gt;           &lt;none&gt;
+kubernetes-bootcamp-9bc58d867-wp67j   1/1     Running   0          12m   10.244.0.5   minikube   &lt;none&gt;           &lt;none&gt;
+kubernetes-bootcamp-9bc58d867-zq2mn   1/1     Running   0          20s   10.244.0.6   minikube   &lt;none&gt;           &lt;none&gt;
+
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  12m   deployment-controller  Scaled up replica set kubernetes-bootcamp-9bc58d867 from 0 to 1
+  Normal  ScalingReplicaSet  20s   deployment-controller  Scaled up replica set kubernetes-bootcamp-9bc58d867 from 1 to 4
+</pre></div>
+    <p><code>kubectl scale</code> فقط فیلد <code>spec.replicas</code> را عوض می‌کند؛‏ بقیه‌ی کار (به‌روزکردن ReplicaSet،‏ ساختن Pod،‏ scheduling) را controllerها و scheduler انجام می‌دهند. در minikube همه‌ی Podها روی یک Node هستند؛‏ در cluster چند Node،‏ ستون NODE توزیع Podها را نشان می‌دهد.</p>
+    <p><b>هشدار عملیاتی:</b> اگر Deployment شما با GitOps یا یک HorizontalPodAutoscaler مدیریت می‌شود،‏ <code>kubectl scale</code> دستی موقت است؛‏ ابزار GitOps آن را به مقدار Git برمی‌گرداند یا HPA بازنویسی‌اش می‌کند (فصل ۱۰).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا توزیع دقیقاً نوبتی (round-robin) نیست؟</b>
+    <p>در خروجی نمونه،‏ یک Pod دو بار و Pod دیگری دو بار دیده شده و یکی از چهار Pod اصلاً دیده نشده. در حالت پیش‌فرض (kube-proxy در حالت iptables یا nftables)،‏ هر اتصال جدید به‌صورت تصادفی بین مقصدها پخش می‌شود،‏ نه نوبتی دقیق؛‏ با تعداد درخواست زیاد،‏ توزیع تقریباً یکنواخت می‌شود (فصل ۵).</p>
+    <p><b>پیامد مهم عملیاتی:</b> توزیع بار Service در سطح <b>اتصال</b> (لایه‌ی ۴) است،‏ نه درخواست. clientهایی که اتصال طولانی دارند (keep-alive،‏ gRPC،‏ WebSocket) بعد از افزایش مقیاس خودبه‌خود به Podهای جدید نمی‌روند؛‏ برای توزیع در سطح درخواست به یک proxy لایه‌ی ۷ (Ingress/Gateway یا service mesh) یا توزیع بار سمت client نیاز دارید.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: هنگام کاهش مقیاس کدام Podها حذف می‌شوند؟</b>
     <p>ReplicaSet controller برای انتخاب Podهای حذفی اولویت‌هایی دارد: Podهای منتظر یا schedule‌نشده زودتر از Podهای در حال اجرا،‏ Podهای ناآماده زودتر از آماده‌ها،‏ و به‌طور کلی Podهای جدیدتر زودتر از قدیمی‌تر (جزئیات در صفحه‌ی ReplicaSet،‏ فصل ۴؛‏ با annotation <code>controller.kubernetes.io/pod-deletion-cost</code> هم می‌شود روی این انتخاب اثر گذاشت). بلافاصله بعد از کاهش مقیاس ممکن است دو Pod را چند ثانیه در وضعیت <code>Terminating</code> ببینید؛‏ در این فاصله Service آن‌ها را از مقصدها بیرون برده و برنامه فرصت graceful shutdown (خاموش شدن مرتب،‏ با فرصت دادن به Podها برای پایان کار) دارد.</p>
   </div>
+  </details>
 <h3 id="ch17-basics-update">بخش ۶: rolling update <small>(Performing a Rolling Update)</small></h3>
   <h4>اهداف</h4>
   <ul>
@@ -1280,11 +1292,6 @@ Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-9bc58d867-4hjvf | v
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/b87e11c627.svg" alt="حالت اولیه‌ی Deployment پیش از rolling update"></div><figcaption><b>شکل ۱۷-۸.</b> <span style="flex:1 1 0;min-width:0">پیش از به‌روزرسانی: همه‌ی Podها نسخه‌ی v1 image را اجرا می‌کنند. منبع: <span class="en">tutorials/kubernetes-basics/update</span></span></figcaption></figure>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/36331e2024.svg" alt="به‌روزرسانی در حال انجام؛ برخی Podها v1 و برخی v2"></div><figcaption><b>شکل ۱۷-۹.</b> <span style="flex:1 1 0;min-width:0">وسط به‌روزرسانی: Podهای v2 کم‌کم جای Podهای v1 را می‌گیرند و Service به هر دو ترافیک می‌فرستد. منبع: <span class="en">tutorials/kubernetes-basics/update</span></span></figcaption></figure>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/c9d3c962fd.svg" alt="پایان به‌روزرسانی؛ همه‌ی Podها v2"></div><figcaption><b>شکل ۱۷-۱۰.</b> <span style="flex:1 1 0;min-width:0">پس از پایان به‌روزرسانی: همه‌ی Podها نسخه‌ی v2 را اجرا می‌کنند و Podهای v1 حذف شده‌اند. منبع: <span class="en">tutorials/kubernetes-basics/update</span></span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: maxUnavailable و maxSurge</b>
-    <p>این رفتار را دو فیلد در <code>strategy.rollingUpdate</code> کنترل می‌کنند (جزئیات در فصل ۴): <code>maxUnavailable</code>،‏ حداکثر تعداد یا درصد Podهایی که می‌توانند در طول به‌روزرسانی در دسترس نباشند (پیش‌فرض ۲۵٪)؛‏ و <code>maxSurge</code>،‏ حداکثر تعداد یا درصد Podهای اضافه بر تعداد دلخواه (پیش‌فرض ۲۵٪). مقدار درصدی برای maxUnavailable به پایین و برای maxSurge به بالا گرد می‌شود؛‏ پس با ۴ replica هر دو برابر یک Pod می‌شوند. اما چون Deployment این آموزش در پایان بخش ۵ به ۲ replica رسید،‏ در همین به‌روزرسانی maxUnavailable صفر و maxSurge یک است. جمله‌ی مستندات («هر دو برابر یک است») فقط برای همین اندازه‌های کوچک درست است؛‏ مقدار پیش‌فرض واقعی ۲۵٪ است.</p>
-    <p>در سرویسی با ۱۲ replica،‏ پیش‌فرض ۲۵٪ یعنی تا ۳ Pod هم‌زمان می‌توانند در دسترس نباشند و تا ۳ Pod اضافه ساخته شوند. برای سرویس‌های حساس معمولاً <code>maxUnavailable: 0</code> و <code>maxSurge: 1</code> (یا بیشتر) تنظیم می‌شود تا ظرفیت هرگز کمتر از مقدار دلخواه نشود؛‏ به قیمت منابع اضافه در طول rollout (فرایند deployment تدریجی نسخه‌ی جدید).</p>
-  </div>
-
   <h4>به‌روزکردن نسخه‌ی برنامه</h4>
   <p>فهرست Deploymentها:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get deployments
@@ -1348,11 +1355,6 @@ echo "NODE_PORT=$NODE_PORT"
 </pre></div>
   <p>Deployment دوباره از نسخه‌ی پایدار (<code>v2</code>) استفاده می‌کند؛‏ برگشت موفق بود.</p>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/d6b6e02c2a.svg" alt="برگشت در حال انجام؛ Podهای v10 با v2 جایگزین می‌شوند"></div><figcaption><b>شکل ۱۷-۱۱.</b> <span style="flex:1 1 0;min-width:0">در طول برگشت: Podهایی که image نامعتبر (<code>v10</code>) دارند کم‌کم با Podهای نسخه‌ی پایدار قبلی (<code>v2</code>) جایگزین می‌شوند. منبع: <span class="en">tutorials/kubernetes-basics/update</span></span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: چرا برگشت خودکار به‌جای اصلاح دستی؟ و چرا rollout خراب کاربران را اذیت نکرد؟</b>
-    <p>هر بار که <code>.spec.template</code> یک Deployment عوض شود،‏ یک revision جدید در تاریخچه‌ی rollout ثبت می‌شود (<code>kubectl rollout history deployments/kubernetes-bootcamp</code>). هر revision با یک ReplicaSet جدا نگه داشته می‌شود،‏ پس <code>rollout undo</code> فقط ReplicaSet قبلی را بزرگ و ReplicaSet فعلی را کوچک می‌کند؛‏ این خودش هم یک rolling update است،‏ پس در طول برگشت هم برنامه در دسترس می‌ماند.</p>
-    <p>چرا rollout خراب <code>v10</code> باعث قطعی نشد؟ چون Podهای جدید هیچ‌وقت Ready نشدند و به خاطر محدودیت <code>maxUnavailable</code>،‏ Deployment controller بیش از حد مجاز Podهای قدیمی سالم را حذف نکرد. rollout فقط «گیر کرد». بعد از <code>progressDeadlineSeconds</code> (پیش‌فرض ۶۰۰ ثانیه) هم Deployment شرط <code>Progressing=False</code> با دلیل <code>ProgressDeadlineExceeded</code> می‌گیرد؛‏ اما کوبرنتیز خودکار برنمی‌گردد و برگشت کار شما (یا ابزار CD) است.</p>
-    <p>در production معمولاً از <code>kubectl rollout undo deployments/NAME --to-revision=N</code> برای برگشت به revision مشخص استفاده می‌شود. همچنین پیش از هر rollout،‏ readiness probe مناسب (فصل ۳) باید تنظیم شده باشد؛‏ وگرنه کوبرنتیز نمی‌تواند بفهمد Pod جدید واقعاً سالم است و ممکن است یک rollout خراب (مثلاً برنامه‌ای که اجرا می‌شود ولی خطای 500 می‌دهد) را «موفق» گزارش کند.</p>
-  </div>
   <p>حالا cluster محلی را پاک‌سازی کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete deployments/kubernetes-bootcamp services/kubernetes-bootcamp
 </pre></div>
@@ -1376,6 +1378,19 @@ REVISION  CHANGE-CAUSE
 </pre></div>
     <p>دقت کنید ستون <code>CHANGE-CAUSE</code> خالی است چون annotation <code>kubernetes.io/change-cause</code> تنظیم نشده. برای پر کردنش از <code>kubectl annotate deployment/web kubernetes.io/change-cause="upgrade to 1.26"</code> استفاده کنید (flag قدیمی <code>--record</code> منسوخ شده و نباید به آن تکیه کرد).</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">maxUnavailable و maxSurge · چرا برگشت خودکار به‌جای اصلاح دستی؟ و چرا rollout خراب کاربران را اذیت نکرد؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: maxUnavailable و maxSurge</b>
+    <p>این رفتار را دو فیلد در <code>strategy.rollingUpdate</code> کنترل می‌کنند (جزئیات در فصل ۴): <code>maxUnavailable</code>،‏ حداکثر تعداد یا درصد Podهایی که می‌توانند در طول به‌روزرسانی در دسترس نباشند (پیش‌فرض ۲۵٪)؛‏ و <code>maxSurge</code>،‏ حداکثر تعداد یا درصد Podهای اضافه بر تعداد دلخواه (پیش‌فرض ۲۵٪). مقدار درصدی برای maxUnavailable به پایین و برای maxSurge به بالا گرد می‌شود؛‏ پس با ۴ replica هر دو برابر یک Pod می‌شوند. اما چون Deployment این آموزش در پایان بخش ۵ به ۲ replica رسید،‏ در همین به‌روزرسانی maxUnavailable صفر و maxSurge یک است. جمله‌ی مستندات («هر دو برابر یک است») فقط برای همین اندازه‌های کوچک درست است؛‏ مقدار پیش‌فرض واقعی ۲۵٪ است.</p>
+    <p>در سرویسی با ۱۲ replica،‏ پیش‌فرض ۲۵٪ یعنی تا ۳ Pod هم‌زمان می‌توانند در دسترس نباشند و تا ۳ Pod اضافه ساخته شوند. برای سرویس‌های حساس معمولاً <code>maxUnavailable: 0</code> و <code>maxSurge: 1</code> (یا بیشتر) تنظیم می‌شود تا ظرفیت هرگز کمتر از مقدار دلخواه نشود؛‏ به قیمت منابع اضافه در طول rollout (فرایند deployment تدریجی نسخه‌ی جدید).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا برگشت خودکار به‌جای اصلاح دستی؟ و چرا rollout خراب کاربران را اذیت نکرد؟</b>
+    <p>هر بار که <code>.spec.template</code> یک Deployment عوض شود،‏ یک revision جدید در تاریخچه‌ی rollout ثبت می‌شود (<code>kubectl rollout history deployments/kubernetes-bootcamp</code>). هر revision با یک ReplicaSet جدا نگه داشته می‌شود،‏ پس <code>rollout undo</code> فقط ReplicaSet قبلی را بزرگ و ReplicaSet فعلی را کوچک می‌کند؛‏ این خودش هم یک rolling update است،‏ پس در طول برگشت هم برنامه در دسترس می‌ماند.</p>
+    <p>چرا rollout خراب <code>v10</code> باعث قطعی نشد؟ چون Podهای جدید هیچ‌وقت Ready نشدند و به خاطر محدودیت <code>maxUnavailable</code>،‏ Deployment controller بیش از حد مجاز Podهای قدیمی سالم را حذف نکرد. rollout فقط «گیر کرد». بعد از <code>progressDeadlineSeconds</code> (پیش‌فرض ۶۰۰ ثانیه) هم Deployment شرط <code>Progressing=False</code> با دلیل <code>ProgressDeadlineExceeded</code> می‌گیرد؛‏ اما کوبرنتیز خودکار برنمی‌گردد و برگشت کار شما (یا ابزار CD) است.</p>
+    <p>در production معمولاً از <code>kubectl rollout undo deployments/NAME --to-revision=N</code> برای برگشت به revision مشخص استفاده می‌شود. همچنین پیش از هر rollout،‏ readiness probe مناسب (فصل ۳) باید تنظیم شده باشد؛‏ وگرنه کوبرنتیز نمی‌تواند بفهمد Pod جدید واقعاً سالم است و ممکن است یک rollout خراب (مثلاً برنامه‌ای که اجرا می‌شود ولی خطای 500 می‌دهد) را «موفق» گزارش کند.</p>
+  </div>
+  </details>
 <h3 id="ch17-autocomplete">تکمیل خودکار در kubectl <small>(Kubectl autocomplete)</small></h3>
 <p><code>kubectl</code> دارای autocomplete برای shellهای مختلف است که تایپ سریع‌تر دستورات و resource typeها را ممکن می‌کند.</p>
 
@@ -1403,7 +1418,10 @@ echo '[[ $commands[kubectl] ]] &amp;&amp; source &lt;(kubectl completion zsh)' &
 <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl -A
 </pre></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>autocomplete صرفاً یک راحتی تایپی نیست؛‏ در محیط production که نام Podها و Nodeها معمولاً طولانی و شامل hash است (مثل <code>nginx-7d6ff5cd77-x9k2p</code>)،‏ autocomplete از اشتباه تایپی که می‌تواند منجر به اجرای دستور روی resource اشتباه شود جلوگیری می‌کند. alias مثل <code>k</code> فقط برای کار تعاملی است؛‏ در scriptها نام کامل <code>kubectl</code> را بنویسید،‏ چون aliasهای فایل <code>~/.bashrc</code> در shell غیرتعاملی بارگذاری نمی‌شوند و مستندات conventions هم می‌گوید script نباید به state ضمنی تکیه کند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>autocomplete صرفاً یک راحتی تایپی نیست؛‏ در محیط production که نام Podها و Nodeها معمولاً طولانی و شامل hash است (مثل <code>nginx-7d6ff5cd77-x9k2p</code>)،‏ autocomplete از اشتباه تایپی که می‌تواند منجر به اجرای دستور روی resource اشتباه شود جلوگیری می‌کند. alias مثل <code>k</code> فقط برای کار تعاملی است؛‏ در scriptها نام کامل <code>kubectl</code> را بنویسید،‏ چون aliasهای فایل <code>~/.bashrc</code> در shell غیرتعاملی بارگذاری نمی‌شوند و مستندات conventions هم می‌گوید script نباید به state ضمنی تکیه کند.</p></div>
+  </details>
 
 <h3 id="ch17-context">context و پیکربندی kubectl <small>(Kubectl context and configuration)</small></h3>
 <p>تعیین این‌که <code>kubectl</code> با کدام cluster کوبرنتیز ارتباط برقرار کند و ویرایش اطلاعات پیکربندی. برای جزئیات کامل فایل config به مستند <span class="en">Authenticating Across Clusters with kubeconfig</span> مراجعه کنید.</p>
@@ -1452,8 +1470,6 @@ alias kx='f() { [ "$1" ] &amp;&amp; kubectl config use-context $1 || kubectl con
 alias kn='f() { [ "$1" ] &amp;&amp; kubectl config set-context --current --namespace $1 || kubectl config view --minify | grep namespace | cut -d" " -f6 ; } ; f'
 </pre></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>کوتاه‌نویسی <code>kx</code> و <code>kn</code> نمونه‌ای است از تعریف alias برای کار سریع با چند cluster و namespace (محدوده‌ای برای جدا کردن نام‌ها و منابع درون یک cluster). در یک تیم Platform که مهندسان روزانه بین چندین context (مثلاً <code>staging</code>،‏ <code>prod-eu</code>،‏ <code>prod-us</code>) جابه‌جا می‌شوند،‏ این aliasها ریسک اجرای اشتباه دستور روی production cluster را کاهش می‌دهند؛‏ با این‌حال بهتر است prompt shell طوری تنظیم شود که context جاری همیشه در خط فرمان نمایش داده شود (مثلاً با ابزار <span class="en">kube-ps1</span>،‏ خارج از مستندات رسمی).</p></div>
-
 <div class="lab"><b>آزمایش عملی: مدیریت چند context</b>
 <p>روی یک cluster kind یا minikube،‏ دو namespace بسازید و context جداگانه برای هرکدام تعریف کنید:</p>
 <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl create namespace team-a
@@ -1471,6 +1487,11 @@ kubectl config view --minify -o jsonpath='{..namespace}{"\n"}'
 </pre></div>
 <p>خروجی انتظاری ستون <code>CURRENT</code> برای <code>team-a</code> علامت <code>‎*‎</code> را نشان می‌دهد و namespace فعال <code>team-a</code> است.</p>
 </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>کوتاه‌نویسی <code>kx</code> و <code>kn</code> نمونه‌ای است از تعریف alias برای کار سریع با چند cluster و namespace (محدوده‌ای برای جدا کردن نام‌ها و منابع درون یک cluster). در یک تیم Platform که مهندسان روزانه بین چندین context (مثلاً <code>staging</code>،‏ <code>prod-eu</code>،‏ <code>prod-us</code>) جابه‌جا می‌شوند،‏ این aliasها ریسک اجرای اشتباه دستور روی production cluster را کاهش می‌دهند؛‏ با این‌حال بهتر است prompt shell طوری تنظیم شود که context جاری همیشه در خط فرمان نمایش داده شود (مثلاً با ابزار <span class="en">kube-ps1</span>،‏ خارج از مستندات رسمی).</p></div>
+  </details>
 
 <h3 id="ch17-apply">دستور kubectl apply <small>(Kubectl apply)</small></h3>
 <p><code>apply</code> اپلیکیشن‌ها را از طریق فایل‌هایی که resourceهای کوبرنتیز را تعریف می‌کنند مدیریت می‌کند. با اجرای <code>kubectl apply</code> این دستور resourceها را در cluster ایجاد و به‌روزرسانی می‌کند. این روش پیشنهادی برای مدیریت اپلیکیشن‌های کوبرنتیز در production است (مطابق <span class="en">Kubectl Book</span>).</p>
@@ -1531,7 +1552,10 @@ data:
 EOF
 </pre></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>تفاوت <code>kubectl create</code> و <code>kubectl apply</code>: <code>create</code> امری (imperative) است و اگر resource از قبل وجود داشته باشد خطا می‌دهد؛‏ <code>apply</code> اعلانی (declarative) است: با three-way merge بین manifest جدید،‏ آخرین manifest اعمال‌شده (که در annotation به نام <code>kubectl.kubernetes.io/last-applied-configuration</code> ذخیره می‌شود) و state فعلی object در cluster،‏ فقط تغییرات لازم را اعمال می‌کند. مستندات <code>apply</code> را روش پیشنهادی برای production می‌داند،‏ چون idempotent (اجرای چندباره‌اش همان نتیجه‌ی یک بار را دارد) است و می‌توان آن را بارها در CI/CD اجرا کرد. با <code>--server-side</code> همین کار را API server با field management انجام می‌دهد (فصل ۸).</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>تفاوت <code>kubectl create</code> و <code>kubectl apply</code>: <code>create</code> امری (imperative) است و اگر resource از قبل وجود داشته باشد خطا می‌دهد؛‏ <code>apply</code> اعلانی (declarative) است: با three-way merge بین manifest جدید،‏ آخرین manifest اعمال‌شده (که در annotation به نام <code>kubectl.kubernetes.io/last-applied-configuration</code> ذخیره می‌شود) و state فعلی object در cluster،‏ فقط تغییرات لازم را اعمال می‌کند. مستندات <code>apply</code> را روش پیشنهادی برای production می‌داند،‏ چون idempotent (اجرای چندباره‌اش همان نتیجه‌ی یک بار را دارد) است و می‌توان آن را بارها در CI/CD اجرا کرد. با <code>--server-side</code> همین کار را API server با field management انجام می‌دهد (فصل ۸).</p></div>
+  </details>
 
 <h3 id="ch17-viewing">دیدن و پیدا کردن resourceها <small>(Viewing and finding resources)</small></h3>
 <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh"># Get commands with basic output
@@ -1625,14 +1649,17 @@ for pod in $(kubectl get po --output=jsonpath={.items..metadata.name}); do echo 
 kubectl get deployment nginx-deployment --subresource=status
 </pre></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>این بخش پرکاربردترین قسمت cheat sheet برای debug روزمره است. نکات کلیدی: <code>--sort-by</code> از JSONPath برای مرتب‌سازی خروجی <code>get</code> استفاده می‌کند؛‏ <code>--selector</code> (یا <code>-l</code>) بر پایه‌ی label filter می‌کند در حالی‌که <code>--field-selector</code> بر پایه‌ی فیلدهای object (مثل <code>status.phase</code>) فیلتر می‌کند و فقط فیلدهایی را می‌پذیرد که آن نوع resource پشتیبانی می‌کند (همه‌ی resourceها <code>metadata.name</code> و <code>metadata.namespace</code> را دارند)؛‏ <code>--subresource</code> امکان خواندن/نوشتن مستقیم subresource (<code>status</code>،‏ <code>scale</code>) بدون دست‌کاری کل object را می‌دهد.</p></div>
-
 <div class="lab"><b>آزمایش عملی: پیدا کردن Podهای مشکل‌دار با field-selector</b>
 <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods --all-namespaces --field-selector=status.phase=Failed
 kubectl get pods --field-selector=status.phase!=Running,status.phase!=Succeeded
 </pre></div>
 <p>این دو دستور برای پیدا کردن سریع Podهای دچار مشکل در سراسر cluster،‏ بدون نیاز به grep روی خروجی،‏ بسیار مفیدند و در scriptهای health-check در production رایج‌اند. اما دقت کنید Pod در CrashLoopBackOff فاز <code>Running</code> دارد و با این فیلتر دیده نمی‌شود؛‏ برای آن باید ستون STATUS یا <code>restartCount</code> را بررسی کرد.</p>
 </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>این بخش پرکاربردترین قسمت cheat sheet برای debug روزمره است. نکات کلیدی: <code>--sort-by</code> از JSONPath برای مرتب‌سازی خروجی <code>get</code> استفاده می‌کند؛‏ <code>--selector</code> (یا <code>-l</code>) بر پایه‌ی label filter می‌کند در حالی‌که <code>--field-selector</code> بر پایه‌ی فیلدهای object (مثل <code>status.phase</code>) فیلتر می‌کند و فقط فیلدهایی را می‌پذیرد که آن نوع resource پشتیبانی می‌کند (همه‌ی resourceها <code>metadata.name</code> و <code>metadata.namespace</code> را دارند)؛‏ <code>--subresource</code> امکان خواندن/نوشتن مستقیم subresource (<code>status</code>،‏ <code>scale</code>) بدون دست‌کاری کل object را می‌دهد.</p></div>
+  </details>
 
 <h3 id="ch17-updating">به‌روزرسانی resourceها <small>(Updating resources)</small></h3>
 <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl set image deployment/frontend www=image:v2               # Rolling update "www" containers of "frontend" deployment, updating the image
@@ -1681,7 +1708,10 @@ kubectl patch sa default --type='json' -p='[{"op": "add", "path": "/secrets/1", 
 kubectl patch deployment nginx-deployment --subresource='scale' --type='merge' -p '{"spec":{"replicas":2}}'
 </pre></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>سه نوع patch در کوبرنتیز وجود دارد: <code>strategic</code> (پیش‌فرض،‏ فقط برای typeهای built-in و آگاه از merge keyها مثل <code>name</code> در لیست containers)،‏ <code>merge</code> (RFC 7386،‏ جایگزینی ساده‌ی فیلدها/آرایه‌ها) و <code>json</code> (RFC 6902،‏ عملیات دقیق add/remove/replace با path). برای CRDها معمولاً باید از <code>merge</code> یا <code>json</code> استفاده کرد چون strategic merge برای آن‌ها تعریف نشده است.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>سه نوع patch در کوبرنتیز وجود دارد: <code>strategic</code> (پیش‌فرض،‏ فقط برای typeهای built-in و آگاه از merge keyها مثل <code>name</code> در لیست containers)،‏ <code>merge</code> (RFC 7386،‏ جایگزینی ساده‌ی فیلدها/آرایه‌ها) و <code>json</code> (RFC 6902،‏ عملیات دقیق add/remove/replace با path). برای CRDها معمولاً باید از <code>merge</code> یا <code>json</code> استفاده کرد چون strategic merge برای آن‌ها تعریف نشده است.</p></div>
+  </details>
 
 <h3 id="ch17-editing">ویرایش resourceها <small>(Editing resources)</small></h3>
 <p>ویرایش هر API resource در editor دلخواه شما.</p>
@@ -1733,7 +1763,10 @@ kubectl top pod POD_NAME --containers               # Show metrics for a given p
 kubectl top pod POD_NAME --sort-by=cpu              # Show metrics for a given pod and sort it by 'cpu' or 'memory'
 </pre></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p><code>kubectl debug</code> برای troubleshooting بدون تغییر دادن Pod اصلی طراحی شده: یا یک ephemeral container به Pod در حال اجرا اضافه می‌کند (وقتی image اصلی هیچ ابزار debugی مثل <code>curl</code> یا <code>sh</code> ندارد،‏ مثل imageهای distroless) یا روی همان Node یک Pod برای debug با دسترسی به namespaceهای لینوکسی host می‌سازد (<code>node/my-node</code>). این دستور جایگزین بهتری برای <code>kubectl exec</code> در سناریوهایی است که container اصلی shell ندارد یا نباید تغییر کند (مرتبط با فصل ۱۱).</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p><code>kubectl debug</code> برای troubleshooting بدون تغییر دادن Pod اصلی طراحی شده: یا یک ephemeral container به Pod در حال اجرا اضافه می‌کند (وقتی image اصلی هیچ ابزار debugی مثل <code>curl</code> یا <code>sh</code> ندارد،‏ مثل imageهای distroless) یا روی همان Node یک Pod برای debug با دسترسی به namespaceهای لینوکسی host می‌سازد (<code>node/my-node</code>). این دستور جایگزین بهتری برای <code>kubectl exec</code> در سناریوهایی است که container اصلی shell ندارد یا نباید تغییر کند (مرتبط با فصل ۱۱).</p></div>
+  </details>
 
 <h3 id="ch17-copying">کپی فایل و پوشه به container و از آن <small>(Copying files and directories to and from containers)</small></h3>
 <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl cp /tmp/foo_dir my-pod:/tmp/bar_dir            # Copy /tmp/foo_dir local directory to /tmp/bar_dir in a remote pod in the current namespace
@@ -1756,7 +1789,10 @@ kubectl port-forward svc/my-service 5000:my-service-port  # listen on local port
 kubectl port-forward deploy/my-deployment 5000:6000       # listen on local port 5000 and forward to port 6000 on a Pod created by &lt;my-deployment&gt;
 kubectl exec deploy/my-deployment -- ls                   # run command in first Pod and first container in Deployment (single- or multi-container cases)
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی</b><p>وقتی <code>kubectl logs</code>،‏ <code>exec</code> یا <code>port-forward</code> را روی <code>deploy/name</code> اجرا می‌کنید،‏ kubectl با selector همان Deployment،‏ Podها را می‌گیرد،‏ مرتبشان می‌کند و یکی را انتخاب می‌کند؛‏ اولویت با Podی است که schedule شده،‏ در فاز Running است و Ready است. برای <code>logs</code> اگر چند Pod باشد،‏ روی stderr پیامی مثل <code>Found 3 pods, using pod/...</code> چاپ می‌شود و با <code>--all-pods</code> می‌توان logهای همه را گرفت. این برای بررسی سریع کافی است اما اگر replicaهای متعدد رفتار متفاوتی دارند (مثلاً یکی OOM می‌شود) باید مستقیماً روی نام آن Pod خاص کار کنید،‏ نه روی Deployment.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>وقتی <code>kubectl logs</code>،‏ <code>exec</code> یا <code>port-forward</code> را روی <code>deploy/name</code> اجرا می‌کنید،‏ kubectl با selector همان Deployment،‏ Podها را می‌گیرد،‏ مرتبشان می‌کند و یکی را انتخاب می‌کند؛‏ اولویت با Podی است که schedule شده،‏ در فاز Running است و Ready است. برای <code>logs</code> اگر چند Pod باشد،‏ روی stderr پیامی مثل <code>Found 3 pods, using pod/...</code> چاپ می‌شود و با <code>--all-pods</code> می‌توان logهای همه را گرفت. این برای بررسی سریع کافی است اما اگر replicaهای متعدد رفتار متفاوتی دارند (مثلاً یکی OOM می‌شود) باید مستقیماً روی نام آن Pod خاص کار کنید،‏ نه روی Deployment.</p></div>
+  </details>
 
 <h3 id="ch17-nodes-cluster">کار با Nodeها و cluster <small>(Interacting with Nodes and cluster)</small></h3>
 <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl cordon my-node                                                # Mark my-node as unschedulable
@@ -1830,7 +1866,10 @@ kubectl get pods -A -o=custom-columns='DATA:metadata.*'
 </pre></div>
 <p class="next">مثال‌های بیشتر در <a href="https://kubernetes.io/docs/reference/kubectl/#custom-columns">مرجع kubectl</a>.</p>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>تفاوت کلیدی بین این فرمت‌های خروجی: <code>-o name</code> و <code>-o wide</code> برای چشم انسان و اسکریپت‌های ساده‌اند؛‏ <code>-o json</code>/<code>-o yaml</code> کل object را می‌دهند و مناسب pipe کردن به <code>jq</code>/<code>yq</code> هستند؛‏ <code>custom-columns</code> و <code>jsonpath</code> برای زمانی هستند که فقط چند فیلد خاص لازم دارید و نمی‌خواهید overhead پردازش کل JSON را متحمل شوید — این دو معمولاً در اسکریپت‌های نظارتی (monitoring) و CI بیشترین کاربرد را دارند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>تفاوت کلیدی بین این فرمت‌های خروجی: <code>-o name</code> و <code>-o wide</code> برای چشم انسان و اسکریپت‌های ساده‌اند؛‏ <code>-o json</code>/<code>-o yaml</code> کل object را می‌دهند و مناسب pipe کردن به <code>jq</code>/<code>yq</code> هستند؛‏ <code>custom-columns</code> و <code>jsonpath</code> برای زمانی هستند که فقط چند فیلد خاص لازم دارید و نمی‌خواهید overhead پردازش کل JSON را متحمل شوید — این دو معمولاً در اسکریپت‌های نظارتی (monitoring) و CI بیشترین کاربرد را دارند.</p></div>
+  </details>
 
 <h3 id="ch17-verbosity">سطح جزئیات خروجی و debug در kubectl <small>(Kubectl output verbosity and debugging)</small></h3>
 <p>verbosity در kubectl با flagهای <code>-v</code> یا <code>--v</code> به‌همراه یک عدد صحیح که سطح log level را نشان می‌دهد کنترل می‌شود. قراردادهای (conventions) logging در کوبرنتیز و سطوح مربوطه در مستندات جامعه توضیح داده شده‌اند.</p>
@@ -1847,9 +1886,12 @@ kubectl get pods -A -o=custom-columns='DATA:metadata.*'
 <tr><td><code>--v=9</code></td><td>نمایش محتوای HTTP request بدون truncate شدن محتوا.</td></tr>
 </tbody></table></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>در یک incident production،‏ اجرای یک دستور مشکوک با <code>--v=6</code> یا بالاتر (مثلاً <code>kubectl get pods -n prod --v=8</code>) دقیقاً نشان می‌دهد چه URL و چه پارامترهایی به kube-apiserver ارسال می‌شود؛‏ این برای عیب‌یابی مشکلات RBAC (خطای <code>403 Forbidden</code>) یا رفتار غیرمنتظره‌ی <code>--selector</code> و <code>--field-selector</code> بسیار کاربردی است؛‏ این دو در URL به شکل query parameterهای <code>labelSelector</code> و <code>fieldSelector</code> دیده می‌شوند،‏ چون فیلتر را خود API server انجام می‌دهد. از سطح <code>--v=7</code> headerها هم چاپ می‌شوند؛‏ client-go مقدار header مربوط به Authorization را به شکل <code>Bearer &lt;masked&gt;</code> نشان می‌دهد،‏ اما در <code>--v=8</code> و <code>--v=9</code> بدنه‌ی پاسخ هم چاپ می‌شود و مثلاً داده‌ی یک Secret در خروجی می‌آید. پس این خروجی را بی‌احتیاط در تیکت یا log عمومی share نکنید.</p></div>
-
 <p class="next">مطالعه‌ی بیشتر: <a href="https://kubernetes.io/docs/concepts/overview/kubectl/">kubectl overview</a> ·‏ <a href="https://kubernetes.io/docs/reference/kubectl/kubectl/">kubectl options</a> ·‏ <a href="https://kubernetes.io/docs/reference/kubectl/kuberc">kuberc options</a> ·‏ <a href="https://kubernetes.io/docs/reference/kubectl/conventions/">kubectl Usage Conventions</a>.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>در یک incident production،‏ اجرای یک دستور مشکوک با <code>--v=6</code> یا بالاتر (مثلاً <code>kubectl get pods -n prod --v=8</code>) دقیقاً نشان می‌دهد چه URL و چه پارامترهایی به kube-apiserver ارسال می‌شود؛‏ این برای عیب‌یابی مشکلات RBAC (خطای <code>403 Forbidden</code>) یا رفتار غیرمنتظره‌ی <code>--selector</code> و <code>--field-selector</code> بسیار کاربردی است؛‏ این دو در URL به شکل query parameterهای <code>labelSelector</code> و <code>fieldSelector</code> دیده می‌شوند،‏ چون فیلتر را خود API server انجام می‌دهد. از سطح <code>--v=7</code> headerها هم چاپ می‌شوند؛‏ client-go مقدار header مربوط به Authorization را به شکل <code>Bearer &lt;masked&gt;</code> نشان می‌دهد،‏ اما در <code>--v=8</code> و <code>--v=9</code> بدنه‌ی پاسخ هم چاپ می‌شود و مثلاً داده‌ی یک Secret در خروجی می‌آید. پس این خروجی را بی‌احتیاط در تیکت یا log عمومی share نکنید.</p></div>
+  </details>
 <h3 id="ch17-conventions">قراردادهای استفاده از kubectl <small>(kubectl Usage Conventions)</small></h3>
 <p>توصیه‌های استفاده‌ی مرسوم از <code>kubectl</code>،‏ به‌خصوص وقتی در اسکریپت‌های قابل‌استفاده‌ی مجدد (reusable scripts) به‌کار می‌رود.</p>
 
@@ -1961,8 +2003,6 @@ kubectl get pods -A -o=custom-columns='DATA:metadata.*'
 <tr><td><code>‎\‎</code></td><td>escape کاراکتر پایان‌دهنده</td><td><code>{.items[0].metadata.labels.kubernetes\.io/hostname}</code></td><td><code>‎127.0.0.1‎</code></td></tr>
 </tbody></table></div>
 
-<div class="deep"><b>توضیح تکمیلی</b><p>نکته‌ی مهم درباره‌ی <code>‎..‎</code> (recursive descent): این عملگر تمام فیلدهایی به نام <code>name</code> را در هر عمق ساختار جستجو می‌کند،‏ بدون آن‌که نیاز باشد مسیر کامل را بدانید — به همین دلیل در مثال بالا هم <code>metadata.name</code> Podها و هم <code>name</code> کاربران (users) را برمی‌گرداند. این می‌تواند غیرمنتظره باشد اگر انتظار فقط یک زیرمجموعه‌ی خاص را دارید؛‏ در چنین حالتی مسیر دقیق (<code>.items[*].metadata.name</code>) امن‌تر است.</p></div>
-
 <h4 id="ch17-jp-usage">استفاده از عبارت‌های JSONPath با kubectl <small>(Using JSONPath expressions with kubectl)</small></h4>
 <p>مثال‌هایی از استفاده از <code>kubectl</code> با عبارات JSONPath:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -o json
@@ -2008,6 +2048,11 @@ kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"="}{.spec.conta
 </pre></div>
 <p>خروجی انتظاری برای هر سه دستور یک ستون یا جدول ساده‌ی متنی است،‏ مناسب برای pipe کردن به <code>awk</code>/<code>sort</code>/<code>column -t</code> در یک اسکریپت health-check یا capacity-report روزانه.</p>
 </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>نکته‌ی مهم درباره‌ی <code>‎..‎</code> (recursive descent): این عملگر تمام فیلدهایی به نام <code>name</code> را در هر عمق ساختار جستجو می‌کند،‏ بدون آن‌که نیاز باشد مسیر کامل را بدانید — به همین دلیل در مثال بالا هم <code>metadata.name</code> Podها و هم <code>name</code> کاربران (users) را برمی‌گرداند. این می‌تواند غیرمنتظره باشد اگر انتظار فقط یک زیرمجموعه‌ی خاص را دارید؛‏ در چنین حالتی مسیر دقیق (<code>.items[*].metadata.name</code>) امن‌تر است.</p></div>
+  </details>
 <h3 id="ch17-glossary">واژه‌نامه‌ی کامل کوبرنتیز <small>(Glossary)</small></h3>
 <p>در ادامه،‏ تمام اصطلاحات رسمی <a href="https://kubernetes.io/docs/reference/glossary/">Glossary کوبرنتیز</a> به‌صورت موضوعی گروه‌بندی شده‌اند. هر ردیف جدول معادل یک صفحه‌ی جداگانه در Glossary رسمی است و توضیح آن برگرفته از تعریف <code>short_description</code> و بدنه‌ی آن صفحه است. برای اصطلاحاتی که در فصل‌های قبلی به‌تفصیل بررسی شده‌اند،‏ ارجاع به فصل مربوطه آمده است.</p>
 
@@ -2209,8 +2254,8 @@ kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"="}{.spec.conta
 <tr><td>Upstream (disambiguation)</td><td>می‌تواند به کوبرنتیز هسته یا مخزن منبعی که یک مخزن از آن fork شده اشاره داشته باشد. در جامعه‌ی کوبرنتیز،‏ «upstream» معمولاً به معنای codebase هسته‌ی کوبرنتیز است که اکوسیستم گسترده‌تر،‏ کد دیگر یا ابزارهای شخص‌ثالث به آن متکی‌اند؛‏ در GitHub یا git،‏ قرارداد این است که به مخزن منبع «upstream» و به مخزن fork‌شده «downstream» گفته می‌شود.</td></tr>
 <tr><td>Downstream (disambiguation)</td><td>می‌تواند به کدی در اکوسیستم کوبرنتیز اشاره داشته باشد که به codebase هسته‌ی کوبرنتیز یا یک مخزن fork‌شده متکی است. در جامعه‌ی کوبرنتیز،‏ «downstream» معمولاً به اکوسیستم،‏ کد یا ابزارهای شخص‌ثالثی اشاره دارد که به codebase هسته متکی‌اند؛‏ در GitHub یا git،‏ قرارداد این است که به یک مخزن fork‌شده «downstream» گفته می‌شود،‏ در حالی‌که مخزن منبع «upstream» تلقی می‌شود.</td></tr>
 </tbody></table></div>
-<div id="ch17-ex1" class="ex">
-<div class="ex-h">تمرین‌های فصل ۱۷ <small>۱۴ تمرین</small></div>
+<details id="ch17-ex1" class="ex">
+<summary class="ex-h">تمرین‌های فصل ۱۷ <small>۱۴ تمرین</small></summary>
 <ol>
 
 <li><span class="lvl l1">مفهومی</span>تفاوت <code>kubectl create</code> و <code>kubectl apply</code> چیست و چرا مستندات <code>apply</code> را برای مدیریت اپلیکیشن در production توصیه می‌کنند؟
@@ -2324,10 +2369,10 @@ kubectl rollout status deployment/demo
 <p><b>نکته‌ی امتیازآور:</b> در script،‏ context و namespace را هم صریح بدهید (<code>--context</code> و <code>-n</code>) و به خروجی جدولی پیش‌فرض یا alias تکیه نکنید؛‏ ستون‌های آن برای انسان است و ممکن است در نسخه‌های بعدی تغییر کند.</p></details></li>
 
 </ol>
-</div>
+</details>
 
-  <div id="ch17-ex2" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۷ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch17-ex2" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۷ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>kubectl از کجا می‌فهمد به کدام cluster و با چه هویتی وصل شود؟
         <details class="ans"><summary>پاسخ</summary>
@@ -2390,7 +2435,7 @@ kubectl rollout status deployment/demo
           <p><b>نکته‌ی امتیازآور:</b> admission webhookها هم در dry run صدا زده می‌شوند؛‏ برای همین در <code>admissionregistration.k8s.io/v1</code> فیلد <code>sideEffects</code> فقط <code>None</code> یا <code>NoneOnDryRun</code> را می‌پذیرد و webhookی که side effect دارد باید فیلد <code>dryRun</code> در درخواست را بررسی کند (فصل ۱۵).</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch17-recap">
     <div class="recap-h">خلاصه‌ی فصل ۱۷ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

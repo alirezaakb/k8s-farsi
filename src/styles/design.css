@@ -301,3 +301,42 @@ svg.foot-word{width:min(100%,360px);margin:8px 0 0;fill:var(--ground)}
 
 /* ---- 14. light mode: the second ink on the teal field is a pale tint, never black ------------ */
 .cover p.lead{color:var(--field-ink)}
+
+/* ---- 15. layered reading: supplementary notes and exercises are folded ----------------------- */
+details.more{margin:28px 0;background:var(--surface);border-inline-start:5px solid var(--ink-2)}
+details.more>summary,details.ex>summary.ex-h{cursor:pointer;list-style:none}
+details.more>summary::-webkit-details-marker,details.ex>summary.ex-h::-webkit-details-marker{display:none}
+details.more>summary{display:flex;align-items:center;gap:10px;padding:14px 20px;font-weight:800;font-size:var(--step-body)}
+details.more>summary small{font-weight:500;color:var(--ink-2)}
+details.more>summary::after,details.ex>summary.ex-h::after{content:"+";margin-inline-start:auto;font-size:1.5rem;line-height:1;font-weight:500}
+details.more[open]>summary::after,details.ex[open]>summary.ex-h::after{content:"\2212"}
+details.more>summary::after{color:var(--accent-ink)}
+details.more:not([open])>summary:hover{background:var(--accent-soft)}
+details.more[open]{padding-bottom:12px}
+details.more .deep{margin:0 12px 12px;background:var(--ground)}
+details.ex>summary.ex-h{display:flex;justify-content:flex-start;align-items:center;gap:12px;min-height:48px}
+details.ex:not([open])>summary.ex-h:hover{background:var(--accent);color:var(--on-accent)}
+details.ex:not([open]){margin-bottom:8px}
+
+/* ---- 16. progress: read marks, minutes, continue where you stopped ---------------------------- */
+.outline li{display:flex;align-items:flex-start;gap:8px;margin:0}
+.outline li a{flex:1;min-width:0}
+.outline li a small{display:block;color:var(--ink-2);font-size:var(--step-small)}
+.chk{flex:none;width:20px;height:20px;margin-top:8px;padding:0;border:0;border-radius:0;background:var(--sunk);cursor:pointer;position:relative}
+.chk:hover{background:var(--line)}
+.chk[aria-pressed="true"]{background:var(--accent)}
+.chk[aria-pressed="true"]::after{content:"\2713";position:absolute;inset:0;display:grid;place-items:center;color:var(--on-accent);font-size:.8rem;font-weight:900;line-height:1}
+.outline li.read a{color:var(--ink-2)}
+.outline-sum{margin:0 0 12px;color:var(--ink-2);font-size:var(--step-small);line-height:1.7}
+.toc a .prog{margin-inline-start:auto;font-style:normal;font-size:var(--step-small);color:var(--accent-ink);font-weight:800}
+.toc a{grid-template-columns:2.2em 1fr auto}
+.toc-mobile .chk{margin-top:10px}
+.toc-mobile ol{list-style:none;padding-inline-start:0}
+.toc-mobile li{display:flex;gap:8px;align-items:flex-start}
+.toc-mobile .outline-sum{margin:10px 0}
+.resume{margin:56px calc(var(--margin) * -1) 0;padding:12px var(--margin);background:var(--accent-soft)}
+.resume a{font-weight:800;color:var(--accent-ink)}
+.resume + #main .cover{margin-top:0}
+details.more>summary .m-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;color:var(--ink-2);font-size:var(--step-small)}
+.toc-mobile li a{flex:1;min-width:0}
+.toc-mobile li a small{display:block;color:var(--ink-2);font-size:var(--step-small)}

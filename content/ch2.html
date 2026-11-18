@@ -277,6 +277,8 @@ bye
   <p>معمولاً می‌توانید اجازه دهید cluster شما container runtime پیش‌فرض را برای یک Pod انتخاب کند. اگر لازم است بیش از یک container runtime در cluster داشته باشید،‏ می‌توانید <a href="#ch2-runtimeclass">RuntimeClass</a> را برای Pod مشخص کنید تا مطمئن شوید کوبرنتیز آن containerها را با یک container runtime خاص اجرا می‌کند.</p>
   <p>همچنین می‌توانید از RuntimeClass (شیئی که تعیین می‌کند Pod با کدام پیکربندی container runtime اجرا شود) استفاده کنید تا Podهای مختلف را با همان container runtime ولی با تنظیمات متفاوت اجرا کنید.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">immutable بودن در عمل یعنی چه؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: immutable بودن در عمل یعنی چه؟</b>
     <p>فرض کنید در یک container در حال اجرا با <code>kubectl exec</code> یک فایل تنظیمات nginx را ویرایش می‌کنید و مشکل حل می‌شود. این تغییر فقط در لایه‌ی writable همان container وجود دارد. اولین restart (مثلاً به خاطر شکست liveness probe)،‏ اولین rescheduling به Node دیگر یا اولین rollout (فرایند deployment تدریجی نسخه‌ی جدید)،‏ آن را پاک می‌کند و مشکل برمی‌گردد. به همین دلیل کوبرنتیز کل مدل خود را روی «image جدید + ساخت دوباره‌ی container» بنا کرده است: Deployment با تغییر <code>image</code> در Pod template (الگویی که controller،‏ Podها را از روی آن می‌سازد) یک rolling update (جایگزینی تدریجی Podهای قدیمی با جدید،‏ بدون قطعی) انجام می‌دهد و Podهای جدید از image جدید ساخته می‌شوند (فصل ۴).</p>
     <div class="tbl"><table><thead><tr><th>روش</th><th>نتیجه پس از restart</th><th>قابل rollback؟</th><th>قابل audit؟</th></tr></thead><tbody>
@@ -285,6 +287,7 @@ bye
       <tr><td>تنظیمات در ConfigMap (فصل ۶) + rollout</td><td>ماندگار</td><td>بله</td><td>بله</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch2-images">Images</h3>
   <p>یک container image داده‌ی binary است که یک برنامه و همه‌ی dependencyهای نرم‌افزاری آن را در بر می‌گیرد. Container imageها بسته‌های نرم‌افزاری اجرایی‌ای هستند که می‌توانند به صورت مستقل (standalone) اجرا شوند و فرض‌های بسیار مشخصی درباره‌ی محیط runtime خود دارند.</p>
@@ -308,6 +311,8 @@ bye
     <tr><td><code>registry.k8s.io/pause:3.5@sha256:1ff6c18fbef2045af6b9c16bf034cc421a29027b800e4f9b68ae9b1cb3e9ae07</code></td><td>نام image با tag و digest. برای pull کردن فقط digest استفاده می‌شود.</td></tr>
   </tbody></table></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">آناتومی کامل یک image reference</span></summary>
   <div class="deep"><b>توضیح تکمیلی: آناتومی کامل یک image reference</b>
     <p>یک image reference کامل را می‌توان این‌طور تجزیه کرد:</p>
       <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="100%" style="max-width:760px;height:auto" role="img" aria-label="اجزای یک image reference: registry، repository، tag و digest"><defs><marker id="f5ir-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f5ir-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f5ir-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f5ir-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f5ir-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><text x="380" y="26" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#4a5672" text-anchor="middle" direction="rtl">اجزای یک image reference کامل، از چپ به راست</text><rect x="20" y="44" width="250" height="46" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="145.0" y="73" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">registry.example.com:5000</text><line x1="145.0" y1="92" x2="145.0" y2="118" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f5ir-a326ce5)"></line><rect x="276" y="44" width="196" height="46" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="374.0" y="73" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">/team-a/payments-api</text><line x1="374.0" y1="92" x2="374.0" y2="118" stroke="#12806f" stroke-width="1.6" marker-end="url(#f5ir-a12806f)"></line><rect x="478" y="44" width="96" height="46" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="526.0" y="73" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="ltr">:v2.4.1</text><line x1="526.0" y1="92" x2="526.0" y2="118" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f5ir-ab26b00)"></line><rect x="580" y="44" width="160" height="46" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="660.0" y="73" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">@sha256:9f86d0…</text><line x1="660.0" y1="92" x2="660.0" y2="118" stroke="#b83227" stroke-width="1.6" marker-end="url(#f5ir-ab83227)"></line><rect x="20" y="120" width="250" height="118" rx="10" fill="#fff" stroke="#326ce5" stroke-width="1.4"></rect><text x="145.0" y="146" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">registry</text><text x="145.0" y="172" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر نباشد: docker.io</text><text x="145.0" y="194" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">نشانه‌ی host: نقطه، port</text><text x="145.0" y="216" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">یا localhost در بخش اول</text><rect x="276" y="120" width="196" height="118" rx="10" fill="#fff" stroke="#12806f" stroke-width="1.4"></rect><text x="374.0" y="146" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">repository</text><text x="374.0" y="172" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">نام تک‌بخشی در Docker Hub</text><text x="374.0" y="194" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">این پیشوند را می‌گیرد</text><text x="374.0" y="216" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">library/</text><rect x="478" y="120" width="96" height="118" rx="10" fill="#fff" stroke="#b26b00" stroke-width="1.4"></rect><text x="526.0" y="146" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#b26b00" text-anchor="middle" direction="ltr">tag</text><text x="526.0" y="172" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر نباشد:</text><text x="526.0" y="194" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">latest</text><text x="526.0" y="216" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">جابه‌جاشدنی</text><rect x="580" y="120" width="160" height="118" rx="10" fill="#fff" stroke="#b83227" stroke-width="1.4"></rect><text x="660.0" y="146" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">digest</text><text x="660.0" y="172" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">تغییرناپذیر</text><text x="660.0" y="194" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر باشد، pull فقط</text><text x="660.0" y="216" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">با digest انجام می‌شود</text><text x="380" y="272" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">نمونه‌ی کوتاه: busybox یعنی docker.io/library/busybox:latest</text></svg></div><figcaption><b>شکل ۲-۳.</b> <span style="flex:1 1 0;min-width:0">اجزای یک image reference و مقدارهای پیش‌فرض هر جزء. اگر هم tag و هم digest بیاید،‏ tag فقط برای خوانایی است و pull با digest انجام می‌شود.</span></figcaption></figure>
@@ -316,6 +321,7 @@ bye
       <li>وقتی هم tag و هم digest داده شود،‏ tag فقط نقش «مستندسازی برای انسان» دارد و pull بر اساس digest انجام می‌شود. این الگو در production بسیار مفید است: <code>payments-api:v2.4.1@sha256:...</code> هم خواناست و هم غیرقابل تغییر.</li>
     </ul>
   </div>
+  </details>
 
   <h3 id="ch2-updating-images">به‌روزرسانی imageها <small>(Updating images)</small></h3>
   <p>وقتی برای نخستین بار یک Deployment،‏ StatefulSet،‏ Pod یا object دیگری که یک PodTemplate دارد می‌سازید و pull policy (قاعده‌ای که تعیین می‌کند kubelet کِی image را از registry بگیرد) را صریحاً مشخص نکرده‌اید،‏ به‌طور پیش‌فرض pull policy همه‌ی containerهای آن Pod روی <code>IfNotPresent</code> تنظیم می‌شود. این policy باعث می‌شود kubelet اگر image از قبل وجود داشته باشد،‏ pull را انجام ندهد.</p>
@@ -334,19 +340,6 @@ bye
   <p>برای اینکه مطمئن شوید Pod همیشه از همان نسخه‌ی container image استفاده می‌کند،‏ می‌توانید digest آن image را مشخص کنید؛‏ <code>&lt;image-name&gt;:&lt;tag&gt;</code> را با <code>&lt;image-name&gt;@&lt;digest&gt;</code> جایگزین کنید (برای مثال <code>image@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2</code>).</p>
   <p>وقتی از image tag استفاده می‌کنید،‏ اگر registry کدی را که آن tag نمایندگی می‌کند تغییر دهد،‏ ممکن است با ترکیبی از Podهایی روبه‌رو شوید که کد قدیم و جدید را اجرا می‌کنند. یک image digest به‌طور یکتا یک نسخه‌ی مشخص از image را شناسایی می‌کند،‏ پس کوبرنتیز هر بار که containerی را با آن نام image و digest start می‌کند همان کد را اجرا می‌کند. مشخص کردن image با digest کدی را که اجرا می‌کنید pin می‌کند تا تغییری در registry نتواند به آن ترکیب نسخه‌ها منجر شود.</p>
   <p>admission controllerهای third-party وجود دارند که Podها (و PodTemplateها) را هنگام ایجاد mutate می‌کنند،‏ به طوری که workload (برنامه‌ای که روی cluster اجرا می‌شود) در حال اجرا بر اساس image digest تعریف شود نه tag. این کار زمانی مفید است که بخواهید مطمئن شوید کل workload شما،‏ صرف‌نظر از هر تغییری که در tagهای registry رخ دهد،‏ همان کد را اجرا می‌کند.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: چرا tag قابل‌جابه‌جایی خطرناک است؟ (سناریوی ترکیب نسخه‌ها)</b>
-    <p>یک Deployment با ۶ replica و image <code>shop/api:1.8</code> و <code>imagePullPolicy: IfNotPresent</code> دارید. Node A و B این image را دو هفته پیش pull کرده‌اند. امروز تیم CI به اشتباه یک build جدید را دوباره با همان tag <code>‎1.8‎</code> push می‌کند. فردا Node C اضافه می‌شود (مثلاً توسط Node autoscaling) و Podی روی آن schedule می‌شود. Node C image را pull می‌کند و محتوای <i>جدید</i> را می‌گیرد،‏ در حالی که A و B همچنان نسخه‌ی قدیم cache‌شده را اجرا می‌کنند. نتیجه: دو نسخه‌ی متفاوت کد با یک نام image.‏ digest این مسئله را ریشه‌کن می‌کند،‏ چون digest یعنی hash محتوا.</p>
-    <p>برای دیدن digest واقعی اجراشده روی هر Pod:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l app=api -o custom-columns='POD:.metadata.name,NODE:.spec.nodeName,IMAGEID:.status.containerStatuses[0].imageID'
-</pre></div>
-    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">POD                   NODE     IMAGEID
-api-7c9d8f5b6-2kq9x   node-a   docker.io/shop/api@sha256:3b1f...e21
-api-7c9d8f5b6-8wz4m   node-b   docker.io/shop/api@sha256:3b1f...e21
-api-7c9d8f5b6-p7t6c   node-c   docker.io/shop/api@sha256:a9c4...07d
-</pre></div>
-    <p>فیلد <code>status.containerStatuses[].imageID</code> digest واقعی image اجراشده را نشان می‌دهد؛‏ دو digest متفاوت برای یک tag یعنی دقیقاً همان مشکل.</p>
-  </div>
 
   <div class="lab"><b>آزمایش عملی: pin کردن image با digest در یک Deployment</b>
     <p>ابتدا digest یک tag را پیدا کنید (مثلاً با <code>crane digest</code> یا <code>docker buildx imagetools inspect</code>؛‏ این ابزارها خارج از مستندات رسمی هستند):</p>
@@ -393,24 +386,6 @@ kubectl get pods -l app=web -o jsonpath='{range .items[*]}{.status.containerStat
 
   
   <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" width="100%" style="max-width:760px;height:auto" role="img" aria-label="تعیین مقدار پیش‌فرض imagePullPolicy در API server و رفتار kubelet هنگام شروع container"><defs><marker id="f5pp-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f5pp-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f5pp-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f5pp-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f5pp-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="400" y="14" width="345" height="36" rx="10" fill="#eef2f9" stroke="#c9d3e6" stroke-width="1.4"></rect><text x="572" y="38" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">مرحله‌ی ۱: API server، زمان ساختن شیء</text><rect x="15" y="14" width="365" height="36" rx="10" fill="#eef2f9" stroke="#c9d3e6" stroke-width="1.4"></rect><text x="197" y="38" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">مرحله‌ی ۲: kubelet، هر بار شروع container</text><rect x="560" y="70" width="185" height="60" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="652" y="95" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">digest دارد</text><text x="652" y="116" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">nginx@sha256:…</text><line x1="558" y1="100" x2="522" y2="100" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f5pp-a326ce5)"></line><rect x="400" y="80" width="120" height="40" rx="10" fill="#fff" stroke="#326ce5" stroke-width="1.4"></rect><text x="460" y="105" font-family="'JetBrains Mono', Consolas, monospace" font-size="13" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">IfNotPresent</text><rect x="560" y="148" width="185" height="60" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="652" y="173" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">بدون tag یا با latest</text><text x="652" y="194" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">nginx  ·  nginx:latest</text><line x1="558" y1="178" x2="522" y2="178" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f5pp-ab26b00)"></line><rect x="400" y="158" width="120" height="40" rx="10" fill="#fff" stroke="#b26b00" stroke-width="1.4"></rect><text x="460" y="183" font-family="'JetBrains Mono', Consolas, monospace" font-size="13" font-weight="700" fill="#b26b00" text-anchor="middle" direction="ltr">Always</text><rect x="560" y="226" width="185" height="60" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="652" y="251" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">tag دیگری دارد</text><text x="652" y="272" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">nginx:1.27</text><line x1="558" y1="256" x2="522" y2="256" stroke="#12806f" stroke-width="1.6" marker-end="url(#f5pp-a12806f)"></line><rect x="400" y="236" width="120" height="40" rx="10" fill="#fff" stroke="#12806f" stroke-width="1.4"></rect><text x="460" y="261" font-family="'JetBrains Mono', Consolas, monospace" font-size="13" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">IfNotPresent</text><rect x="400" y="304" width="345" height="100" rx="10" fill="#fff" stroke="#4a5672" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="572" y="330" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">فقط اگر فیلد خالی باشد پر می‌شود</text><text x="572" y="354" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">بعد از ساخته شدن شیء، با عوض شدن tag</text><text x="572" y="378" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">دیگر خودکار تغییر نمی‌کند</text><rect x="15" y="70" width="365" height="92" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="197" y="96" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#b26b00" text-anchor="middle" direction="ltr">Always</text><text x="197" y="122" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">از container runtime می‌خواهد pull کند</text><text x="197" y="145" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">فقط layerهای تازه دانلود می‌شوند</text><rect x="15" y="180" width="365" height="92" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="197" y="206" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">IfNotPresent</text><text x="197" y="232" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">اگر image روی Node باشد، همان اجرا می‌شود</text><text x="197" y="255" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر نباشد، pull و سپس اجرا</text><rect x="15" y="290" width="365" height="92" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="197" y="316" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">Never</text><text x="197" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">اگر image روی Node باشد، اجرا می‌شود</text><text x="197" y="365" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر نباشد، خطای ErrImageNeverPull</text></svg></div><figcaption><b>شکل ۲-۴.</b> <span style="flex:1 1 0;min-width:0">دو مرحله‌ی جدا: API server فقط وقتی فیلد <code>imagePullPolicy</code> خالی است،‏ بر اساس tag و digest آن را پر می‌کند؛‏ kubelet هر بار که containerی را شروع می‌کند (از جمله پس از restart) بر اساس همین مقدار تصمیم می‌گیرد.</span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: جدول تصمیم مقدار پیش‌فرض</b>
-    <div class="tbl"><table><thead><tr><th>image در spec</th><th>imagePullPolicy نوشته‌شده؟</th><th>مقدار نهایی ذخیره‌شده در API</th></tr></thead><tbody>
-      <tr><td><code>nginx</code></td><td>خیر</td><td><code>Always</code> (بدون tag)</td></tr>
-      <tr><td><code>nginx:latest</code></td><td>خیر</td><td><code>Always</code></td></tr>
-      <tr><td><code>nginx:1.27</code></td><td>خیر</td><td><code>IfNotPresent</code></td></tr>
-      <tr><td><code>nginx@sha256:...</code></td><td>خیر</td><td><code>IfNotPresent</code></td></tr>
-      <tr><td>هر چیز</td><td>بله</td><td>همان مقدار نوشته‌شده</td></tr>
-    </tbody></table></div>
-    <p>نکته‌ی ظریف Note بالا: defaulting در زمان <i>ایجاد</i> انجام می‌شود و در Deployment مقدار در Pod template ذخیره می‌شود. اگر <code>kubectl set image deploy/web nginx=nginx:latest</code> بزنید،‏ مقدار <code>IfNotPresent</code> قبلی در template باقی می‌ماند و Nodeهایی که یک <code>nginx:latest</code> قدیمی دارند آن را دوباره pull نمی‌کنند. بررسی:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment web --image=nginx:1.27
-kubectl get deploy web -o jsonpath='{.spec.template.spec.containers[0].imagePullPolicy}{"\n"}'
-# IfNotPresent
-kubectl set image deploy/web nginx=nginx:latest
-kubectl get deploy web -o jsonpath='{.spec.template.spec.containers[0].imagePullPolicy}{"\n"}'
-# IfNotPresent   ← unchanged
-</pre></div>
-  </div>
-
   <h4>اجبار به image pull <small>(Required image pull)</small></h4>
   <p>اگر می‌خواهید همیشه pull اجباری انجام شود،‏ می‌توانید یکی از کارهای زیر را انجام دهید:</p>
   <ul>
@@ -419,10 +394,6 @@ kubectl get deploy web -o jsonpath='{.spec.template.spec.containers[0].imagePull
     <li><code>imagePullPolicy</code> و tag image را حذف کنید؛‏ کوبرنتیز هنگام ارسال Pod،‏ policy را روی <code>Always</code> تنظیم می‌کند.</li>
     <li>admission controller (plugin در API server که درخواست را پیش از ذخیره بررسی یا تغییر می‌دهد) <a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#alwayspullimages">AlwaysPullImages</a> را فعال کنید.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: AlwaysPullImages و امنیت</b>
-    <p>AlwaysPullImages برای هر Pod جدید <code>imagePullPolicy</code> را به <code>Always</code> تغییر می‌دهد. اهمیت امنیتی آن در بخش <a href="#ch2-use-cases">Use cases</a> روشن می‌شود: بدون آن،‏ یک Pod در namespace (محدوده‌ی نام‌گذاری برای جدا کردن منابع در cluster) دیگر که هیچ credentialی ندارد می‌تواند با <code>IfNotPresent</code> از imageی استفاده کند که Pod دیگری با credential خودش قبلاً روی همان Node pull کرده است. از v1.35 قابلیت <a href="#ch2-ensure-verification">Ensure image pull credential verification</a> به‌طور پیش‌فرض فعال است و همین مشکل را در سطح kubelet و بدون pull اجباری برای همه‌ی Podها حل می‌کند؛‏ جز برای imageهایی که با credential سطح Node pull شده‌اند و برای همه‌ی Podهای آن Node آزادند. هزینه‌ی AlwaysPullImages: وابستگی شدیدتر راه‌اندازی Pod به دسترس‌پذیری registry.</p>
-  </div>
-
   <h4>ImagePullBackOff</h4>
   <p>وقتی kubelet شروع به ساختن containerهای یک Pod با استفاده از container runtime می‌کند،‏ ممکن است container به خاطر <code>ImagePullBackOff</code> در وضعیت <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-state-waiting">Waiting</a> باشد.</p>
   <p>وضعیت <code>ImagePullBackOff</code> یعنی یک container نتوانسته start شود چون کوبرنتیز نتوانسته container image را pull کند (به دلایلی مثل نام image نامعتبر،‏ یا pull کردن از یک private registry بدون <code>imagePullSecret</code>). بخش <code>BackOff</code> نشان می‌دهد که کوبرنتیز به تلاش برای pull کردن image ادامه می‌دهد،‏ با یک تأخیر back-off افزایشی.</p>
@@ -458,7 +429,42 @@ badimg   0/1     ImagePullBackOff    0          44s
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.29 [alpha]</span> (به‌طور پیش‌فرض غیرفعال؛‏ feature gate: <code>RuntimeClassInImageCriApi</code>)</p>
   <p>کوبرنتیز پشتیبانی alpha برای انجام image pull بر اساس RuntimeClass یک Pod دارد.</p>
   <p>اگر feature gate (کلید روشن و خاموش کردن قابلیت‌های جدید یا آزمایشی) <code>RuntimeClassInImageCriApi</code> را فعال کنید،‏ kubelet به جای اینکه فقط با نام image یا digest به container imageها ارجاع دهد،‏ با یک tuple از نام image و runtime handler به آن‌ها ارجاع می‌دهد. container runtime شما ممکن است رفتار خود را بر اساس runtime handler انتخاب‌شده تطبیق دهد. pull کردن image بر اساس runtime class برای containerهای مبتنی بر VM،‏ مثل Windows Hyper-V containerها،‏ مفید است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">چرا tag قابل‌جابه‌جایی خطرناک است؟ (سناریوی ترکیب نسخه‌ها) · جدول تصمیم مقدار پیش‌فرض · AlwaysPullImages و امنیت · یک image،‏ دو موجودیت</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا tag قابل‌جابه‌جایی خطرناک است؟ (سناریوی ترکیب نسخه‌ها)</b>
+    <p>یک Deployment با ۶ replica و image <code>shop/api:1.8</code> و <code>imagePullPolicy: IfNotPresent</code> دارید. Node A و B این image را دو هفته پیش pull کرده‌اند. امروز تیم CI به اشتباه یک build جدید را دوباره با همان tag <code>‎1.8‎</code> push می‌کند. فردا Node C اضافه می‌شود (مثلاً توسط Node autoscaling) و Podی روی آن schedule می‌شود. Node C image را pull می‌کند و محتوای <i>جدید</i> را می‌گیرد،‏ در حالی که A و B همچنان نسخه‌ی قدیم cache‌شده را اجرا می‌کنند. نتیجه: دو نسخه‌ی متفاوت کد با یک نام image.‏ digest این مسئله را ریشه‌کن می‌کند،‏ چون digest یعنی hash محتوا.</p>
+    <p>برای دیدن digest واقعی اجراشده روی هر Pod:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l app=api -o custom-columns='POD:.metadata.name,NODE:.spec.nodeName,IMAGEID:.status.containerStatuses[0].imageID'
+</pre></div>
+    <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">POD                   NODE     IMAGEID
+api-7c9d8f5b6-2kq9x   node-a   docker.io/shop/api@sha256:3b1f...e21
+api-7c9d8f5b6-8wz4m   node-b   docker.io/shop/api@sha256:3b1f...e21
+api-7c9d8f5b6-p7t6c   node-c   docker.io/shop/api@sha256:a9c4...07d
+</pre></div>
+    <p>فیلد <code>status.containerStatuses[].imageID</code> digest واقعی image اجراشده را نشان می‌دهد؛‏ دو digest متفاوت برای یک tag یعنی دقیقاً همان مشکل.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: جدول تصمیم مقدار پیش‌فرض</b>
+    <div class="tbl"><table><thead><tr><th>image در spec</th><th>imagePullPolicy نوشته‌شده؟</th><th>مقدار نهایی ذخیره‌شده در API</th></tr></thead><tbody>
+      <tr><td><code>nginx</code></td><td>خیر</td><td><code>Always</code> (بدون tag)</td></tr>
+      <tr><td><code>nginx:latest</code></td><td>خیر</td><td><code>Always</code></td></tr>
+      <tr><td><code>nginx:1.27</code></td><td>خیر</td><td><code>IfNotPresent</code></td></tr>
+      <tr><td><code>nginx@sha256:...</code></td><td>خیر</td><td><code>IfNotPresent</code></td></tr>
+      <tr><td>هر چیز</td><td>بله</td><td>همان مقدار نوشته‌شده</td></tr>
+    </tbody></table></div>
+    <p>نکته‌ی ظریف Note بالا: defaulting در زمان <i>ایجاد</i> انجام می‌شود و در Deployment مقدار در Pod template ذخیره می‌شود. اگر <code>kubectl set image deploy/web nginx=nginx:latest</code> بزنید،‏ مقدار <code>IfNotPresent</code> قبلی در template باقی می‌ماند و Nodeهایی که یک <code>nginx:latest</code> قدیمی دارند آن را دوباره pull نمی‌کنند. بررسی:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment web --image=nginx:1.27
+kubectl get deploy web -o jsonpath='{.spec.template.spec.containers[0].imagePullPolicy}{"\n"}'
+# IfNotPresent
+kubectl set image deploy/web nginx=nginx:latest
+kubectl get deploy web -o jsonpath='{.spec.template.spec.containers[0].imagePullPolicy}{"\n"}'
+# IfNotPresent   ← unchanged
+</pre></div>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: AlwaysPullImages و امنیت</b>
+    <p>AlwaysPullImages برای هر Pod جدید <code>imagePullPolicy</code> را به <code>Always</code> تغییر می‌دهد. اهمیت امنیتی آن در بخش <a href="#ch2-use-cases">Use cases</a> روشن می‌شود: بدون آن،‏ یک Pod در namespace (محدوده‌ی نام‌گذاری برای جدا کردن منابع در cluster) دیگر که هیچ credentialی ندارد می‌تواند با <code>IfNotPresent</code> از imageی استفاده کند که Pod دیگری با credential خودش قبلاً روی همان Node pull کرده است. از v1.35 قابلیت <a href="#ch2-ensure-verification">Ensure image pull credential verification</a> به‌طور پیش‌فرض فعال است و همین مشکل را در سطح kubelet و بدون pull اجباری برای همه‌ی Podها حل می‌کند؛‏ جز برای imageهایی که با credential سطح Node pull شده‌اند و برای همه‌ی Podهای آن Node آزادند. هزینه‌ی AlwaysPullImages: وابستگی شدیدتر راه‌اندازی Pod به دسترس‌پذیری registry.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: یک image،‏ دو موجودیت</b><p>در runtimeهای مبتنی بر VM (مثلاً Kata Containers یا Hyper-V isolation) ممکن است image لازم باشد در قالب یا محل دیگری آماده شود (مثلاً داخل guest VM). با tuple «image + handler»،‏ runtime می‌داند یک image یکسان برای handler معمولی و handler مبتنی بر VM دو موجودیت متفاوت است. RuntimeClass را در <a href="#ch2-runtimeclass">بخش RuntimeClass</a> همین فصل می‌بینیم.</p></div>
+  </details>
 
   <h3 id="ch2-serial-parallel">pull سریالی و موازی imageها <small>(Serial and parallel image pulls)</small></h3>
   <p>به‌طور پیش‌فرض،‏ kubelet imageها را به صورت سریالی pull می‌کند. به عبارت دیگر،‏ kubelet در هر لحظه فقط یک درخواست image pull به image service می‌فرستد. درخواست‌های image pull دیگر باید صبر کنند تا درخواست در حال پردازش تمام شود.</p>
@@ -491,13 +497,18 @@ sudo systemctl status kubelet --no-pager | head -5
       <tr><td>false</td><td>n</td><td>حداکثر n pull همزمان</td></tr>
     </tbody></table></div>
   </div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چه زمانی parallel pull ارزش دارد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چه زمانی parallel pull ارزش دارد؟</b>
     <p>سناریوی کلاسیک: Node جدیدی که autoscaler اضافه کرده و ناگهان ۲۵ Pod با imageهای متفاوت روی آن schedule می‌شوند. در حالت سریالی،‏ اگر یک image حجیم ۴ گیگابایتی (مثلاً یک image یادگیری ماشین) اول صف باشد،‏ Podهای کوچک پشت آن گیر می‌کنند (head-of-line blocking) و وضعیت <code>ContainerCreating</code> طولانی می‌شود. با <code>serializeImagePulls: false</code> و یک سقف معقول مثل ۳ تا ۵،‏ هم این انسداد رفع می‌شود و هم disk و شبکه اشباع نمی‌شوند. به یاد داشته باشید که containerهای یک Pod همچنان به ترتیب pull می‌شوند.</p>
   </div>
+  </details>
 
   <h3 id="ch2-multi-arch">multi-architecture imageها و image index <small>(Multi-architecture images with image indexes)</small></h3>
   <p>علاوه بر ارائه‌ی imageهای binary،‏ یک container registry می‌تواند یک <a href="https://github.com/opencontainers/image-spec/blob/master/image-index.md">container image index</a> هم ارائه دهد. یک image index می‌تواند به چندین <a href="https://github.com/opencontainers/image-spec/blob/master/manifest.md">image manifest</a> برای نسخه‌های مخصوص معماری (architecture-specific) یک container اشاره کند. ایده این است که برای یک image یک نام داشته باشید (برای مثال <code>pause</code>،‏ <code>example/mycontainer</code>،‏ <code>kube-apiserver</code>) و به سیستم‌های مختلف اجازه دهید image binary مناسب برای معماری ماشینی که استفاده می‌کنند را بگیرند.</p>
   <p>پروژه‌ی کوبرنتیز معمولاً container imageهای releaseهای خود را با نام‌هایی می‌سازد که پسوند <code>-$(ARCH)</code> دارند. برای سازگاری با گذشته (backward compatibility)،‏ imageهای قدیمی‌تر را با پسوند تولید کنید. برای مثال،‏ imageی با نام <code>pause</code> یک multi-architecture image خواهد بود که manifestهای همه‌ی معماری‌های پشتیبانی‌شده را دارد،‏ در حالی که <code>pause-amd64</code> یک نسخه‌ی backward-compatible برای پیکربندی‌های قدیمی‌تر یا فایل‌های YAML با نام‌های image hardcode‌شده‌ی دارای پسوند است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">image index در عمل</span></summary>
   <div class="deep"><b>توضیح تکمیلی: image index در عمل</b>
     <p>ساختار یک image index (خلاصه‌شده‌ی قالب OCI):</p>
     <div class="code"><div class="lbl"><span>OCI image index (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">{
@@ -511,6 +522,7 @@ sudo systemctl status kubelet --no-pager | head -5
 </pre></div>
     <p>در یک cluster مختلط (مثلاً Nodeهای amd64 و Nodeهای arm64 ارزان‌تر)،‏ Deployment با یک نام image روی هر دو نوع Node کار می‌کند،‏ چون container runtime هر Node manifest مناسب معماری خودش را انتخاب می‌کند. اگر image فقط برای amd64 ساخته شده باشد،‏ Pod روی Node arm64 معمولاً با خطای <code>exec format error</code> در logها crash می‌کند یا pull با پیام «no matching manifest for linux/arm64» شکست می‌خورد (خارج از مستندات رسمی). نکته‌ی digest:‏ digest خود index با digest هر manifest فرق دارد؛‏ اگر digest index را pin کنید،‏ همچنان روی همه‌ی معماری‌ها کار می‌کنید.</p>
   </div>
+  </details>
 
   <h3 id="ch2-private-registry">استفاده از private registry <small>(Using a private registry)</small></h3>
   <p>Private registryها ممکن است برای کشف و/یا pull کردن imageها به authentication نیاز داشته باشند. Credentialها را می‌توان به چند روش فراهم کرد:</p>
@@ -527,15 +539,6 @@ sudo systemctl status kubelet --no-pager | head -5
       <ul><li>اگر از یک پیکربندی سفارشی Node استفاده می‌کنید،‏ شما (یا cloud provider شما) می‌توانید مکانیزم خود را برای authentication Node به container registry پیاده‌سازی کنید.</li></ul></li>
   </ul>
   <p>این گزینه‌ها در ادامه با جزئیات بیشتر توضیح داده می‌شوند.</p>
-  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی روش‌ها</b>
-    <div class="tbl"><table><thead><tr><th>روش</th><th>دامنه‌ی دسترسی</th><th>چه کسی پیکربندی می‌کند</th><th>برای static Pod؟</th><th>نقطه‌ی ضعف</th></tr></thead><tbody>
-      <tr><td>imagePullSecrets روی Pod/ServiceAccount</td><td>فقط Podهای دارای Secret</td><td>تیم برنامه در namespace</td><td>خیر</td><td>تکرار Secret در هر namespace،‏ credential بلندمدت</td></tr>
-      <tr><td>پیکربندی Node</td><td>همه‌ی Podهای آن Node</td><td>مدیر cluster</td><td>بله</td><td>بدون جداسازی tenant</td></tr>
-      <tr><td>kubelet credential provider</td><td>بر اساس matchImages (و در صورت tokenAttributes،‏ هویت ServiceAccount)</td><td>مدیر cluster</td><td>بله</td><td>نیاز به plugin و پیکربندی kubelet</td></tr>
-      <tr><td>Pre-pulled images</td><td>همه‌ی Podهای Node</td><td>مدیر cluster (root)</td><td>بله</td><td>ناسازگار با Nodeهای managed و autoscaling</td></tr>
-    </tbody></table></div>
-  </div>
-
   <h4 id="ch2-imagepullsecrets-pod">تعیین <code>imagePullSecrets</code> روی Pod <small>(Specifying imagePullSecrets on a Pod)</small></h4>
   <div class="note"><b>نکته</b><p>این روش توصیه‌شده برای اجرای containerهای مبتنی بر imageهای private registry است.</p></div>
   <p>کوبرنتیز از مشخص کردن کلیدهای container image registry روی یک Pod پشتیبانی می‌کند. همه‌ی <code>imagePullSecrets</code> باید Secretهایی باشند که در همان namespace آن Pod وجود دارند. این Secretها باید از نوع <code>kubernetes.io/dockercfg</code> یا <code>kubernetes.io/dockerconfigjson</code> باشند.</p>
@@ -549,6 +552,183 @@ sudo systemctl status kubelet --no-pager | head -5
   <p>این تکنیک به‌ویژه برای اجرای static Podهایی (Podی که kubelet مستقیم از فایلی روی Node اجرا می‌کند،‏ بدون API server) مفید است که به container imageهای میزبانی‌شده در یک private registry نیاز دارند. استفاده از یک ServiceAccount (هویتی که processهای داخل Pod با آن با API server کار می‌کنند) یا یک Secret برای فراهم کردن credentialهای private registry در spec یک static Pod ممکن نیست،‏ چون spec آن <i>نمی‌تواند</i> به منابع دیگر API ارجاع داشته باشد.</p>
   <p>برای جزئیات بیشتر <a href="https://kubernetes.io/docs/tasks/administer-cluster/kubelet-credential-provider/">Configure a kubelet image credential provider</a> را ببینید. خلاصه‌ی کامل آن task در ادامه آمده است.</p>
 
+  <h4 id="ch2-config-json">تفسیر <code>config.json</code> <small>(Interpretation of config.json)</small></h4>
+  <p>تفسیر <code>config.json</code> بین پیاده‌سازی اصلی Docker و تفسیر کوبرنتیز متفاوت است. در Docker،‏ کلیدهای <code>auths</code> فقط می‌توانند URLهای ریشه (root) را مشخص کنند،‏ در حالی که کوبرنتیز علاوه بر آن URLهای glob و مسیرهای prefix-matched را هم مجاز می‌داند. تنها محدودیت این است که الگوهای glob (<code>‎*‎</code>) باید برای هر subdomain نقطه (<code>‎.‎</code>) را شامل شوند. تعداد subdomainهای تطبیق‌یافته باید با تعداد الگوهای glob (<code>‎*.‎</code>) برابر باشد،‏ برای مثال:</p>
+  <ul>
+    <li><code>*.kubernetes.io</code> با <code>kubernetes.io</code> تطبیق <i>ندارد</i>،‏ اما با <code>abc.kubernetes.io</code> تطبیق دارد.</li>
+    <li><code>*.*.kubernetes.io</code> با <code>abc.kubernetes.io</code> تطبیق <i>ندارد</i>،‏ اما با <code>abc.def.kubernetes.io</code> تطبیق دارد.</li>
+    <li><code>prefix.*.io</code> با <code>prefix.kubernetes.io</code> تطبیق دارد.</li>
+    <li><code>*-good.kubernetes.io</code> با <code>prefix-good.kubernetes.io</code> تطبیق دارد.</li>
+  </ul>
+  <p>این یعنی یک <code>config.json</code> مثل زیر معتبر است:</p>
+  <div class="code"><div class="lbl"><span>config.json</span><button type="button">کپی</button></div><pre class="yaml">{
+    "auths": {
+        "my-registry.example/images": { "auth": "…" },
+        "*.my-registry.example/images": { "auth": "…" }
+    }
+}
+</pre></div>
+  <p>عملیات image pull،‏ credentialها را برای هر الگوی معتبر به CRI container runtime می‌فرستد. برای مثال،‏ نام‌های container image زیر با موفقیت تطبیق می‌یابند:</p>
+  <ul>
+    <li><code>my-registry.example/images</code></li>
+    <li><code>my-registry.example/images/my-image</code></li>
+    <li><code>my-registry.example/images/another-image</code></li>
+    <li><code>sub.my-registry.example/images/my-image</code></li>
+  </ul>
+  <p>اما این نام‌های container image تطبیق <i>نمی‌یابند</i>:</p>
+  <ul>
+    <li><code>a.sub.my-registry.example/images/my-image</code></li>
+    <li><code>a.b.sub.my-registry.example/images/my-image</code></li>
+  </ul>
+  <p>kubelet برای هر credential پیدا‌شده،‏ image pull را به‌ترتیب (sequentially) انجام می‌دهد. این یعنی چند entry در <code>config.json</code> برای pathهای مختلف هم ممکن است:</p>
+  <div class="code"><div class="lbl"><span>config.json</span><button type="button">کپی</button></div><pre class="yaml">{
+    "auths": {
+        "my-registry.example/images": {
+            "auth": "…"
+        },
+        "my-registry.example/images/subpath": {
+            "auth": "…"
+        }
+    }
+}
+</pre></div>
+  <p>حالا اگر یک container image <code>my-registry.example/images/subpath/my-image</code> را برای pull مشخص کند،‏ kubelet در صورتی که یکی از منابع authentication شکست بخورد،‏ تلاش می‌کند با هر دو آن را دانلود کند.</p>
+  <h4 id="ch2-pre-pulled">imageهای از پیش pull‌شده <small>(Pre-pulled images)</small></h4>
+  <div class="note"><b>نکته</b><p>این روش در صورتی مناسب است که بتوانید پیکربندی Node را کنترل کنید. اگر cloud provider شما Nodeها را مدیریت می‌کند و آن‌ها را به‌طور خودکار جایگزین می‌کند،‏ به‌طور قابل اعتماد کار نخواهد کرد.</p></div>
+  <p>به‌طور پیش‌فرض،‏ kubelet تلاش می‌کند هر image را از registry مشخص‌شده pull کند. اما اگر property <code>imagePullPolicy</code> یک container روی <code>IfNotPresent</code> یا <code>Never</code> تنظیم شده باشد،‏ از یک image محلی استفاده می‌شود (به ترتیب به صورت ترجیحی یا انحصاری).</p>
+  <p>اگر می‌خواهید به جای registry authentication به pre-pulled imageها تکیه کنید،‏ باید مطمئن شوید همه‌ی Nodeهای cluster همان pre-pulled imageها را دارند.</p>
+  <p>این روش می‌تواند برای preload کردن برخی imageها برای سرعت،‏ یا به عنوان جایگزینی برای authentication (تشخیص هویت درخواست‌دهنده) به یک private registry استفاده شود.</p>
+  <p>مشابه استفاده از <a href="#ch2-credential-provider">kubelet credential provider</a>،‏ pre-pulled imageها برای راه‌اندازی static Podهایی که به imageهای میزبانی‌شده در یک private registry وابسته‌اند هم مناسب‌اند.</p>
+  <div class="note"><b>نکته</b><p><span class="fs">وضعیت قابلیت: Kubernetes v1.35 [beta]</span> (به‌طور پیش‌فرض فعال؛‏ feature gate: <code>KubeletEnsureSecretPulledImages</code>)</p><p>دسترسی به pre-pulled imageها ممکن است بر اساس <a href="#ch2-ensure-verification">image pull credential verification</a> مجاز شمرده شود.</p></div>
+  <div class="lab"><b>آزمایش عملی: pre-pull روی k3s و <code>imagePullPolicy: Never</code></b>
+    <p>image را روی VM مربوط به k3s با Docker بسازید و مستقیم به containerd همراه k3s بدهید؛‏ همان کاری که در گام ۶ آزمایش شاپیفای کردید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">docker build -t myapp:dev .
+docker save myapp:dev | sudo k3s ctr images import -     # copy the image into k3s containerd
+sudo k3s crictl images | grep myapp
+kubectl run myapp --image=myapp:dev --image-pull-policy=Never
+kubectl get pod myapp
+</pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">docker.io/library/myapp   dev   9c1e4b7a2f3d5   48.2MB
+NAME    READY   STATUS    RESTARTS   AGE
+myapp   1/1     Running   0          5s
+</pre></div><p>نام <code>myapp:dev</code> در containerd به شکل کامل <code>docker.io/library/myapp:dev</code> ذخیره می‌شود؛‏ همان قاعده‌ی کامل شدن نام در فصل ۲. اگر image را import نکرده باشید،‏ یا در cluster چند Node،‏ Pod روی Nodeی قرار بگیرد که image را ندارد،‏ وضعیت <code>ErrImageNeverPull</code> را می‌بینید (خارج از مستندات رسمی: نام reason در kubelet)؛‏ این همان «startup fails» در تعریف <code>Never</code> است. برای همین در cluster چندNodeی (فصل ۹) باید image را روی همه‌ی Nodeها import کنید یا از registry استفاده کنید.</p>
+  </div>
+
+  <h4 id="ch2-ensure-verification">بررسی credential برای imageهای موجود روی Node <small>(Ensure image pull credential verification)</small></h4>
+  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.35 [beta]</span> (به‌طور پیش‌فرض فعال؛‏ feature gate: <code>KubeletEnsureSecretPulledImages</code>)</p>
+  <p>اگر feature gate <code>KubeletEnsureSecretPulledImages</code> برای cluster شما فعال باشد،‏ کوبرنتیز credentialهای image را برای هر imageی که برای pull شدن به credential نیاز دارد validate می‌کند،‏ حتی اگر آن image از قبل روی Node موجود باشد. این validation تضمین می‌کند imageهایی در درخواست یک Pod که با credentialهای ارائه‌شده با موفقیت pull نشده‌اند،‏ باید دوباره از registry pull شوند. علاوه بر این،‏ image pullهایی که از همان credentialهایی استفاده می‌کنند که قبلاً به یک image pull موفق منجر شده‌اند،‏ نیازی به pull دوباره از registry ندارند و به جای آن به صورت محلی و بدون دسترسی به registry validate می‌شوند (به شرطی که image به صورت محلی موجود باشد). این رفتار با فیلد <code>imagePullCredentialsVerificationPolicy</code> در <a href="https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/#kubelet-config-k8s-io-v1beta1-ImagePullCredentialsVerificationPolicy">Kubelet configuration</a> کنترل می‌شود.</p>
+  <p>این پیکربندی کنترل می‌کند که اگر image از قبل روی Node موجود است،‏ چه زمانی credentialهای image pull باید تأیید شوند:</p>
+  <div class="tbl"><table><thead><tr><th>مقدار</th><th>رفتار</th></tr></thead><tbody>
+    <tr><td><code>NeverVerify</code></td><td>رفتار غیرفعال بودن این feature gate را تقلید می‌کند. اگر image به صورت محلی موجود باشد،‏ credentialهای image pull تأیید نمی‌شوند.</td></tr>
+    <tr><td><code>NeverVerifyPreloadedImages</code></td><td>imageهایی که بیرون از kubelet pull شده‌اند تأیید نمی‌شوند،‏ اما همه‌ی imageهای دیگر credentialشان تأیید می‌شود. <b>این رفتار پیش‌فرض است.</b></td></tr>
+    <tr><td><code>NeverVerifyAllowListedImages</code></td><td>imageهایی که بیرون از kubelet pull شده‌اند و در <code>preloadedImagesVerificationAllowlist</code> مشخص‌شده در kubelet config آمده‌اند،‏ تأیید نمی‌شوند.</td></tr>
+    <tr><td><code>AlwaysVerify</code></td><td>همه‌ی imageها قبل از استفاده،‏ credentialشان تأیید می‌شود.</td></tr>
+  </tbody></table></div>
+  <p>این verification روی <a href="#ch2-pre-pulled">pre-pulled images</a>،‏ imageهای pull‌شده با Secretهای سطح Node و imageهای pull‌شده با Secretهای سطح Pod اعمال می‌شود.</p>
+  <div class="note"><b>نکته</b><p>در صورت rotation credential،‏ credentialهایی که قبلاً برای pull کردن image استفاده شده‌اند همچنان بدون نیاز به دسترسی به registry تأیید می‌شوند. credentialهای جدید یا rotate‌شده نیاز دارند image دوباره از registry pull شود.</p></div>
+
+  <h4>نخستین فعال‌سازی <code>KubeletEnsureSecretPulledImages</code> <small>(Enabling KubeletEnsureSecretPulledImages for the first time)</small></h4>
+  <p>وقتی <code>KubeletEnsureSecretPulledImages</code> برای نخستین بار فعال می‌شود،‏ چه با upgrade کردن kubelet و چه با فعال کردن صریح feature،‏ اگر kubelet در آن لحظه به imageهایی دسترسی داشته باشد،‏ همه‌ی آن‌ها pre-pulled در نظر گرفته می‌شوند. این اتفاق می‌افتد چون در این حالت kubelet هیچ سابقه‌ای (record) از pull شدن imageها ندارد. kubelet فقط زمانی می‌تواند شروع به ساختن image pull recordها کند که یک image برای نخستین بار pull شود.</p>
+  <p>اگر این موضوع نگران‌کننده است،‏ توصیه می‌شود قبل از فعال کردن feature،‏ Nodeها را از همه‌ی imageهایی که نباید pre-pulled در نظر گرفته شوند پاک کنید.</p>
+  <p>توجه کنید که حذف دایرکتوری نگه‌دارنده‌ی image pulled recordها هم در restart شدن kubelet همین اثر را دارد؛‏ به‌ویژه همه‌ی imageهایی که فعلاً توسط container runtime روی Nodeها cache شده‌اند،‏ pre-pulled در نظر گرفته می‌شوند.</p>
+  <h4 id="ch2-creating-secret">ساختن Secret با پیکربندی Docker <small>(Creating a Secret with a Docker config)</small></h4>
+  <p>برای authentication به registry باید username،‏ password registry و آدرس ایمیل client،‏ و همچنین hostname آن را بدانید. دستور زیر را اجرا کنید و placeholderها را با مقادیر مناسب جایگزین کنید:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create secret docker-registry &lt;name&gt; \
+  --docker-server=&lt;docker-registry-server&gt; \
+  --docker-username=&lt;docker-user&gt; \
+  --docker-password=&lt;docker-password&gt; \
+  --docker-email=&lt;docker-email&gt;
+</pre></div>
+  <p>اگر از قبل یک فایل Docker credentials دارید،‏ به جای دستور بالا می‌توانید فایل credentialها را به عنوان یک کوبرنتیز Secret import کنید. بخش <a href="#ch2-task-existing">Create a Secret based on existing Docker credentials</a> نحوه‌ی انجام آن را توضیح می‌دهد.</p>
+  <p>این کار به‌ویژه وقتی از چند private container registry استفاده می‌کنید مفید است،‏ چون <code>kubectl create secret docker-registry</code> یک Secret می‌سازد که فقط با یک private registry کار می‌کند.</p>
+  <div class="note"><b>نکته</b><p>Podها فقط می‌توانند به image pull secretهای namespace خودشان ارجاع دهند،‏ پس این فرایند باید یک بار برای هر namespace انجام شود.</p></div>
+
+  <h4>ارجاع به <code>imagePullSecrets</code> در Pod <small>(Referring to imagePullSecrets on a Pod)</small></h4>
+  <p>حالا می‌توانید Podهایی بسازید که با اضافه کردن بخش <code>imagePullSecrets</code> به تعریف Pod،‏ به آن Secret ارجاع دهند. هر آیتم در آرایه‌ی <code>imagePullSecrets</code> فقط می‌تواند به یک Secret در همان namespace ارجاع دهد.</p>
+  <p>برای مثال:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">cat &lt;&lt;EOF &gt; pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: foo
+  namespace: awesomeapps
+spec:
+  containers:
+    - name: foo
+      image: janedoe/awesomeapp:v1
+  imagePullSecrets:
+    - name: myregistrykey
+EOF
+
+cat &lt;&lt;EOF &gt;&gt; ./kustomization.yaml
+resources:
+- pod.yaml
+EOF
+</pre></div>
+  <p>این کار باید برای هر Podی که از یک private registry استفاده می‌کند انجام شود.</p>
+  <p>اما می‌توانید با مشخص کردن بخش <code>imagePullSecrets</code> در یک resource از نوع <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/">ServiceAccount</a> این فرایند را خودکار کنید. برای دستورالعمل کامل <a href="#ch2-sa-pullsecrets">Add ImagePullSecrets to a Service Account</a> را ببینید.</p>
+  <p>می‌توانید این روش را همراه با یک <code>.docker/config.json</code> مخصوص هر Node استفاده کنید. credentialها با هم merge می‌شوند.</p>
+
+  <h4 id="ch2-sa-pullsecrets">افزودن imagePullSecrets به ServiceAccount <small>(Add ImagePullSecrets to a service account)</small></h4>
+  <p>ابتدا یک imagePullSecret بسازید (همان‌طور که در Specifying ImagePullSecrets on a Pod آمد) و بررسی کنید ساخته شده است:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create secret docker-registry myregistrykey --docker-server=&lt;registry name&gt; \
+        --docker-username=DUMMY_USERNAME --docker-password=DUMMY_DOCKER_PASSWORD \
+        --docker-email=DUMMY_DOCKER_EMAIL
+kubectl get secrets myregistrykey
+</pre></div>
+  <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">NAME             TYPE                              DATA    AGE
+myregistrykey    kubernetes.io/.dockerconfigjson   1       1d
+</pre></div>
+  <p>سپس ServiceAccount پیش‌فرض namespace را طوری تغییر دهید که از این Secret به عنوان imagePullSecret استفاده کند:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "myregistrykey"}]}'
+</pre></div>
+  <p>همین نتیجه را می‌توانید با ویرایش دستی object به دست آورید (<code>kubectl edit serviceaccount/default</code>). ویرایشگر پیکربندی‌ای شبیه این را باز می‌کند:</p>
+  <div class="code"><div class="lbl"><span>ServiceAccount (قبل از ویرایش)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: 2021-07-07T22:02:39Z
+  name: default
+  namespace: default
+  resourceVersion: "243024"
+  uid: 052fb0f4-3d50-11e5-b066-42010af0d7b6
+</pre></div>
+  <p>در ویرایشگر خط کلید <code>resourceVersion</code> را حذف کنید،‏ خطوط <code>imagePullSecrets:</code> را اضافه کنید و ذخیره کنید. مقدار <code>uid</code> را همان‌طور که هست نگه دارید. پس از تغییرات،‏ ServiceAccount شبیه این است:</p>
+  <div class="code"><div class="lbl"><span>ServiceAccount (بعد از ویرایش)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: 2021-07-07T22:02:39Z
+  name: default
+  namespace: default
+  uid: 052fb0f4-3d50-11e5-b066-42010af0d7b6
+imagePullSecrets:
+  - name: myregistrykey
+</pre></div>
+  <p>حالا وقتی یک Pod جدید در namespace جاری با ServiceAccount پیش‌فرض ساخته شود،‏ فیلد <code>spec.imagePullSecrets</code> آن به صورت خودکار تنظیم می‌شود:</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run nginx --image=&lt;registry name&gt;/nginx --restart=Never
+kubectl get pod nginx -o=jsonpath='{.spec.imagePullSecrets[0].name}{"\n"}'
+</pre></div>
+  <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">myregistrykey
+</pre></div>
+
+  <h4 id="ch2-use-cases">موارد استفاده <small>(Use cases)</small></h4>
+  <p>راه‌حل‌های متعددی برای پیکربندی private registryها وجود دارد. در اینجا چند مورد استفاده‌ی رایج و راه‌حل‌های پیشنهادی آمده است:</p>
+  <div class="tbl"><table><thead><tr><th>#</th><th>مورد استفاده</th><th>راه‌حل‌های پیشنهادی</th></tr></thead><tbody>
+    <tr><td>۱</td><td>clusterی که فقط imageهای غیرانحصاری (مثلاً open-source) اجرا می‌کند. نیازی به پنهان کردن imageها نیست.</td><td>از imageهای عمومی یک public registry استفاده کنید.<ul><li>هیچ پیکربندی لازم نیست.</li><li>برخی cloud providerها imageهای عمومی را به‌طور خودکار cache یا mirror می‌کنند که دسترس‌پذیری را بهتر و زمان pull را کم می‌کند.</li></ul></td></tr>
+    <tr><td>۲</td><td>clusterی که برخی imageهای انحصاری اجرا می‌کند که باید از بیرون شرکت پنهان باشند،‏ اما برای همه‌ی کاربران cluster قابل مشاهده باشند.</td><td><ul><li>از یک hosted private registry استفاده کنید. ممکن است روی Nodeهایی که باید به private registry دسترسی داشته باشند پیکربندی دستی لازم باشد.</li><li>یا یک private registry داخلی پشت firewall با دسترسی خواندن باز اجرا کنید. هیچ پیکربندی کوبرنتیز لازم نیست.</li><li>از یک سرویس hosted container image registry استفاده کنید که دسترسی به imageها را کنترل می‌کند. این با Node autoscaling بهتر از پیکربندی دستی Node کار می‌کند.</li><li>یا در clusterی که تغییر پیکربندی Node ناخوشایند است،‏ از <code>imagePullSecrets</code> استفاده کنید.</li></ul></td></tr>
+    <tr><td>۳</td><td>cluster با imageهای انحصاری که چندتایی از آن‌ها کنترل دسترسی سخت‌گیرانه‌تری لازم دارند.</td><td><ul><li>مطمئن شوید <a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#alwayspullimages">AlwaysPullImages admission controller</a> فعال است. در غیر این صورت،‏ همه‌ی Podها به‌طور بالقوه به همه‌ی imageها دسترسی دارند.</li><li>داده‌های حساس را به جای بسته‌بندی در image،‏ به یک resource از نوع Secret منتقل کنید.</li></ul></td></tr>
+    <tr><td>۴</td><td>یک cluster multi-tenant که هر tenant به private registry خودش نیاز دارد.</td><td><ul><li>مطمئن شوید AlwaysPullImages admission controller فعال است. در غیر این صورت،‏ همه‌ی Podهای همه‌ی tenantها به‌طور بالقوه به همه‌ی imageها دسترسی دارند.</li><li>یک private registry با authorization اجباری اجرا کنید.</li><li>برای هر tenant credentialهای registry تولید کنید،‏ در یک Secret ذخیره کنید و Secret را به هر namespace آن tenant منتشر کنید.</li><li>سپس tenant آن Secret را به <code>imagePullSecrets</code> هر namespace اضافه می‌کند (در عمل به ServiceAccountهای آن namespace یا به خود Podها).</li></ul></td></tr>
+  </tbody></table></div>
+  <p>اگر به چند registry دسترسی لازم دارید،‏ می‌توانید برای هر registry یک Secret بسازید.</p>
+  <div class="note"><b>نکته</b><p>توصیه‌ی <code>AlwaysPullImages</code> در ردیف‌های ۳ و ۴ از مستندات است. از v1.35 قابلیت <a href="#ch2-ensure-verification"><code>KubeletEnsureSecretPulledImages</code></a> به‌طور پیش‌فرض فعال است و بیشتر همین حفاظت را بدون pull اجباری فراهم می‌کند،‏ به شرطی که credential private registryها در سطح Pod یا ServiceAccount باشد،‏ نه در سطح Node.</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۵)</small> <span class="m-t">مقایسه‌ی روش‌ها · Configure a kubelet image credential provider (از task مربوطه) · قواعد تطبیق در یک نگاه · مسئله‌ای که این feature حل می‌کند · الگوی production برای private registry با ServiceAccount</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی روش‌ها</b>
+    <div class="tbl"><table><thead><tr><th>روش</th><th>دامنه‌ی دسترسی</th><th>چه کسی پیکربندی می‌کند</th><th>برای static Pod؟</th><th>نقطه‌ی ضعف</th></tr></thead><tbody>
+      <tr><td>imagePullSecrets روی Pod/ServiceAccount</td><td>فقط Podهای دارای Secret</td><td>تیم برنامه در namespace</td><td>خیر</td><td>تکرار Secret در هر namespace،‏ credential بلندمدت</td></tr>
+      <tr><td>پیکربندی Node</td><td>همه‌ی Podهای آن Node</td><td>مدیر cluster</td><td>بله</td><td>بدون جداسازی tenant</td></tr>
+      <tr><td>kubelet credential provider</td><td>بر اساس matchImages (و در صورت tokenAttributes،‏ هویت ServiceAccount)</td><td>مدیر cluster</td><td>بله</td><td>نیاز به plugin و پیکربندی kubelet</td></tr>
+      <tr><td>Pre-pulled images</td><td>همه‌ی Podهای Node</td><td>مدیر cluster (root)</td><td>بله</td><td>ناسازگار با Nodeهای managed و autoscaling</td></tr>
+    </tbody></table></div>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: Configure a kubelet image credential provider (از task مربوطه)</b>
     <p><span class="fs">وضعیت قابلیت: Kubernetes v1.26 [stable]</span></p>
     <p>از Kubernetes v1.20،‏ kubelet می‌تواند credentialهای یک container image registry را با استفاده از exec pluginها به صورت پویا بگیرد. kubelet و exec plugin از طریق stdio (stdin،‏ stdout و stderr) با استفاده از APIهای نسخه‌دار کوبرنتیز با هم ارتباط برقرار می‌کنند. این pluginها (جزء قابل‌اتصالی که رفتار سیستم را گسترش می‌دهد) به kubelet اجازه می‌دهند به جای ذخیره‌ی credentialهای ایستا روی disk،‏ credential یک container registry را به صورت پویا درخواست کند. برای مثال،‏ plugin ممکن است با یک metadata server محلی صحبت کند تا credentialهای کوتاه‌عمر برای imageی که kubelet در حال pull کردن آن است بگیرد.</p>
@@ -703,48 +883,6 @@ providers:
     </ul>
     <p>نمونه‌هایی از الگوهای <code>matchImages</code>: <code>123456789.dkr.ecr.us-east-1.amazonaws.com</code>،‏ <code>*.azurecr.io</code>،‏ <code>gcr.io</code>،‏ <code>*.*.registry.io</code>،‏ <code>foo.registry.io:8080/path</code>.</p>
   </div>
-
-  <h4 id="ch2-config-json">تفسیر <code>config.json</code> <small>(Interpretation of config.json)</small></h4>
-  <p>تفسیر <code>config.json</code> بین پیاده‌سازی اصلی Docker و تفسیر کوبرنتیز متفاوت است. در Docker،‏ کلیدهای <code>auths</code> فقط می‌توانند URLهای ریشه (root) را مشخص کنند،‏ در حالی که کوبرنتیز علاوه بر آن URLهای glob و مسیرهای prefix-matched را هم مجاز می‌داند. تنها محدودیت این است که الگوهای glob (<code>‎*‎</code>) باید برای هر subdomain نقطه (<code>‎.‎</code>) را شامل شوند. تعداد subdomainهای تطبیق‌یافته باید با تعداد الگوهای glob (<code>‎*.‎</code>) برابر باشد،‏ برای مثال:</p>
-  <ul>
-    <li><code>*.kubernetes.io</code> با <code>kubernetes.io</code> تطبیق <i>ندارد</i>،‏ اما با <code>abc.kubernetes.io</code> تطبیق دارد.</li>
-    <li><code>*.*.kubernetes.io</code> با <code>abc.kubernetes.io</code> تطبیق <i>ندارد</i>،‏ اما با <code>abc.def.kubernetes.io</code> تطبیق دارد.</li>
-    <li><code>prefix.*.io</code> با <code>prefix.kubernetes.io</code> تطبیق دارد.</li>
-    <li><code>*-good.kubernetes.io</code> با <code>prefix-good.kubernetes.io</code> تطبیق دارد.</li>
-  </ul>
-  <p>این یعنی یک <code>config.json</code> مثل زیر معتبر است:</p>
-  <div class="code"><div class="lbl"><span>config.json</span><button type="button">کپی</button></div><pre class="yaml">{
-    "auths": {
-        "my-registry.example/images": { "auth": "…" },
-        "*.my-registry.example/images": { "auth": "…" }
-    }
-}
-</pre></div>
-  <p>عملیات image pull،‏ credentialها را برای هر الگوی معتبر به CRI container runtime می‌فرستد. برای مثال،‏ نام‌های container image زیر با موفقیت تطبیق می‌یابند:</p>
-  <ul>
-    <li><code>my-registry.example/images</code></li>
-    <li><code>my-registry.example/images/my-image</code></li>
-    <li><code>my-registry.example/images/another-image</code></li>
-    <li><code>sub.my-registry.example/images/my-image</code></li>
-  </ul>
-  <p>اما این نام‌های container image تطبیق <i>نمی‌یابند</i>:</p>
-  <ul>
-    <li><code>a.sub.my-registry.example/images/my-image</code></li>
-    <li><code>a.b.sub.my-registry.example/images/my-image</code></li>
-  </ul>
-  <p>kubelet برای هر credential پیدا‌شده،‏ image pull را به‌ترتیب (sequentially) انجام می‌دهد. این یعنی چند entry در <code>config.json</code> برای pathهای مختلف هم ممکن است:</p>
-  <div class="code"><div class="lbl"><span>config.json</span><button type="button">کپی</button></div><pre class="yaml">{
-    "auths": {
-        "my-registry.example/images": {
-            "auth": "…"
-        },
-        "my-registry.example/images/subpath": {
-            "auth": "…"
-        }
-    }
-}
-</pre></div>
-  <p>حالا اگر یک container image <code>my-registry.example/images/subpath/my-image</code> را برای pull مشخص کند،‏ kubelet در صورتی که یکی از منابع authentication شکست بخورد،‏ تلاش می‌کند با هر دو آن را دانلود کند.</p>
   <div class="deep"><b>توضیح تکمیلی: قواعد تطبیق در یک نگاه</b>
     <div class="tbl"><table><thead><tr><th>کلید در auths</th><th>image</th><th>تطبیق؟</th><th>دلیل</th></tr></thead><tbody>
       <tr><td><code>*.corp.example</code></td><td><code>corp.example/app</code></td><td>خیر</td><td>یک <code>‎*.‎</code> یعنی دقیقاً یک subdomain اضافه لازم است</td></tr>
@@ -755,43 +893,6 @@ providers:
     </tbody></table></div>
     <p>کاربرد production: در یک registry مشترک (مثلاً Harbor) که هر تیم یک project دارد،‏ می‌توانید در یک Secret چند credential با pathهای متفاوت داشته باشید؛‏ kubelet به ترتیب همه‌ی credentialهای منطبق را امتحان می‌کند.</p>
   </div>
-
-  <h4 id="ch2-pre-pulled">imageهای از پیش pull‌شده <small>(Pre-pulled images)</small></h4>
-  <div class="note"><b>نکته</b><p>این روش در صورتی مناسب است که بتوانید پیکربندی Node را کنترل کنید. اگر cloud provider شما Nodeها را مدیریت می‌کند و آن‌ها را به‌طور خودکار جایگزین می‌کند،‏ به‌طور قابل اعتماد کار نخواهد کرد.</p></div>
-  <p>به‌طور پیش‌فرض،‏ kubelet تلاش می‌کند هر image را از registry مشخص‌شده pull کند. اما اگر property <code>imagePullPolicy</code> یک container روی <code>IfNotPresent</code> یا <code>Never</code> تنظیم شده باشد،‏ از یک image محلی استفاده می‌شود (به ترتیب به صورت ترجیحی یا انحصاری).</p>
-  <p>اگر می‌خواهید به جای registry authentication به pre-pulled imageها تکیه کنید،‏ باید مطمئن شوید همه‌ی Nodeهای cluster همان pre-pulled imageها را دارند.</p>
-  <p>این روش می‌تواند برای preload کردن برخی imageها برای سرعت،‏ یا به عنوان جایگزینی برای authentication (تشخیص هویت درخواست‌دهنده) به یک private registry استفاده شود.</p>
-  <p>مشابه استفاده از <a href="#ch2-credential-provider">kubelet credential provider</a>،‏ pre-pulled imageها برای راه‌اندازی static Podهایی که به imageهای میزبانی‌شده در یک private registry وابسته‌اند هم مناسب‌اند.</p>
-  <div class="note"><b>نکته</b><p><span class="fs">وضعیت قابلیت: Kubernetes v1.35 [beta]</span> (به‌طور پیش‌فرض فعال؛‏ feature gate: <code>KubeletEnsureSecretPulledImages</code>)</p><p>دسترسی به pre-pulled imageها ممکن است بر اساس <a href="#ch2-ensure-verification">image pull credential verification</a> مجاز شمرده شود.</p></div>
-  <div class="lab"><b>آزمایش عملی: pre-pull روی k3s و <code>imagePullPolicy: Never</code></b>
-    <p>image را روی VM مربوط به k3s با Docker بسازید و مستقیم به containerd همراه k3s بدهید؛‏ همان کاری که در گام ۶ آزمایش شاپیفای کردید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">docker build -t myapp:dev .
-docker save myapp:dev | sudo k3s ctr images import -     # copy the image into k3s containerd
-sudo k3s crictl images | grep myapp
-kubectl run myapp --image=myapp:dev --image-pull-policy=Never
-kubectl get pod myapp
-</pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">docker.io/library/myapp   dev   9c1e4b7a2f3d5   48.2MB
-NAME    READY   STATUS    RESTARTS   AGE
-myapp   1/1     Running   0          5s
-</pre></div><p>نام <code>myapp:dev</code> در containerd به شکل کامل <code>docker.io/library/myapp:dev</code> ذخیره می‌شود؛‏ همان قاعده‌ی کامل شدن نام در فصل ۲. اگر image را import نکرده باشید،‏ یا در cluster چند Node،‏ Pod روی Nodeی قرار بگیرد که image را ندارد،‏ وضعیت <code>ErrImageNeverPull</code> را می‌بینید (خارج از مستندات رسمی: نام reason در kubelet)؛‏ این همان «startup fails» در تعریف <code>Never</code> است. برای همین در cluster چندNodeی (فصل ۹) باید image را روی همه‌ی Nodeها import کنید یا از registry استفاده کنید.</p>
-  </div>
-
-  <h4 id="ch2-ensure-verification">بررسی credential برای imageهای موجود روی Node <small>(Ensure image pull credential verification)</small></h4>
-  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.35 [beta]</span> (به‌طور پیش‌فرض فعال؛‏ feature gate: <code>KubeletEnsureSecretPulledImages</code>)</p>
-  <p>اگر feature gate <code>KubeletEnsureSecretPulledImages</code> برای cluster شما فعال باشد،‏ کوبرنتیز credentialهای image را برای هر imageی که برای pull شدن به credential نیاز دارد validate می‌کند،‏ حتی اگر آن image از قبل روی Node موجود باشد. این validation تضمین می‌کند imageهایی در درخواست یک Pod که با credentialهای ارائه‌شده با موفقیت pull نشده‌اند،‏ باید دوباره از registry pull شوند. علاوه بر این،‏ image pullهایی که از همان credentialهایی استفاده می‌کنند که قبلاً به یک image pull موفق منجر شده‌اند،‏ نیازی به pull دوباره از registry ندارند و به جای آن به صورت محلی و بدون دسترسی به registry validate می‌شوند (به شرطی که image به صورت محلی موجود باشد). این رفتار با فیلد <code>imagePullCredentialsVerificationPolicy</code> در <a href="https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/#kubelet-config-k8s-io-v1beta1-ImagePullCredentialsVerificationPolicy">Kubelet configuration</a> کنترل می‌شود.</p>
-  <p>این پیکربندی کنترل می‌کند که اگر image از قبل روی Node موجود است،‏ چه زمانی credentialهای image pull باید تأیید شوند:</p>
-  <div class="tbl"><table><thead><tr><th>مقدار</th><th>رفتار</th></tr></thead><tbody>
-    <tr><td><code>NeverVerify</code></td><td>رفتار غیرفعال بودن این feature gate را تقلید می‌کند. اگر image به صورت محلی موجود باشد،‏ credentialهای image pull تأیید نمی‌شوند.</td></tr>
-    <tr><td><code>NeverVerifyPreloadedImages</code></td><td>imageهایی که بیرون از kubelet pull شده‌اند تأیید نمی‌شوند،‏ اما همه‌ی imageهای دیگر credentialشان تأیید می‌شود. <b>این رفتار پیش‌فرض است.</b></td></tr>
-    <tr><td><code>NeverVerifyAllowListedImages</code></td><td>imageهایی که بیرون از kubelet pull شده‌اند و در <code>preloadedImagesVerificationAllowlist</code> مشخص‌شده در kubelet config آمده‌اند،‏ تأیید نمی‌شوند.</td></tr>
-    <tr><td><code>AlwaysVerify</code></td><td>همه‌ی imageها قبل از استفاده،‏ credentialشان تأیید می‌شود.</td></tr>
-  </tbody></table></div>
-  <p>این verification روی <a href="#ch2-pre-pulled">pre-pulled images</a>،‏ imageهای pull‌شده با Secretهای سطح Node و imageهای pull‌شده با Secretهای سطح Pod اعمال می‌شود.</p>
-  <div class="note"><b>نکته</b><p>در صورت rotation credential،‏ credentialهایی که قبلاً برای pull کردن image استفاده شده‌اند همچنان بدون نیاز به دسترسی به registry تأیید می‌شوند. credentialهای جدید یا rotate‌شده نیاز دارند image دوباره از registry pull شود.</p></div>
-
-  <h4>نخستین فعال‌سازی <code>KubeletEnsureSecretPulledImages</code> <small>(Enabling KubeletEnsureSecretPulledImages for the first time)</small></h4>
-  <p>وقتی <code>KubeletEnsureSecretPulledImages</code> برای نخستین بار فعال می‌شود،‏ چه با upgrade کردن kubelet و چه با فعال کردن صریح feature،‏ اگر kubelet در آن لحظه به imageهایی دسترسی داشته باشد،‏ همه‌ی آن‌ها pre-pulled در نظر گرفته می‌شوند. این اتفاق می‌افتد چون در این حالت kubelet هیچ سابقه‌ای (record) از pull شدن imageها ندارد. kubelet فقط زمانی می‌تواند شروع به ساختن image pull recordها کند که یک image برای نخستین بار pull شود.</p>
-  <p>اگر این موضوع نگران‌کننده است،‏ توصیه می‌شود قبل از فعال کردن feature،‏ Nodeها را از همه‌ی imageهایی که نباید pre-pulled در نظر گرفته شوند پاک کنید.</p>
-  <p>توجه کنید که حذف دایرکتوری نگه‌دارنده‌ی image pulled recordها هم در restart شدن kubelet همین اثر را دارد؛‏ به‌ویژه همه‌ی imageهایی که فعلاً توسط container runtime روی Nodeها cache شده‌اند،‏ pre-pulled در نظر گرفته می‌شوند.</p>
   <div class="deep"><b>توضیح تکمیلی: مسئله‌ای که این feature حل می‌کند</b>
     <p>Namespace <code>team-a</code> با Secret خودش image خصوصی <code>corp.example/team-a/billing:v3</code> را روی Node-1 pull می‌کند. Pod از namespace <code>team-b</code> که هیچ credentialی برای آن image ندارد،‏ با <code>imagePullPolicy: IfNotPresent</code> همان image را روی Node-1 درخواست می‌کند. بدون این feature (یا با <code>NeverVerify</code>)،‏ image موجود است و بدون هیچ بررسی‌ای اجرا می‌شود؛‏ یعنی نشت image خصوصی بین tenantها. با <code>KubeletEnsureSecretPulledImages</code> و policy پیش‌فرض <code>NeverVerifyPreloadedImages</code>،‏ kubelet می‌داند این image با credential دیگری pull شده؛‏ پس Pod تیم b باید image را با credential خودش از registry pull کند و چون credential ندارد،‏ به <code>ErrImagePull</code> می‌رسد. این همان تضمینی است که قبلاً فقط AlwaysPullImages می‌داد،‏ اما بدون تحمیل pull کامل به همه‌ی Podها. استثنا: imageی که با credential سطح Node (یا بدون credential) pull شده،‏ در سابقه‌ی kubelet «در دسترس همه‌ی Podهای Node» ثبت می‌شود.</p>
   <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 380" width="100%" style="max-width:760px;height:auto" role="img" aria-label="بررسی credential برای image موجود روی Node با KubeletEnsureSecretPulledImages"><defs><marker id="f5cv-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f5cv-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f5cv-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f5cv-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f5cv-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="250" y="16" width="260" height="128" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.6"></rect><text x="380" y="42" font-family="'JetBrains Mono', Consolas, monospace" font-size="15" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">Node-1</text><text x="380" y="66" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">نسخه‌ی موجود در cache</text><text x="380" y="88" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">corp.example/team-a/billing:v3</text><text x="380" y="112" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">سابقه‌ی pull ثبت‌شده در kubelet</text><text x="380" y="132" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">secret team-a/harbor-pull</text><rect x="560" y="190" width="190" height="116" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="655" y="216" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#12806f" text-anchor="middle" direction="rtl">تیم a با همان Secret</text><text x="655" y="242" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">بدون تماس با registry</text><text x="655" y="264" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">از cache اجرا می‌شود</text><text x="655" y="286" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl"></text><rect x="285" y="190" width="190" height="116" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="380" y="216" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#b26b00" text-anchor="middle" direction="rtl">تیم a با Secret دیگر</text><text x="380" y="242" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">یک pull با credential</text><text x="380" y="264" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">خودش لازم است</text><text x="380" y="286" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl"></text><rect x="10" y="190" width="190" height="116" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="105" y="216" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#b83227" text-anchor="middle" direction="rtl">تیم b بدون Secret</text><text x="105" y="242" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">باید pull کند و</text><text x="105" y="264" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">چون credential ندارد</text><text x="105" y="286" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">به ErrImagePull می‌رسد</text><line x1="655" y1="188" x2="470" y2="146" stroke="#12806f" stroke-width="1.6" marker-end="url(#f5cv-a12806f)"></line><line x1="380" y1="188" x2="380" y2="146" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f5cv-ab26b00)"></line><line x1="105" y1="188" x2="290" y2="146" stroke="#b83227" stroke-width="1.6" marker-end="url(#f5cv-ab83227)"></line><text x="380" y="338" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">هر imageی که با credential سطح Node یا بدون credential pull شده، برای همه‌ی Podهای Node آزاد است</text><text x="380" y="362" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#4a5672" text-anchor="middle" direction="rtl">سیاست پیش‌فرض: NeverVerifyPreloadedImages</text></svg></div><figcaption><b>شکل ۲-۵.</b> <span style="flex:1 1 0;min-width:0">با <code>KubeletEnsureSecretPulledImages</code> (از v1.35 به‌طور پیش‌فرض فعال)،‏ kubelet برای هر image ثبت می‌کند با کدام credential pull شده است. Podی که همان credential را ارائه نکند،‏ نمی‌تواند از نسخه‌ی موجود در cache استفاده کند و باید خودش pull کند.</span></figcaption></figure>
@@ -804,86 +905,6 @@ preloadedImagesVerificationAllowlist:
 - corp.example/platform/node-agent
 </pre></div>
   </div>
-
-  <h4 id="ch2-creating-secret">ساختن Secret با پیکربندی Docker <small>(Creating a Secret with a Docker config)</small></h4>
-  <p>برای authentication به registry باید username،‏ password registry و آدرس ایمیل client،‏ و همچنین hostname آن را بدانید. دستور زیر را اجرا کنید و placeholderها را با مقادیر مناسب جایگزین کنید:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create secret docker-registry &lt;name&gt; \
-  --docker-server=&lt;docker-registry-server&gt; \
-  --docker-username=&lt;docker-user&gt; \
-  --docker-password=&lt;docker-password&gt; \
-  --docker-email=&lt;docker-email&gt;
-</pre></div>
-  <p>اگر از قبل یک فایل Docker credentials دارید،‏ به جای دستور بالا می‌توانید فایل credentialها را به عنوان یک کوبرنتیز Secret import کنید. بخش <a href="#ch2-task-existing">Create a Secret based on existing Docker credentials</a> نحوه‌ی انجام آن را توضیح می‌دهد.</p>
-  <p>این کار به‌ویژه وقتی از چند private container registry استفاده می‌کنید مفید است،‏ چون <code>kubectl create secret docker-registry</code> یک Secret می‌سازد که فقط با یک private registry کار می‌کند.</p>
-  <div class="note"><b>نکته</b><p>Podها فقط می‌توانند به image pull secretهای namespace خودشان ارجاع دهند،‏ پس این فرایند باید یک بار برای هر namespace انجام شود.</p></div>
-
-  <h4>ارجاع به <code>imagePullSecrets</code> در Pod <small>(Referring to imagePullSecrets on a Pod)</small></h4>
-  <p>حالا می‌توانید Podهایی بسازید که با اضافه کردن بخش <code>imagePullSecrets</code> به تعریف Pod،‏ به آن Secret ارجاع دهند. هر آیتم در آرایه‌ی <code>imagePullSecrets</code> فقط می‌تواند به یک Secret در همان namespace ارجاع دهد.</p>
-  <p>برای مثال:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">cat &lt;&lt;EOF &gt; pod.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: foo
-  namespace: awesomeapps
-spec:
-  containers:
-    - name: foo
-      image: janedoe/awesomeapp:v1
-  imagePullSecrets:
-    - name: myregistrykey
-EOF
-
-cat &lt;&lt;EOF &gt;&gt; ./kustomization.yaml
-resources:
-- pod.yaml
-EOF
-</pre></div>
-  <p>این کار باید برای هر Podی که از یک private registry استفاده می‌کند انجام شود.</p>
-  <p>اما می‌توانید با مشخص کردن بخش <code>imagePullSecrets</code> در یک resource از نوع <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/">ServiceAccount</a> این فرایند را خودکار کنید. برای دستورالعمل کامل <a href="#ch2-sa-pullsecrets">Add ImagePullSecrets to a Service Account</a> را ببینید.</p>
-  <p>می‌توانید این روش را همراه با یک <code>.docker/config.json</code> مخصوص هر Node استفاده کنید. credentialها با هم merge می‌شوند.</p>
-
-  <h4 id="ch2-sa-pullsecrets">افزودن imagePullSecrets به ServiceAccount <small>(Add ImagePullSecrets to a service account)</small></h4>
-  <p>ابتدا یک imagePullSecret بسازید (همان‌طور که در Specifying ImagePullSecrets on a Pod آمد) و بررسی کنید ساخته شده است:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create secret docker-registry myregistrykey --docker-server=&lt;registry name&gt; \
-        --docker-username=DUMMY_USERNAME --docker-password=DUMMY_DOCKER_PASSWORD \
-        --docker-email=DUMMY_DOCKER_EMAIL
-kubectl get secrets myregistrykey
-</pre></div>
-  <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">NAME             TYPE                              DATA    AGE
-myregistrykey    kubernetes.io/.dockerconfigjson   1       1d
-</pre></div>
-  <p>سپس ServiceAccount پیش‌فرض namespace را طوری تغییر دهید که از این Secret به عنوان imagePullSecret استفاده کند:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "myregistrykey"}]}'
-</pre></div>
-  <p>همین نتیجه را می‌توانید با ویرایش دستی object به دست آورید (<code>kubectl edit serviceaccount/default</code>). ویرایشگر پیکربندی‌ای شبیه این را باز می‌کند:</p>
-  <div class="code"><div class="lbl"><span>ServiceAccount (قبل از ویرایش)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
-kind: ServiceAccount
-metadata:
-  creationTimestamp: 2021-07-07T22:02:39Z
-  name: default
-  namespace: default
-  resourceVersion: "243024"
-  uid: 052fb0f4-3d50-11e5-b066-42010af0d7b6
-</pre></div>
-  <p>در ویرایشگر خط کلید <code>resourceVersion</code> را حذف کنید،‏ خطوط <code>imagePullSecrets:</code> را اضافه کنید و ذخیره کنید. مقدار <code>uid</code> را همان‌طور که هست نگه دارید. پس از تغییرات،‏ ServiceAccount شبیه این است:</p>
-  <div class="code"><div class="lbl"><span>ServiceAccount (بعد از ویرایش)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
-kind: ServiceAccount
-metadata:
-  creationTimestamp: 2021-07-07T22:02:39Z
-  name: default
-  namespace: default
-  uid: 052fb0f4-3d50-11e5-b066-42010af0d7b6
-imagePullSecrets:
-  - name: myregistrykey
-</pre></div>
-  <p>حالا وقتی یک Pod جدید در namespace جاری با ServiceAccount پیش‌فرض ساخته شود،‏ فیلد <code>spec.imagePullSecrets</code> آن به صورت خودکار تنظیم می‌شود:</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run nginx --image=&lt;registry name&gt;/nginx --restart=Never
-kubectl get pod nginx -o=jsonpath='{.spec.imagePullSecrets[0].name}{"\n"}'
-</pre></div>
-  <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">myregistrykey
-</pre></div>
-
   <div class="deep"><b>توضیح تکمیلی: الگوی production برای private registry با ServiceAccount</b>
     <p>در یک cluster واقعی نمی‌خواهید هر تیم در هر Deployment به یاد داشته باشد <code>imagePullSecrets</code> را بنویسد. الگوی رایج:</p>
     <ol>
@@ -931,17 +952,7 @@ kubectl -n payments get pod -l app=payments-api -o jsonpath='{.items[0].spec.ima
 </pre></div>
     <p>نکته‌ها: (۱) تزریق <code>imagePullSecrets</code> از ServiceAccount در زمان <i>ایجاد</i> Pod انجام می‌شود؛‏ Podهای موجود پس از patch کردن ServiceAccount تغییری نمی‌کنند تا دوباره ساخته شوند. (۲) اگر Secret حذف یا اشتباه نام‌گذاری شود،‏ event <code>FailedToRetrieveImagePullSecret</code> را می‌بینید. (۳) rotation رمز robot account:‏ Secret را به‌روز کنید؛‏ Podهای در حال اجرا تأثیری نمی‌گیرند،‏ ولی pull بعدی (مثلاً روی Node جدید) با credential جدید انجام می‌شود.</p>
   </div>
-
-  <h4 id="ch2-use-cases">موارد استفاده <small>(Use cases)</small></h4>
-  <p>راه‌حل‌های متعددی برای پیکربندی private registryها وجود دارد. در اینجا چند مورد استفاده‌ی رایج و راه‌حل‌های پیشنهادی آمده است:</p>
-  <div class="tbl"><table><thead><tr><th>#</th><th>مورد استفاده</th><th>راه‌حل‌های پیشنهادی</th></tr></thead><tbody>
-    <tr><td>۱</td><td>clusterی که فقط imageهای غیرانحصاری (مثلاً open-source) اجرا می‌کند. نیازی به پنهان کردن imageها نیست.</td><td>از imageهای عمومی یک public registry استفاده کنید.<ul><li>هیچ پیکربندی لازم نیست.</li><li>برخی cloud providerها imageهای عمومی را به‌طور خودکار cache یا mirror می‌کنند که دسترس‌پذیری را بهتر و زمان pull را کم می‌کند.</li></ul></td></tr>
-    <tr><td>۲</td><td>clusterی که برخی imageهای انحصاری اجرا می‌کند که باید از بیرون شرکت پنهان باشند،‏ اما برای همه‌ی کاربران cluster قابل مشاهده باشند.</td><td><ul><li>از یک hosted private registry استفاده کنید. ممکن است روی Nodeهایی که باید به private registry دسترسی داشته باشند پیکربندی دستی لازم باشد.</li><li>یا یک private registry داخلی پشت firewall با دسترسی خواندن باز اجرا کنید. هیچ پیکربندی کوبرنتیز لازم نیست.</li><li>از یک سرویس hosted container image registry استفاده کنید که دسترسی به imageها را کنترل می‌کند. این با Node autoscaling بهتر از پیکربندی دستی Node کار می‌کند.</li><li>یا در clusterی که تغییر پیکربندی Node ناخوشایند است،‏ از <code>imagePullSecrets</code> استفاده کنید.</li></ul></td></tr>
-    <tr><td>۳</td><td>cluster با imageهای انحصاری که چندتایی از آن‌ها کنترل دسترسی سخت‌گیرانه‌تری لازم دارند.</td><td><ul><li>مطمئن شوید <a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#alwayspullimages">AlwaysPullImages admission controller</a> فعال است. در غیر این صورت،‏ همه‌ی Podها به‌طور بالقوه به همه‌ی imageها دسترسی دارند.</li><li>داده‌های حساس را به جای بسته‌بندی در image،‏ به یک resource از نوع Secret منتقل کنید.</li></ul></td></tr>
-    <tr><td>۴</td><td>یک cluster multi-tenant که هر tenant به private registry خودش نیاز دارد.</td><td><ul><li>مطمئن شوید AlwaysPullImages admission controller فعال است. در غیر این صورت،‏ همه‌ی Podهای همه‌ی tenantها به‌طور بالقوه به همه‌ی imageها دسترسی دارند.</li><li>یک private registry با authorization اجباری اجرا کنید.</li><li>برای هر tenant credentialهای registry تولید کنید،‏ در یک Secret ذخیره کنید و Secret را به هر namespace آن tenant منتشر کنید.</li><li>سپس tenant آن Secret را به <code>imagePullSecrets</code> هر namespace اضافه می‌کند (در عمل به ServiceAccountهای آن namespace یا به خود Podها).</li></ul></td></tr>
-  </tbody></table></div>
-  <p>اگر به چند registry دسترسی لازم دارید،‏ می‌توانید برای هر registry یک Secret بسازید.</p>
-  <div class="note"><b>نکته</b><p>توصیه‌ی <code>AlwaysPullImages</code> در ردیف‌های ۳ و ۴ از مستندات است. از v1.35 قابلیت <a href="#ch2-ensure-verification"><code>KubeletEnsureSecretPulledImages</code></a> به‌طور پیش‌فرض فعال است و بیشتر همین حفاظت را بدون pull اجباری فراهم می‌کند،‏ به شرطی که credential private registryها در سطح Pod یا ServiceAccount باشد،‏ نه در سطح Node.</p></div>
+  </details>
 
   <h3 id="ch2-legacy-provider">credential provider داخلی قدیمی kubelet <small>(Legacy built-in kubelet credential provider)</small></h3>
   <p>در نسخه‌های قدیمی‌تر کوبرنتیز،‏ kubelet یک یکپارچگی مستقیم با credentialهای cloud provider داشت. این امکان گرفتن پویای credentialها برای image registryها را فراهم می‌کرد.</p>
@@ -951,7 +962,10 @@ kubectl -n payments get pod -l app=payments-api -o jsonpath='{.items[0].spec.ima
     <li>روی هر Node یک kubelet image credential provider پیکربندی کنید؛‏ یا</li>
     <li>credentialهای image pull را با استفاده از <code>imagePullSecrets</code> و حداقل یک Secret مشخص کنید.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نشانه‌ی کلاسیک پس از ارتقا از نسخه‌های پیش از 1.26</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نشانه‌ی کلاسیک پس از ارتقا از نسخه‌های پیش از 1.26</b><p>اگر clusterی با Nodeهای خودمدیریت (self-managed) روی AWS،‏ Azure یا GCP را از نسخه‌ای پیش از 1.26 ارتقا می‌دهید،‏ علامت کلاسیک پس از upgrade این است که Podهای جدید روی Nodeهای upgrade‌شده با <code>401 Unauthorized</code> از ECR/ACR/GCR به <code>ErrImagePull</code> می‌رسند،‏ در حالی که Podهای قدیمی سالم‌اند (چون image از قبل روی Node بود). راه‌حل: نصب binary credential provider مربوطه (مثل <code>ecr-credential-provider</code>) و تنظیم دو flag kubelet که در بالا آمد.</p></div>
+  </details>
 
   <h3 id="ch2-task-private-registry">pull کردن image از private registry <small>(Pull an Image from a Private Registry)</small></h3>
   <p>این task نشان می‌دهد چطور Podی بسازید که از یک Secret برای pull کردن image از یک private container image registry یا repository استفاده کند. private registryهای زیادی استفاده می‌شوند؛‏ این task از <a href="https://www.docker.com/products/docker-hub">Docker Hub</a> به عنوان registry نمونه استفاده می‌کند.</p>
@@ -1169,9 +1183,12 @@ MY_POD_NAMESPACE=default
 </pre></div>
     <p>حالا یک Service دیگر به نام <code>bar2</code> بسازید و دوباره <code>env</code> را در همان Pod ببینید: متغیر <code>BAR2_SERVICE_HOST</code> وجود <b>ندارد</b>،‏ چون فهرست Serviceها فقط «در زمان ایجاد Container» ساخته می‌شود. برای رسیدن به Serviceهای جدید باید از DNS استفاده کنید (<code>bar2.default.svc.cluster.local</code>). به همین دلیل در production به DNS تکیه می‌شود نه به این متغیرها.</p>
   </div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">وابستگی به ترتیب ایجاد</span></summary>
   <div class="deep"><b>توضیح تکمیلی: وابستگی به ترتیب ایجاد</b>
     <p>اگر برنامه‌ای به <code>DB_SERVICE_HOST</code> تکیه کند،‏ باید Service <code>db</code> قبل از Pod برنامه وجود داشته باشد؛‏ در غیر این صورت متغیر خالی است و برنامه crash می‌کند و فقط پس از restart container درست می‌شود. این یک وابستگی شکننده به ترتیب deployment است. علاوه بر آن،‏ در namespaceهایی با صدها Service،‏ تعداد زیادی متغیر به هر container تزریق می‌شود (خارج از مستندات رسمی: فیلد <code>enableServiceLinks: false</code> در Pod spec تزریق این متغیرها را برای Serviceهای کاربر خاموش می‌کند).</p>
   </div>
+  </details>
 
   <h3 id="ch2-runtimeclass">RuntimeClass</h3>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.20 [stable]</span></p>
@@ -1219,15 +1236,6 @@ spec:
 </pre></div>
   <p>این به kubelet دستور می‌دهد از RuntimeClass نام‌برده برای اجرای این Pod استفاده کند. اگر RuntimeClass نام‌برده وجود نداشته باشد،‏ یا CRI نتواند handler متناظر را اجرا کند،‏ Pod وارد <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase">phase</a> پایانی <code>Failed</code> می‌شود. برای پیام خطا به دنبال <a href="https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/">event</a> متناظر بگردید.</p>
   <p>اگر هیچ <code>runtimeClassName</code> مشخص نشود،‏ RuntimeHandler پیش‌فرض استفاده می‌شود که معادل رفتار زمانی است که قابلیت RuntimeClass غیرفعال است.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: دو حالت شکست در عمل</b>
-    <p>جمله‌ی بالا از مستندات است،‏ ولی در clusterی که admission plugin به نام RuntimeClass (به‌طور پیش‌فرض فعال) دارد،‏ دو حالت رفتار متفاوتی دارند:</p>
-    <ul>
-      <li><b>RuntimeClass وجود ندارد:</b> API server همان لحظه درخواست را رد می‌کند و Podی ساخته نمی‌شود: <code>pods "mypod" is forbidden: pod rejected: RuntimeClass "myclass" not found</code>. اگر Pod را یک controller بسازد،‏ همین پیام در event <code>FailedCreate</code> مربوط به ReplicaSet دیده می‌شود.</li>
-      <li><b>RuntimeClass هست،‏ ولی handler روی Node تعریف نشده:</b> Pod ساخته و schedule می‌شود،‏ اما <code>RunPodSandbox</code> در container runtime شکست می‌خورد. Pod در <code>ContainerCreating</code> می‌ماند و kubelet با event <code>FailedCreatePodSandBox</code> دوباره تلاش می‌کند.</li>
-    </ul>
-    <p>در هیچ‌کدام از این دو حالت،‏ کوبرنتیز بی‌صدا به runtime پیش‌فرض برنمی‌گردد.</p>
-  </div>
 
   <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 470" width="100%" style="max-width:760px;height:auto" role="img" aria-label="مسیر RuntimeClass از admission تا container runtime"><defs><marker id="f5rc-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f5rc-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f5rc-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f5rc-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f5rc-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="240" y="14" width="380" height="58" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="430" y="38" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">ارسال Pod به API server</text><text x="430" y="60" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">runtimeClassName: gvisor</text><text x="604" y="38" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#326ce5" text-anchor="middle" direction="rtl">۱</text><line x1="430" y1="72" x2="430" y2="88" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f5rc-a4a5672)"></line><rect x="240" y="90" width="380" height="58" rx="10" fill="#fff" stroke="#4a5672" stroke-width="1.4"></rect><text x="430" y="114" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">بررسی در admission plugin به نام RuntimeClass</text><text x="430" y="136" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر RuntimeClass نباشد، Pod رد می‌شود (Forbidden)</text><text x="604" y="114" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#4a5672" text-anchor="middle" direction="rtl">۲</text><line x1="430" y1="148" x2="430" y2="164" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f5rc-a4a5672)"></line><rect x="240" y="166" width="380" height="58" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="430" y="190" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">ادغام در Pod spec</text><text x="430" y="212" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">nodeSelector و tolerations و overhead</text><text x="604" y="190" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#12806f" text-anchor="middle" direction="rtl">۳</text><line x1="430" y1="224" x2="430" y2="240" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f5rc-a4a5672)"></line><rect x="240" y="242" width="380" height="58" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="430" y="266" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">scheduler</text><text x="430" y="288" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">Node دارای label را با احتساب overhead انتخاب می‌کند</text><text x="604" y="266" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#b26b00" text-anchor="middle" direction="rtl">۴</text><line x1="430" y1="300" x2="430" y2="316" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f5rc-a4a5672)"></line><rect x="240" y="318" width="380" height="58" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="430" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">kubelet روی Node</text><text x="430" y="364" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">RunPodSandbox را با handler برابر runsc صدا می‌زند</text><text x="604" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#326ce5" text-anchor="middle" direction="rtl">۵</text><line x1="430" y1="376" x2="430" y2="392" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f5rc-a4a5672)"></line><rect x="240" y="394" width="380" height="58" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.4"></rect><text x="430" y="418" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">containerd یا CRI-O</text><text x="430" y="440" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">runtime متناظر با runsc را اجرا می‌کند</text><text x="604" y="418" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#4a5672" text-anchor="middle" direction="rtl">۶</text><rect x="640" y="72" width="110" height="170" rx="10" fill="#fff" stroke="#326ce5" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="695" y="96" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">RuntimeClass</text><text x="695" y="118" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">handler</text><text x="695" y="140" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">scheduling</text><text x="695" y="162" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">overhead</text><text x="695" y="196" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#326ce5" text-anchor="middle" direction="rtl">منبع ادغام</text><text x="695" y="216" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#326ce5" text-anchor="middle" direction="rtl">در مرحله‌ی ۲ و ۳</text><line x1="638" y1="150" x2="622" y2="150" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f5rc-a326ce5)"></line><rect x="10" y="336" width="212" height="120" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="116" y="362" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">handler روی Node تعریف نشده؟</text><text x="116" y="384" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">Pod در ContainerCreating</text><text x="116" y="406" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">می‌ماند با event</text><text x="116" y="428" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">FailedCreatePodSandBox</text><line x1="238" y1="399" x2="224" y2="399" stroke="#b83227" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#f5rc-ab83227)"></line></svg></div><figcaption><b>شکل ۲-۶.</b> <span style="flex:1 1 0;min-width:0">مسیر یک Pod با RuntimeClass.‏ admission فیلدهای <code>scheduling</code> و <code>overhead</code> را در Pod ادغام می‌کند،‏ scheduler بر اساس آن‌ها Node را انتخاب می‌کند و در پایان kubelet نام <code>handler</code> را از طریق CRI به container runtime می‌دهد.</span></figcaption></figure>
 
@@ -1295,6 +1303,20 @@ kubectl logs untrusted-job                       # dmesg shows gVisor's emulated
   <p>برای اطمینان از اینکه Podها روی Nodeهای پشتیبانی‌کننده از یک RuntimeClass مشخص قرار می‌گیرند،‏ آن مجموعه از Nodeها باید یک label (جفت کلید/مقدار روی اشیا برای گروه‌بندی و انتخاب آن‌ها) مشترک داشته باشند که سپس توسط فیلد <code>runtimeclass.scheduling.nodeSelector</code> انتخاب می‌شود. nodeSelector مربوط به RuntimeClass در admission با nodeSelector مربوط به Pod merge می‌شود،‏ که در عمل اشتراک (intersection) مجموعه‌ی Nodeهای انتخاب‌شده توسط هر کدام را می‌گیرد. اگر تعارض وجود داشته باشد،‏ Pod رد (reject) می‌شود.</p>
   <p>اگر Nodeهای پشتیبانی‌کننده taint (علامتی روی Node که Podهای بدون toleration مناسب را دور نگه می‌دارد) شده‌اند تا جلوی اجرای Podهای دیگر RuntimeClassها روی آن Node گرفته شود،‏ می‌توانید <code>tolerations</code> را به RuntimeClass اضافه کنید. مانند <code>nodeSelector</code>،‏ tolerationها (اجازه‌ی Pod برای قرار گرفتن روی Node دارای taint) در admission با tolerationهای Pod merge می‌شوند،‏ که در عمل اجتماع (union) مجموعه‌ی Nodeهای tolerate‌شده توسط هر کدام را می‌گیرد.</p>
   <p>برای یادگیری بیشتر درباره‌ی پیکربندی node selector و tolerationها،‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/">Assigning Pods to Nodes</a> را ببینید (فصل ۹).</p>
+  <h4>Pod Overhead</h4>
+  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.24 [stable]</span></p>
+  <p>می‌توانید resourceهای <i>overhead</i> مرتبط با اجرای یک Pod را مشخص کنید. اعلام overhead به cluster (از جمله scheduler) اجازه می‌دهد هنگام تصمیم‌گیری درباره‌ی Podها و resourceها آن را در نظر بگیرد.</p>
+  <p>Pod overhead در RuntimeClass از طریق فیلد <code>overhead</code> تعریف می‌شود. با استفاده از این فیلد می‌توانید overhead اجرای Podهایی که از این RuntimeClass استفاده می‌کنند را مشخص کنید و مطمئن شوید این overheadها در کوبرنتیز محاسبه می‌شوند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">دو حالت شکست در عمل · intersection در برابر union · overhead چطور حساب می‌شود؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: دو حالت شکست در عمل</b>
+    <p>جمله‌ی بالا از مستندات است،‏ ولی در clusterی که admission plugin به نام RuntimeClass (به‌طور پیش‌فرض فعال) دارد،‏ دو حالت رفتار متفاوتی دارند:</p>
+    <ul>
+      <li><b>RuntimeClass وجود ندارد:</b> API server همان لحظه درخواست را رد می‌کند و Podی ساخته نمی‌شود: <code>pods "mypod" is forbidden: pod rejected: RuntimeClass "myclass" not found</code>. اگر Pod را یک controller بسازد،‏ همین پیام در event <code>FailedCreate</code> مربوط به ReplicaSet دیده می‌شود.</li>
+      <li><b>RuntimeClass هست،‏ ولی handler روی Node تعریف نشده:</b> Pod ساخته و schedule می‌شود،‏ اما <code>RunPodSandbox</code> در container runtime شکست می‌خورد. Pod در <code>ContainerCreating</code> می‌ماند و kubelet با event <code>FailedCreatePodSandBox</code> دوباره تلاش می‌کند.</li>
+    </ul>
+    <p>در هیچ‌کدام از این دو حالت،‏ کوبرنتیز بی‌صدا به runtime پیش‌فرض برنمی‌گردد.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: intersection در برابر union</b>
     <p>nodeSelector یک <i>محدودیت</i> است؛‏ هر چه selectorها بیشتر شوند مجموعه‌ی Nodeها کوچک‌تر می‌شود (intersection). اگر Pod <code>disktype: ssd</code> بخواهد و RuntimeClass <code>sandbox.example.com/gvisor: "true"</code>،‏ Pod فقط روی Nodeهایی می‌رود که هر دو label را دارند. اما اگر Pod <code>sandbox.example.com/gvisor: "false"</code> داشته باشد،‏ کلید یکسان با مقدار متفاوت یک تعارض است و admission،‏ Pod را رد می‌کند. در مقابل،‏ toleration یک <i>اجازه</i> است؛‏ هر چه بیشتر شوند Pod روی Nodeهای بیشتری مجاز است (union). الگوی production:‏ Nodeهای sandbox را با <code>runtime=gvisor:NoSchedule</code> taint کنید و toleration را فقط در RuntimeClass بگذارید،‏ تا Podهای معمولی روی آن‌ها نروند و Podهای gvisor نیاز نداشته باشند خودشان toleration بنویسند.</p>
     <div class="code"><div class="lbl"><span>RuntimeClass با toleration</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: node.k8s.io/v1
@@ -1312,14 +1334,10 @@ scheduling:
     effect: NoSchedule
 </pre></div>
   </div>
-
-  <h4>Pod Overhead</h4>
-  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.24 [stable]</span></p>
-  <p>می‌توانید resourceهای <i>overhead</i> مرتبط با اجرای یک Pod را مشخص کنید. اعلام overhead به cluster (از جمله scheduler) اجازه می‌دهد هنگام تصمیم‌گیری درباره‌ی Podها و resourceها آن را در نظر بگیرد.</p>
-  <p>Pod overhead در RuntimeClass از طریق فیلد <code>overhead</code> تعریف می‌شود. با استفاده از این فیلد می‌توانید overhead اجرای Podهایی که از این RuntimeClass استفاده می‌کنند را مشخص کنید و مطمئن شوید این overheadها در کوبرنتیز محاسبه می‌شوند.</p>
   <div class="deep"><b>توضیح تکمیلی: overhead چطور حساب می‌شود؟</b>
     <p>در runtimeهای مبتنی بر VM (مثل Kata)،‏ هر Pod یک kernel و agent داخل VM دارد که خودش memory و CPU مصرف می‌کند،‏ جدا از requestهای containerها. اگر این مقدار اعلام نشود،‏ scheduler Nodeها را overcommit می‌کند. با <code>overhead.podFixed</code>،‏ مقدار overhead در admission به <code>spec.overhead</code> Pod اضافه می‌شود و scheduler مجموع requestهای containerها <b>به‌علاوه‌ی</b> overhead را در نظر می‌گیرد. مثال: container با request <code>500m</code> CPU و <code>1Gi</code> memory و overhead <code>250m</code> و <code>120Mi</code> ⇐ scheduler برای Pod <code>750m</code> و <code>1Gi + 120Mi</code> جا لازم دارد. جزئیات کامل در صفحه‌ی Pod Overhead (فصل ۹) آمده است.</p>
   </div>
+  </details>
 
   <h3 id="ch2-lifecycle-hooks">Container Lifecycle Hooks</h3>
   <p>این بخش توضیح می‌دهد چگونه Containerهایی که kubelet مدیریت می‌کند می‌توانند از چارچوب Container lifecycle hook (نقطه‌ای از چرخه‌ی عمر container که kubelet در آن کد شما را اجرا می‌کند) برای اجرای کد در پاسخ به رخدادهای lifecycle مدیریتی خود استفاده کنند.</p>
@@ -1339,22 +1357,6 @@ scheduling:
   <p><b><code>StopSignal</code></b></p>
   <p>StopSignal lifecycle را می‌توان برای تعریف یک stop signal استفاده کرد که هنگام متوقف شدن container به آن فرستاده می‌شود. اگر این را تنظیم کنید،‏ هر دستور <code>STOPSIGNAL</code> تعریف‌شده در container image را override می‌کند.</p>
   <p>توضیح دقیق‌تر رفتار termination با stop signalهای سفارشی را در <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination-stop-signals">Stop Signals</a> می‌توانید پیدا کنید؛‏ خلاصه‌ی کامل آن در ادامه آمده است.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: Stop Signals (از صفحه‌ی Pod Lifecycle)</b>
-    <p>stop signalی که برای kill کردن container استفاده می‌شود را می‌توان در container image با دستور <code>STOPSIGNAL</code> تعریف کرد. اگر در image هیچ stop signalی تعریف نشده باشد،‏ سیگنال پیش‌فرض container runtime (SIGTERM برای هر دو containerd و CRI-O) برای kill کردن container استفاده می‌شود.</p>
-    <p><b>تعریف stop signal سفارشی (Defining custom stop signals)</b> — <span class="fs">وضعیت قابلیت: Kubernetes v1.33 [alpha]</span> (به‌طور پیش‌فرض غیرفعال؛‏ feature gate: <code>ContainerStopSignals</code>). اگر feature gate <code>ContainerStopSignals</code> فعال باشد،‏ می‌توانید از Container Lifecycle یک stop signal سفارشی برای containerهای خود پیکربندی کنید. به عنوان پیش‌نیاز تعریف stop signal در container lifecycle،‏ فیلد <code>spec.os.name</code> مربوط به Pod باید وجود داشته باشد. فهرست سیگنال‌های معتبر به سیستم‌عاملی که Pod روی آن schedule می‌شود بستگی دارد. برای Podهایی که روی Nodeهای Windows schedule می‌شوند،‏ فقط SIGTERM و SIGKILL به عنوان سیگنال معتبر پشتیبانی می‌شوند.</p>
-    <div class="code"><div class="lbl"><span>Pod spec با stop signal سفارشی</span><button type="button">کپی</button></div><pre class="yaml">spec:
-  os:
-    name: linux
-  containers:
-    - name: my-container
-      image: container-image:latest
-      lifecycle:
-        stopSignal: SIGUSR1
-</pre></div>
-    <p>اگر یک stop signal در lifecycle تعریف شده باشد،‏ سیگنال تعریف‌شده در container image را override می‌کند. اگر در container spec هیچ stop signalی تعریف نشده باشد،‏ container به رفتار پیش‌فرض برمی‌گردد.</p>
-    <p>کاربرد: برخی نرم‌افزارها با SIGTERM به‌سرعت خارج می‌شوند اما با سیگنال دیگری graceful shutdown انجام می‌دهند. مثلاً nginx با <code>SIGQUIT</code> به صورت graceful خاموش می‌شود (image رسمی nginx همین را با <code>STOPSIGNAL SIGQUIT</code> تنظیم کرده است؛‏ خارج از مستندات رسمی). با <code>stopSignal</code> می‌توانید این رفتار را بدون rebuild کردن image تنظیم کنید.</p>
-  </div>
 
   <h4>انواع hook handler <small>(Hook handler implementations)</small></h4>
   <p>Containerها با پیاده‌سازی و ثبت یک handler برای یک hook می‌توانند به آن hook دسترسی داشته باشند. سه نوع hook handler وجود دارد که می‌توان برای Containerها پیاده‌سازی کرد:</p>
@@ -1393,11 +1395,45 @@ scheduling:
   <p>اگر یکی از hookهای <code>PostStart</code> یا <code>PreStop</code> شکست بخورد،‏ Container kill می‌شود.</p>
   <p>کاربران باید hook handlerهای خود را تا حد امکان سبک نگه دارند. اما مواردی هست که دستورهای طولانی منطقی‌اند،‏ مثل ذخیره‌ی state قبل از توقف یک Container.</p>
 
+  <h4>تضمین تحویل hook <small>(Hook delivery guarantees)</small></h4>
+  <p>تحویل hook قرار است <i>at least once</i> (حداقل یک بار) باشد،‏ یعنی یک hook ممکن است برای هر رخداد،‏ مثل <code>PostStart</code> یا <code>PreStop</code>،‏ چندین بار فراخوانی شود. مدیریت درست این موضوع بر عهده‌ی پیاده‌سازی hook است.</p>
+  <p>به‌طور کلی فقط تحویل‌های تکی انجام می‌شوند. اگر،‏ برای مثال،‏ گیرنده‌ی یک HTTP hook از کار افتاده باشد و نتواند ترافیک بگیرد،‏ هیچ تلاشی برای ارسال دوباره نمی‌شود. اما در برخی موارد نادر ممکن است تحویل دوباره رخ دهد. برای مثال،‏ اگر kubelet در میانه‌ی ارسال یک hook restart شود،‏ ممکن است hook پس از اجرای دوباره‌ی kubelet دوباره فرستاده شود.</p>
+  <h4>عیب‌یابی hook handlerها <small>(Debugging Hook handlers)</small></h4>
+  <p>logهای یک Hook handler در eventهای Pod نمایش داده نمی‌شوند. اگر یک handler به هر دلیلی شکست بخورد،‏ یک event منتشر (broadcast) می‌کند. برای <code>PostStart</code> این event <code>FailedPostStartHook</code> و برای <code>PreStop</code> این event <code>FailedPreStopHook</code> است. برای اینکه خودتان یک event <code>FailedPostStartHook</code> تولید کنید،‏ فایل <a href="https://k8s.io/examples/pods/lifecycle-events.yaml">lifecycle-events.yaml</a> را طوری تغییر دهید که دستور postStart به "badcommand" تغییر کند و آن را apply کنید. این نمونه‌ای از خروجی eventهایی است که با اجرای <code>kubectl describe pod lifecycle-demo</code> می‌بینید:</p>
+  <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Events:
+  Type     Reason               Age              From               Message
+  ----     ------               ----             ----               -------
+  Normal   Scheduled            7s               default-scheduler  Successfully assigned default/lifecycle-demo to ip-XXX-XXX-XX-XX.us-east-2...
+  Normal   Pulled               6s               kubelet            Successfully pulled image "nginx" in 229.604315ms
+  Normal   Pulling              4s (x2 over 6s)  kubelet            Pulling image "nginx"
+  Normal   Created              4s (x2 over 5s)  kubelet            Created container lifecycle-demo-container
+  Normal   Started              4s (x2 over 5s)  kubelet            Started container lifecycle-demo-container
+  Warning  FailedPostStartHook  4s (x2 over 5s)  kubelet            Exec lifecycle hook ([badcommand]) for Container "lifecycle-demo-container" in Pod "lifecycle-demo_default(30229739-9651-4e5a-9a32-a8f1688862db)" failed - error: command 'badcommand' exited with 126: , message: "OCI runtime exec failed: exec failed: container_linux.go:380: starting container process caused: exec: \"badcommand\": executable file not found in $PATH: unknown\r\n"
+  Normal   Killing              4s (x2 over 5s)  kubelet            FailedPostStartHook
+  Normal   Pulled               4s               kubelet            Successfully pulled image "nginx" in 215.66395ms
+  Warning  BackOff              2s (x2 over 3s)  kubelet            Back-off restarting failed container
+</pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۵)</small> <span class="m-t">Stop Signals (از صفحه‌ی Pod Lifecycle) · خط زمانی termination با preStop · preStop برای graceful draining پشت load balancer (الگوی production) · idempotent بودن hook · خواندن این eventها</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: Stop Signals (از صفحه‌ی Pod Lifecycle)</b>
+    <p>stop signalی که برای kill کردن container استفاده می‌شود را می‌توان در container image با دستور <code>STOPSIGNAL</code> تعریف کرد. اگر در image هیچ stop signalی تعریف نشده باشد،‏ سیگنال پیش‌فرض container runtime (SIGTERM برای هر دو containerd و CRI-O) برای kill کردن container استفاده می‌شود.</p>
+    <p><b>تعریف stop signal سفارشی (Defining custom stop signals)</b> — <span class="fs">وضعیت قابلیت: Kubernetes v1.33 [alpha]</span> (به‌طور پیش‌فرض غیرفعال؛‏ feature gate: <code>ContainerStopSignals</code>). اگر feature gate <code>ContainerStopSignals</code> فعال باشد،‏ می‌توانید از Container Lifecycle یک stop signal سفارشی برای containerهای خود پیکربندی کنید. به عنوان پیش‌نیاز تعریف stop signal در container lifecycle،‏ فیلد <code>spec.os.name</code> مربوط به Pod باید وجود داشته باشد. فهرست سیگنال‌های معتبر به سیستم‌عاملی که Pod روی آن schedule می‌شود بستگی دارد. برای Podهایی که روی Nodeهای Windows schedule می‌شوند،‏ فقط SIGTERM و SIGKILL به عنوان سیگنال معتبر پشتیبانی می‌شوند.</p>
+    <div class="code"><div class="lbl"><span>Pod spec با stop signal سفارشی</span><button type="button">کپی</button></div><pre class="yaml">spec:
+  os:
+    name: linux
+  containers:
+    - name: my-container
+      image: container-image:latest
+      lifecycle:
+        stopSignal: SIGUSR1
+</pre></div>
+    <p>اگر یک stop signal در lifecycle تعریف شده باشد،‏ سیگنال تعریف‌شده در container image را override می‌کند. اگر در container spec هیچ stop signalی تعریف نشده باشد،‏ container به رفتار پیش‌فرض برمی‌گردد.</p>
+    <p>کاربرد: برخی نرم‌افزارها با SIGTERM به‌سرعت خارج می‌شوند اما با سیگنال دیگری graceful shutdown انجام می‌دهند. مثلاً nginx با <code>SIGQUIT</code> به صورت graceful خاموش می‌شود (image رسمی nginx همین را با <code>STOPSIGNAL SIGQUIT</code> تنظیم کرده است؛‏ خارج از مستندات رسمی). با <code>stopSignal</code> می‌توانید این رفتار را بدون rebuild کردن image تنظیم کنید.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: خط زمانی termination با preStop</b>
       <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" width="100%" style="max-width:760px;height:auto" role="img" aria-label="خط زمانی termination با preStop: مثال مستندات با grace period شصت ثانیه"><defs><marker id="f5tl-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f5tl-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f5tl-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f5tl-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f5tl-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><line x1="120.0" y1="300" x2="714.0" y2="300" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f5tl-a4a5672)"></line><line x1="120.0" y1="60" x2="120.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="120.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=0s</text><line x1="210.0" y1="60" x2="210.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="210.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=10s</text><line x1="300.0" y1="60" x2="300.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="300.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=20s</text><line x1="390.0" y1="60" x2="390.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="390.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=30s</text><line x1="480.0" y1="60" x2="480.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="480.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=40s</text><line x1="570.0" y1="60" x2="570.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="570.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=50s</text><line x1="615.0" y1="60" x2="615.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="615.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=55s</text><line x1="660.0" y1="60" x2="660.0" y2="300" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="2 3"></line><text x="660.0" y="320" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">t=60s</text><text x="708.0" y="344" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="end" direction="rtl">زمان</text><text x="745" y="96" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#326ce5" text-anchor="end" direction="ltr">kubelet</text><text x="745" y="176" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13.5" font-weight="700" fill="#12806f" text-anchor="start" direction="rtl">برنامه</text><text x="745" y="256" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13.5" font-weight="700" fill="#b26b00" text-anchor="start" direction="rtl">شبکه</text><rect x="120.0" y="80" width="495.0" height="30" rx="4" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.2"></rect><text x="367.5" y="100" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="rtl">اجرای preStop (پنجاه‌وپنج ثانیه)</text><line x1="615.0" y1="70" x2="615.0" y2="150" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f5tl-a326ce5)"></line><text x="611.0" y="64" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="700" fill="#326ce5" text-anchor="end" direction="ltr">SIGTERM</text><line x1="660.0" y1="118" x2="660.0" y2="150" stroke="#b83227" stroke-width="1.6" marker-end="url(#f5tl-ab83227)"></line><text x="664.0" y="130" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="700" fill="#b83227" text-anchor="start" direction="ltr">SIGKILL</text><rect x="120.0" y="158" width="495.0" height="30" rx="4" fill="#e1f4f0" stroke="#12806f" stroke-width="1.2"></rect><text x="367.5" y="178" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="rtl">برنامه هنوز کار می‌کند</text><rect x="615.0" y="158" width="45.0" height="30" rx="4" fill="#fbe5e3" stroke="#b83227" stroke-width="1.2"></rect><rect x="660.0" y="158" width="45.0" height="30" rx="4" fill="#fff" stroke="#b83227" stroke-width="1.2"></rect><text x="682.5" y="208" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#b83227" text-anchor="middle" direction="rtl">۵ ثانیه‌ی دیگر لازم بود</text><rect x="120.0" y="238" width="72.0" height="30" rx="4" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.2"></rect><text x="198.0" y="258" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="end" direction="rtl">خروج endpoint از EndpointSlice و رسیدن آن به kube-proxy و load balancer</text><text x="380" y="30" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">بودجه‌ی کل: terminationGracePeriodSeconds برابر ۶۰ ثانیه، برای preStop و خاموش شدن برنامه با هم</text></svg></div><figcaption><b>شکل ۲-۷.</b> <span style="flex:1 1 0;min-width:0">مثال مستندات: grace period شصت ثانیه،‏ preStop پنجاه‌وپنج ثانیه و برنامه‌ای که پس از <code>SIGTERM</code> ده ثانیه برای خروج لازم دارد. شمارش از لحظه‌ی حذف شروع می‌شود،‏ پس برنامه فقط پنج ثانیه فرصت دارد و با <code>SIGKILL</code> کشته می‌شود. هم‌زمان،‏ مسیر شبکه endpoint را از چرخه خارج می‌کند.</span></figcaption></figure>
     <p>قاعده‌ی طراحی: <code>terminationGracePeriodSeconds</code> ≥ زمان preStop + زمان graceful shutdown برنامه + حاشیه‌ی اطمینان. اطلاعات تمدید ۲ ثانیه‌ای و ترتیب همزمانی حذف endpoint از بخش Pod Termination Flow در Pod Lifecycle است (فصل ۳).</p>
   </div>
-
   <div class="deep"><b>توضیح تکمیلی: preStop برای graceful draining پشت load balancer (الگوی production)</b>
     <p>مشکل: وقتی Pod حذف می‌شود،‏ دو کار <i>همزمان</i> شروع می‌شوند: (الف) kubelet preStop و سپس TERM را اجرا می‌کند؛‏ (ب) control plane،‏ endpoint را از EndpointSlice (شیئی که نشانی Podهای پشت یک Service را نگه می‌دارد) خارج (ready=false) می‌کند و سپس kube-proxy روی همه‌ی Nodeها،‏ Ingress controller و load balancer بیرونی باید این تغییر را ببینند و اعمال کنند. مسیر (ب) چند ثانیه طول می‌کشد. اگر برنامه با دریافت TERM فوراً خارج شود،‏ در همان چند ثانیه load balancer هنوز درخواست به Pod مرده می‌فرستد ⇐ خطاهای 502/503 و connection reset در هر rollout.</p>
     <p>راه‌حل: یک preStop که فقط «صبر» می‌کند تا مسیر (ب) به همه جا برسد،‏ سپس TERM برسد و برنامه اتصالات باز را تمام کند:</p>
@@ -1438,32 +1474,13 @@ spec:
 </pre></div>
     <p>در نسخه‌های قدیمی کوبرنتیز که handler <code>sleep</code> ندارند،‏ معادل exec آن <code>command: ["sh", "-c", "sleep 15"]</code> است (که به وجود <code>sh</code> و <code>sleep</code> در image نیاز دارد؛‏ در imageهای distroless وجود ندارند و به همین دلیل handler <code>sleep</code> که توسط خود kubelet اجرا می‌شود مزیت دارد). مقدار ۱۵ ثانیه یک عدد تجربی است (خارج از مستندات رسمی) و باید با تأخیر واقعی propagation در load balancer شما تنظیم شود؛‏ برای load balancerهای cloud با health check فاصله‌دار ممکن است بیشتر لازم باشد.</p>
   </div>
-
-  <h4>تضمین تحویل hook <small>(Hook delivery guarantees)</small></h4>
-  <p>تحویل hook قرار است <i>at least once</i> (حداقل یک بار) باشد،‏ یعنی یک hook ممکن است برای هر رخداد،‏ مثل <code>PostStart</code> یا <code>PreStop</code>،‏ چندین بار فراخوانی شود. مدیریت درست این موضوع بر عهده‌ی پیاده‌سازی hook است.</p>
-  <p>به‌طور کلی فقط تحویل‌های تکی انجام می‌شوند. اگر،‏ برای مثال،‏ گیرنده‌ی یک HTTP hook از کار افتاده باشد و نتواند ترافیک بگیرد،‏ هیچ تلاشی برای ارسال دوباره نمی‌شود. اما در برخی موارد نادر ممکن است تحویل دوباره رخ دهد. برای مثال،‏ اگر kubelet در میانه‌ی ارسال یک hook restart شود،‏ ممکن است hook پس از اجرای دوباره‌ی kubelet دوباره فرستاده شود.</p>
   <div class="deep"><b>توضیح تکمیلی: idempotent بودن hook</b>
     <p>چون تحویل at least once است،‏ handler باید idempotent باشد. بد: <code>postStart</code> که <code>INSERT INTO nodes ...</code> اجرا می‌کند (دو بار اجرا ⇐ رکورد تکراری). خوب: <code>INSERT ... ON CONFLICT DO NOTHING</code>،‏ یا نوشتن فایل با <code>&gt;</code> به جای <code>&gt;&gt;</code>،‏ یا یک preStop که «deregister اگر ثبت شده» را انجام می‌دهد.</p>
   </div>
-
-  <h4>عیب‌یابی hook handlerها <small>(Debugging Hook handlers)</small></h4>
-  <p>logهای یک Hook handler در eventهای Pod نمایش داده نمی‌شوند. اگر یک handler به هر دلیلی شکست بخورد،‏ یک event منتشر (broadcast) می‌کند. برای <code>PostStart</code> این event <code>FailedPostStartHook</code> و برای <code>PreStop</code> این event <code>FailedPreStopHook</code> است. برای اینکه خودتان یک event <code>FailedPostStartHook</code> تولید کنید،‏ فایل <a href="https://k8s.io/examples/pods/lifecycle-events.yaml">lifecycle-events.yaml</a> را طوری تغییر دهید که دستور postStart به "badcommand" تغییر کند و آن را apply کنید. این نمونه‌ای از خروجی eventهایی است که با اجرای <code>kubectl describe pod lifecycle-demo</code> می‌بینید:</p>
-  <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Events:
-  Type     Reason               Age              From               Message
-  ----     ------               ----             ----               -------
-  Normal   Scheduled            7s               default-scheduler  Successfully assigned default/lifecycle-demo to ip-XXX-XXX-XX-XX.us-east-2...
-  Normal   Pulled               6s               kubelet            Successfully pulled image "nginx" in 229.604315ms
-  Normal   Pulling              4s (x2 over 6s)  kubelet            Pulling image "nginx"
-  Normal   Created              4s (x2 over 5s)  kubelet            Created container lifecycle-demo-container
-  Normal   Started              4s (x2 over 5s)  kubelet            Started container lifecycle-demo-container
-  Warning  FailedPostStartHook  4s (x2 over 5s)  kubelet            Exec lifecycle hook ([badcommand]) for Container "lifecycle-demo-container" in Pod "lifecycle-demo_default(30229739-9651-4e5a-9a32-a8f1688862db)" failed - error: command 'badcommand' exited with 126: , message: "OCI runtime exec failed: exec failed: container_linux.go:380: starting container process caused: exec: \"badcommand\": executable file not found in $PATH: unknown\r\n"
-  Normal   Killing              4s (x2 over 5s)  kubelet            FailedPostStartHook
-  Normal   Pulled               4s               kubelet            Successfully pulled image "nginx" in 215.66395ms
-  Warning  BackOff              2s (x2 over 3s)  kubelet            Back-off restarting failed container
-</pre></div>
   <div class="deep"><b>توضیح تکمیلی: خواندن این eventها</b>
     <p>ترتیب را دنبال کنید: container ساخته و start شد،‏ hook شکست خورد (<code>FailedPostStartHook</code>)،‏ kubelet container را kill کرد (<code>Killing</code> با reason همان FailedPostStartHook)،‏ container طبق restartPolicy دوباره ساخته شد (<code>x2</code>) و در نهایت <code>BackOff</code> (یعنی حلقه‌ی CrashLoopBackOff). نکته‌ی مهم debugging: خروجی stdout/stderr handler از نوع exec در <code>kubectl logs</code> نمی‌آید. اگر به log نیاز دارید،‏ handler را طوری بنویسید که در stdout process اصلی بنویسد (مثلاً <code>echo ... &gt; /proc/1/fd/1</code>) یا در فایلی که بعداً بخوانید (خارج از مستندات رسمی).</p>
   </div>
+  </details>
 
   <h3 id="ch2-attach-handler">اتصال handler به رخدادهای lifecycle container <small>(Attach Handlers to Container Lifecycle Events)</small></h3>
   <p>این task نشان می‌دهد چگونه handlerها را به رخدادهای lifecycle یک Container متصل کنید. کوبرنتیز از رخدادهای postStart و preStop پشتیبانی می‌کند. کوبرنتیز رخداد postStart را بلافاصله پس از start شدن یک Container و رخداد preStop را بلافاصله قبل از terminate شدن Container می‌فرستد. یک Container می‌تواند برای هر رخداد یک handler مشخص کند.</p>
@@ -1562,10 +1579,14 @@ RuntimeApiVersion:  v1
 </pre></div>
     <p><code>RuntimeApiVersion: v1</code> همان شرطی است که kubelet از v1.26 برای register کردن Node لازم دارد.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جایگاه CRI در معماری Node</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جایگاه CRI در معماری Node</b>
       <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 400" width="100%" style="max-width:760px;height:auto" role="img" aria-label="جایگاه CRI بین kubelet، container runtime و OCI runtimeها"><defs><marker id="f5cr-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f5cr-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f5cr-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f5cr-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f5cr-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="590" y="40" width="150" height="74" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="665" y="70" font-family="'JetBrains Mono', Consolas, monospace" font-size="15" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">kubelet</text><text x="665" y="94" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">gRPC client</text><rect x="590" y="150" width="150" height="60" rx="10" fill="#fff" stroke="#4a5672" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="665" y="176" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">crictl</text><text x="665" y="197" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">ابزار عیب‌یابی</text><rect x="250" y="20" width="290" height="250" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.6"></rect><text x="395" y="44" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">containerd یا CRI-O</text><text x="395" y="64" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">unix:///run/containerd/containerd.sock</text><rect x="268" y="80" width="254" height="70" rx="10" fill="#fff" stroke="#326ce5" stroke-width="1.4"></rect><text x="395" y="108" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">RuntimeService</text><text x="395" y="131" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">ساختن sandbox و container، اجرا و توقف</text><rect x="268" y="170" width="254" height="80" rx="10" fill="#fff" stroke="#12806f" stroke-width="1.4"></rect><text x="395" y="198" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">ImageService</text><text x="395" y="221" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">دریافت، فهرست و حذف image</text><line x1="588" y1="70" x2="524" y2="105" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f5cr-a326ce5)"></line><text x="560" y="70" font-family="'JetBrains Mono', Consolas, monospace" font-size="11" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">CRI v1</text><line x1="588" y1="96" x2="524" y2="200" stroke="#12806f" stroke-width="1.6" marker-end="url(#f5cr-a12806f)"></line><line x1="588" y1="180" x2="524" y2="125" stroke="#4a5672" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#f5cr-a4a5672)"></line><rect x="20" y="180" width="150" height="70" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="95" y="208" font-family="'JetBrains Mono', Consolas, monospace" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">registry</text><text x="95" y="230" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">Docker Hub و …</text><line x1="266" y1="214" x2="172" y2="214" stroke="#12806f" stroke-width="1.6" marker-end="url(#f5cr-a12806f)"></line><rect x="250" y="310" width="90" height="64" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="295" y="336" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">runc</text><text x="295" y="358" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">پیش‌فرض</text><line x1="395" y1="272" x2="295" y2="308" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f5cr-ab26b00)"></line><rect x="350" y="310" width="90" height="64" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="395" y="336" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">runsc</text><text x="395" y="358" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">gVisor</text><line x1="395" y1="272" x2="395" y2="308" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f5cr-ab26b00)"></line><rect x="450" y="310" width="90" height="64" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="495" y="336" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="ltr">kata</text><text x="495" y="358" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">VM سبک</text><line x1="395" y1="272" x2="495" y2="308" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f5cr-ab26b00)"></line><text x="240" y="330" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="end" direction="ltr">OCI runtime</text><text x="240" y="352" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="start" direction="rtl">انتخاب با handler در RuntimeClass</text></svg></div><figcaption><b>شکل ۲-۸.</b> <span style="flex:1 1 0;min-width:0">kubelet از طریق CRI (gRPC روی یک unix socket) با دو سرویس container runtime ارتباط برقرار می‌کند: RuntimeService برای sandbox و containerها و ImageService برای imageها. <code>crictl</code> client همین API است. در پایین‌ترین لایه،‏ OCI runtime container را واقعاً می‌سازد و <code>handler</code> در RuntimeClass تعیین می‌کند کدام یک.</span></figcaption></figure>
     <p>این شکل همه‌ی بخش‌های این فصل را به هم وصل می‌کند: image pullها (serial/parallel،‏ credentialها) از طریق ImageService انجام می‌شوند؛‏ RuntimeClass در RuntimeService یک handler را انتخاب می‌کند؛‏ stop signal و exec hook هم نهایتاً درخواست‌های CRI به runtime هستند (در حالی که httpGet و sleep را خود kubelet اجرا می‌کند).</p>
   </div>
+  </details>
   <h3 id="ch2-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>حالا API واقعی شاپیفای روی cluster است و هر سه مشکل هفته حل شد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>ImagePullBackOff روی cluster</td><td>انجام push به registry و معرفی آن به k3s؛‏ رمز در Secret از نوع docker-registry و ارجاع در <code>imagePullSecrets</code></td><td>گام‌های ۵ تا ۷</td></tr><tr><td>کد متفاوت با همان tag</td><td>هیچ tagی دوباره استفاده نمی‌شود و digest کنار tag نوشته می‌شود؛‏ بررسی با <code>imageID</code></td><td>گام ۸</td></tr><tr><td>قطع درخواست‌ها و حذف سی‌ثانیه‌ای</td><td>handler برای SIGTERM در برنامه،‏ و CMD به شکل exec و preStop از نوع sleep و grace period مشخص</td><td>گام‌های ۳ و ۱۰</td></tr></tbody></table></div><p><b>فایل‌های شاپیفای تا این‌جا:</b> فایل <code>app.py</code> (نسخه‌ی 1.1) و <code>Dockerfile</code> و <code>shop-api.yaml</code> زیر. این فایل‌ها را نگه دارید؛‏ فصل بعد از همین‌جا ادامه می‌دهد.</p><div class="code"><div class="lbl"><span>shop-api.yaml (پایان فصل ۲)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
 kind: Deployment
@@ -1629,8 +1650,8 @@ spec:
     targetPort: http
 </pre></div><p><b>هنوز حل نشده:</b> probe فعلی فقط زنده بودن process را می‌سنجد،‏ نه آمادگی واقعی API؛‏ و migration پایگاه داده جایی برای اجرا ندارد (فصل ۳). پایگاه داده و گزارش شبانه هنوز نیامده‌اند (فصل ۴).</p><p><b>هفته‌ی بعد:</b> گاهی API قفل می‌کند ولی Running می‌ماند و ترافیک می‌گیرد. در فصل ۳ Pod را از درون می‌شناسیم: probeها،‏ init container و sidecar.</p></div>
 
-  <div id="ch2-ex1" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۲ <small>۲۲ تمرین</small></div>
+  <details id="ch2-ex1" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۲ <small>۲۲ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>تفاوت <code>imagePullPolicy: Always</code> و <code>IfNotPresent</code> را از نظر تماس با registry توضیح دهید. اگر tag یکسانی (مثلاً <code>v1.2.3</code>) با محتوای جدید دوباره push شود،‏ هر کدام چه رفتاری دارند و چرا این کار خطرناک است؟
         <details class="ans"><summary>پاسخ</summary>
@@ -1928,10 +1949,10 @@ kubectl get pods -A --field-selector spec.nodeName=&lt;node&gt; -o wide
         </details></li>
 
     </ol>
-  </div>
+  </details>
 
-  <div id="ch2-ex2" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۲ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch2-ex2" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۲ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>مقادیر <code>imagePullPolicy</code> چیست و اگر آن را ننویسید مقدار پیش‌فرض چطور تعیین می‌شود؟
         <details class="ans"><summary>پاسخ</summary>
@@ -2012,7 +2033,7 @@ kubectl get pods -A --field-selector spec.nodeName=&lt;node&gt; -o wide
         </details></li>
 
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch2-recap">
     <div class="recap-h">خلاصه‌ی فصل ۲ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

@@ -4,6 +4,14 @@
 
   <p>مستندات کوبرنتیز بخش storage را این‌طور معرفی می‌کند: «Ways to provide both long-term and temporary storage to Pods in your cluster»؛‏ یعنی راه‌های فراهم کردن storage بلندمدت و موقت برای Podها. این فصل دو بخش دارد. بخش اول درباره‌ی Volumeها و انواع آن‌هاست؛‏ همراه با projected volume و ephemeral volume و local ephemeral storage. بخش دوم درباره‌ی PersistentVolume و StorageClass و VolumeAttributesClass است؛‏ و بعد dynamic provisioning و VolumeSnapshot و cloning و volume populator؛‏ و در پایان storage capacity tracking و محدودیت تعداد Volume روی هر Node و volume health monitoring و storage در Windows.</p>
 
+  <div class="story"><b>ماجرای این فصل: سفارش‌های دیروز پاک شد</b><p>Node میزبان PostgreSQL برای نصب یک patch امنیتی reboot شد،‏ Pod پایگاه داده دوباره ساخته شد و همه‌ی سفارش‌های دیروز از بین رفت؛‏ داده داخل خود container نوشته می‌شد. همین را در فصل ۶،‏ گام ۷ هم دیدید. تیم بخشی از سفارش‌ها را با کمک سوابق درگاه پرداخت دستی بازسازی کرد. در جلسه‌ی postmortem،‏ سه کار واجب شد:</p><ol><li>داده‌ی PostgreSQL باید از چرخه‌ی عمر Pod جدا شود و با حذف یا جابه‌جایی Pod سر جایش بماند.</li><li>از داده هر شب backup گرفته شود و بازگردانی آن آزموده شود؛‏ حتی داده‌ی ماندگار هم با یک دستور اشتباه پاک می‌شود.</li><li>فایل access log مربوط به API که در یک emptyDir نوشته می‌شود،‏ مدام بزرگ می‌شود؛‏ نباید بتواند disk مربوط به Node را پر کند و سرویس‌های دیگر را هم از کار بیندازد.</li></ol><p><b>راه‌حل را در این بخش‌ها می‌سازید:</b></p><ul><li><a href="#ch7-lesson">درس: داده کجا زندگی می‌کند؟</a></li><li><a href="#ch7-lab-s1">گام‌های ۱ و ۲: PVC و StorageClass و reclaim policy</a></li><li><a href="#ch7-lab-s3">گام‌های ۳ تا ۶: PostgreSQL با volumeClaimTemplates</a> (مشکل ۱)</li><li><a href="#ch7-lab-s7">گام ۷: backup شبانه با CronJob</a> (مشکل ۲)</li><li><a href="#ch7-lab-s8">گام ۸: سقف برای emptyDir</a> (مشکل ۳)</li><li><a href="#ch7-solved">حل مسئله‌ی شاپیفای</a></li></ul></div>
+
+  <div class="note"><b>هدف این فصل</b><p>در پایان این فصل می‌توانید:</p><ul><li>بگویید داده‌ی هر نوع Volume کی از بین می‌رود؛‏</li><li>رابطه‌ی PersistentVolume و PersistentVolumeClaim و StorageClass را توضیح دهید و مسیر ساخته شدن یک PV را دنبال کنید؛‏</li><li>درباره‌ی access mode و reclaim policy و volumeBindingMode تصمیم بگیرید؛‏</li><li>برای StatefulSet با volumeClaimTemplates داده‌ی ماندگار بسازید و داده‌ی موجود را بدون از دست رفتن به آن منتقل کنید؛‏</li><li>با CronJob از پایگاه داده backup بگیرید و بدانید چرا backup روی همان Node کافی نیست؛‏</li><li>برای emptyDir و ephemeral storage سقف بگذارید.</li></ul><p><b>پیش‌نیاز:</b> وضعیت پایان فصل ۶: در namespace به نام <code>shopify</code> دو Deployment به نام‌های <code>shop-api</code> و <code>shop-web</code>؛‏ StatefulSet به نام <code>postgres</code> با رمز از Secret به نام <code>shop-db</code>؛‏ Job و CronJob فصل ۴؛‏ Ingress و NetworkPolicy فصل ۵؛‏ و فایل‌های پروژه در پوشه‌ی <code>~/shopify</code>.</p></div>
+
+  <div class="deep"><b>نقشه‌ی این فصل</b><p>مثل فصل‌های قبل: اول درس،‏ بعد آزمایش گام‌به‌گام روی شاپیفای،‏ و در پایان متن کامل مستندات به‌عنوان مرجع. این فصل در انتها سؤال‌های مصاحبه و خلاصه‌ی فصل را هم دارد.</p><div class="tbl"><table><thead><tr><th>بخش</th><th>چه چیزی به دست می‌آورید</th></tr></thead><tbody><tr><td>درس</td><td>عمر داده در هر نوع Volume؛‏ سه شیء PV و PVC و StorageClass؛‏ access mode و reclaim policy؛‏ StatefulSet و volumeClaimTemplates؛‏ storage موقت؛‏ و backup</td></tr><tr><td>آزمایش شاپیفای (۹ گام)</td><td>PVC و local-path؛‏ reclaim policy؛‏ backup پیش از جابه‌جایی؛‏ PostgreSQL با PVC؛‏ آزمون ماندگاری؛‏ Retain؛‏ CronJob برای backup؛‏ و sizeLimit برای emptyDir</td></tr><tr><td>مرجع عمیق‌تر</td><td>متن کامل مستندات Volume و PersistentVolume و StorageClass و snapshot</td></tr><tr><td>حل مسئله،‏ تمرین‌ها،‏ سؤال‌های مصاحبه و خلاصه</td><td>جمع‌بندی و سنجش خودتان</td></tr></tbody></table></div></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نقشه‌ی ذهنی storage در Kubernetes</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نقشه‌ی ذهنی storage در Kubernetes</b>
     <p>پیش از ورود به جزئیات،‏ خوب است سه لایه را از هم جدا کنید:</p>
     <ul>
@@ -23,12 +31,7 @@
       <tr><td>دسترسی به فایل‌های Node (عامل log یا CSI node plugin)</td><td><code>hostPath</code> (با احتیاط زیاد)</td><td>روی Node می‌ماند</td></tr>
     </tbody></table></div>
   </div>
-
-  <div class="story"><b>ماجرای این فصل: سفارش‌های دیروز پاک شد</b><p>Node میزبان PostgreSQL برای نصب یک patch امنیتی reboot شد،‏ Pod پایگاه داده دوباره ساخته شد و همه‌ی سفارش‌های دیروز از بین رفت؛‏ داده داخل خود container نوشته می‌شد. همین را در فصل ۶،‏ گام ۷ هم دیدید. تیم بخشی از سفارش‌ها را با کمک سوابق درگاه پرداخت دستی بازسازی کرد. در جلسه‌ی postmortem،‏ سه کار واجب شد:</p><ol><li>داده‌ی PostgreSQL باید از چرخه‌ی عمر Pod جدا شود و با حذف یا جابه‌جایی Pod سر جایش بماند.</li><li>از داده هر شب backup گرفته شود و بازگردانی آن آزموده شود؛‏ حتی داده‌ی ماندگار هم با یک دستور اشتباه پاک می‌شود.</li><li>فایل access log مربوط به API که در یک emptyDir نوشته می‌شود،‏ مدام بزرگ می‌شود؛‏ نباید بتواند disk مربوط به Node را پر کند و سرویس‌های دیگر را هم از کار بیندازد.</li></ol><p><b>راه‌حل را در این بخش‌ها می‌سازید:</b></p><ul><li><a href="#ch7-lesson">درس: داده کجا زندگی می‌کند؟</a></li><li><a href="#ch7-lab-s1">گام‌های ۱ و ۲: PVC و StorageClass و reclaim policy</a></li><li><a href="#ch7-lab-s3">گام‌های ۳ تا ۶: PostgreSQL با volumeClaimTemplates</a> (مشکل ۱)</li><li><a href="#ch7-lab-s7">گام ۷: backup شبانه با CronJob</a> (مشکل ۲)</li><li><a href="#ch7-lab-s8">گام ۸: سقف برای emptyDir</a> (مشکل ۳)</li><li><a href="#ch7-solved">حل مسئله‌ی شاپیفای</a></li></ul></div>
-
-  <div class="note"><b>هدف این فصل</b><p>در پایان این فصل می‌توانید:</p><ul><li>بگویید داده‌ی هر نوع Volume کی از بین می‌رود؛‏</li><li>رابطه‌ی PersistentVolume و PersistentVolumeClaim و StorageClass را توضیح دهید و مسیر ساخته شدن یک PV را دنبال کنید؛‏</li><li>درباره‌ی access mode و reclaim policy و volumeBindingMode تصمیم بگیرید؛‏</li><li>برای StatefulSet با volumeClaimTemplates داده‌ی ماندگار بسازید و داده‌ی موجود را بدون از دست رفتن به آن منتقل کنید؛‏</li><li>با CronJob از پایگاه داده backup بگیرید و بدانید چرا backup روی همان Node کافی نیست؛‏</li><li>برای emptyDir و ephemeral storage سقف بگذارید.</li></ul><p><b>پیش‌نیاز:</b> وضعیت پایان فصل ۶: در namespace به نام <code>shopify</code> دو Deployment به نام‌های <code>shop-api</code> و <code>shop-web</code>؛‏ StatefulSet به نام <code>postgres</code> با رمز از Secret به نام <code>shop-db</code>؛‏ Job و CronJob فصل ۴؛‏ Ingress و NetworkPolicy فصل ۵؛‏ و فایل‌های پروژه در پوشه‌ی <code>~/shopify</code>.</p></div>
-
-  <div class="deep"><b>نقشه‌ی این فصل</b><p>مثل فصل‌های قبل: اول درس،‏ بعد آزمایش گام‌به‌گام روی شاپیفای،‏ و در پایان متن کامل مستندات به‌عنوان مرجع. این فصل در انتها سؤال‌های مصاحبه و خلاصه‌ی فصل را هم دارد.</p><div class="tbl"><table><thead><tr><th>بخش</th><th>چه چیزی به دست می‌آورید</th></tr></thead><tbody><tr><td>درس</td><td>عمر داده در هر نوع Volume؛‏ سه شیء PV و PVC و StorageClass؛‏ access mode و reclaim policy؛‏ StatefulSet و volumeClaimTemplates؛‏ storage موقت؛‏ و backup</td></tr><tr><td>آزمایش شاپیفای (۹ گام)</td><td>PVC و local-path؛‏ reclaim policy؛‏ backup پیش از جابه‌جایی؛‏ PostgreSQL با PVC؛‏ آزمون ماندگاری؛‏ Retain؛‏ CronJob برای backup؛‏ و sizeLimit برای emptyDir</td></tr><tr><td>مرجع عمیق‌تر</td><td>متن کامل مستندات Volume و PersistentVolume و StorageClass و snapshot</td></tr><tr><td>حل مسئله،‏ تمرین‌ها،‏ سؤال‌های مصاحبه و خلاصه</td><td>جمع‌بندی و سنجش خودتان</td></tr></tbody></table></div></div>
+  </details>
 
   <h3 id="ch7-lesson">درس: داده کجا زندگی می‌کند؟</h3>
   <p>هر container یک لایه‌ی قابل نوشتن روی image دارد. هر چه برنامه در این لایه بنویسد،‏ با حذف container از بین می‌رود؛‏ حتی با restart ساده‌ی container. پایگاه داده‌ی PostgreSQL شاپیفای تا امروز دقیقاً همین‌جا می‌نوشت. راه نگه داشتن داده،‏ Volume است: پوشه‌ای که بیرون از container تعریف می‌شود و در مسیری داخل آن mount می‌شود.</p><h4>۱. Volume در سطح Pod و عمر داده</h4><p>Volume در <code>spec.volumes</code> مربوط به Pod تعریف و با <code>volumeMounts</code> در container استفاده می‌شود. مهم‌ترین سؤال درباره‌ی هر نوع Volume این است که داده‌اش تا کی زنده است:</p><div class="tbl"><table><thead><tr><th>نوع Volume</th><th>عمر داده</th><th>در شاپیفای</th></tr></thead><tbody><tr><td><code>emptyDir</code></td><td>هم‌عمر Pod؛‏ restart مربوط به container را تحمل می‌کند ولی حذف Pod را نه</td><td>access log بین API و sidecar (فصل ۳)</td></tr><tr><td><code>configMap</code> و <code>secret</code> و <code>projected</code></td><td>منبع در API می‌ماند؛‏ فقط mount هم‌عمر Pod است</td><td>فصل ۶</td></tr><tr><td><code>hostPath</code></td><td>روی disk مربوط به همان Node می‌ماند؛‏ به Node بسته است و خطر امنیتی دارد</td><td>DaemonSet جمع‌آوری log (فصل ۴)</td></tr><tr><td><code>persistentVolumeClaim</code></td><td>مستقل از Pod؛‏ تا وقتی PVC و PV هستند</td><td>PostgreSQL در همین فصل</td></tr></tbody></table></div><h4>۲. سه شیء: PVC و PV و StorageClass</h4><p>کوبرنتیز «چه فضایی لازم دارم» را از «این فضا از کجا می‌آید» جدا می‌کند. برنامه‌نویس یک PersistentVolumeClaim (درخواست فضای ذخیره‌سازی) می‌نویسد. PersistentVolume یا PV (شیئی که یک disk یا پوشه‌ی واقعی را نمایندگی می‌کند) نشانی واقعی را دارد. StorageClass هم (قالبی که می‌گوید PVها با چه provisioner و چه پارامترهایی ساخته شوند) کار ساختن را خودکار می‌کند. دو روش ساختن PV وجود دارد: در static provisioning مدیر cluster PVها را از قبل می‌سازد؛‏ در dynamic provisioning هم خود provisioner برای هر PVC تازه یک PV می‌سازد. در k3s هم StorageClass پیش‌فرض <code>local-path</code> است که برای هر PVC یک پوشه در <code>/var/lib/rancher/k3s/storage</code> روی Node می‌سازد.</p><figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 300" width="100%" style="max-width:770px;height:auto" role="img" aria-label="زنجیره‌ی Pod و PVC و PV و StorageClass"><defs><marker id="f7b-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker></defs><rect x="610" y="50" width="140" height="60" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="680.0" y="76.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">Pod</text><text x="680.0" y="96.0" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="12" fill="#4a5672" text-anchor="middle">postgres-0</text><rect x="410" y="50" width="170" height="60" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="495.0" y="76.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">PVC</text><text x="495.0" y="96.0" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="12" fill="#4a5672" text-anchor="middle">data-postgres-0</text><rect x="190" y="50" width="190" height="60" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="285.0" y="76.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">PV</text><text x="285.0" y="96.0" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="12" fill="#4a5672" text-anchor="middle">pvc-8e2f7a41-…</text><rect x="20" y="50" width="140" height="60" rx="10" fill="#ffffff" stroke="#4a5672" stroke-width="1.4"></rect><text x="90.0" y="76.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">disk روی Node</text><text x="90.0" y="96.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">پوشه‌ی local-path</text><line x1="608" y1="80" x2="582" y2="80" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7b-a)"></line><line x1="408" y1="80" x2="382" y2="80" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7b-a)"></line><line x1="188" y1="80" x2="162" y2="80" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7b-a)"></line><text x="495" y="36" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="11" fill="#4a5672" text-anchor="middle">چه می‌خواهم: 2Gi و RWO</text><text x="285" y="36" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="11" fill="#4a5672" text-anchor="middle">چه چیزی واقعاً هست</text><rect x="190" y="195" width="190" height="60" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="285.0" y="221.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">StorageClass</text><text x="285.0" y="241.0" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="12" fill="#4a5672" text-anchor="middle">local-path</text><line x1="285" y1="193" x2="285" y2="112" stroke="#4a5672" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#f7b-a)"></line><text x="275" y="158" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="11" fill="#4a5672" text-anchor="start">provisioner می‌سازد</text><line x1="495" y1="112" x2="382" y2="205" stroke="#4a5672" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#f7b-a)"></line><text x="585" y="165" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="11" fill="#4a5672" text-anchor="start">PVC کلاس را نام می‌برد</text><text x="385" y="285" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">Pod فقط PVC را می‌شناسد؛ جزئیات disk در PV و StorageClass پنهان است</text></svg></div><figcaption><b>شکل ۷-۱.</b> <span style="flex:1 1 0;min-width:0">زنجیره‌ی رسیدن Pod به disk.‏ Pod فقط نام PVC را می‌داند. PVC می‌گوید چقدر فضا با چه access mode و از کدام StorageClass لازم است. provisioner مربوط به StorageClass یک PV می‌سازد و control plane آن را به PVC وصل (bind) می‌کند. PV نشانی واقعی disk را دارد؛‏ در k3s یک پوشه روی Node.</span></figcaption></figure><h4>۳. تنظیم‌هایی که باید تصمیم بگیرید</h4><div class="tbl"><table><thead><tr><th>تنظیم</th><th>مقدارها</th><th>نکته</th></tr></thead><tbody><tr><td>access mode در PVC</td><td><code>ReadWriteOnce</code> (یک Node)؛‏ <code>ReadOnlyMany</code>؛‏ <code>ReadWriteMany</code> (چند Node)؛‏ <code>ReadWriteOncePod</code> (فقط یک Pod)</td><td>RWO یعنی یک Node،‏ نه یک Pod؛‏ چند Pod روی همان Node می‌توانند بنویسند. همه‌ی storageها همه‌ی modeها را ندارند؛‏ local-path فقط حالت‌های تک‌Node را دارد</td></tr><tr><td>reclaimPolicy در PV یا StorageClass</td><td><code>Delete</code> یا <code>Retain</code></td><td>در dynamic provisioning پیش‌فرض Delete است: حذف PVC یعنی حذف داده</td></tr><tr><td>volumeBindingMode در StorageClass</td><td><code>Immediate</code> یا <code>WaitForFirstConsumer</code></td><td>در حالت دوم،‏ PV وقتی ساخته می‌شود که Pod مصرف‌کننده schedule شده باشد؛‏ برای storage وابسته به Node یا zone لازم است</td></tr><tr><td>allowVolumeExpansion در StorageClass</td><td><code>true</code> یا <code>false</code></td><td>فقط بزرگ کردن ممکن است،‏ نه کوچک کردن؛‏ local-path از آن پشتیبانی نمی‌کند</td></tr></tbody></table></div><figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 230" width="100%" style="max-width:770px;height:auto" role="img" aria-label="چرخه‌ی عمر PersistentVolume و reclaim policy"><defs><marker id="f7l-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker></defs><rect x="600" y="50" width="140" height="56" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="670.0" y="74.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">Available</text><text x="670.0" y="94.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">آزاد</text><rect x="400" y="50" width="140" height="56" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="470.0" y="74.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">Bound</text><text x="470.0" y="94.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">وصل به یک PVC</text><rect x="200" y="50" width="140" height="56" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="270.0" y="74.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">Released</text><text x="270.0" y="94.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">PVC حذف شد</text><line x1="598" y1="78" x2="542" y2="78" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7l-a)"></line><line x1="398" y1="78" x2="342" y2="78" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7l-a)"></line><text x="570" y="70" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">bind</text><text x="370" y="70" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="11" fill="#4a5672" text-anchor="middle">حذف PVC</text><rect x="20" y="150" width="170" height="60" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="105.0" y="176.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">Delete</text><text x="105.0" y="196.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">PV و داده پاک می‌شوند</text><rect x="220" y="150" width="200" height="60" rx="10" fill="#ffffff" stroke="#4a5672" stroke-width="1.4"></rect><text x="320.0" y="176.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">Retain</text><text x="320.0" y="196.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">داده می‌ماند؛ کار دستی</text><line x1="240" y1="108" x2="120" y2="148" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7l-a)"></line><line x1="270" y1="108" x2="310" y2="148" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7l-a)"></line><text x="150" y="124" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">reclaimPolicy</text><text x="600" y="185" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">در dynamic provisioning پیش‌فرض Delete است</text></svg></div><figcaption><b>شکل ۷-۲.</b> <span style="flex:1 1 0;min-width:0">چرخه‌ی عمر یک PV. با حذف PVC،‏ وضعیت PV به Released می‌رسد و reclaimPolicy سرنوشتش را تعیین می‌کند: با Delete،‏ خود PV و داده‌ی روی disk پاک می‌شوند؛‏ با Retain،‏ داده می‌ماند و PV دیگر خودکار به PVC تازه‌ای وصل نمی‌شود تا مدیر cluster آن را دستی آزاد کند.</span></figcaption></figure><p>دو محافظ هم هست: finalizer به نام <code>kubernetes.io/pvc-protection</code> نمی‌گذارد PVCی که Podی از آن استفاده می‌کند واقعاً حذف شود؛‏ PVC در وضعیت Terminating می‌ماند تا آن Pod برود. finalizer به نام <code>kubernetes.io/pv-protection</code> هم همین کار را برای PV وصل به PVC انجام می‌دهد.</p><h4>۴. StatefulSet و volumeClaimTemplates</h4><p>در Deployment همه‌ی replicaها یک template دارند؛‏ اگر به یک PVC ارجاع دهند،‏ همه یک disk را شریک‌اند. StatefulSet با <code>volumeClaimTemplates</code> برای هر replica یک PVC جدا می‌سازد به نام <code>TEMPLATE-STATEFULSET-ORDINAL</code>؛‏ مثلاً <code>data-postgres-0</code>. اگر Pod به نام postgres-0 حذف شود،‏ Pod تازه با همان نام دوباره به همان PVC وصل می‌شود. با حذف StatefulSet یا کم کردن replicaها،‏ PVCها به‌طور پیش‌فرض می‌مانند؛‏ فیلد <code>persistentVolumeClaimRetentionPolicy</code> با دو بخش whenDeleted و whenScaled این رفتار را تعیین می‌کند.</p><div class="warn"><b>volumeClaimTemplates تغییرناپذیر است</b><p>API server تغییر volumeClaimTemplates مربوط به StatefulSet موجود را رد می‌کند. برای اضافه کردن volume به StatefulSetی که قبلاً ساخته شده،‏ باید آن را حذف و دوباره بسازید. اگر داده داخل container است،‏ اول از آن backup بگیرید؛‏ در گام‌های ۳ و ۴ همین کار را می‌کنیم.</p></div><h4>۵. storage موقت: emptyDir و ephemeral storage</h4><p>emptyDir روی disk مربوط به Node (در پوشه‌ی kubelet) ساخته می‌شود. با <code>medium: Memory</code> روی tmpfs ساخته می‌شود و مصرفش جزو memory مربوط به container حساب می‌شود. هر emptyDir می‌تواند <code>sizeLimit</code> داشته باشد و هر container هم می‌تواند برای <code>ephemeral-storage</code> مقدار request و limit داشته باشد. kubelet مصرف را دوره‌ای می‌سنجد و Podی را که از سقف گذشته evict می‌کند. برای فضای موقت بزرگ که باید از storage واقعی بیاید،‏ generic ephemeral volume یک PVC هم‌عمر Pod می‌سازد.</p><h4>۶. backup و snapshot</h4><p>داده‌ی ماندگار در برابر حذف Pod امن است،‏ ولی در برابر حذف اشتباه PVC،‏ خرابی disk و خرابی کل Node نه. VolumeSnapshot (شیئی برای گرفتن snapshot از یک PVC) فقط با CSI driverی کار می‌کند که snapshot را پشتیبانی کند،‏ همراه با snapshot controller و CRDهای مربوط؛‏ local-path هیچ‌کدام را ندارد. snapshot سطح disk معمولاً فقط crash-consistent است؛‏ یعنی شبیه قطع ناگهانی برق. برای پایگاه داده،‏ backup منطقی با ابزار خود پایگاه داده (مثل <code>pg_dump</code>) سازگاری داده را تضمین می‌کند. هر دو باید به جایی بیرون از همان Node فرستاده شوند.</p>
@@ -275,7 +278,7 @@ persistentvolumeclaim/shop-backups      Bound    pvc-c47d1e90-6b2a-4f3e-9d85-2a1
 NAME                        SCHEDULE      TIMEZONE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE
 cronjob.batch/shop-backup   30 3 * * *    Asia/Tehran   False     0        &lt;none&gt;          8m
 cronjob.batch/shop-report   0 2 * * *     Asia/Tehran   False     0        5h              3d
-</pre></div><p>داده‌ی PostgreSQL روی PVC است،‏ PV آن Retain دارد،‏ backup هر شب گرفته می‌شود و هیچ emptyDirی بی‌سقف نیست.</p><div id="ch7-ex1" class="ex"><div class="ex-h">امتحان کنید <small>3 تمرین</small></div><ol><li><span class="lvl l1">عملی</span>StatefulSet مربوط به PostgreSQL را با <code>kubectl scale statefulset postgres --replicas=0</code> صفر و بعد دوباره یک کنید. PVC به نام data-postgres-0 چه می‌شود؟ سفارش‌ها می‌مانند؟<details class="ans"><summary>پاسخ</summary><p>با صفر شدن تعداد replicaها Pod به نام postgres-0 حذف می‌شود ولی PVC می‌ماند،‏ چون <code>whenScaled: Retain</code> است (مقدار پیش‌فرض هم همین است). در این فاصله API آماده نیست. با برگشتن به یک،‏ Pod تازه با همان نام به همان PVC وصل می‌شود و <code>SELECT count(*) FROM orders</code> همان عدد قبلی را نشان می‌دهد. اگر <code>whenScaled: Delete</code> بود،‏ PVC با scale down حذف می‌شد و با reclaimPolicy برابر Delete داده هم از بین می‌رفت؛‏ البته PV ما را در گام ۶ به Retain تغییر داده‌ایم.</p></details></li><li><span class="lvl l2">مفهومی</span>PVC مربوط به backup را با ظرفیت 1Gi خواسته‌ایم. اگر فایل‌های backup از 1Gi بیشتر شوند،‏ در local-path چه اتفاقی می‌افتد؟<details class="ans"><summary>پاسخ</summary><p>هیچ خطایی رخ نمی‌دهد. local-path فقط یک پوشه روی disk مربوط به Node است و ظرفیت PVC را اجرا نمی‌کند؛‏ نوشتن تا پر شدن کل disk مربوط به Node ادامه پیدا می‌کند. storageهای واقعی (مثل disk مربوط به cloud یا بیشتر CSI driverها) یک volume با همان اندازه می‌سازند و نوشتن بیشتر از آن با خطای no space left on device متوقف می‌شود. ظرفیت PVC درخواست است و اجرای آن کار storage است؛‏ برای همین در گام ۷ فایل‌های قدیمی‌تر از هفت روز پاک می‌شوند.</p></details></li><li><span class="lvl l2">عملی</span>PVC به نام orders-data از گام ۱ را دوباره بسازید،‏ PV آن را با patch به Retain تغییر دهید و بعد PVC را حذف کنید. PV به چه وضعیتی می‌رسد؟ اگر دوباره PVC با همان نام بسازید،‏ به همان PV وصل می‌شود؟<details class="ans"><summary>پاسخ</summary><p>PV به وضعیت Released می‌رسد و داده روی disk می‌ماند. PVC تازه (پس از ساخته شدن Pod مصرف‌کننده) یک PV <b>تازه</b> و خالی از provisioner می‌گیرد؛‏ PV قدیمی در Released می‌ماند،‏ چون در <code>spec.claimRef</code> آن هنوز uid مربوط به PVC حذف‌شده نوشته شده است. برای استفاده‌ی دوباره،‏ مدیر cluster باید claimRef را از PV پاک کند (تا Available شود) و PVC تازه را با <code>volumeName</code> صریحاً به آن وصل کند. در پایان PV آزمایشی را دستی حذف کنید و پوشه‌اش را روی Node پاک کنید؛‏ Retain یعنی پاک‌سازی هم دستی است.</p></details></li></ol></div><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>می‌دانید داده‌ی هر نوع Volume کی از بین می‌رود.</li><li>زنجیره‌ی Pod و PVC و PV و StorageClass را در cluster دنبال می‌کنید.</li><li>وضعیت Pending مربوط به PVC با WaitForFirstConsumer را از خرابی تشخیص می‌دهید.</li><li>PostgreSQL داده‌اش را روی PVC نگه می‌دارد و حذف Pod آن را پاک نمی‌کند.</li><li>PV مربوط به PostgreSQL با Retain از حذف اشتباه PVC در امان است.</li><li>backup شبانه با CronJob گرفته می‌شود و می‌دانید باید از Node بیرون برود.</li><li>emptyDir بدون سقف نمی‌تواند disk مربوط به Node را پر کند.</li></ul></div>
+</pre></div><p>داده‌ی PostgreSQL روی PVC است،‏ PV آن Retain دارد،‏ backup هر شب گرفته می‌شود و هیچ emptyDirی بی‌سقف نیست.</p><details id="ch7-ex1" class="ex"><summary class="ex-h">امتحان کنید <small>3 تمرین</small></summary><ol><li><span class="lvl l1">عملی</span>StatefulSet مربوط به PostgreSQL را با <code>kubectl scale statefulset postgres --replicas=0</code> صفر و بعد دوباره یک کنید. PVC به نام data-postgres-0 چه می‌شود؟ سفارش‌ها می‌مانند؟<details class="ans"><summary>پاسخ</summary><p>با صفر شدن تعداد replicaها Pod به نام postgres-0 حذف می‌شود ولی PVC می‌ماند،‏ چون <code>whenScaled: Retain</code> است (مقدار پیش‌فرض هم همین است). در این فاصله API آماده نیست. با برگشتن به یک،‏ Pod تازه با همان نام به همان PVC وصل می‌شود و <code>SELECT count(*) FROM orders</code> همان عدد قبلی را نشان می‌دهد. اگر <code>whenScaled: Delete</code> بود،‏ PVC با scale down حذف می‌شد و با reclaimPolicy برابر Delete داده هم از بین می‌رفت؛‏ البته PV ما را در گام ۶ به Retain تغییر داده‌ایم.</p></details></li><li><span class="lvl l2">مفهومی</span>PVC مربوط به backup را با ظرفیت 1Gi خواسته‌ایم. اگر فایل‌های backup از 1Gi بیشتر شوند،‏ در local-path چه اتفاقی می‌افتد؟<details class="ans"><summary>پاسخ</summary><p>هیچ خطایی رخ نمی‌دهد. local-path فقط یک پوشه روی disk مربوط به Node است و ظرفیت PVC را اجرا نمی‌کند؛‏ نوشتن تا پر شدن کل disk مربوط به Node ادامه پیدا می‌کند. storageهای واقعی (مثل disk مربوط به cloud یا بیشتر CSI driverها) یک volume با همان اندازه می‌سازند و نوشتن بیشتر از آن با خطای no space left on device متوقف می‌شود. ظرفیت PVC درخواست است و اجرای آن کار storage است؛‏ برای همین در گام ۷ فایل‌های قدیمی‌تر از هفت روز پاک می‌شوند.</p></details></li><li><span class="lvl l2">عملی</span>PVC به نام orders-data از گام ۱ را دوباره بسازید،‏ PV آن را با patch به Retain تغییر دهید و بعد PVC را حذف کنید. PV به چه وضعیتی می‌رسد؟ اگر دوباره PVC با همان نام بسازید،‏ به همان PV وصل می‌شود؟<details class="ans"><summary>پاسخ</summary><p>PV به وضعیت Released می‌رسد و داده روی disk می‌ماند. PVC تازه (پس از ساخته شدن Pod مصرف‌کننده) یک PV <b>تازه</b> و خالی از provisioner می‌گیرد؛‏ PV قدیمی در Released می‌ماند،‏ چون در <code>spec.claimRef</code> آن هنوز uid مربوط به PVC حذف‌شده نوشته شده است. برای استفاده‌ی دوباره،‏ مدیر cluster باید claimRef را از PV پاک کند (تا Available شود) و PVC تازه را با <code>volumeName</code> صریحاً به آن وصل کند. در پایان PV آزمایشی را دستی حذف کنید و پوشه‌اش را روی Node پاک کنید؛‏ Retain یعنی پاک‌سازی هم دستی است.</p></details></li></ol></details><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>می‌دانید داده‌ی هر نوع Volume کی از بین می‌رود.</li><li>زنجیره‌ی Pod و PVC و PV و StorageClass را در cluster دنبال می‌کنید.</li><li>وضعیت Pending مربوط به PVC با WaitForFirstConsumer را از خرابی تشخیص می‌دهید.</li><li>PostgreSQL داده‌اش را روی PVC نگه می‌دارد و حذف Pod آن را پاک نمی‌کند.</li><li>PV مربوط به PostgreSQL با Retain از حذف اشتباه PVC در امان است.</li><li>backup شبانه با CronJob گرفته می‌شود و می‌دانید باید از Node بیرون برود.</li><li>emptyDir بدون سقف نمی‌تواند disk مربوط به Node را پر کند.</li></ul></div>
   </div>
 
   <div class="deep"><b>از این‌جا به بعد: مرجع عمیق‌تر</b><p>بخش‌های بعدی متن کامل مستندات است. لازم نیست پشت‌سرهم بخوانید؛‏ هر وقت سؤالی پیش آمد،‏ به بخش مربوط برگردید:</p><div class="tbl"><table><thead><tr><th>اگر می‌خواهید بدانید…</th><th>به این بخش بروید</th></tr></thead><tbody><tr><td>همه‌ی انواع Volume و عمر هر کدام</td><td><a href="#ch7-a-volumes">Volumes</a> و <a href="#ch7-a-types">انواع Volume</a></td></tr><tr><td>emptyDir و sizeLimit (گام ۸)</td><td><a href="#ch7-a-emptydir">emptyDir</a> و <a href="#ch7-a-ephstorage">Local Ephemeral Storage</a></td></tr><tr><td>خطرهای hostPath</td><td><a href="#ch7-a-hostpath">hostPath</a></td></tr><tr><td>چرخه‌ی عمر PV و reclaim policy (گام‌های ۲ و ۶)</td><td><a href="#ch7-b-lifecycle">Lifecycle of a volume and claim</a></td></tr><tr><td>access mode و ساختار PV و PVC (گام ۱)</td><td><a href="#ch7-b-pv-spec">ساختار PersistentVolume</a> و <a href="#ch7-b-pvc">PersistentVolumeClaims</a></td></tr><tr><td>StorageClass و volumeBindingMode (گام ۱)</td><td><a href="#ch7-b-sc">Storage Classes</a> و <a href="#ch7-b-dynprov">Dynamic Provisioning</a></td></tr><tr><td>snapshot و cloning</td><td><a href="#ch7-b-snapshots">Volume Snapshots</a> و <a href="#ch7-b-clone">CSI Volume Cloning</a></td></tr><tr><td>نوشتن YAML قابل انتقال بین clusterها</td><td><a href="#ch7-b-portable">Writing Portable Configuration</a></td></tr></tbody></table></div><p>متن مرجع برای cluster عمومی نوشته شده است. روی k3s این تفاوت‌ها را در نظر بگیرید:</p><div class="tbl"><table><thead><tr><th>در متن مرجع</th><th>معادل در k3s</th></tr></thead><tbody><tr><td>StorageClass پیش‌فرض cloud (مثلاً standard یا gp3)</td><td>StorageClass به نام <code>local-path</code> با provisioner به نام <code>rancher.io/local-path</code></td></tr><tr><td>PV از نوع CSI با ظرفیت اجراشده</td><td>پوشه‌ای در <code>/var/lib/rancher/k3s/storage</code>؛‏ ظرفیت اجرا نمی‌شود</td></tr><tr><td>گسترش PVC با allowVolumeExpansion</td><td>در local-path پشتیبانی نمی‌شود</td></tr><tr><td>VolumeSnapshot</td><td>بدون CSI driver دارای snapshot در دسترس نیست؛‏ برای آزمایش می‌توان یک CSI driver مثل Longhorn نصب کرد</td></tr><tr><td>access mode از نوع ReadWriteMany</td><td>local-path پشتیبانی نمی‌کند؛‏ به NFS یا storage شبکه‌ای نیاز است</td></tr></tbody></table></div></div>
@@ -344,6 +347,8 @@ Mon Sep 21 10:00:36 UTC 2026
   <p>وقتی یک Pod راه‌اندازی می‌شود،‏ یک process داخل container یک نمای filesystem می‌بیند که از محتوای اولیه‌ی container image به‌علاوه‌ی Volumeهای mount شده داخل container (اگر تعریف شده باشند) تشکیل شده است. process یک root filesystem می‌بیند که در ابتدا با محتوای container image مطابقت دارد. هر نوشتنی درون این سلسله‌مراتب filesystem،‏ اگر مجاز باشد،‏ روی چیزی که process در دسترسی‌های بعدی به filesystem می‌بیند اثر می‌گذارد. Volumeها در <a href="#ch7-a-subpath">مسیرهای مشخص‌شده</a> داخل filesystem container mount می‌شوند. برای هر container تعریف‌شده در یک Pod،‏ باید به‌طور مستقل مشخص کنید هر Volumeی که آن container استفاده می‌کند کجا mount شود.</p>
   <p>Volumeها نمی‌توانند درون Volumeهای دیگر mount شوند (اما برای یک سازوکار مرتبط،‏ بخش Using subPath را ببینید). همچنین یک Volume نمی‌تواند hard link به چیزی در یک Volume دیگر داشته باشد.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">دو نیمه‌ی تعریف Volume</span></summary>
   <div class="deep"><b>توضیح تکمیلی: دو نیمه‌ی تعریف Volume</b>
     <p>تعریف Volume همیشه دو نیمه دارد که با <code>name</code> به هم وصل می‌شوند: نیمه‌ی اول در سطح Pod (<code>spec.volumes[]</code>) می‌گوید «این Volume چیست و از کجا می‌آید»؛‏ نیمه‌ی دوم در سطح container (<code>volumeMounts[]</code>) می‌گوید «این container آن را در کدام مسیر ببیند». به همین دلیل یک Volume می‌تواند در container اول در <code>/cache</code> و در container دوم در <code>/var/www</code> دیده شود،‏ یا در یک container اصلا mount نشود.</p>
     <div class="code"><div class="lbl"><span>lab/two-halves.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -377,6 +382,7 @@ Mon Sep 21 10:05:15 UTC 2026
 </pre></div>
     <p>اگر <code>name</code> در <code>volumeMounts</code> با هیچ Volumeی در <code>spec.volumes</code> مطابقت نداشته باشد،‏ API server خود Pod را هنگام validation رد می‌کند (خطایی شبیه <code>volumeMounts[0].name: Not found</code>) (خارج از مستندات رسمی).</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-types">انواع Volume <small>(Types of volumes)</small></h3>
   <p>کوبرنتیز چندین نوع Volume را پشتیبانی می‌کند. در ادامه هر type که در مستندات v1.37 آمده به ترتیب توضیح داده می‌شود.</p>
@@ -413,6 +419,8 @@ spec:
       <li>داده‌ی متنی با character encoding از نوع UTF-8 به‌صورت فایل نمایش داده می‌شود. برای character encodingهای دیگر از <code>binaryData</code> استفاده کنید.</li>
     </ul>
   </div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">وقتی items نمی‌گذارید،‏ و سازوکار به‌روزرسانی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: وقتی <code>items</code> نمی‌گذارید،‏ و سازوکار به‌روزرسانی</b>
     <p>اگر <code>items</code> را مشخص نکنید،‏ هر key در ConfigMap به یک فایل هم‌نام در <code>mountPath</code> تبدیل می‌شود. اگر <code>items</code> را مشخص کنید،‏ <b>فقط</b> keyهای فهرست‌شده ساخته می‌شوند و بقیه نادیده گرفته می‌شوند. مقدار پیش‌فرض permission فایل‌ها <code>‎0644‎</code> است و با <code>defaultMode</code> (یا <code>mode</code> برای هر item) تغییر می‌کند (خارج از مستندات رسمی؛‏ جزئیات در فصل ۶).</p>
     <p>kubelet فایل‌ها را با یک استراتژی atomic مبتنی بر symlink می‌نویسد: فایل‌های واقعی در یک دایرکتوری با نام زمان‌دار مانند <code>‎..2026_09_21_10_00_00.123456789‎</code> قرار می‌گیرند،‏ یک symlink به نام <code>..data</code> به آن اشاره می‌کند،‏ و هر فایل قابل مشاهده (مثلا <code>log_level.conf</code>) symlinkی به <code>..data/log_level.conf</code> است. هنگام تغییر ConfigMap،‏ kubelet دایرکتوری زمان‌دار جدید می‌سازد و فقط symlink <code>..data</code> را به‌صورت atomic عوض می‌کند. به همین دلیل وقتی با <code>subPath</code> یک فایل تکی را mount می‌کنید،‏ آن فایل مستقیما bind-mount می‌شود و symlink swap هرگز به container نمی‌رسد؛‏ یعنی به‌روزرسانی دریافت نمی‌شود. تأخیر رسیدن تغییر به Volumeهای معمولی هم وابسته به دوره‌ی sync kubelet و cache آن است و معمولا از چند ثانیه تا حدود یک دقیقه طول می‌کشد (خارج از مستندات رسمی).</p>
@@ -433,11 +441,14 @@ INFO
 </pre></div>
     <p>نکته: بسیاری از برنامه‌ها فایل پیکربندی را فقط هنگام شروع می‌خوانند. حتی اگر فایل روی دیسک به‌روز شود،‏ برنامه باید خودش آن را دوباره بخواند (مثلا با <code>inotify</code>،‏ polling یا signal)،‏ یا باید یک rollout انجام شود.</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-downwardapi">downwardAPI</h3>
   <p>یک Volume از نوع <code>downwardAPI</code> داده‌ی downward API را در اختیار برنامه‌ها قرار می‌دهد. درون این Volume،‏ داده‌های در معرض قرار گرفته را به‌صورت فایل‌های read-only با قالب plain text پیدا می‌کنید.</p>
   <div class="note"><b>نکته</b><p>containerی که downward API را به‌صورت mount از نوع <a href="#ch7-a-subpath"><code>subPath</code></a> استفاده می‌کند،‏ وقتی مقدار fieldها تغییر کند به‌روزرسانی دریافت نمی‌کند.</p></div>
   <p>برای اطلاعات بیشتر،‏ <a href="https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/">Expose Pod Information to Containers Through Files</a> را ببینید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نمونه‌ی downwardAPI volume</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نمونه‌ی downwardAPI volume</b>
     <p>downward API دو نوع منبع دارد: <code>fieldRef</code> برای fieldهای Pod (مثل <code>metadata.name</code>،‏ <code>metadata.namespace</code>،‏ <code>metadata.labels</code>،‏ <code>metadata.annotations</code>) و <code>resourceFieldRef</code> برای request و limit یک container (مثل <code>limits.cpu</code>،‏ <code>requests.memory</code>). مزیت Volume نسبت به environment variable این است که labelها و annotationها اگر تغییر کنند،‏ فایل مربوط به‌روز می‌شود،‏ در حالی که environment variable پس از شروع container ثابت است (خارج از مستندات رسمی این صفحه؛‏ جزئیات در صفحه‌ی task مربوط).</p>
     <div class="code"><div class="lbl"><span>lab/downward-vol.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -484,6 +495,7 @@ tier="backend"
 version="v2"
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch7-a-emptydir">emptyDir</h3>
   <p>برای Podی که یک Volume از نوع <code>emptyDir</code> تعریف می‌کند،‏ Volume زمانی ساخته می‌شود که Pod به یک Node اختصاص داده (assign) شود. همان‌طور که از نامش پیداست،‏ Volume <code>emptyDir</code> در ابتدا خالی است. همه‌ی containerهای Pod می‌توانند فایل‌های یکسانی را در Volume <code>emptyDir</code> بخوانند و بنویسند،‏ هرچند آن Volume می‌تواند در هر container در مسیر یکسان یا متفاوتی mount شود. وقتی یک Pod به هر دلیلی از یک Node حذف شود،‏ داده‌ی درون <code>emptyDir</code> برای همیشه پاک می‌شود.</p>
@@ -558,18 +570,6 @@ spec:
       mode: 01777
 </pre></div>
 
-  <div class="deep"><b>توضیح تکمیلی: emptyDir روی دیسک در برابر emptyDir روی memory</b>
-    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>medium پیش‌فرض (دیسک)</th><th><code>medium: Memory</code> (tmpfs)</th></tr></thead><tbody>
-      <tr><td>محل داده روی Node</td><td>زیر kubelet root dir،‏ معمولا <code>/var/lib/kubelet/pods/&lt;pod-uid&gt;/volumes/kubernetes.io~empty-dir/&lt;name&gt;</code> (خارج از مستندات رسمی)</td><td>tmpfs در RAM</td></tr>
-      <tr><td>مصرف در حساب کدام resource</td><td><code>ephemeral-storage</code> Pod</td><td>memory همان containerی که نوشته (memory limit)</td></tr>
-      <tr><td>اثر <code>sizeLimit</code></td><td>اگر مصرف از آن بیشتر شود،‏ kubelet Pod را evict می‌کند</td><td>اندازه‌ی tmpfs؛‏ بدون آن،‏ اندازه‌ی tmpfs برابر node allocatable memory است</td></tr>
-      <tr><td>پیامد پر شدن</td><td>eviction Pod یا DiskPressure روی Node</td><td>OOMKilled شدن container (چون memory limit پر می‌شود) یا خطای <code>No space left on device</code> وقتی به اندازه‌ی tmpfs برسد</td></tr>
-      <tr><td>پس از restart container</td><td>داده باقی است</td><td>داده باقی است (Volume هم‌عمر Pod است،‏ نه container)</td></tr>
-      <tr><td>پس از reboot شدن Node</td><td>Pod جدید،‏ Volume جدید</td><td>قطعا از بین رفته</td></tr>
-    </tbody></table></div>
-    <p>قاعده‌ی عملی: هر <code>emptyDir</code> در محیط Production باید <code>sizeLimit</code> داشته باشد و containerهایی که در آن می‌نویسند باید <code>resources.limits.ephemeral-storage</code> (برای medium دیسک) یا memory limit مناسب (برای medium Memory) داشته باشند. بدون این‌ها یک Pod می‌تواند کل دیسک Node را پر کند و باعث DiskPressure و eviction دیگر Podهای سالم شود.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: eviction به‌خاطر عبور از sizeLimit</b>
     <div class="code"><div class="lbl"><span>lab/fill-emptydir.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: Pod
@@ -605,9 +605,26 @@ Message:          Usage of EmptyDir volume "scratch" exceeds the limit "100Mi".
     <p>ستون STATUS بسته به نسخه‌ی kubectl ممکن است <code>Evicted</code>،‏ <code>Error</code> یا <code>ContainerStatusUnknown</code> باشد؛‏ مرجع دقیق field <code>status.reason</code> است (خارج از مستندات رسمی). دقت کنید که <code>dd</code> خطا نداد: <code>sizeLimit</code> روی medium دیسک یک سقف سخت filesystem نیست؛‏ kubelet مصرف را اندازه می‌گیرد و بعد Pod را evict می‌کند (بخش Ephemeral storage consumption management در همین فصل).</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">emptyDir روی دیسک در برابر emptyDir روی memory</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: emptyDir روی دیسک در برابر emptyDir روی memory</b>
+    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>medium پیش‌فرض (دیسک)</th><th><code>medium: Memory</code> (tmpfs)</th></tr></thead><tbody>
+      <tr><td>محل داده روی Node</td><td>زیر kubelet root dir،‏ معمولا <code>/var/lib/kubelet/pods/&lt;pod-uid&gt;/volumes/kubernetes.io~empty-dir/&lt;name&gt;</code> (خارج از مستندات رسمی)</td><td>tmpfs در RAM</td></tr>
+      <tr><td>مصرف در حساب کدام resource</td><td><code>ephemeral-storage</code> Pod</td><td>memory همان containerی که نوشته (memory limit)</td></tr>
+      <tr><td>اثر <code>sizeLimit</code></td><td>اگر مصرف از آن بیشتر شود،‏ kubelet Pod را evict می‌کند</td><td>اندازه‌ی tmpfs؛‏ بدون آن،‏ اندازه‌ی tmpfs برابر node allocatable memory است</td></tr>
+      <tr><td>پیامد پر شدن</td><td>eviction Pod یا DiskPressure روی Node</td><td>OOMKilled شدن container (چون memory limit پر می‌شود) یا خطای <code>No space left on device</code> وقتی به اندازه‌ی tmpfs برسد</td></tr>
+      <tr><td>پس از restart container</td><td>داده باقی است</td><td>داده باقی است (Volume هم‌عمر Pod است،‏ نه container)</td></tr>
+      <tr><td>پس از reboot شدن Node</td><td>Pod جدید،‏ Volume جدید</td><td>قطعا از بین رفته</td></tr>
+    </tbody></table></div>
+    <p>قاعده‌ی عملی: هر <code>emptyDir</code> در محیط Production باید <code>sizeLimit</code> داشته باشد و containerهایی که در آن می‌نویسند باید <code>resources.limits.ephemeral-storage</code> (برای medium دیسک) یا memory limit مناسب (برای medium Memory) داشته باشند. بدون این‌ها یک Pod می‌تواند کل دیسک Node را پر کند و باعث DiskPressure و eviction دیگر Podهای سالم شود.</p>
+  </div>
+  </details>
+
   <h3 id="ch7-a-fc">fc (fibre channel)</h3>
   <p>Volume type <code>fc</code> اجازه می‌دهد یک Volume از نوع block storage مبتنی بر fibre channel که از قبل وجود دارد در یک Pod mount شود. می‌توانید یک یا چند target world wide name (WWN) را با پارامتر <code>targetWWNs</code> در پیکربندی Volume مشخص کنید. اگر چند WWN مشخص شود،‏ <code>targetWWNs</code> انتظار دارد آن WWNها از اتصال‌های multi-path باشند.</p>
   <div class="note"><b>نکته</b><p>باید از قبل FC SAN Zoning را پیکربندی کنید تا آن LUNها (Volumeها) به target WWNها تخصیص داده و mask شوند،‏ تا hostهای کوبرنتیز بتوانند به آن‌ها دسترسی داشته باشند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">شکل تعریف fc</span></summary>
   <div class="deep"><b>توضیح تکمیلی: شکل تعریف fc</b>
     <p>مستندات مفهومی manifest کاملی برای <code>fc</code> ندارند. شکل کلی fieldها در API (<code>FCVolumeSource</code>) چنین است: <code>targetWWNs</code> (فهرست WWNها)،‏ <code>lun</code> (شماره‌ی LUN)،‏ <code>fsType</code>،‏ <code>readOnly</code>،‏ و به‌جای WWN می‌توان <code>wwids</code> را داد (خارج از مستندات رسمی این صفحه،‏ از API reference):</p>
     <div class="code"><div class="lbl"><span>نمونه‌ی fc (خارج از مستندات رسمی)</span><button type="button">کپی</button></div><pre class="yaml">volumes:
@@ -620,6 +637,7 @@ Message:          Usage of EmptyDir volume "scratch" exceeds the limit "100Mi".
 </pre></div>
     <p>در عمل امروز برای SAN معمولا از CSI driver فروشنده‌ی storage استفاده می‌شود و <code>fc</code> مستقیم در Pod spec کمتر دیده می‌شود.</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-gcepd">gcePersistentDisk (deprecated)</h3>
   <p>در Kubernetes 1.37،‏ همه‌ی عملیات مربوط به type از نوع in-tree (کدش داخل خود کوبرنتیز بوده) با نام <code>gcePersistentDisk</code> به CSI driver با نام <code>pd.csi.storage.gke.io</code> هدایت (redirect) می‌شوند.</p>
@@ -635,6 +653,8 @@ Message:          Usage of EmptyDir volume "scratch" exceeds the limit "100Mi".
     <div class="code"><div class="lbl"><span>CEL</span><button type="button">کپی</button></div><pre class="yaml">!has(object.spec.volumes) || !object.spec.volumes.exists(v, has(v.gitRepo))
 </pre></div>
   </div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جایگزین gitRepo با init container و یک ValidatingAdmissionPolicy کامل</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جایگزین gitRepo با init container و یک ValidatingAdmissionPolicy کامل</b>
     <p>الگوی جایگزین پیشنهادی مستندات به این شکل است:</p>
     <div class="code"><div class="lbl"><span>lab/git-clone-init.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -688,6 +708,7 @@ spec:
   validationActions: ["Deny"]
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch7-a-hostpath">hostPath</h3>
   <p>یک Volume از نوع <code>hostPath</code> یک فایل یا دایرکتوری از filesystem Node میزبان را در Pod شما mount می‌کند. این چیزی نیست که بیشتر Podها به آن نیاز داشته باشند،‏ اما برای برخی برنامه‌ها یک راه فرار (escape hatch) قدرتمند فراهم می‌کند.</p>
@@ -814,18 +835,6 @@ spec:
       type: FileOrCreate
 </pre></div>
 
-  <div class="deep"><b>توضیح تکمیلی: چرا hostPath این‌قدر خطرناک است؟</b>
-    <p>چند نمونه‌ی ملموس از آنچه یک mount از <code>hostPath</code> می‌تواند در اختیار container بگذارد (خارج از مستندات رسمی،‏ ولی منطبق با هشدارهای بالا):</p>
-    <div class="tbl"><table><thead><tr><th>مسیر mount شده</th><th>چه چیزی لو می‌رود</th><th>پیامد</th></tr></thead><tbody>
-      <tr><td><code>‎/‎</code> یا <code>/etc</code> با read-write</td><td>کل filesystem Node</td><td>تغییر <code>/etc/shadow</code>،‏ کاشتن cron یا کلید SSH،‏ یعنی تصاحب Node</td></tr>
-      <tr><td><code>/run/containerd/containerd.sock</code> (type <code>Socket</code>)</td><td>API container runtime</td><td>ساختن container privileged روی Node،‏ دور زدن همه‌ی policyهای Kubernetes</td></tr>
-      <tr><td><code>/var/lib/kubelet</code></td><td>credential kubelet،‏ token و Secretهای mount شده‌ی همه‌ی Podهای آن Node</td><td>سرقت token ServiceAccountهای دیگر و حرکت جانبی در Cluster</td></tr>
-      <tr><td><code>/etc/kubernetes</code> روی Control Plane</td><td>kubeconfig ادمین،‏ کلیدهای CA</td><td>دسترسی کامل به Cluster</td></tr>
-      <tr><td><code>/var/log</code> read-only</td><td>logهای سیستمی و containerها (ممکن است داده‌ی حساس داشته باشند)</td><td>نشت اطلاعات؛‏ ریسک کمتر ولی صفر نیست</td></tr>
-    </tbody></table></div>
-    <p>کنترل‌های پیشگیرانه: Pod Security Standards در سطح <code>baseline</code> و <code>restricted</code> هر نوع Volume <code>hostPath</code> را ممنوع می‌کنند (فصل ۱۴). اگر ناگزیر به اجازه دادن هستید،‏ با ValidatingAdmissionPolicy هم مسیرها را محدود کنید و هم <code>readOnly: true</code> را اجباری کنید (طبق هشدار مستندات،‏ محدود کردن مسیر بدون اجبار readOnly کافی نیست،‏ زیرا از طریق mount خواندنی‌نوشتنی می‌توان مثلا symlinkی ساخت که به بیرون از مسیر مجاز اشاره کند).</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: FileOrCreate بدون دایرکتوری والد</b>
     <div class="code"><div class="lbl"><span>lab/foc-broken.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: Pod
@@ -855,6 +864,21 @@ foc-broken   0/1     ContainerCreating   0          30s
 </pre></div>
     <p>راه‌حل همان الگوی مستندات است: یک Volume دوم با <code>DirectoryOrCreate</code> برای <code>/opt/does-not-exist</code> اضافه کنید،‏ یا خود دایرکتوری را mount کنید.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا hostPath این‌قدر خطرناک است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا hostPath این‌قدر خطرناک است؟</b>
+    <p>چند نمونه‌ی ملموس از آنچه یک mount از <code>hostPath</code> می‌تواند در اختیار container بگذارد (خارج از مستندات رسمی،‏ ولی منطبق با هشدارهای بالا):</p>
+    <div class="tbl"><table><thead><tr><th>مسیر mount شده</th><th>چه چیزی لو می‌رود</th><th>پیامد</th></tr></thead><tbody>
+      <tr><td><code>‎/‎</code> یا <code>/etc</code> با read-write</td><td>کل filesystem Node</td><td>تغییر <code>/etc/shadow</code>،‏ کاشتن cron یا کلید SSH،‏ یعنی تصاحب Node</td></tr>
+      <tr><td><code>/run/containerd/containerd.sock</code> (type <code>Socket</code>)</td><td>API container runtime</td><td>ساختن container privileged روی Node،‏ دور زدن همه‌ی policyهای Kubernetes</td></tr>
+      <tr><td><code>/var/lib/kubelet</code></td><td>credential kubelet،‏ token و Secretهای mount شده‌ی همه‌ی Podهای آن Node</td><td>سرقت token ServiceAccountهای دیگر و حرکت جانبی در Cluster</td></tr>
+      <tr><td><code>/etc/kubernetes</code> روی Control Plane</td><td>kubeconfig ادمین،‏ کلیدهای CA</td><td>دسترسی کامل به Cluster</td></tr>
+      <tr><td><code>/var/log</code> read-only</td><td>logهای سیستمی و containerها (ممکن است داده‌ی حساس داشته باشند)</td><td>نشت اطلاعات؛‏ ریسک کمتر ولی صفر نیست</td></tr>
+    </tbody></table></div>
+    <p>کنترل‌های پیشگیرانه: Pod Security Standards در سطح <code>baseline</code> و <code>restricted</code> هر نوع Volume <code>hostPath</code> را ممنوع می‌کنند (فصل ۱۴). اگر ناگزیر به اجازه دادن هستید،‏ با ValidatingAdmissionPolicy هم مسیرها را محدود کنید و هم <code>readOnly: true</code> را اجباری کنید (طبق هشدار مستندات،‏ محدود کردن مسیر بدون اجبار readOnly کافی نیست،‏ زیرا از طریق mount خواندنی‌نوشتنی می‌توان مثلا symlinkی ساخت که به بیرون از مسیر مجاز اشاره کند).</p>
+  </div>
+  </details>
 
   <h3 id="ch7-a-image">image</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.36 [stable]</span> (feature gate <code>ImageVolume</code>،‏ پیش‌فرض فعال)</p>
@@ -932,6 +956,8 @@ status:
       readOnly: true
       imageRef: quay.io/crio/artifact@sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">image volume برای مدل‌های ML و داده‌ی ثابت</span></summary>
   <div class="deep"><b>توضیح تکمیلی: image volume برای مدل‌های ML و داده‌ی ثابت</b>
     <p>کاربرد رایج <code>image</code> volume جدا کردن «داده‌ی حجیم و کم‌تغییر» از image برنامه است: مثلا وزن‌های یک مدل ML،‏ فایل‌های GeoIP یا یک dataset مرجع را در یک OCI artifact جدا بسته‌بندی می‌کنید. image برنامه کوچک می‌ماند،‏ هر کدام نسخه‌ی مستقل دارند و node cache برای هر دو استفاده می‌شود. چون mount فقط‌خواندنی است،‏ برنامه نمی‌تواند داده را خراب کند. نکته‌ی عملیاتی: چون resolve شدن فقط هنگام ساخت Pod رخ می‌دهد،‏ با tag متغیر (مثل <code>:latest</code>) Podهای مختلف یک Deployment ممکن است نسخه‌های متفاوتی از داده را ببینند؛‏ در Production از digest یا tag تغییرناپذیر استفاده کنید و در صورت فعال بودن <code>ImageVolumeWithDigest</code> از <code>imageRef</code> در status برای audit استفاده کنید (خارج از مستندات رسمی).</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/pods/image-volumes.yaml
@@ -943,14 +969,18 @@ touch: cannot touch '/volume/x': Read-only file system
 command terminated with exit code 1
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch7-a-iscsi">iscsi</h3>
   <p>یک Volume از نوع <code>iscsi</code> اجازه می‌دهد یک Volume موجود iSCSI (SCSI over IP) در Pod شما mount شود. برخلاف <code>emptyDir</code> که با حذف Pod پاک می‌شود،‏ محتوای یک Volume <code>iscsi</code> حفظ می‌شود و Volume فقط unmount می‌شود. یعنی یک Volume iscsi می‌تواند از قبل با داده پر شود (pre-populated) و آن داده بین Podها به اشتراک گذاشته شود.</p>
   <div class="note"><b>نکته</b><p>پیش از استفاده باید سرور iSCSI خودتان را در حال اجرا داشته باشید و Volume روی آن ساخته شده باشد.</p></div>
   <p>یکی از ویژگی‌های iSCSI این است که می‌تواند هم‌زمان توسط چند مصرف‌کننده به‌صورت read-only mount شود. یعنی می‌توانید یک Volume را با dataset خود از قبل پر کنید و سپس آن را به‌صورت موازی از هر تعداد Pod که نیاز دارید سرو کنید. متأسفانه Volumeهای iSCSI فقط توسط یک مصرف‌کننده در حالت read-write قابل mount هستند. نویسنده‌های هم‌زمان مجاز نیستند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا نویسنده‌ی هم‌زمان روی iSCSI مجاز نیست؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا نویسنده‌ی هم‌زمان روی iSCSI مجاز نیست؟</b>
     <p>iSCSI یک پروتکل <b>block</b> است،‏ نه file.‏ filesystemهایی مثل ext4 یا xfs که روی آن ساخته می‌شوند cluster-aware نیستند: هر kernel فرض می‌کند تنها مالک block device است و metadata را در cache خودش نگه می‌دارد. اگر دو Node هم‌زمان روی یک LUN بنویسند،‏ metadata هر کدام دیگری را بازنویسی می‌کند و filesystem خراب می‌شود. به همین دلیل برای اشتراک خواندنی‌نوشتنی بین Podها باید از storage فایلی (مثل NFS) یا از filesystemهای cluster-aware استفاده کرد (خارج از مستندات رسمی).‏ fieldهای اصلی API: <code>targetPortal</code>،‏ <code>iqn</code>،‏ <code>lun</code>،‏ <code>fsType</code>،‏ <code>readOnly</code> و برای CHAP،‏ <code>chapAuthSession</code> و <code>secretRef</code>.</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-local">local</h3>
   <p>یک Volume از نوع <code>local</code> یک دستگاه storage محلی mount شده را نمایش می‌دهد،‏ مانند یک دیسک،‏ partition یا دایرکتوری.</p>
@@ -986,6 +1016,8 @@ spec:
   <p>هنگام استفاده از Volumeهای local،‏ توصیه می‌شود یک StorageClass با <code>volumeBindingMode</code> برابر <code>WaitForFirstConsumer</code> بسازید. برای جزئیات بیشتر،‏ مثال <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/#local">StorageClass محلی</a> را ببینید (بخش دوم همین فصل). به تأخیر انداختن volume binding تضمین می‌کند که تصمیم binding مربوط به PersistentVolumeClaim همراه با هر محدودیت Node دیگری که Pod ممکن است داشته باشد ارزیابی شود،‏ مانند نیازهای resource روی Node،‏ node selectorها،‏ Pod affinity و Pod anti-affinity.</p>
   <p>برای مدیریت بهتر lifecycle مربوط به Volume محلی،‏ می‌توان یک static provisioner خارجی را جداگانه اجرا کرد. توجه کنید که این provisioner هنوز dynamic provisioning را پشتیبانی نمی‌کند. برای نمونه‌ای از اجرای یک local provisioner خارجی،‏ <a href="https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner">local volume provisioner user guide</a> را ببینید.</p>
   <div class="note"><b>نکته</b><p>اگر static provisioner خارجی برای مدیریت lifecycle Volume استفاده نشود،‏ PersistentVolume محلی نیازمند پاک‌سازی و حذف دستی توسط کاربر است.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">local در برابر hostPath</span></summary>
   <div class="deep"><b>توضیح تکمیلی: local در برابر hostPath</b>
     <div class="tbl"><table><thead><tr><th>جنبه</th><th><code>hostPath</code></th><th><code>local</code> PV</th></tr></thead><tbody>
       <tr><td>محل تعریف</td><td>مستقیم در Pod spec</td><td>فقط به‌صورت PersistentVolume (از طریق PVC)</td></tr>
@@ -996,6 +1028,7 @@ spec:
     </tbody></table></div>
     <p>با <code>WaitForFirstConsumer</code>،‏ binding تا زمانی که scheduler یک Node برای Pod انتخاب کند به تأخیر می‌افتد؛‏ اگر <code>Immediate</code> باشد،‏ PVC ممکن است به PVی روی Nodeی bind شود که Pod به‌خاطر کمبود CPU یا یک taint نمی‌تواند روی آن اجرا شود و Pod برای همیشه <code>Pending</code> بماند.</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-nfs">nfs</h3>
   <p>یک Volume از نوع <code>nfs</code> اجازه می‌دهد یک NFS (Network File System) share موجود در یک Pod mount شود. برخلاف <code>emptyDir</code> که با حذف Pod پاک می‌شود،‏ محتوای یک Volume <code>nfs</code> حفظ می‌شود و Volume فقط unmount می‌شود. یعنی یک Volume NFS می‌تواند از قبل با داده پر شود و آن داده بین Podها به اشتراک گذاشته شود. NFS می‌تواند هم‌زمان توسط چند نویسنده mount شود.</p>
@@ -1021,6 +1054,8 @@ spec:
     <p>پیش از استفاده باید سرور NFS خودتان را در حال اجرا داشته باشید و share روی آن export شده باشد.</p>
     <p>همچنین توجه کنید که نمی‌توانید mount optionهای NFS را در Pod spec مشخص کنید. می‌توانید mount optionها را سمت سرور تنظیم کنید یا از <a href="https://man7.org/linux/man-pages/man5/nfsmount.conf.5.html">/etc/nfsmount.conf</a> استفاده کنید. همچنین می‌توانید Volumeهای NFS را از طریق PersistentVolumeها mount کنید که اجازه‌ی تنظیم mount optionها را می‌دهند.</p>
   </div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">NFS از طریق PV با mountOptions</span></summary>
   <div class="deep"><b>توضیح تکمیلی: NFS از طریق PV با mountOptions</b>
     <p>چون Pod spec اجازه‌ی mount option نمی‌دهد،‏ در Production معمولا NFS را با PV تعریف می‌کنند تا بتوان نسخه‌ی پروتکل و timeoutها را کنترل کرد (فیلد <code>mountOptions</code> در بخش دوم همین فصل توضیح داده شده است):</p>
     <div class="code"><div class="lbl"><span>nfs-pv.yaml (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -1042,10 +1077,13 @@ spec:
 </pre></div>
     <p>نکته: Node باید ابزار client مربوط به NFS (مثلا بسته‌ی <code>nfs-common</code> یا <code>nfs-utils</code>) را داشته باشد،‏ وگرنه mount با خطای <code>bad option; for several filesystems (e.g. nfs, cifs) you might need a /sbin/mount.&lt;type&gt; helper program</code> شکست می‌خورد (خارج از مستندات رسمی).</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-pvc">persistentVolumeClaim</h3>
   <p>یک Volume از نوع <code>persistentVolumeClaim</code> برای mount کردن یک <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">PersistentVolume</a> در یک Pod استفاده می‌شود. PersistentVolumeClaimها راهی هستند که کاربران storage ماندگار (مثلا یک Volume iSCSI) را «claim» (درخواست) کنند،‏ بدون اینکه جزئیات محیط cloud مشخص را بدانند.</p>
   <p>برای جزئیات بیشتر،‏ اطلاعات مربوط به PersistentVolumeها را ببینید (بخش دوم همین فصل).</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نمونه‌ی حداقلی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نمونه‌ی حداقلی</b>
     <div class="code"><div class="lbl"><span>pvc-and-pod.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: PersistentVolumeClaim
@@ -1080,6 +1118,7 @@ spec:
 </pre></div>
     <p>تفکیک نقش: توسعه‌دهنده فقط می‌گوید «5Gi با ReadWriteOnce می‌خواهم»؛‏ اینکه این فضا EBS است،‏ Ceph است یا NVMe محلی،‏ در StorageClass و PV تعیین می‌شود. اگر Pod حذف شود،‏ PVC و داده باقی می‌مانند و Pod بعدی همان داده را می‌بیند.</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-portworx">portworxVolume (deprecated)</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.25 [deprecated]</span></p>
@@ -1121,6 +1160,8 @@ spec:
     </ul>
   </div>
   <p>برای جزئیات بیشتر،‏ <a href="https://kubernetes.io/docs/concepts/configuration/secret/">Configuring Secrets</a> را ببینید (فصل ۶).</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">نمونه و بررسی tmpfs · جدول typeهای deprecated و حذف‌شده</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نمونه و بررسی tmpfs</b>
     <div class="code"><div class="lbl"><span>lab/secret-vol.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: Pod
@@ -1149,7 +1190,6 @@ S3cr3t
 </pre></div>
     <p>نکته‌ی امنیتی: tmpfs بودن یعنی Secret روی دیسک Node ماندگار نمی‌شود،‏ اما هر کسی که بتواند در container <code>exec</code> کند یا به Node دسترسی root داشته باشد می‌تواند آن را بخواند. کنترل‌های RBAC روی <code>pods/exec</code> و Secretها همچنان ضروری است (فصل ۱۴).</p>
   </div>
-
   <div class="deep"><b>توضیح تکمیلی: جدول typeهای deprecated و حذف‌شده</b>
     <p>typeهایی که در صفحه‌ی volumes نسخه‌ی v1.37 به‌عنوان deprecated یا disabled آمده‌اند:</p>
     <div class="tbl"><table><thead><tr><th>type</th><th>وضعیت در مستندات v1.37</th><th>جایگزین</th></tr></thead><tbody>
@@ -1160,6 +1200,7 @@ S3cr3t
     </tbody></table></div>
     <p>typeهای in-tree دیگری که در نسخه‌های قبلی کوبرنتیز حذف شده‌اند و دیگر در این صفحه نیامده‌اند (خارج از مستندات رسمی نسخه‌ی v1.37؛‏ بر اساس release noteهای قبلی): <code>awsElasticBlockStore</code> و <code>azureDisk</code> (حذف در v1.27)،‏ <code>azureFile</code> و <code>vsphereVolume</code> (حذف در v1.30)،‏ <code>cephfs</code> و <code>rbd</code> (حذف در v1.31)،‏ <code>cinder</code> و <code>glusterfs</code> (حذف در v1.26)،‏ و <code>flocker</code>،‏ <code>quobyte</code>،‏ <code>storageos</code>،‏ <code>scaleIO</code> (حذف در v1.25). برای همه‌ی این‌ها،‏ مسیر درست استفاده از CSI driver فروشنده است؛‏ PVهای قدیمی که از typeهای دارای CSI migration استفاده می‌کنند از طریق CSI driver نصب‌شده به کار خود ادامه می‌دهند (بخش Migrating to CSI drivers from in-tree plugins).</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-subpath">Using subPath</h3>
   <p>گاهی مفید است یک Volume را برای چند کاربرد در یک Pod به اشتراک بگذارید. property <code>volumeMounts[*].subPath</code> یک مسیر فرعی (sub-path) درون Volume ارجاع‌شده را به‌جای ریشه‌ی آن مشخص می‌کند.</p>
@@ -1191,14 +1232,6 @@ spec:
       persistentVolumeClaim:
         claimName: my-lamp-site-data
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: subPath دقیقا چه می‌کند و چه محدودیت‌هایی دارد؟</b>
-    <ul>
-      <li>kubelet مسیر <code>&lt;volume-root&gt;/&lt;subPath&gt;</code> را (اگر وجود نداشته باشد،‏ به‌صورت دایرکتوری) می‌سازد و فقط همان را bind-mount می‌کند. container دیگر ریشه‌ی Volume و پوشه‌های کناری را نمی‌بیند؛‏ در مثال بالا container <code>php</code> به فایل‌های MySQL دسترسی ندارد.</li>
-      <li>subPath می‌تواند به یک <b>فایل</b> اشاره کند؛‏ رایج‌ترین کاربرد آن قرار دادن یک فایل از ConfigMap در یک دایرکتوری موجود image است (مثلا <code>/etc/nginx/nginx.conf</code>) بدون اینکه بقیه‌ی فایل‌های آن دایرکتوری پوشانده شوند. هزینه‌ی این کار،‏ طبق Noteهای مستندات،‏ این است که فایل mount شده دیگر به‌روزرسانی ConfigMap،‏ Secret،‏ downwardAPI یا projected را دریافت نمی‌کند.</li>
-      <li>چرا مستندات این LAMP را برای Production توصیه نمی‌کند؟ چون دو برنامه با چرخه‌ی عمر،‏ الگوی I/O و نیاز backup متفاوت به یک PVC و یک Pod وابسته شده‌اند؛‏ scale کردن PHP بدون MySQL ممکن نیست و خرابی یکی روی دیگری اثر می‌گذارد. در Production،‏ MySQL در StatefulSet خودش با PVC جدا اجرا می‌شود (خارج از مستندات رسمی).</li>
-      <li>مقدار <code>subPath</code> نباید مسیر مطلق باشد و نباید شامل <code>‎..‎</code> باشد (خارج از مستندات رسمی؛‏ validation در API server).</li>
-    </ul>
-  </div>
   <div class="lab"><b>آزمایش عملی: subPath و به‌روز نشدن ConfigMap</b>
     <div class="code"><div class="lbl"><span>lab/subpath-cm.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: ConfigMap
@@ -1268,6 +1301,16 @@ spec:
     hostPath:
       path: /var/log/pods
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">subPath دقیقا چه می‌کند و چه محدودیت‌هایی دارد؟ · کاربرد subPathExpr در یک Deployment</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: subPath دقیقا چه می‌کند و چه محدودیت‌هایی دارد؟</b>
+    <ul>
+      <li>kubelet مسیر <code>&lt;volume-root&gt;/&lt;subPath&gt;</code> را (اگر وجود نداشته باشد،‏ به‌صورت دایرکتوری) می‌سازد و فقط همان را bind-mount می‌کند. container دیگر ریشه‌ی Volume و پوشه‌های کناری را نمی‌بیند؛‏ در مثال بالا container <code>php</code> به فایل‌های MySQL دسترسی ندارد.</li>
+      <li>subPath می‌تواند به یک <b>فایل</b> اشاره کند؛‏ رایج‌ترین کاربرد آن قرار دادن یک فایل از ConfigMap در یک دایرکتوری موجود image است (مثلا <code>/etc/nginx/nginx.conf</code>) بدون اینکه بقیه‌ی فایل‌های آن دایرکتوری پوشانده شوند. هزینه‌ی این کار،‏ طبق Noteهای مستندات،‏ این است که فایل mount شده دیگر به‌روزرسانی ConfigMap،‏ Secret،‏ downwardAPI یا projected را دریافت نمی‌کند.</li>
+      <li>چرا مستندات این LAMP را برای Production توصیه نمی‌کند؟ چون دو برنامه با چرخه‌ی عمر،‏ الگوی I/O و نیاز backup متفاوت به یک PVC و یک Pod وابسته شده‌اند؛‏ scale کردن PHP بدون MySQL ممکن نیست و خرابی یکی روی دیگری اثر می‌گذارد. در Production،‏ MySQL در StatefulSet خودش با PVC جدا اجرا می‌شود (خارج از مستندات رسمی).</li>
+      <li>مقدار <code>subPath</code> نباید مسیر مطلق باشد و نباید شامل <code>‎..‎</code> باشد (خارج از مستندات رسمی؛‏ validation در API server).</li>
+    </ul>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: کاربرد subPathExpr در یک Deployment</b>
     <p>مزیت اصلی <code>subPathExpr</code> در Podهایی است که از یک template ساخته می‌شوند: همه‌ی replicaها یک Volume مشترک (مثلا یک PVC از نوع ReadWriteMany یا یک hostPath) را mount می‌کنند،‏ اما هر کدام خودکار در پوشه‌ی مخصوص خودش می‌نویسد و فایل‌های هم را بازنویسی نمی‌کنند. syntax متغیر <code>$(VAR)</code> است،‏ نه <code>${VAR}</code>؛‏ و متغیر باید در <code>env</code> همان container تعریف شده باشد.</p>
     <div class="code"><div class="lbl"><span>بخشی از Deployment (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">    containers:
@@ -1289,10 +1332,13 @@ spec:
 </pre></div>
     <p>نکته‌ی امنیتی مثال مستندات: این مثال از <code>hostPath</code> روی <code>/var/log/pods</code> استفاده می‌کند که خود kubelet logهای containerها را آنجا نگه می‌دارد؛‏ این فقط برای نمایش مفهوم است و در Production نباید Podهای برنامه در آن مسیر بنویسند.</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-resources">Resources</h3>
   <p>رسانه‌ی ذخیره‌سازی (مانند Disk یا SSD) یک Volume <code>emptyDir</code> توسط رسانه‌ی filesystemی تعیین می‌شود که kubelet root dir (معمولا <code>/var/lib/kubelet</code>) روی آن قرار دارد. هیچ محدودیتی روی مقدار فضایی که یک Volume <code>emptyDir</code> یا <code>hostPath</code> می‌تواند مصرف کند وجود ندارد،‏ و هیچ ایزوله‌سازی بین containerها یا Podها وجود ندارد.</p>
   <p>برای یادگیری درباره‌ی درخواست فضا با استفاده از یک resource specification،‏ <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">how to manage resources</a> را ببینید (و بخش Local ephemeral storage در همین فصل).</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«بدون محدودیت» یعنی چه؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: «بدون محدودیت» یعنی چه؟</b>
     <p>این جمله یعنی خود Volume <code>emptyDir</code> (بدون <code>sizeLimit</code>) و <code>hostPath</code> سقف سخت filesystem ندارند: همه روی همان filesystem kubelet مشترک‌اند. ابزار کنترل،‏ مکانیزم‌های سطح بالاتر است: <code>sizeLimit</code> و <code>ephemeral-storage</code> limit برای <code>emptyDir</code> (با eviction توسط kubelet)،‏ و برای <code>hostPath</code> هیچ مکانیزمی جز پایش خود شما وجود ندارد.</p>
     <div class="code"><div class="lbl"><span>shell (روی Node)</span><button type="button">کپی</button></div><pre class="sh"># find the largest emptyDir volumes on a node
@@ -1301,6 +1347,7 @@ sudo du -sh /var/lib/kubelet/pods/*/volumes/kubernetes.io~empty-dir/* 2&gt;/dev/
 kubectl get pods -A -o custom-columns=UID:.metadata.uid,NS:.metadata.namespace,NAME:.metadata.name | grep &lt;pod-uid&gt;
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch7-a-oot">Out-of-tree volume plugins</h3>
   <p>volume pluginهای out-of-tree شامل Container Storage Interface (CSI) و همچنین FlexVolume (که deprecated است) هستند. این pluginها به فروشندگان storage امکان می‌دهند pluginهای storage سفارشی بسازند،‏ بدون اینکه کد منبع plugin خود را به repository کوبرنتیز اضافه کنند.</p>
@@ -1333,6 +1380,47 @@ kubectl get pods -A -o custom-columns=UID:.metadata.uid,NS:.metadata.namespace,N
     <li><code>nodePublishSecretRef</code>: ارجاع به secret objectی که اطلاعات حساس لازم برای تکمیل فراخوانی CSI <code>NodePublishVolume</code> را به CSI driver می‌رساند. این field اختیاری است و اگر secret لازم نباشد می‌تواند خالی باشد. اگر secret object بیش از یک secret داشته باشد،‏ همه‌ی secretها ارسال می‌شوند.</li>
     <li><code>nodeStageSecretRef</code>: ارجاع به secret objectی که اطلاعات حساس لازم برای تکمیل فراخوانی CSI <code>NodeStageVolume</code> را به CSI driver می‌رساند. این field اختیاری است و اگر secret لازم نباشد می‌تواند خالی باشد. اگر Secret بیش از یک secret داشته باشد،‏ همه‌ی secretها ارسال می‌شوند.</li>
   </ul>
+  <h4>CSI raw block volume support</h4>
+  <p><span class="fs">FEATURE STATE: Kubernetes v1.18 [stable]</span></p>
+  <p>فروشندگانی که CSI driver خارجی دارند می‌توانند پشتیبانی از raw block volume را در workloadهای کوبرنتیز پیاده‌سازی کنند.</p>
+  <p>می‌توانید <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/#raw-block-volume-support">PersistentVolume/PersistentVolumeClaim با پشتیبانی raw block volume</a> را مانند همیشه،‏ بدون هیچ تغییر مخصوص CSI،‏ راه‌اندازی کنید (بخش دوم همین فصل).</p>
+
+  <h4 id="ch7-a-csi-eph-short">CSI ephemeral volumes</h4>
+  <p><span class="fs">FEATURE STATE: Kubernetes v1.25 [stable]</span></p>
+  <p>می‌توانید Volumeهای CSI را مستقیما درون Pod specification پیکربندی کنید. Volumeهایی که به این روش مشخص می‌شوند ephemeral هستند و در طول restart شدن Pod ماندگار نمی‌مانند. برای اطلاعات بیشتر،‏ بخش <a href="#ch7-a-csi-ephvol">CSI ephemeral volumes</a> در همین فصل را ببینید.</p>
+  <p>برای اطلاعات بیشتر درباره‌ی نحوه‌ی توسعه‌ی یک CSI driver،‏ به <a href="https://kubernetes-csi.github.io/docs/">kubernetes-csi documentation</a> مراجعه کنید.</p>
+
+  <h4>Windows CSI proxy</h4>
+  <p><span class="fs">FEATURE STATE: Kubernetes v1.22 [stable]</span></p>
+  <p>CSI node pluginها باید عملیات ممتاز (privileged) مختلفی انجام دهند،‏ مانند scan کردن دستگاه‌های دیسک و mount کردن filesystemها. این عملیات برای هر سیستم‌عامل میزبان متفاوت است. برای Worker Nodeهای Linux،‏ CSI node pluginهای containerized معمولا به‌صورت privileged container deploy می‌شوند. برای Worker Nodeهای Windows،‏ عملیات ممتاز برای CSI node pluginهای containerized با استفاده از <a href="https://github.com/kubernetes-csi/csi-proxy">csi-proxy</a> پشتیبانی می‌شود؛‏ یک binary مستقل که توسط جامعه مدیریت می‌شود و باید از قبل روی هر Node ویندوزی نصب شده باشد.</p>
+  <p>برای جزئیات بیشتر،‏ به راهنمای deploy آن CSI pluginی که می‌خواهید deploy کنید مراجعه کنید.</p>
+
+  <h4>Migrating to CSI drivers from in-tree plugins</h4>
+  <p><span class="fs">FEATURE STATE: Kubernetes v1.25 [stable]</span></p>
+  <p>feature <code>CSIMigration</code> عملیات انجام‌شده روی pluginهای in-tree موجود را به CSI pluginهای متناظر هدایت می‌کند (که انتظار می‌رود نصب و پیکربندی شده باشند). در نتیجه،‏ operatorها هنگام گذار به یک CSI driver که جایگزین یک plugin in-tree می‌شود،‏ لازم نیست هیچ تغییری در پیکربندی Storage Classها،‏ PersistentVolumeها یا PersistentVolumeClaimهای موجود (که به pluginهای in-tree ارجاع می‌دهند) بدهند.</p>
+  <div class="note"><b>نکته</b>
+    <p>PVهای موجودی که توسط یک volume plugin از نوع in-tree ساخته شده‌اند،‏ در آینده هم بدون هیچ تغییر پیکربندی قابل استفاده هستند،‏ حتی پس از اینکه migration به CSI برای آن Volume type کامل شد،‏ و حتی پس از ارتقا به نسخه‌ای از کوبرنتیز که پشتیبانی کامپایل‌شده (compiled-in) برای آن نوع storage را ندارد.</p>
+    <p>به‌عنوان بخشی از آن migration،‏ شما (یا مدیر دیگری از cluster) <b>باید</b> CSI driver مناسب برای آن storage را نصب و پیکربندی کرده باشید. هسته‌ی کوبرنتیز آن نرم‌افزار را برای شما نصب نمی‌کند.</p>
+    <hr>
+    <p>پس از آن migration،‏ می‌توانید PVCها و PVهای جدیدی هم تعریف کنید که به یکپارچه‌سازی‌های storage قدیمی و built-in ارجاع می‌دهند. به شرط اینکه CSI driver مناسب نصب و پیکربندی شده باشد،‏ ساخت PV حتی برای Volumeهای کاملا جدید به کار خود ادامه می‌دهد. مدیریت واقعی storage اکنون از طریق CSI driver انجام می‌شود.</p>
+  </div>
+  <p>عملیات و قابلیت‌های پشتیبانی‌شده عبارت‌اند از: provisioning/delete،‏ attach/detach،‏ mount/unmount و resize کردن Volumeها.</p>
+  <p>pluginهای in-tree که <code>CSIMigration</code> را پشتیبانی می‌کنند و یک CSI driver متناظر برایشان پیاده‌سازی شده،‏ در Types of Volumes فهرست شده‌اند.</p>
+  <h4 id="ch7-a-flex">flexVolume (deprecated)</h4>
+  <p><span class="fs">FEATURE STATE: Kubernetes v1.23 [deprecated]</span></p>
+  <p>FlexVolume یک interface plugin از نوع out-of-tree است که از یک مدل مبتنی بر exec برای ارتباط با storage driverها استفاده می‌کند. binaryهای driver مربوط به FlexVolume باید در یک مسیر از پیش تعریف‌شده‌ی volume plugin روی هر Node،‏ و در برخی موارد روی Nodeهای Control Plane نیز،‏ نصب شوند.</p>
+  <p>Podها از طریق volume plugin از نوع in-tree با نام <code>flexVolume</code> با driverهای FlexVolume تعامل می‌کنند.</p>
+  <p>pluginهای FlexVolume زیر که به‌صورت PowerShell script روی host deploy می‌شوند،‏ Nodeهای Windows را پشتیبانی می‌کنند:</p>
+  <ul>
+    <li><a href="https://github.com/microsoft/K8s-Storage-Plugins/tree/master/flexvolume/windows/plugins/microsoft.com~smb.cmd">SMB</a></li>
+    <li><a href="https://github.com/microsoft/K8s-Storage-Plugins/tree/master/flexvolume/windows/plugins/microsoft.com~iscsi.cmd">iSCSI</a></li>
+  </ul>
+  <div class="note"><b>نکته</b>
+    <p>FlexVolume deprecated است. استفاده از یک CSI driver از نوع out-of-tree روش توصیه‌شده برای یکپارچه کردن storage خارجی با کوبرنتیز است.</p>
+    <p>نگه‌دارندگان driverهای FlexVolume باید یک CSI Driver پیاده‌سازی کنند و به migrate کردن کاربران driverهای FlexVolume به CSI کمک کنند. کاربران FlexVolume باید workloadهای خود را به استفاده از CSI Driver معادل منتقل کنند.</p>
+  </div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">fieldهای CSI در یک PV و ترتیب فراخوانی‌های CSI · migration در عمل · exec-based در برابر CSI</span></summary>
   <div class="deep"><b>توضیح تکمیلی: fieldهای CSI در یک PV و ترتیب فراخوانی‌های CSI</b>
     <p>نمونه‌ی یک PV ایستا که به یک Volume موجود در backend اشاره می‌کند (مقادیر فرضی؛‏ خارج از مستندات رسمی):</p>
     <div class="code"><div class="lbl"><span>csi-static-pv.yaml (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -1361,53 +1449,13 @@ kubectl get csinodes
 kubectl get volumeattachments
 </pre></div>
   </div>
-
-  <h4>CSI raw block volume support</h4>
-  <p><span class="fs">FEATURE STATE: Kubernetes v1.18 [stable]</span></p>
-  <p>فروشندگانی که CSI driver خارجی دارند می‌توانند پشتیبانی از raw block volume را در workloadهای کوبرنتیز پیاده‌سازی کنند.</p>
-  <p>می‌توانید <a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/#raw-block-volume-support">PersistentVolume/PersistentVolumeClaim با پشتیبانی raw block volume</a> را مانند همیشه،‏ بدون هیچ تغییر مخصوص CSI،‏ راه‌اندازی کنید (بخش دوم همین فصل).</p>
-
-  <h4 id="ch7-a-csi-eph-short">CSI ephemeral volumes</h4>
-  <p><span class="fs">FEATURE STATE: Kubernetes v1.25 [stable]</span></p>
-  <p>می‌توانید Volumeهای CSI را مستقیما درون Pod specification پیکربندی کنید. Volumeهایی که به این روش مشخص می‌شوند ephemeral هستند و در طول restart شدن Pod ماندگار نمی‌مانند. برای اطلاعات بیشتر،‏ بخش <a href="#ch7-a-csi-ephvol">CSI ephemeral volumes</a> در همین فصل را ببینید.</p>
-  <p>برای اطلاعات بیشتر درباره‌ی نحوه‌ی توسعه‌ی یک CSI driver،‏ به <a href="https://kubernetes-csi.github.io/docs/">kubernetes-csi documentation</a> مراجعه کنید.</p>
-
-  <h4>Windows CSI proxy</h4>
-  <p><span class="fs">FEATURE STATE: Kubernetes v1.22 [stable]</span></p>
-  <p>CSI node pluginها باید عملیات ممتاز (privileged) مختلفی انجام دهند،‏ مانند scan کردن دستگاه‌های دیسک و mount کردن filesystemها. این عملیات برای هر سیستم‌عامل میزبان متفاوت است. برای Worker Nodeهای Linux،‏ CSI node pluginهای containerized معمولا به‌صورت privileged container deploy می‌شوند. برای Worker Nodeهای Windows،‏ عملیات ممتاز برای CSI node pluginهای containerized با استفاده از <a href="https://github.com/kubernetes-csi/csi-proxy">csi-proxy</a> پشتیبانی می‌شود؛‏ یک binary مستقل که توسط جامعه مدیریت می‌شود و باید از قبل روی هر Node ویندوزی نصب شده باشد.</p>
-  <p>برای جزئیات بیشتر،‏ به راهنمای deploy آن CSI pluginی که می‌خواهید deploy کنید مراجعه کنید.</p>
-
-  <h4>Migrating to CSI drivers from in-tree plugins</h4>
-  <p><span class="fs">FEATURE STATE: Kubernetes v1.25 [stable]</span></p>
-  <p>feature <code>CSIMigration</code> عملیات انجام‌شده روی pluginهای in-tree موجود را به CSI pluginهای متناظر هدایت می‌کند (که انتظار می‌رود نصب و پیکربندی شده باشند). در نتیجه،‏ operatorها هنگام گذار به یک CSI driver که جایگزین یک plugin in-tree می‌شود،‏ لازم نیست هیچ تغییری در پیکربندی Storage Classها،‏ PersistentVolumeها یا PersistentVolumeClaimهای موجود (که به pluginهای in-tree ارجاع می‌دهند) بدهند.</p>
-  <div class="note"><b>نکته</b>
-    <p>PVهای موجودی که توسط یک volume plugin از نوع in-tree ساخته شده‌اند،‏ در آینده هم بدون هیچ تغییر پیکربندی قابل استفاده هستند،‏ حتی پس از اینکه migration به CSI برای آن Volume type کامل شد،‏ و حتی پس از ارتقا به نسخه‌ای از کوبرنتیز که پشتیبانی کامپایل‌شده (compiled-in) برای آن نوع storage را ندارد.</p>
-    <p>به‌عنوان بخشی از آن migration،‏ شما (یا مدیر دیگری از cluster) <b>باید</b> CSI driver مناسب برای آن storage را نصب و پیکربندی کرده باشید. هسته‌ی کوبرنتیز آن نرم‌افزار را برای شما نصب نمی‌کند.</p>
-    <hr>
-    <p>پس از آن migration،‏ می‌توانید PVCها و PVهای جدیدی هم تعریف کنید که به یکپارچه‌سازی‌های storage قدیمی و built-in ارجاع می‌دهند. به شرط اینکه CSI driver مناسب نصب و پیکربندی شده باشد،‏ ساخت PV حتی برای Volumeهای کاملا جدید به کار خود ادامه می‌دهد. مدیریت واقعی storage اکنون از طریق CSI driver انجام می‌شود.</p>
-  </div>
-  <p>عملیات و قابلیت‌های پشتیبانی‌شده عبارت‌اند از: provisioning/delete،‏ attach/detach،‏ mount/unmount و resize کردن Volumeها.</p>
-  <p>pluginهای in-tree که <code>CSIMigration</code> را پشتیبانی می‌کنند و یک CSI driver متناظر برایشان پیاده‌سازی شده،‏ در Types of Volumes فهرست شده‌اند.</p>
   <div class="deep"><b>توضیح تکمیلی: migration در عمل</b>
     <p>یعنی یک PV قدیمی با <code>gcePersistentDisk:</code> در spec،‏ پس از ارتقای cluster همچنان در API به همان شکل دیده می‌شود،‏ اما kube-controller-manager و kubelet آن را در حافظه به یک spec معادل <code>csi:</code> با driver <code>pd.csi.storage.gke.io</code> ترجمه می‌کنند و تمام کار را به CSI driver می‌سپارند. پیش‌شرط حیاتی: اگر CSI driver نصب نباشد،‏ attach و mount این PVها شکست می‌خورد. پیش از ارتقای نسخه،‏ همیشه بررسی کنید <code>kubectl get csidrivers</code> driver معادل را نشان دهد و روی همه‌ی Nodeها (<code>kubectl get csinode &lt;node&gt; -o yaml</code>) ثبت شده باشد (خارج از مستندات رسمی).</p>
-  </div>
-
-  <h4 id="ch7-a-flex">flexVolume (deprecated)</h4>
-  <p><span class="fs">FEATURE STATE: Kubernetes v1.23 [deprecated]</span></p>
-  <p>FlexVolume یک interface plugin از نوع out-of-tree است که از یک مدل مبتنی بر exec برای ارتباط با storage driverها استفاده می‌کند. binaryهای driver مربوط به FlexVolume باید در یک مسیر از پیش تعریف‌شده‌ی volume plugin روی هر Node،‏ و در برخی موارد روی Nodeهای Control Plane نیز،‏ نصب شوند.</p>
-  <p>Podها از طریق volume plugin از نوع in-tree با نام <code>flexVolume</code> با driverهای FlexVolume تعامل می‌کنند.</p>
-  <p>pluginهای FlexVolume زیر که به‌صورت PowerShell script روی host deploy می‌شوند،‏ Nodeهای Windows را پشتیبانی می‌کنند:</p>
-  <ul>
-    <li><a href="https://github.com/microsoft/K8s-Storage-Plugins/tree/master/flexvolume/windows/plugins/microsoft.com~smb.cmd">SMB</a></li>
-    <li><a href="https://github.com/microsoft/K8s-Storage-Plugins/tree/master/flexvolume/windows/plugins/microsoft.com~iscsi.cmd">iSCSI</a></li>
-  </ul>
-  <div class="note"><b>نکته</b>
-    <p>FlexVolume deprecated است. استفاده از یک CSI driver از نوع out-of-tree روش توصیه‌شده برای یکپارچه کردن storage خارجی با کوبرنتیز است.</p>
-    <p>نگه‌دارندگان driverهای FlexVolume باید یک CSI Driver پیاده‌سازی کنند و به migrate کردن کاربران driverهای FlexVolume به CSI کمک کنند. کاربران FlexVolume باید workloadهای خود را به استفاده از CSI Driver معادل منتقل کنند.</p>
   </div>
   <div class="deep"><b>توضیح تکمیلی: exec-based در برابر CSI</b>
     <p>در FlexVolume،‏ kubelet برای هر عملیات یک فایل اجرایی روی Node را با آرگومان‌هایی مثل <code>init</code>،‏ <code>mount</code>،‏ <code>unmount</code> اجرا می‌کرد و خروجی JSON آن را می‌خواند؛‏ مسیر پیش‌فرض <code>/usr/libexec/kubernetes/kubelet-plugins/volume/exec/&lt;vendor~driver&gt;/</code> بود (خارج از مستندات رسمی). یعنی نصب driver به معنی کپی binary روی filesystem Node بود و وابستگی‌های آن (مثلا ابزار <code>jq</code>) باید روی Node موجود می‌بود. CSI این مشکلات را با یک پروتکل gRPC استاندارد و driverهایی که خودشان به‌صورت container (DaemonSet و Deployment) deploy می‌شوند حل کرد.</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-propagation">Mount propagation</h3>
   <div class="warn"><b>هشدار</b><p>Mount propagation یک feature سطح پایین است که روی همه‌ی Volume typeها به‌طور یکسان کار نمی‌کند. پروژه‌ی کوبرنتیز توصیه می‌کند mount propagation فقط با Volumeهای <code>hostPath</code> یا <code>emptyDir</code> مبتنی بر memory استفاده شود. برای زمینه‌ی بیشتر،‏ <a href="https://github.com/kubernetes/kubernetes/issues/95049">Kubernetes issue #95049</a> را ببینید.</p></div>
@@ -1426,6 +1474,8 @@ kubectl get volumeattachments
       <p>این حالت معادل mount propagation از نوع <code>rshared</code> است،‏ همان‌طور که در <code>mount(8)</code> توضیح داده شده.</p>
       <div class="warn"><b>هشدار</b><p>mount propagation از نوع <code>Bidirectional</code> می‌تواند خطرناک باشد. می‌تواند به سیستم‌عامل host آسیب بزند و بنابراین فقط در privileged containerهای مجاز است. آشنایی با رفتار kernel لینوکس به‌شدت توصیه می‌شود. علاوه بر این،‏ هر volume mountی که توسط containerهای درون Podها ساخته شود باید هنگام termination توسط همان containerها نابود (unmount) شود.</p></div></li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا CSI node plugin به Bidirectional نیاز دارد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا CSI node plugin به Bidirectional نیاز دارد؟</b>
     <p>CSI node plugin داخل یک container اجرا می‌شود،‏ اما mountی که انجام می‌دهد (مثلا mount کردن یک دیسک EBS در <code>/var/lib/kubelet/pods/&lt;uid&gt;/volumes/...</code>) باید در mount namespace خود <b>host</b> دیده شود تا container runtime بتواند آن را به container برنامه bind-mount کند. اگر mount propagation برابر <code>None</code> باشد،‏ mount فقط درون mount namespace همان container plugin باقی می‌ماند و Pod برنامه یک دایرکتوری خالی می‌بیند. به همین دلیل DaemonSet مربوط به CSI node plugin معمولا چنین چیزی دارد (خارج از مستندات رسمی):</p>
     <div class="code"><div class="lbl"><span>بخشی از DaemonSet یک CSI node plugin (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">      containers:
@@ -1448,6 +1498,7 @@ kubectl get volumeattachments
       <tr><td><code>Bidirectional</code></td><td><code>rshared</code></td><td>بله</td><td>بله (فقط privileged)</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch7-a-readonly">Read-only mounts</h3>
   <p>یک mount را می‌توان با تنظیم field <code>.spec.containers[*].volumeMounts[*].readOnly</code> روی <code>true</code> فقط‌خواندنی کرد. این کار خود Volume را read-only نمی‌کند،‏ اما آن container مشخص نمی‌تواند در آن بنویسد. containerهای دیگر در Pod ممکن است همان Volume را به‌صورت read-write mount کنند.</p>
@@ -1572,9 +1623,6 @@ spec:
             path: baa
             user: 1000
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: خواندن این مثال</b>
-    <p>در <code>volA</code>،‏ فایل <code>foo</code> مالک 1000 (از <code>defaultUser</code>) و فایل <code>bar</code> مالک 1001 (از <code>user</code> سطح item که اولویت دارد) می‌گیرد. در <code>volB</code> همه‌ی فایل‌های Secret مالک 1000 هستند. در <code>volC</code> چون <code>defaultUser</code> تعیین نشده،‏ <code>moo</code> مالک root می‌ماند و <code>baa</code> مالک 1000 می‌شود. کاربرد: برنامه‌هایی که با UID غیر root اجرا می‌شوند و فایل کلید با permission <code>‎0400‎</code> می‌خواهند (مثلا SSH یا PostgreSQL که کلید خصوصی قابل‌خواندن برای دیگران را رد می‌کنند) (خارج از مستندات رسمی). توجه: نام Volumeها در کوبرنتیز باید DNS label (حروف کوچک) باشد؛‏ نام‌هایی مثل <code>volA</code> در این مثال مستندات فقط برای نمایش ساختار است و در عمل باید مثلا <code>vol-a</code> نوشته شود (خارج از مستندات رسمی).</p>
-  </div>
   <h4>Implementations</h4>
   <p>container runtimeهای زیر شناخته شده‌اند که از recursive read-only mountها پشتیبانی می‌کنند.</p>
   <p>سطح CRI:</p>
@@ -1588,6 +1636,13 @@ spec:
     <li><a href="https://github.com/containers/crun">crun</a>،‏ از v1.8.6</li>
   </ul>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">خواندن این مثال</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: خواندن این مثال</b>
+    <p>در <code>volA</code>،‏ فایل <code>foo</code> مالک 1000 (از <code>defaultUser</code>) و فایل <code>bar</code> مالک 1001 (از <code>user</code> سطح item که اولویت دارد) می‌گیرد. در <code>volB</code> همه‌ی فایل‌های Secret مالک 1000 هستند. در <code>volC</code> چون <code>defaultUser</code> تعیین نشده،‏ <code>moo</code> مالک root می‌ماند و <code>baa</code> مالک 1000 می‌شود. کاربرد: برنامه‌هایی که با UID غیر root اجرا می‌شوند و فایل کلید با permission <code>‎0400‎</code> می‌خواهند (مثلا SSH یا PostgreSQL که کلید خصوصی قابل‌خواندن برای دیگران را رد می‌کنند) (خارج از مستندات رسمی). توجه: نام Volumeها در کوبرنتیز باید DNS label (حروف کوچک) باشد؛‏ نام‌هایی مثل <code>volA</code> در این مثال مستندات فقط برای نمایش ساختار است و در عمل باید مثلا <code>vol-a</code> نوشته شود (خارج از مستندات رسمی).</p>
+  </div>
+  </details>
+
   <h3 id="ch7-a-bindopts">Bind mount options</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.37 [alpha]</span> (feature gate <code>VolumeBindMountOptions</code>،‏ پیش‌فرض غیرفعال)</p>
   <p>field <code>.spec.containers[*].volumeMounts[*].bindMountOptions</code> اجازه می‌دهد flagهای امنیتی bind mount لینوکس را روی هر volume mount اعمال کنید. مقادیر مجاز:</p>
@@ -1598,6 +1653,10 @@ spec:
   </ul>
   <p>این optionها برای هر container جداگانه اعمال می‌شوند،‏ بنابراین containerهای مختلف در یک Pod می‌توانند همان Volume را با bind mount optionهای متفاوت mount کنند. این field با <a href="#ch7-a-image">image volumes</a> پشتیبانی نمی‌شود.</p>
   <div class="note"><b>نکته</b><p>container runtime (مانند containerd یا CRI-O) باید field <code>mount_options</code> را در پیام <code>Mount</code> مربوط به CRI پشتیبانی کند. اگر runtime پشتیبانی را اعلام نکند،‏ kubelet Podهایی را که از <code>bindMountOptions</code> استفاده می‌کنند رد می‌کند. این field روی Nodeهای Windows اثری ندارد.</p></div>
+  <p class="next">ادامه‌ی مطالعه: <a href="https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/">deploying WordPress and MySQL with Persistent Volumes</a></p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نمونه‌ی noexec برای یک upload directory</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نمونه‌ی noexec برای یک upload directory</b>
     <p>یک الگوی امنیتی رایج: برنامه‌ی وب فایل‌های آپلودی کاربران را در یک <code>emptyDir</code> یا PVC می‌نویسد. اگر مهاجم بتواند یک binary آپلود کند و آن را اجرا کند،‏ به remote code execution می‌رسد. با <code>noexec</code> روی همان mount،‏ اجرای فایل از آن مسیر توسط kernel رد می‌شود،‏ در حالی که یک container دیگر (مثلا اسکنر ویروس) می‌تواند همان Volume را بدون این محدودیت mount کند (شکل fieldها طبق توضیح مستندات؛‏ نمونه خارج از مستندات رسمی):</p>
     <div class="code"><div class="lbl"><span>بخشی از Pod spec (نمونه)</span><button type="button">کپی</button></div><pre class="yaml">    volumeMounts:
@@ -1606,7 +1665,7 @@ spec:
       bindMountOptions: ["noexec", "nodev", "nosuid"]
 </pre></div>
   </div>
-  <p class="next">ادامه‌ی مطالعه: <a href="https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/">deploying WordPress and MySQL with Persistent Volumes</a></p>
+  </details>
   <h3 id="ch7-a-projected">Projected Volumes</h3>
   <p>این بخش <code>projected</code> volume را که پیش‌تر به‌عنوان یک type در «Types of volumes» معرفی شد،‏ با جزئیات کامل توضیح می‌دهد. آشنایی با <a href="#ch7-a-volumes">volumes</a> پیشنهاد می‌شود.</p>
 
@@ -1697,10 +1756,6 @@ spec:
     <li>برای Secretها،‏ field <code>secretName</code> به <code>name</code> تغییر کرده تا با نام‌گذاری ConfigMap سازگار باشد.</li>
     <li><code>defaultMode</code> فقط در سطح projected می‌تواند مشخص شود،‏ نه برای هر volume source جداگانه. با این حال،‏ همان‌طور که در بالا نشان داده شد،‏ می‌توانید <code>mode</code> را به‌صورت صریح برای هر projection جداگانه تنظیم کنید.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: چرا projected volume؟</b>
-    <p>بدون <code>projected</code>،‏ برای mount کردن هم یک Secret و هم یک ConfigMap در یک Pod باید دو <code>volumeMounts</code> جدا با دو mountPath جدا تعریف کنید. با <code>projected</code>،‏ همه در یک directory کنار هم قرار می‌گیرند؛‏ این برای برنامه‌هایی که انتظار دارند تمام فایل‌های پیکربندی/credential در یک مسیر باشند (مثلا یک الگوی <code>/etc/app-config/</code> با هم secret و configMap) مفید است (خارج از مستندات رسمی). محدودیت مهم: چون <code>defaultMode</code> فقط در سطح projected قابل تنظیم است،‏ اگر به permission متفاوت برای هر source نیاز دارید باید از <code>mode</code> در سطح هر item استفاده کنید.</p>
-  </div>
-
   <h4 id="ch7-a-satoken">serviceAccountToken projected volumes</h4>
   <p>می‌توانید token مربوط به service account فعلی را در یک مسیر مشخص در Pod inject کنید. برای مثال:</p>
   <div class="code"><div class="lbl"><span>pods/storage/projected-service-account-token.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -1767,10 +1822,6 @@ spec:
           path: mysigner-roots.pem
           optional: true
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: کاربرد ClusterTrustBundle</b>
-    <p>ClusterTrustBundle یک object در سطح Cluster (فصل ۱۴) است که مجموعه‌ای از گواهی‌های root/CA را نگه می‌دارد. کاربرد این projected source این است که به‌جای این‌که هر برنامه یک ConfigMap جداگانه با bundle گواهی‌ها داشته باشد که باید دستی به‌روز شود،‏ همه‌ی Podهایی که به یک signer اعتماد می‌کنند می‌توانند از یک منبع مرکزی و خودکار به‌روزشونده استفاده کنند؛‏ این برای mutual TLS بین سرویس‌ها یا اعتماد به یک CA داخلی سازمان مفید است (خارج از مستندات رسمی).</p>
-  </div>
-
   <h4 id="ch7-a-podcert">podCertificate projected volumes</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.37 [stable]</span> (پیش‌فرض فعال،‏ feature gate <code>PodCertificateRequest</code>)</p>
   <p>source از نوع <code>podCertificate</code> projected volume به‌صورت امن یک private key و زنجیره‌ی گواهی X.509 برای استفاده‌ی Pod به‌عنوان credential client یا سرور فراهم می‌کند. سپس Kubelet هنگام نزدیک شدن به انقضا،‏ private key و زنجیره‌ی گواهی را refresh می‌کند. برنامه فقط باید مطمئن شود که هنگام تغییر فایل،‏ به‌سرعت آن را دوباره بارگذاری می‌کند،‏ با مکانیزمی مثل <code>inotify</code> یا polling.</p>
@@ -1839,6 +1890,16 @@ Sddl   : O:BAG:SYD:AI(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;0x1200a9;;;BU)
 </pre></div>
   <p>این یعنی همه‌ی کاربران administrator مثل <code>ContainerAdministrator</code> دسترسی خواندن،‏ نوشتن و اجرا خواهند داشت،‏ در حالی که کاربران non-administrator دسترسی خواندن و اجرا خواهند داشت.</p>
   <div class="note"><b>نکته</b><p>به‌طور کلی،‏ دادن دسترسی container به host توصیه نمی‌شود چون می‌تواند راه را برای سوءاستفاده‌های امنیتی احتمالی باز کند.</p><p>ایجاد یک Windows Pod با <code>RunAsUser</code> در SecurityContext آن باعث می‌شود Pod برای همیشه در وضعیت <code>ContainerCreating</code> گیر کند. بنابراین توصیه می‌شود از گزینه‌ی <code>RunAsUser</code> که مخصوص Linux است با Windows Podها استفاده نکنید.</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا projected volume؟ · کاربرد ClusterTrustBundle</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا projected volume؟</b>
+    <p>بدون <code>projected</code>،‏ برای mount کردن هم یک Secret و هم یک ConfigMap در یک Pod باید دو <code>volumeMounts</code> جدا با دو mountPath جدا تعریف کنید. با <code>projected</code>،‏ همه در یک directory کنار هم قرار می‌گیرند؛‏ این برای برنامه‌هایی که انتظار دارند تمام فایل‌های پیکربندی/credential در یک مسیر باشند (مثلا یک الگوی <code>/etc/app-config/</code> با هم secret و configMap) مفید است (خارج از مستندات رسمی). محدودیت مهم: چون <code>defaultMode</code> فقط در سطح projected قابل تنظیم است،‏ اگر به permission متفاوت برای هر source نیاز دارید باید از <code>mode</code> در سطح هر item استفاده کنید.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: کاربرد ClusterTrustBundle</b>
+    <p>ClusterTrustBundle یک object در سطح Cluster (فصل ۱۴) است که مجموعه‌ای از گواهی‌های root/CA را نگه می‌دارد. کاربرد این projected source این است که به‌جای این‌که هر برنامه یک ConfigMap جداگانه با bundle گواهی‌ها داشته باشد که باید دستی به‌روز شود،‏ همه‌ی Podهایی که به یک signer اعتماد می‌کنند می‌توانند از یک منبع مرکزی و خودکار به‌روزشونده استفاده کنند؛‏ این برای mutual TLS بین سرویس‌ها یا اعتماد به یک CA داخلی سازمان مفید است (خارج از مستندات رسمی).</p>
+  </div>
+  </details>
   <h3 id="ch7-a-ephvol">Ephemeral Volumes</h3>
   <p>این سند <em>ephemeral volumes</em> را در کوبرنتیز توصیف می‌کند. آشنایی با <a href="#ch7-a-volumes">volumes</a> پیشنهاد می‌شود،‏ به‌خصوص PersistentVolumeClaim و PersistentVolume (بخش دوم همین فصل).</p>
   <p>برخی برنامه‌ها به storage اضافی نیاز دارند اما اهمیتی نمی‌دهند که آیا آن داده به‌صورت persistent در طول restartها ذخیره می‌شود یا نه. برای مثال،‏ سرویس‌های caching اغلب محدود به اندازه‌ی memory هستند و می‌توانند داده‌ی کم‌استفاده را به storageی کندتر از memory منتقل کنند بدون تاثیر زیادی روی performance کلی.</p>
@@ -1946,6 +2007,8 @@ spec:
   <h4 id="ch7-a-ephvol-security">Security</h4>
   <p>استفاده از generic ephemeral volumeها به کاربران اجازه می‌دهد به‌صورت غیرمستقیم PVC ایجاد کنند اگر بتوانند Pod ایجاد کنند،‏ حتی اگر مجوز ایجاد مستقیم PVC را نداشته باشند. مدیران cluster باید از این موضوع آگاه باشند. اگر این با مدل امنیتی آن‌ها سازگار نیست،‏ باید از یک <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">admission webhook</a> استفاده کنند که objectهایی مثل Podها که یک generic ephemeral volume دارند را رد می‌کند.</p>
   <p>quota معمول namespace برای PVCها همچنان اعمال می‌شود،‏ بنابراین حتی اگر به کاربران اجازه‌ی استفاده از این مکانیزم جدید داده شود،‏ نمی‌توانند از آن برای دور زدن policyهای دیگر استفاده کنند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام نوع ephemeral volume را انتخاب کنیم؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کدام نوع ephemeral volume را انتخاب کنیم؟</b>
     <div class="tbl"><table><thead><tr><th>نیاز</th><th>گزینه‌ی مناسب</th></tr></thead><tbody>
       <tr><td>scratch space ساده روی همان node،‏ بدون نیاز به اندازه‌ی تضمین‌شده یا network storage</td><td><code>emptyDir</code></td></tr>
@@ -1954,6 +2017,7 @@ spec:
     </tbody></table></div>
     <p>نکته‌ی مهم عملیاتی: چون generic ephemeral volume یک PVC واقعی می‌سازد،‏ در محیط production باید quota و RBAC مربوط به PVC را طوری تنظیم کنید که این PVCهای خودکار هم حساب شوند؛‏ در غیر این صورت ممکن است namespace quota برای PVC غیرمنتظره پر شود (خارج از مستندات رسمی).</p>
   </div>
+  </details>
 
   <h3 id="ch7-a-ephstorage">Local Ephemeral Storage</h3>
   <p>Nodeها دارای local ephemeral storage هستند که توسط deviceهای writeable متصل محلی یا،‏ گاهی،‏ توسط RAM پشتیبانی می‌شود. «Ephemeral» یعنی هیچ تضمین بلندمدتی درباره‌ی durability وجود ندارد.</p>
@@ -2080,11 +2144,15 @@ sudo tune2fs -O project -Q prjquota /dev/block-device
   <ul>
     <li>feature gate <code>LocalStorageCapacityIsolationFSQuotaMonitoring</code> را با استفاده از field <code>featureGates</code> در پیکربندی kubelet غیرفعال کنید.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا اندازه‌گیری ephemeral storage مهم است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا اندازه‌گیری ephemeral storage مهم است؟</b>
     <p>یک اشتباه رایج در production این است که فرض کنیم <code>emptyDir</code> بدون <code>sizeLimit</code> بی‌خطر است چون «موقت» است. اما اگر kubelet نتواند مصرف را اندازه‌گیری کند (یا شما limit تعریف نکنید)،‏ یک container که به‌اشتباه log یا فایل موقت بی‌نهایت می‌نویسد می‌تواند کل filesystem node را پر کند و باعث DiskPressure شود که روی همه‌ی Podهای آن node،‏ نه فقط Pod خودش،‏ تاثیر می‌گذارد. راه‌حل عملی: همیشه برای containerهایی که به <code>/tmp</code> یا <code>emptyDir</code> می‌نویسند،‏ هم <code>resources.limits.ephemeral-storage</code> در سطح container و هم <code>sizeLimit</code> روی خود volume تعریف کنید،‏ و روی metric <code>node-pressure eviction</code> (فصل ۹) هشدار (alert) تنظیم کنید (خارج از مستندات رسمی).</p>
   </div>
-  <div id="ch7-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۷،‏ بخش اول <small>۱۵ تمرین</small></div>
+  </details>
+
+  <details id="ch7-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۷،‏ بخش اول <small>۱۵ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>تفاوت بین <code>emptyDir</code> و volume از نوع <code>configMap</code> را از نظر lifecycle و منبع داده توضیح دهید. چرا با حذف Pod،‏ محتوای هر دو از بین می‌رود اما دلیل این از بین رفتن متفاوت است؟
         <details class="ans"><summary>پاسخ</summary><p><code>emptyDir</code> یک directory کاملا خالی است که kubelet آن را روی base directory خودش (یا در RAM،‏ اگر <code>medium: Memory</code>) می‌سازد؛‏ داده‌ی آن فقط در همان Pod تولید می‌شود و هیچ منبع دیگری در API ندارد،‏ پس با حذف Pod،‏ آن دایرکتوری هم حذف می‌شود و داده برای همیشه از بین می‌رود. volume از نوع <code>configMap</code> اما محتوایش را از یک object ConfigMap موجود در API می‌گیرد؛‏ با حذف Pod فقط mount محلی آن از بین می‌رود،‏ اما خود object ConfigMap در etcd باقی می‌ماند و می‌تواند در Podهای دیگر دوباره mount شود. به عبارت دیگر emptyDir «ephemeral در داده» است،‏ اما configMap فقط «ephemeral در mount» است،‏ نه در منبع داده.</p></details></li>
@@ -2311,7 +2379,7 @@ Events:
           <p>پس از فعال‌سازی،‏ project quotaها فقط monitoring را دقیق‌تر می‌کنند («project quotas let you monitor storage use; they do not enforce limits»)،‏ پس همچنان لازم است <code>resources.limits.ephemeral-storage</code> و <code>sizeLimit</code> روی Podها تعریف شود تا واقعا enforcement هم انجام شود.</p></details></li>
 
     </ol>
-  </div>
+  </details>
 <!-- chapter 9 part b -->
   <h3 id="ch7-b-pv-intro">معرفی PersistentVolume <small>(PersistentVolumes)</small></h3>
   <p>این بخش <i>persistent volumes</i> را در کوبرنتیز توضیح می‌دهد. آشنایی با <a href="#ch7-a-volumes">volumes</a>،‏ StorageClasses و VolumeAttributesClasses پیش‌نیاز آن است.</p>
@@ -2321,9 +2389,12 @@ Events:
   <p>در حالی که PersistentVolumeClaimها به یک user اجازه می‌دهند resourceهای storage انتزاعی را مصرف کند،‏ معمول است که userها به PersistentVolumeهایی با ویژگی‌های متفاوت،‏ مثل performance،‏ برای مسائل مختلف نیاز داشته باشند. Cluster adminها باید بتوانند مجموعه‌ای متنوع از PersistentVolumeها را ارائه دهند که در بیش از اندازه و access mode تفاوت دارند،‏ بدون اینکه userها را در معرض جزئیات پیاده‌سازی آن Volumeها قرار دهند. برای این نیازها،‏ resource <i>StorageClass</i> وجود دارد.</p>
   <div class="note"><b>نکته</b><p>برای یک walkthrough کامل با مثال‌های working،‏ به مستندات tutorial «Configure a Pod to Use a PersistentVolume for Storage» مراجعه کنید.</p></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا این دو resource جدا هستند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا این دو resource جدا هستند؟</b>
     <p>اگر Pod مستقیما به جزئیات یک NFS server یا disk خاص وصل می‌شد،‏ هر manifest به یک زیرساخت خاص قفل می‌شد. جدا کردن PV (چیزی که admin می‌سازد یا provisioner می‌سازد) از PVC (چیزی که developer درخواست می‌کند) دقیقا مثل جدا کردن Node از Pod است: Pod نمی‌داند روی کدام Node اجرا می‌شود،‏ فقط resource درخواست می‌کند؛‏ به همین ترتیب یک Pod (از طریق PVC) نمی‌داند دقیقا کدام PV یا چه backendی پشت آن است،‏ فقط اندازه و access mode درخواست می‌کند. همین لایه‌بندی است که یک manifest را «قابل حمل» (portable) بین clusterهای مختلف می‌کند (به <a href="#ch7-b-portable">Writing Portable Configuration</a> در پایین همین بخش مراجعه کنید).</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-lifecycle">Lifecycle of a volume and claim</h3>
   <p>PVها resourceهایی در cluster هستند. PVCها درخواست‌هایی برای آن resourceها هستند و همچنین به‌عنوان claim check برای آن resource عمل می‌کنند. تعامل بین PVها و PVCها از این lifecycle پیروی می‌کند:</p>
@@ -2462,10 +2533,6 @@ spec:
       mountPath: /scrub
 </pre></div>
   <p>با این حال،‏ مسیر خاصی که در custom recycler Pod template در بخش <code>volumes</code> مشخص شده،‏ با مسیر خاص volumeی که در حال recycle شدن است جایگزین می‌شود.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: چرا Retain امن‌ترین انتخاب برای production است؟</b>
-    <p><code>Delete</code> راحت است اما یک اشتباه ساده (حذف اشتباهی یک PVC یا یک namespace) می‌تواند داده‌ی واقعی روی backend را نابود کند. برای همین در production معمول است StorageClassهای مخصوص workloadهای stateful حساس (پایگاه داده،‏ fileهای uploads) با <code>reclaimPolicy: Retain</code> ساخته شوند،‏ حتی اگر پیش‌فرض provisioner،‏ Delete باشد. جبران این کار این است که PVهای Released باید به‌صورت دستی پاک‌سازی و دوباره در دسترس قرار داده شوند (به <a href="#ch7-b-reserving">Reserving a PersistentVolume</a> نگاه کنید)،‏ پس این یک trade-off آگاهانه بین ایمنی داده و overhead عملیاتی است.</p>
-  </div>
 
   <h4 id="ch7-b-deletion-finalizer">PersistentVolume deletion protection finalizer</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.33 [stable]</span> (feature gate <code>HonorPVReclaimPolicy</code>؛‏ پس از GA در v1.36 حذف شد و این رفتار همیشه فعال است)</p>
@@ -2663,6 +2730,13 @@ kubectl describe pvc data-mysql-0 | grep -A3 Conditions
     <p>طبق مستندات،‏ file system فقط وقتی resize می‌شود که یک Pod در mode <code>ReadWrite</code> از PVC استفاده کند؛‏ اگر driver از online expansion پشتیبانی نکند،‏ باید Pod را دوباره راه‌اندازی کرد (مثلا <code>kubectl delete pod mysql-0</code> برای یک StatefulSet که دوباره آن را می‌سازد) تا condition برطرف شود.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا Retain امن‌ترین انتخاب برای production است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا Retain امن‌ترین انتخاب برای production است؟</b>
+    <p><code>Delete</code> راحت است اما یک اشتباه ساده (حذف اشتباهی یک PVC یا یک namespace) می‌تواند داده‌ی واقعی روی backend را نابود کند. برای همین در production معمول است StorageClassهای مخصوص workloadهای stateful حساس (پایگاه داده،‏ fileهای uploads) با <code>reclaimPolicy: Retain</code> ساخته شوند،‏ حتی اگر پیش‌فرض provisioner،‏ Delete باشد. جبران این کار این است که PVهای Released باید به‌صورت دستی پاک‌سازی و دوباره در دسترس قرار داده شوند (به <a href="#ch7-b-reserving">Reserving a PersistentVolume</a> نگاه کنید)،‏ پس این یک trade-off آگاهانه بین ایمنی داده و overhead عملیاتی است.</p>
+  </div>
+  </details>
+
   <h3 id="ch7-b-pv-types">Types of Persistent Volumes</h3>
   <p>انواع PersistentVolume به‌صورت plugin پیاده‌سازی شده‌اند. Kubernetes در حال حاضر از pluginهای زیر پشتیبانی می‌کند:</p>
   <ul>
@@ -2695,10 +2769,13 @@ kubectl describe pvc data-mysql-0 | grep -A3 Conditions
     <li><code>scaleIO</code> - ScaleIO volume (از v1.21 <b>در دسترس نیست</b>)</li>
     <li><code>storageos</code> - StorageOS volume (از v1.25 <b>در دسترس نیست</b>)</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«migration on by default» یعنی چه؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: «migration on by default» یعنی چه؟</b>
     <p>CSI migration (که در بخش اول همین فصل در کنار volume typeهای in-tree دیدیم) یعنی وقتی شما هنوز یک PV با فیلد قدیمی مثلا <code>awsElasticBlockStore</code> دارید،‏ کامپوننت‌های کوبرنتیز عملیات آن را به‌صورت داخلی به CSI driver متناظر (مثلا <code>ebs.csi.aws.com</code>) ترجمه می‌کنند. پس manifest قدیمی شما همچنان parse می‌شود،‏ اما <b>اگر CSI driver نصب نباشد</b>،‏ attach/mount شکست می‌خورد. به همین دلیل مستندات می‌گویند «CSI driverهای متناظر را نصب کنید». برای <code>cephfs</code> و <code>rbd</code> چنین ترجمه‌ای وجود ندارد: آن‌ها کاملا حذف شده‌اند و باید PVها را به‌صورت دستی به CSI driver مربوط (مثلا Ceph CSI) منتقل کنید.</p>
     <p>همچنین توجه کنید <code>hostPath</code> در یک cluster چند-nodeی «کار نمی‌کند» چون PV هیچ node affinityی ندارد: Pod ممکن است روی nodeی schedule شود که آن دایرکتوری روی آن اصلا وجود ندارد یا داده‌ی دیگری دارد. نوع <code>local</code> دقیقا برای رفع همین مشکل،‏ با اجباری کردن <code>nodeAffinity</code>،‏ طراحی شده است (بخش <a href="#ch7-b-pv-node-affinity">Node Affinity</a>).</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-pv-spec">ساختار object در PersistentVolume <small>(Persistent Volumes)</small></h3>
   <p>هر PV شامل یک spec و یک status است که به ترتیب مشخصات و وضعیت volume هستند. نام یک PersistentVolume object باید یک DNS subdomain name معتبر باشد.</p>
@@ -2722,24 +2799,9 @@ spec:
     server: 172.17.0.2
 </pre></div>
   <div class="note"><b>نکته</b><p>ممکن است برای مصرف یک PersistentVolume در cluster،‏ برنامه‌های کمکی (helper programs) مربوط به آن volume type لازم باشند. در این مثال،‏ PersistentVolume از نوع NFS است و برنامه‌ی کمکی <code>/sbin/mount.nfs</code> برای پشتیبانی از mount کردن NFS filesystemهای لازم است.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: خواندن این manifest خط به خط</b>
-    <div class="tbl"><table><thead><tr><th>فیلد</th><th>معنی در این مثال</th><th>بخش مرتبط</th></tr></thead><tbody>
-      <tr><td><code>capacity.storage: 5Gi</code></td><td>این PV پنج گیگابایت ظرفیت اعلام می‌کند؛‏ فقط PVCهایی که ۵Gi یا کمتر بخواهند می‌توانند به آن bind شوند.</td><td>Capacity</td></tr>
-      <tr><td><code>volumeMode: Filesystem</code></td><td>داخل Pod به‌صورت یک دایرکتوری mount می‌شود (پیش‌فرض).</td><td>Volume Mode</td></tr>
-      <tr><td><code>accessModes: [ReadWriteOnce]</code></td><td>این PV فقط توسط یک node به‌صورت read-write mount می‌شود،‏ هرچند NFS در اصل RWX را هم پشتیبانی می‌کند.</td><td>Access Modes</td></tr>
-      <tr><td><code>persistentVolumeReclaimPolicy: Recycle</code></td><td>بعد از آزاد شدن claim،‏ محتوا scrub می‌شود (deprecated).</td><td>Reclaim Policy</td></tr>
-      <tr><td><code>storageClassName: slow</code></td><td>فقط به PVCهایی که class با نام <code>slow</code> بخواهند bind می‌شود.</td><td>Class</td></tr>
-      <tr><td><code>mountOptions</code></td><td>گزینه‌های <code>hard</code> و <code>nfsvers=4.1</code> هنگام mount به دستور mount روی node پاس داده می‌شوند.</td><td>Mount Options</td></tr>
-      <tr><td><code>nfs</code></td><td>volume source واقعی: export مسیر <code>/tmp</code> روی سرور <code>‎172.17.0.2‎</code>.</td><td>Types of Persistent Volumes</td></tr>
-    </tbody></table></div>
-    <p>نکته‌ی عملی از Note بالا: روی nodeهای بسیاری از distributionها (مثلا imageهای minimal) بسته‌ی <code>nfs-common</code> یا <code>nfs-utils</code> نصب نیست؛‏ در آن صورت Pod در <code>ContainerCreating</code> می‌ماند و event آن چیزی شبیه <code>mount: wrong fs type, bad option, bad superblock ... you might need a /sbin/mount.&lt;type&gt; helper program</code> نشان می‌دهد (خارج از مستندات رسمی).</p>
-  </div>
-
   <h4 id="ch7-b-pv-capacity">Capacity</h4>
   <p>به‌طور کلی،‏ یک PV یک storage capacity مشخص دارد. این با استفاده از attribute با نام <code>capacity</code> در PV تنظیم می‌شود که یک مقدار از نوع quantity است.</p>
   <p>در حال حاضر،‏ اندازه‌ی storage تنها resourceی است که می‌توان تنظیم یا درخواست کرد. attributeهای آینده ممکن است شامل IOPS،‏ throughput و غیره باشند.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>مقدار quantity همان قالبی است که برای CPU و memory در فصل ۶ می‌بینید: <code>5Gi</code> یعنی 5×2<sup>30</sup> بایت و <code>5G</code> یعنی 5×10<sup>9</sup> بایت. این تفاوت در matching مهم است: یک PVC که <code>5Gi</code> بخواهد <b>نمی‌تواند</b> به PVی با <code>capacity.storage: 5G</code> bind شود،‏ چون 5G کوچک‌تر از 5Gi است. همچنین در PVهای static،‏ این عدد فقط یک «اعلام» است؛‏ Kubernetes اندازه‌ی واقعی export شده‌ی NFS را چک نمی‌کند و محدودیتی روی نوشتن اعمال نمی‌کند.</p></div>
-
   <h4 id="ch7-b-pv-volume-mode">Volume Mode</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.18 [stable]</span></p>
   <p>کوبرنتیز از دو <code>volumeModes</code> برای PersistentVolumeها پشتیبانی می‌کند: <code>Filesystem</code> و <code>Block</code>.</p>
@@ -2788,16 +2850,6 @@ spec:
     <tr><td>VsphereVolume</td><td>✓</td><td>-</td><td>- (works when Pods are collocated)</td><td>-</td></tr>
     <tr><td>PortworxVolume</td><td>✓</td><td>-</td><td>✓</td><td>-</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی: RWO در برابر RWOP،‏ و چرا RWO «یک Pod» نیست</b>
-    <p>رایج‌ترین سوءبرداشت در production این است که RWO را به معنای «فقط یک Pod» بدانیم. طبق متن بالا،‏ RWO محدودیت را در سطح <b>node</b> اعمال می‌کند: دو Pod از یک Deployment که روی یک node قرار بگیرند،‏ هر دو می‌توانند یک PVC با RWO را هم‌زمان mount کنند و داخل آن بنویسند. اگر برنامه‌ی شما (مثلا یک پایگاه داده که فایل lock ندارد) نوشتن هم‌زمان را تحمل نمی‌کند،‏ این می‌تواند داده را خراب کند. RWOP این محدودیت را به سطح Pod می‌برد: Pod دوم که همان PVC را بخواهد،‏ schedule نمی‌شود.</p>
-    <div class="tbl"><table><thead><tr><th>سناریو</th><th>RWO</th><th>RWOP</th><th>RWX</th></tr></thead><tbody>
-      <tr><td>دو Pod روی یک node</td><td>هر دو اجرا می‌شوند</td><td>Pod دوم Pending</td><td>هر دو اجرا می‌شوند</td></tr>
-      <tr><td>دو Pod روی دو node متفاوت</td><td>Pod دوم در ContainerCreating با خطای Multi-Attach (برای block storage)</td><td>Pod دوم Pending</td><td>هر دو اجرا می‌شوند</td></tr>
-      <tr><td>backend مناسب</td><td>block disk (EBS،‏ PD،‏ Azure Disk،‏ Ceph RBD)</td><td>همان،‏ با CSI driver</td><td>file storage (NFS،‏ CephFS،‏ EFS،‏ Azure File)</td></tr>
-    </tbody></table></div>
-    <p>ستون «Pod دوم در ContainerCreating» را در یکی از تمرین‌های Production انتهای بخش با خطای کامل <code>Multi-Attach error</code> بررسی می‌کنیم.</p>
-  </div>
-
   <h4 id="ch7-b-pv-class">Class</h4>
   <p>یک PV می‌تواند یک class داشته باشد که با تنظیم attribute با نام <code>storageClassName</code> روی نام یک <a href="#ch7-b-sc-objects">StorageClass</a> مشخص می‌شود. یک PV از یک class خاص فقط می‌تواند به PVCهایی bind شود که همان class را درخواست می‌کنند. یک PV بدون <code>storageClassName</code> هیچ classی ندارد و فقط می‌تواند به PVCهایی bind شود که هیچ class خاصی درخواست نمی‌کنند.</p>
   <p>در گذشته،‏ annotation با نام <code>volume.beta.kubernetes.io/storage-class</code> به‌جای attribute با نام <code>storageClassName</code> استفاده می‌شد. این annotation همچنان کار می‌کند؛‏ اما در یک release آینده‌ی کوبرنتیز کاملا deprecated خواهد شد.</p>
@@ -2833,8 +2885,6 @@ pvc-3b1f0e2a-7c55-4d0e-9b8f-2f6a1d9c4e10   Retain   Bound
   </ul>
   <p>mount optionها validate نمی‌شوند. اگر یک mount option نامعتبر باشد،‏ mount شکست می‌خورد.</p>
   <p>در گذشته،‏ annotation با نام <code>volume.beta.kubernetes.io/mount-options</code> به‌جای attribute با نام <code>mountOptions</code> استفاده می‌شد. این annotation همچنان کار می‌کند؛‏ اما در یک release آینده‌ی کوبرنتیز کاملا deprecated خواهد شد.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>چون mount optionها validate نمی‌شوند،‏ یک اشتباه تایپی (مثلا <code>nfsver=4.1</code> به‌جای <code>nfsvers=4.1</code>) در زمان <code>kubectl apply</code> هیچ خطایی نمی‌دهد؛‏ خطا فقط وقتی دیده می‌شود که kubelet روی node تلاش به mount کند و Pod با event از نوع <code>FailedMount</code> در <code>ContainerCreating</code> بماند. پس همیشه یک PV جدید با mount option سفارشی را ابتدا با یک Pod تستی امتحان کنید.</p></div>
-
   <h4 id="ch7-b-pv-node-affinity">Node Affinity</h4>
   <div class="note"><b>نکته</b><p>برای بیشتر volume typeها،‏ لازم نیست این فیلد را تنظیم کنید. برای volumeهای <a href="#ch7-a-local">local</a> باید آن را صراحتا تنظیم کنید.</p></div>
   <p>یک PV می‌تواند node affinity مشخص کند تا محدودیت‌هایی تعریف کند که از کدام nodeها می‌توان به این volume دسترسی داشت. Podهایی که از یک PV استفاده می‌کنند فقط روی nodeهایی schedule می‌شوند که توسط node affinity انتخاب شده‌اند. برای مشخص کردن node affinity،‏ فیلد <code>nodeAffinity</code> را در <code>.spec</code> یک PV تنظیم کنید. API reference مربوط به PersistentVolume جزئیات بیشتری درباره‌ی این فیلد دارد.</p>
@@ -2848,6 +2898,44 @@ pvc-3b1f0e2a-7c55-4d0e-9b8f-2f6a1d9c4e10   Retain   Bound
     <li><code>kube-apiserver</code></li>
     <li><code>kubelet</code></li>
   </ul>
+  <h4 id="ch7-b-pv-phase">Phase</h4>
+  <p>یک PersistentVolume در یکی از phaseهای زیر قرار دارد:</p>
+  <dl>
+    <dt><code>Available</code></dt><dd>یک resource آزاد که هنوز به هیچ claimی bind نشده است</dd>
+    <dt><code>Bound</code></dt><dd>volume به یک claim bind شده است</dd>
+    <dt><code>Released</code></dt><dd>claim حذف شده،‏ اما storage resource مرتبط هنوز توسط cluster reclaim نشده است</dd>
+    <dt><code>Failed</code></dt><dd>volume در reclamation (خودکار) خود شکست خورده است</dd>
+  </dl>
+  <p>می‌توانید نام PVC bind‌شده به PV را با استفاده از <code>kubectl describe persistentvolume &lt;name&gt;</code> ببینید.</p>
+
+  <h5>Phase transition timestamp</h5>
+  <p><span class="fs">FEATURE STATE: Kubernetes v1.31 [stable]</span> (feature gate <code>PersistentVolumeLastPhaseTransitionTime</code>؛‏ پس از GA در v1.33 حذف شد و فیلد همیشه پر می‌شود)</p>
+  <p>فیلد <code>.status</code> یک PersistentVolume می‌تواند شامل یک فیلد alpha با نام <code>lastPhaseTransitionTime</code> باشد. این فیلد timestamp آخرین باری که volume phase خود را تغییر داده ثبت می‌کند. برای volumeهای تازه ساخته‌شده،‏ phase روی <code>Pending</code> تنظیم می‌شود و <code>lastPhaseTransitionTime</code> روی زمان فعلی تنظیم می‌شود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۶)</small> <span class="m-t">خواندن این manifest خط به خط · RWO در برابر RWOP،‏ و چرا RWO «یک Pod» نیست · نمونه‌ی nodeAffinity برای یک PV از نوع local · استفاده‌ی عملی از lastPhaseTransitionTime</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: خواندن این manifest خط به خط</b>
+    <div class="tbl"><table><thead><tr><th>فیلد</th><th>معنی در این مثال</th><th>بخش مرتبط</th></tr></thead><tbody>
+      <tr><td><code>capacity.storage: 5Gi</code></td><td>این PV پنج گیگابایت ظرفیت اعلام می‌کند؛‏ فقط PVCهایی که ۵Gi یا کمتر بخواهند می‌توانند به آن bind شوند.</td><td>Capacity</td></tr>
+      <tr><td><code>volumeMode: Filesystem</code></td><td>داخل Pod به‌صورت یک دایرکتوری mount می‌شود (پیش‌فرض).</td><td>Volume Mode</td></tr>
+      <tr><td><code>accessModes: [ReadWriteOnce]</code></td><td>این PV فقط توسط یک node به‌صورت read-write mount می‌شود،‏ هرچند NFS در اصل RWX را هم پشتیبانی می‌کند.</td><td>Access Modes</td></tr>
+      <tr><td><code>persistentVolumeReclaimPolicy: Recycle</code></td><td>بعد از آزاد شدن claim،‏ محتوا scrub می‌شود (deprecated).</td><td>Reclaim Policy</td></tr>
+      <tr><td><code>storageClassName: slow</code></td><td>فقط به PVCهایی که class با نام <code>slow</code> بخواهند bind می‌شود.</td><td>Class</td></tr>
+      <tr><td><code>mountOptions</code></td><td>گزینه‌های <code>hard</code> و <code>nfsvers=4.1</code> هنگام mount به دستور mount روی node پاس داده می‌شوند.</td><td>Mount Options</td></tr>
+      <tr><td><code>nfs</code></td><td>volume source واقعی: export مسیر <code>/tmp</code> روی سرور <code>‎172.17.0.2‎</code>.</td><td>Types of Persistent Volumes</td></tr>
+    </tbody></table></div>
+    <p>نکته‌ی عملی از Note بالا: روی nodeهای بسیاری از distributionها (مثلا imageهای minimal) بسته‌ی <code>nfs-common</code> یا <code>nfs-utils</code> نصب نیست؛‏ در آن صورت Pod در <code>ContainerCreating</code> می‌ماند و event آن چیزی شبیه <code>mount: wrong fs type, bad option, bad superblock ... you might need a /sbin/mount.&lt;type&gt; helper program</code> نشان می‌دهد (خارج از مستندات رسمی).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>مقدار quantity همان قالبی است که برای CPU و memory در فصل ۶ می‌بینید: <code>5Gi</code> یعنی 5×2<sup>30</sup> بایت و <code>5G</code> یعنی 5×10<sup>9</sup> بایت. این تفاوت در matching مهم است: یک PVC که <code>5Gi</code> بخواهد <b>نمی‌تواند</b> به PVی با <code>capacity.storage: 5G</code> bind شود،‏ چون 5G کوچک‌تر از 5Gi است. همچنین در PVهای static،‏ این عدد فقط یک «اعلام» است؛‏ Kubernetes اندازه‌ی واقعی export شده‌ی NFS را چک نمی‌کند و محدودیتی روی نوشتن اعمال نمی‌کند.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: RWO در برابر RWOP،‏ و چرا RWO «یک Pod» نیست</b>
+    <p>رایج‌ترین سوءبرداشت در production این است که RWO را به معنای «فقط یک Pod» بدانیم. طبق متن بالا،‏ RWO محدودیت را در سطح <b>node</b> اعمال می‌کند: دو Pod از یک Deployment که روی یک node قرار بگیرند،‏ هر دو می‌توانند یک PVC با RWO را هم‌زمان mount کنند و داخل آن بنویسند. اگر برنامه‌ی شما (مثلا یک پایگاه داده که فایل lock ندارد) نوشتن هم‌زمان را تحمل نمی‌کند،‏ این می‌تواند داده را خراب کند. RWOP این محدودیت را به سطح Pod می‌برد: Pod دوم که همان PVC را بخواهد،‏ schedule نمی‌شود.</p>
+    <div class="tbl"><table><thead><tr><th>سناریو</th><th>RWO</th><th>RWOP</th><th>RWX</th></tr></thead><tbody>
+      <tr><td>دو Pod روی یک node</td><td>هر دو اجرا می‌شوند</td><td>Pod دوم Pending</td><td>هر دو اجرا می‌شوند</td></tr>
+      <tr><td>دو Pod روی دو node متفاوت</td><td>Pod دوم در ContainerCreating با خطای Multi-Attach (برای block storage)</td><td>Pod دوم Pending</td><td>هر دو اجرا می‌شوند</td></tr>
+      <tr><td>backend مناسب</td><td>block disk (EBS،‏ PD،‏ Azure Disk،‏ Ceph RBD)</td><td>همان،‏ با CSI driver</td><td>file storage (NFS،‏ CephFS،‏ EFS،‏ Azure File)</td></tr>
+    </tbody></table></div>
+    <p>ستون «Pod دوم در ContainerCreating» را در یکی از تمرین‌های Production انتهای بخش با خطای کامل <code>Multi-Attach error</code> بررسی می‌کنیم.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>چون mount optionها validate نمی‌شوند،‏ یک اشتباه تایپی (مثلا <code>nfsver=4.1</code> به‌جای <code>nfsvers=4.1</code>) در زمان <code>kubectl apply</code> هیچ خطایی نمی‌دهد؛‏ خطا فقط وقتی دیده می‌شود که kubelet روی node تلاش به mount کند و Pod با event از نوع <code>FailedMount</code> در <code>ContainerCreating</code> بماند. پس همیشه یک PV جدید با mount option سفارشی را ابتدا با یک Pod تستی امتحان کنید.</p></div>
   <div class="deep"><b>توضیح تکمیلی: نمونه‌ی nodeAffinity برای یک PV از نوع local</b>
     <div class="code"><div class="lbl"><span>local-pv-node-affinity.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: PersistentVolume
@@ -2872,20 +2960,6 @@ spec:
 </pre></div>
     <p>هر Podی که PVC متصل به این PV را استفاده کند،‏ <b>فقط</b> روی <code>worker-2</code> قرار می‌گیرد. اگر <code>worker-2</code> از بین برود،‏ Pod هرگز جای دیگری schedule نمی‌شود،‏ چون داده فیزیکی روی همان دیسک است. این همان trade-off ذاتی local storage است: performance بالاتر در برابر وابستگی به node. در بخش <a href="#ch7-b-sc-local">Local</a> از StorageClassها خواهیم دید چرا این PVها باید با <code>volumeBindingMode: WaitForFirstConsumer</code> همراه شوند.</p>
   </div>
-
-  <h4 id="ch7-b-pv-phase">Phase</h4>
-  <p>یک PersistentVolume در یکی از phaseهای زیر قرار دارد:</p>
-  <dl>
-    <dt><code>Available</code></dt><dd>یک resource آزاد که هنوز به هیچ claimی bind نشده است</dd>
-    <dt><code>Bound</code></dt><dd>volume به یک claim bind شده است</dd>
-    <dt><code>Released</code></dt><dd>claim حذف شده،‏ اما storage resource مرتبط هنوز توسط cluster reclaim نشده است</dd>
-    <dt><code>Failed</code></dt><dd>volume در reclamation (خودکار) خود شکست خورده است</dd>
-  </dl>
-  <p>می‌توانید نام PVC bind‌شده به PV را با استفاده از <code>kubectl describe persistentvolume &lt;name&gt;</code> ببینید.</p>
-
-  <h5>Phase transition timestamp</h5>
-  <p><span class="fs">FEATURE STATE: Kubernetes v1.31 [stable]</span> (feature gate <code>PersistentVolumeLastPhaseTransitionTime</code>؛‏ پس از GA در v1.33 حذف شد و فیلد همیشه پر می‌شود)</p>
-  <p>فیلد <code>.status</code> یک PersistentVolume می‌تواند شامل یک فیلد alpha با نام <code>lastPhaseTransitionTime</code> باشد. این فیلد timestamp آخرین باری که volume phase خود را تغییر داده ثبت می‌کند. برای volumeهای تازه ساخته‌شده،‏ phase روی <code>Pending</code> تنظیم می‌شود و <code>lastPhaseTransitionTime</code> روی زمان فعلی تنظیم می‌شود.</p>
   <div class="deep"><b>توضیح تکمیلی: استفاده‌ی عملی از lastPhaseTransitionTime</b>
     <p>این فیلد برای پیدا کردن PVهایی که مدت طولانی در <code>Released</code> مانده‌اند (یعنی disk واقعی پولش پرداخت می‌شود اما هیچ‌کس از آن استفاده نمی‌کند) بسیار مفید است:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pv -o custom-columns=NAME:.metadata.name,PHASE:.status.phase,SINCE:.status.lastPhaseTransitionTime,CLAIM:.spec.claimRef.name \
@@ -2896,6 +2970,7 @@ pvc-0c7e9a51-2b1d-4c39-8e3f-6a4d2b8f1c77   Released   2026-06-02T08:14:51Z   dat
 </pre></div>
     <p>چرخه‌ی phaseها به‌صورت خلاصه: <code>Pending</code> (فقط لحظه‌ی ساخت) ← <code>Available</code> ← <code>Bound</code> ← (حذف PVC) ← <code>Released</code> ← بسته به policy: حذف (Delete)،‏ باقی ماندن تا دخالت دستی (Retain)،‏ یا بازگشت به <code>Available</code> (Recycle)؛‏ و اگر هر کدام از این مراحل خودکار شکست بخورد: <code>Failed</code>.</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-pvc">PersistentVolumeClaims</h3>
   <p>هر PVC شامل یک spec و یک status است که به ترتیب مشخصات و وضعیت claim هستند. نام یک PersistentVolumeClaim object باید یک DNS subdomain name معتبر باشد.</p>
@@ -2930,8 +3005,6 @@ spec:
   <h4>Resources</h4>
   <p>Claimها،‏ مثل Podها،‏ می‌توانند مقادیر مشخصی از یک resource درخواست کنند. در این حالت،‏ درخواست برای storage است. همان resource model برای هم volumeها و هم claimها اعمال می‌شود.</p>
   <div class="note"><b>نکته</b><p>برای volumeهای <code>Filesystem</code>،‏ storage request به اندازه‌ی «بیرونی» volume اشاره دارد (یعنی اندازه‌ی allocate‌شده از storage backend). این یعنی اندازه‌ی قابل نوشتن ممکن است برای providerهایی که یک filesystem روی یک block device می‌سازند،‏ به دلیل overhead مربوط به filesystem،‏ کمی کمتر باشد. این موضوع به‌ویژه با XFS،‏ که بسیاری از featureهای metadata در آن به‌صورت پیش‌فرض فعال هستند،‏ مشهود است.</p></div>
-  <div class="deep"><b>توضیح تکمیلی</b><p>یعنی اگر برنامه‌ی شما دقیقا ۱۰Gi فضای قابل نوشتن لازم دارد (مثلا یک WAL با اندازه‌ی ثابت)،‏ PVC با <code>storage: 10Gi</code> کافی نیست. <code>df -h</code> داخل container برای یک volume ده گیگی با XFS معمولا چیزی حدود 9.9G یا کمتر نشان می‌دهد و ext4 هم بخشی را برای reserved blockها و journal نگه می‌دارد (خارج از مستندات رسمی). همیشه برای overhead filesystem حاشیه در نظر بگیرید.</p></div>
-
   <h4>Selector</h4>
   <p>Claimها می‌توانند یک label selector مشخص کنند تا مجموعه‌ی volumeها را بیشتر فیلتر کنند. فقط volumeهایی که labelهای آن‌ها با selector مطابقت دارند می‌توانند به claim bind شوند. selector (شرطی که اشیای هدف را بر اساس labelها انتخاب می‌کند) می‌تواند از دو فیلد تشکیل شود:</p>
   <ul>
@@ -2952,15 +3025,6 @@ spec:
   <p>وقتی یک PVC علاوه بر درخواست یک StorageClass،‏ یک <code>selector</code> هم مشخص می‌کند،‏ requirementها با هم AND می‌شوند: فقط یک PV از class درخواست‌شده و با labelهای درخواست‌شده می‌تواند به PVC bind شود.</p>
   <div class="note"><b>نکته</b><p>در حال حاضر،‏ برای یک PVC با <code>selector</code> غیرخالی نمی‌توان یک PV را به‌صورت dynamic provision کرد.</p></div>
   <p>در گذشته،‏ annotation با نام <code>volume.beta.kubernetes.io/storage-class</code> به‌جای attribute با نام <code>storageClassName</code> استفاده می‌شد. این annotation همچنان کار می‌کند؛‏ اما در یک release آینده‌ی کوبرنتیز پشتیبانی نخواهد شد.</p>
-  <div class="deep"><b>توضیح تکمیلی: سه حالت storageClassName در PVC</b>
-    <div class="tbl"><table><thead><tr><th>مقدار در PVC</th><th>DefaultStorageClass روشن و default موجود</th><th>بدون default</th></tr></thead><tbody>
-      <tr><td><code>storageClassName: fast</code></td><td>فقط PVهای class <code>fast</code> یا dynamic provisioning از <code>fast</code></td><td>همین</td></tr>
-      <tr><td><code>storageClassName: ""</code></td><td>فقط PVهای بدون class؛‏ dynamic provisioning غیرفعال؛‏ هرگز retroactive به‌روز نمی‌شود</td><td>همین</td></tr>
-      <tr><td>فیلد حذف شده (nil)</td><td>admission plugin مقدار default را در فیلد می‌نویسد و از آن provision می‌شود</td><td>PVC با فیلد خالی ساخته می‌شود و Pending می‌ماند تا یک default ساخته شود (retroactive assignment)</td></tr>
-    </tbody></table></div>
-    <p>درس عملی: اگر یک PV static دستی ساخته‌اید (مثلا NFS بدون class) و می‌خواهید PVC حتما به آن bind شود،‏ <b>باید</b> در PVC صراحتا <code>storageClassName: ""</code> بنویسید؛‏ وگرنه در یک cluster مدیریت‌شده (EKS/GKE/AKS) که default دارد،‏ PVC یک disk جدید dynamic می‌گیرد و PV شما Available باقی می‌ماند. همین نکته در comment مثال <code>foo-pvc.yaml</code> بالاتر هم آمده بود.</p>
-  </div>
-
   <h5 id="ch7-b-retro-default">Retroactive default StorageClass assignment</h5>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.28 [stable]</span></p>
   <p>می‌توانید یک PersistentVolumeClaim بدون مشخص کردن <code>storageClassName</code> برای PVC جدید بسازید،‏ و حتی وقتی هیچ StorageClass پیش‌فرضی در cluster وجود ندارد هم می‌توانید این کار را انجام دهید. در این حالت،‏ PVC جدید همان‌طور که تعریف کرده‌اید ساخته می‌شود و <code>storageClassName</code> آن PVC تا زمانی که پیش‌فرض در دسترس قرار گیرد،‏ تنظیم‌نشده باقی می‌ماند.</p>
@@ -3022,6 +3086,19 @@ ci/cache-runner-17	2026-08-01T22:40:05Z
     <p>مقایسه‌ی رشته‌ای timestampها در قالب RFC3339 با یک timezone یکسان (Z) درست کار می‌کند. این query مبنای خوبی برای یک گزارش هفتگی «هزینه‌ی storage بی‌صاحب» است (خارج از مستندات رسمی).</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">سه حالت storageClassName در PVC</span></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>یعنی اگر برنامه‌ی شما دقیقا ۱۰Gi فضای قابل نوشتن لازم دارد (مثلا یک WAL با اندازه‌ی ثابت)،‏ PVC با <code>storage: 10Gi</code> کافی نیست. <code>df -h</code> داخل container برای یک volume ده گیگی با XFS معمولا چیزی حدود 9.9G یا کمتر نشان می‌دهد و ext4 هم بخشی را برای reserved blockها و journal نگه می‌دارد (خارج از مستندات رسمی). همیشه برای overhead filesystem حاشیه در نظر بگیرید.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: سه حالت storageClassName در PVC</b>
+    <div class="tbl"><table><thead><tr><th>مقدار در PVC</th><th>DefaultStorageClass روشن و default موجود</th><th>بدون default</th></tr></thead><tbody>
+      <tr><td><code>storageClassName: fast</code></td><td>فقط PVهای class <code>fast</code> یا dynamic provisioning از <code>fast</code></td><td>همین</td></tr>
+      <tr><td><code>storageClassName: ""</code></td><td>فقط PVهای بدون class؛‏ dynamic provisioning غیرفعال؛‏ هرگز retroactive به‌روز نمی‌شود</td><td>همین</td></tr>
+      <tr><td>فیلد حذف شده (nil)</td><td>admission plugin مقدار default را در فیلد می‌نویسد و از آن provision می‌شود</td><td>PVC با فیلد خالی ساخته می‌شود و Pending می‌ماند تا یک default ساخته شود (retroactive assignment)</td></tr>
+    </tbody></table></div>
+    <p>درس عملی: اگر یک PV static دستی ساخته‌اید (مثلا NFS بدون class) و می‌خواهید PVC حتما به آن bind شود،‏ <b>باید</b> در PVC صراحتا <code>storageClassName: ""</code> بنویسید؛‏ وگرنه در یک cluster مدیریت‌شده (EKS/GKE/AKS) که default دارد،‏ PVC یک disk جدید dynamic می‌گیرد و PV شما Available باقی می‌ماند. همین نکته در comment مثال <code>foo-pvc.yaml</code> بالاتر هم آمده بود.</p>
+  </div>
+  </details>
+
   <h3 id="ch7-b-claims-as-volumes">Claims As Volumes</h3>
   <p>Podها با استفاده از claim به‌عنوان volume به storage دسترسی پیدا می‌کنند. Claimها باید در همان namespace Podی که از claim استفاده می‌کند وجود داشته باشند. cluster claim را در namespace مربوط به Pod پیدا می‌کند و از آن برای گرفتن PersistentVolume پشتیبان claim استفاده می‌کند. سپس volume روی host و داخل Pod mount می‌شود.</p>
   <div class="code"><div class="lbl"><span>mypod.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -3043,10 +3120,13 @@ spec:
 
   <h4>A Note on Namespaces</h4>
   <p>bindهای PersistentVolume انحصاری (exclusive) هستند،‏ و چون PersistentVolumeClaimها objectهای namespaced هستند،‏ mount کردن claimها با modeهای «Many» (<code>ROX</code>،‏ <code>RWX</code>) فقط در یک namespace ممکن است.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>PV یک object cluster-scoped است اما PVC namespaced است و هر PV فقط به یک PVC bind می‌شود. پس اگر دو تیم در دو namespace متفاوت (مثلا <code>team-a</code> و <code>team-b</code>) بخواهند یک NFS share مشترک را RWX استفاده کنند،‏ نمی‌توانند هر دو به همان PV bind شوند. راه‌حل مرسوم: دو PV جداگانه بسازید که هر دو به همان export مربوط به NFS (همان <code>server</code> و <code>path</code>) اشاره می‌کنند و هر کدام با <code>claimRef</code> برای یکی از namespaceها reserve شده‌اند. در این حالت کوبرنتیز از اشتراک داده خبر ندارد و مسئولیت هماهنگی نوشتن با برنامه‌هاست (خارج از مستندات رسمی).</p></div>
-
   <h4>PersistentVolumes typed <code>hostPath</code></h4>
   <p>یک PersistentVolume از نوع <code>hostPath</code> از یک فایل یا دایرکتوری روی Node برای شبیه‌سازی network-attached storage استفاده می‌کند. برای مثالی از volume با نوع <code>hostPath</code> به tutorial «Configure a Pod to Use a PersistentVolume for Storage» مراجعه کنید.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>PV یک object cluster-scoped است اما PVC namespaced است و هر PV فقط به یک PVC bind می‌شود. پس اگر دو تیم در دو namespace متفاوت (مثلا <code>team-a</code> و <code>team-b</code>) بخواهند یک NFS share مشترک را RWX استفاده کنند،‏ نمی‌توانند هر دو به همان PV bind شوند. راه‌حل مرسوم: دو PV جداگانه بسازید که هر دو به همان export مربوط به NFS (همان <code>server</code> و <code>path</code>) اشاره می‌کنند و هر کدام با <code>claimRef</code> برای یکی از namespaceها reserve شده‌اند. در این حالت کوبرنتیز از اشتراک داده خبر ندارد و مسئولیت هماهنگی نوشتن با برنامه‌هاست (خارج از مستندات رسمی).</p></div>
+  </details>
 
   <h3 id="ch7-b-raw-block">Raw Block Volume Support</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.18 [stable]</span></p>
@@ -3125,10 +3205,13 @@ spec:
     <tr><td>Filesystem</td><td>unspecified</td><td>BIND</td></tr>
   </tbody></table></div>
   <div class="note"><b>نکته</b><p>در release آلفا فقط volumeهای statically provisioned پشتیبانی می‌شوند. administratorها باید هنگام کار با raw block deviceها مراقب این مقادیر باشند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">قاعده‌ی پشت ماتریس</span></summary>
   <div class="deep"><b>توضیح تکمیلی: قاعده‌ی پشت ماتریس</b>
     <p>ماتریس یک قاعده‌ی ساده دارد: «unspecified» همیشه به معنای <code>Filesystem</code> است (چون پیش‌فرض است). پس فقط وقتی bind رخ می‌دهد که هر دو طرف بعد از اعمال پیش‌فرض،‏ یک mode داشته باشند. سه BIND ردیف‌های unspecified/unspecified،‏ unspecified/Filesystem و Filesystem/unspecified همه در واقع Filesystem/Filesystem هستند.</p>
     <p>مصرف‌کنندگان واقعی Block mode: پایگاه‌داده‌هایی که خودشان I/O مستقیم را مدیریت می‌کنند (مثل برخی پیکربندی‌های Oracle ASM یا Ceph OSDها در Rook)،‏ و virtual machineها در KubeVirt که disk را به‌صورت block به VM می‌دهند (خارج از مستندات رسمی). داخل container،‏ <code>ls -l /dev/xvda</code> یک فایل از نوع <code>b</code> (block special) نشان می‌دهد و <code>mount</code> هیچ ورودی‌ای برای آن ندارد.</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-pv-snapshot-support">Volume Snapshot and Restore Volume from Snapshot Support</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.20 [stable]</span></p>
@@ -3201,6 +3284,8 @@ spec:
       </ul></li>
     <li>در ابزارهای خود،‏ PVCهایی را که بعد از مدتی bind نمی‌شوند watch کنید و این موضوع را به user نشان دهید،‏ چون این ممکن است نشان دهد cluster پشتیبانی dynamic storage ندارد (که در آن صورت user باید یک PV مطابق بسازد) یا cluster هیچ سیستم storageی ندارد (که در آن صورت user نمی‌تواند پیکربندی‌ای که به PVC نیاز دارد را deploy کند).</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">پیاده‌سازی این الگو در یک Helm chart</span></summary>
   <div class="deep"><b>توضیح تکمیلی: پیاده‌سازی این الگو در یک Helm chart</b>
     <p>الگوی بالا دقیقا همان چیزی است که chartهای رایج با مقدار <code>persistence.storageClass</code> پیاده‌سازی می‌کنند (خارج از مستندات رسمی). نکته‌ی ظریف: «nil گذاشتن» با «رشته‌ی خالی» متفاوت است (بخش <a href="#ch7-b-pvc-class">Class</a>)،‏ پس template باید وقتی مقداری داده نشده،‏ کل فیلد را حذف کند:</p>
     <div class="code"><div class="lbl"><span>templates/pvc.yaml (Helm)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -3222,6 +3307,7 @@ spec:
 </pre></div>
     <p>و برای بند آخر (watch کردن PVCهای bind نشده)،‏ یک هشدار ساده روی metric <code>kube_persistentvolumeclaim_status_phase{phase="Pending"}</code> از kube-state-metrics که بیش از ۱۵ دقیقه ۱ باشد کفایت می‌کند (خارج از مستندات رسمی؛‏ فصل ۱۱).</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-sc">Storage Classes</h3>
   <p>این بخش مفهوم StorageClass در کوبرنتیز را توضیح می‌دهد. آشنایی با <a href="#ch7-a-volumes">volumes</a> و <a href="#ch7-b-pv-intro">persistent volumes</a> پیشنهاد می‌شود.</p>
@@ -3248,20 +3334,6 @@ volumeBindingMode: WaitForFirstConsumer
 parameters:
   guaranteedReadWriteLatency: "true" # provider-specific
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: نقشه‌ی فیلدهای یک StorageClass</b>
-    <p>این مثال تقریبا همه‌ی فیلدهای مهم را یک‌جا دارد. هر کدام در زیربخش‌های بعدی جداگانه شرح داده می‌شود:</p>
-    <div class="tbl"><table><thead><tr><th>فیلد</th><th>پیش‌فرض</th><th>قابل تغییر بعد از ساخت؟</th><th>روی چه چیزی اثر دارد</th></tr></thead><tbody>
-      <tr><td><code>provisioner</code></td><td>(اجباری)</td><td>خیر</td><td>کدام driver،‏ PV را می‌سازد</td></tr>
-      <tr><td><code>parameters</code></td><td>تهی</td><td>خیر</td><td>تنظیمات مخصوص provider برای volume جدید</td></tr>
-      <tr><td><code>reclaimPolicy</code></td><td><code>Delete</code></td><td>خیر</td><td>مقداری که روی PVهای dynamic جدید کپی می‌شود</td></tr>
-      <tr><td><code>allowVolumeExpansion</code></td><td>false</td><td>بله</td><td>اجازه‌ی resize کردن PVCها</td></tr>
-      <tr><td><code>mountOptions</code></td><td>تهی</td><td>بله (فقط روی PVهای جدید)</td><td>روی PVهای dynamic جدید کپی می‌شود</td></tr>
-      <tr><td><code>volumeBindingMode</code></td><td><code>Immediate</code></td><td>خیر</td><td>زمان bind و provision</td></tr>
-      <tr><td><code>allowedTopologies</code></td><td>تهی</td><td>بله (فقط روی provisioningهای بعدی)</td><td>محدود کردن zone یا topology محل ساخت volume</td></tr>
-    </tbody></table></div>
-    <p>ستون «قابل تغییر» بر اساس validation در API server است (کد منبع کوبرنتیز؛‏ خارج از مستندات رسمی): فیلدهای <code>provisioner</code>،‏ <code>parameters</code>،‏ <code>reclaimPolicy</code> و <code>volumeBindingMode</code> immutable هستند و برای تغییرشان باید class را حذف و با همان نام دوباره بسازید. حذف یا بازسازی StorageClass روی PVهای موجود اثری ندارد،‏ چون مقادیر لازم در زمان provisioning روی خود PV کپی شده‌اند؛‏ فقط expand کردن PVCهای موجود به وجود class با <code>allowVolumeExpansion: true</code> وابسته است.</p>
-  </div>
-
   <h4 id="ch7-b-sc-default">Default StorageClass</h4>
   <p>می‌توانید یک StorageClass را به‌عنوان پیش‌فرض cluster خود علامت‌گذاری کنید. برای دستورالعمل تنظیم StorageClass پیش‌فرض،‏ به task با عنوان «Change the default StorageClass» مراجعه کنید.</p>
   <p>وقتی یک PVC فیلد <code>storageClassName</code> را مشخص نمی‌کند،‏ StorageClass پیش‌فرض استفاده می‌شود.</p>
@@ -3299,8 +3371,6 @@ gp3-encrypted (default)   ebs.csi.aws.com   Retain          WaitForFirstConsumer
   </tbody></table></div>
   <p>شما به مشخص کردن provisionerهای «internal» که اینجا فهرست شده‌اند (که نام آن‌ها با «kubernetes.io» شروع می‌شود و همراه کوبرنتیز ارائه می‌شوند) محدود نیستید. همچنین می‌توانید external provisionerها را اجرا و مشخص کنید،‏ که برنامه‌های مستقلی هستند که از یک specification تعریف‌شده توسط کوبرنتیز پیروی می‌کنند. نویسندگان external provisionerها اختیار کامل دارند که کد آن‌ها کجا قرار بگیرد،‏ provisioner چگونه ارائه شود،‏ چگونه باید اجرا شود،‏ از کدام volume plugin (از جمله Flex) استفاده کند و غیره. repository با نام kubernetes-sigs/sig-storage-lib-external-provisioner یک library برای نوشتن external provisionerها دارد که بخش عمده‌ی specification را پیاده‌سازی می‌کند. برخی external provisionerها در همان repository با نام kubernetes-sigs/sig-storage-lib-external-provisioner فهرست شده‌اند.</p>
   <p>مثلا NFS یک internal provisioner فراهم نمی‌کند،‏ اما می‌توان از یک external provisioner استفاده کرد. همچنین مواردی وجود دارد که vendorهای third-party storage،‏ external provisioner خودشان را ارائه می‌دهند.</p>
-  <div class="deep"><b>توضیح تکمیلی: provisioner در دنیای CSI</b><p>در عمل امروز تقریبا همه‌ی StorageClassهای production،‏ نام یک CSI driver را در <code>provisioner</code> دارند (مثلا <code>ebs.csi.aws.com</code>،‏ <code>pd.csi.storage.gke.io</code>،‏ <code>rook-ceph.rbd.csi.ceph.com</code>). برای این driverها،‏ provisioning واقعی را sidecar با نام <code>external-provisioner</code> انجام می‌دهد که PVCهای Pending را watch می‌کند،‏ از طریق gRPC فراخوانی <code>CreateVolume</code> را به driver می‌فرستد و سپس PV را می‌سازد. اگر نام provisioner را اشتباه بنویسید،‏ هیچ controllerی آن PVC را برنمی‌دارد و event آن معمولا <code>waiting for a volume to be created, either by external provisioner "..." or manually created by system administrator</code> است (خارج از مستندات رسمی). لیست driverهای نصب‌شده را با <code>kubectl get csidrivers</code> ببینید.</p></div>
-
   <h4 id="ch7-b-sc-reclaim">Reclaim policy</h4>
   <p>PersistentVolumeهایی که به‌صورت dynamic توسط یک StorageClass ساخته می‌شوند،‏ <a href="#ch7-b-reclaiming">reclaim policy</a> مشخص‌شده در فیلد <code>reclaimPolicy</code> آن class را خواهند داشت که می‌تواند <code>Delete</code> یا <code>Retain</code> باشد. اگر هنگام ساخت یک StorageClass object هیچ <code>reclaimPolicy</code>ی مشخص نشود،‏ پیش‌فرض آن <code>Delete</code> خواهد بود.</p>
   <p>PersistentVolumeهایی که به‌صورت دستی ساخته شده و از طریق یک StorageClass مدیریت می‌شوند،‏ هر reclaim policyی که هنگام ساخت به آن‌ها تخصیص داده شده را خواهند داشت.</p>
@@ -3354,20 +3424,6 @@ spec:
         - mountPath: "/usr/share/nginx/html"
           name: task-pv-storage
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا Immediate در cloud چند-zone خطرناک است</b>
-    <p>فرض کنید cluster در سه zone (a،‏ b،‏ c) node دارد و PVC با class از نوع <code>Immediate</code> ساخته می‌شود. provisioner همان لحظه،‏ بدون اطلاع از Pod،‏ یک EBS disk مثلا در zone a می‌سازد و در PV یک nodeAffinity به zone a می‌گذارد. حالا Pod با یک <code>nodeSelector</code> یا anti-affinity ساخته می‌شود که فقط nodeهای zone b را مجاز می‌داند. scheduler هیچ nodeی پیدا نمی‌کند که هم با Pod و هم با PV سازگار باشد و Pod با پیامی شبیه زیر Pending می‌ماند:</p>
-    <div class="code"><div class="lbl"><span>kubectl describe pod (نمونه)</span><button type="button">کپی</button></div><pre class="out">Warning  FailedScheduling  default-scheduler  0/6 nodes are available: 3 node(s) didn't match Pod's node affinity/selector, 3 node(s) had volume node affinity conflict.
-</pre></div>
-    <p>با <code>WaitForFirstConsumer</code>،‏ ترتیب برعکس می‌شود: scheduler ابتدا node را با در نظر گرفتن همه‌ی محدودیت‌ها انتخاب می‌کند،‏ annotation با نام <code>volume.kubernetes.io/selected-node</code> را روی PVC می‌گذارد و سپس provisioner disk را در zone همان node می‌سازد. توجه کنید در این mode،‏ <code>kubectl get pvc</code> تا وقتی Podی ساخته نشده <code>Pending</code> نشان می‌دهد و event آن <code>WaitForFirstConsumer</code> است: این وضعیت طبیعی است،‏ نه خطا.</p>
-    <div class="code"><div class="lbl"><span>kubectl describe pvc (پیش از ساخت Pod)</span><button type="button">کپی</button></div><pre class="out">Events:
-  Type    Reason                Age   From                         Message
-  ----    ------                ----  ----                         -------
-  Normal  WaitForFirstConsumer  8s    persistentvolume-controller  waiting for first consumer to be created before binding
-</pre></div>
-
-    <figure><div class="plate"><svg viewBox="0 0 680 268" width="680" height="268" role="img" aria-label="مقایسه‌ی Immediate و WaitForFirstConsumer" style="max-width:100%;height:auto;display:block"><defs><marker id="f95-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f95-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker></defs><text x="660" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#b26b00" direction="rtl" text-anchor="start">Immediate</text><text x="350" y="24" font-family="JetBrains Mono, ui-monospace, monospace" font-size="1" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start"></text><rect x="350" y="38" width="310" height="34" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5"></rect><text x="648" y="60" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۱. ساخت PVC</text><line x1="505" y1="72" x2="505" y2="84" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f95-o)"></line><rect x="350" y="86" width="310" height="34" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5"></rect><text x="648" y="108" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۲. ساخت فوری disk در zone a،‏ بی‌خبر از Pod</text><line x1="505" y1="120" x2="505" y2="132" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f95-o)"></line><rect x="350" y="134" width="310" height="34" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5"></rect><text x="648" y="156" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۳. ساخت Pod با nodeSelector روی zone b</text><line x1="505" y1="168" x2="505" y2="180" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f95-o)"></line><rect x="350" y="182" width="310" height="48" rx="8" fill="#fbe5e3" stroke="#b83227" stroke-width="1.5"></rect><text x="648" y="203" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b83227" direction="rtl" text-anchor="start">۴. Pod برای همیشه در Pending می‌ماند</text><text x="648" y="221" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="400" fill="#b83227" direction="ltr" text-anchor="end">volume node affinity conflict</text><text x="330" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">WaitForFirstConsumer</text><text x="20" y="24" font-family="JetBrains Mono, ui-monospace, monospace" font-size="1" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start"></text><rect x="20" y="38" width="310" height="34" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="60" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۱. ساخت PVC؛‏ وضعیت Pending طبیعی است</text><line x1="175" y1="72" x2="175" y2="84" stroke="#12806f" stroke-width="1.6" marker-end="url(#f95-g)"></line><rect x="20" y="86" width="310" height="34" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="108" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۲. ساخت Pod</text><line x1="175" y1="120" x2="175" y2="132" stroke="#12806f" stroke-width="1.6" marker-end="url(#f95-g)"></line><rect x="20" y="134" width="310" height="46" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="156" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۳. انتخاب node در zone b توسط scheduler</text><text x="318" y="173" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="end">volume.kubernetes.io/selected-node</text><line x1="175" y1="180" x2="175" y2="192" stroke="#12806f" stroke-width="1.6" marker-end="url(#f95-g)"></line><rect x="20" y="194" width="310" height="48" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="215" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">۴. ساخت disk در همان zone و bind</text></svg></div><figcaption><b>شکل ۷-۵.</b> <span style="flex:1 1 0;min-width:0">مقایسه‌ی <code>Immediate</code> و <code>WaitForFirstConsumer</code> در یک cluster چند-zone. در حالت دوم scheduler پیش از provisioning،‏ node را انتخاب می‌کند.</span></figcaption></figure>
-  </div>
-
   <h4 id="ch7-b-sc-topologies">Allowed topologies</h4>
   <p>وقتی یک cluster operator حالت binding با نام <code>WaitForFirstConsumer</code> را مشخص می‌کند،‏ در بیشتر موقعیت‌ها دیگر لازم نیست provisioning را به topologyهای مشخصی محدود کند. با این حال،‏ اگر همچنان لازم باشد،‏ می‌توان <code>allowedTopologies</code> را مشخص کرد.</p>
   <p>این مثال نشان می‌دهد چگونه topology volumeهای provision‌شده را به zoneهای مشخصی محدود کنید و باید به‌عنوان جایگزینی برای پارامترهای <code>zone</code> و <code>zones</code> در pluginهای پشتیبانی‌شده استفاده شود.</p>
@@ -3386,8 +3442,6 @@ allowedTopologies:
     - us-central-1a
     - us-central-1b
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی</b><p>ترکیب <code>WaitForFirstConsumer</code> با <code>allowedTopologies</code> یعنی: «در zone همان nodeی که Pod روی آن schedule می‌شود بساز،‏ اما فقط اگر آن zone یکی از a یا b باشد». scheduler هنگام انتخاب node این محدودیت را هم لحاظ می‌کند،‏ پس Pod فقط روی nodeهای zoneهای مجاز قرار می‌گیرد. کاربرد رایج: یک zone که storage backend در آن در دسترس نیست یا هزینه‌ی داده‌ی بین‌zone در آن بالاست (خارج از مستندات رسمی).</p></div>
-
   <h4 id="ch7-b-sc-parameters">Parameters</h4>
   <p>StorageClassها پارامترهایی دارند که volumeهای متعلق به آن storage class را توصیف می‌کنند. بسته به <code>provisioner</code>،‏ ممکن است پارامترهای متفاوتی پذیرفته شوند. وقتی یک پارامتر حذف شود،‏ یک مقدار پیش‌فرض استفاده می‌شود.</p>
   <p>حداکثر ۵۱۲ پارامتر می‌تواند برای یک StorageClass تعریف شود. طول کل parameters object،‏ شامل keyها و valueهای آن،‏ نمی‌تواند از 256 KiB بیشتر باشد.</p>
@@ -3417,8 +3471,6 @@ allowedTopologies:
     - us-east-2c
 </pre></div>
   <p><code>tagSpecification</code>: tagهایی با این پیشوند روی EBS volumeهای dynamically provisioned اعمال می‌شوند.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>بقیه‌ی پارامترها در این مثال: <code>csi.storage.k8s.io/fstype: xfs</code> یک پارامتر رزرو‌شده‌ی CSI است که filesystem را هنگام format اول تعیین می‌کند؛‏ <code>type: io1</code> نوع disk در EBS؛‏ <code>iopsPerGB: "50"</code> یعنی IOPS متناسب با اندازه (یک PVC با ۱۰۰Gi،‏ ۵۰۰۰ IOPS می‌گیرد)؛‏ <code>encrypted: "true"</code> رمزنگاری at-rest (خارج از مستندات رسمی؛‏ طبق مستندات EBS CSI driver). توجه کنید همه‌ی valueها رشته‌اند (<code>‎"50"‎</code> نه <code>‎50‎</code>)،‏ چون <code>parameters</code> از نوع <code>map[string]string</code> است.</p></div>
-
   <h5>AWS EFS</h5>
   <p>برای پیکربندی storage از نوع AWS EFS،‏ می‌توانید از out-of-tree driver با نام AWS_EFS_CSI_DRIVER استفاده کنید.</p>
   <div class="code"><div class="lbl"><span>storage/storageclass/storageclass-aws-efs.yaml</span><button type="button">کپی</button></div><pre class="yaml">kind: StorageClass
@@ -3601,9 +3653,41 @@ volumeBindingMode: WaitForFirstConsumer
 </pre></div>
   <p>Local volumeها در Kubernetes 1.37 از dynamic provisioning پشتیبانی نمی‌کنند؛‏ با این حال همچنان باید یک StorageClass ساخته شود تا volume binding تا زمانی که یک Pod واقعا روی node مناسب schedule شود به تعویق بیفتد. این با volume binding mode با نام <code>WaitForFirstConsumer</code> مشخص می‌شود.</p>
   <p>به تعویق انداختن volume binding به scheduler اجازه می‌دهد هنگام انتخاب یک PersistentVolume مناسب برای یک PersistentVolumeClaim،‏ همه‌ی محدودیت‌های scheduling مربوط به Pod را در نظر بگیرد.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۶)</small> <span class="m-t">نقشه‌ی فیلدهای یک StorageClass · provisioner در دنیای CSI · چرا Immediate در cloud چند-zone خطرناک است · چرا local بدون WaitForFirstConsumer خراب می‌شود</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: نقشه‌ی فیلدهای یک StorageClass</b>
+    <p>این مثال تقریبا همه‌ی فیلدهای مهم را یک‌جا دارد. هر کدام در زیربخش‌های بعدی جداگانه شرح داده می‌شود:</p>
+    <div class="tbl"><table><thead><tr><th>فیلد</th><th>پیش‌فرض</th><th>قابل تغییر بعد از ساخت؟</th><th>روی چه چیزی اثر دارد</th></tr></thead><tbody>
+      <tr><td><code>provisioner</code></td><td>(اجباری)</td><td>خیر</td><td>کدام driver،‏ PV را می‌سازد</td></tr>
+      <tr><td><code>parameters</code></td><td>تهی</td><td>خیر</td><td>تنظیمات مخصوص provider برای volume جدید</td></tr>
+      <tr><td><code>reclaimPolicy</code></td><td><code>Delete</code></td><td>خیر</td><td>مقداری که روی PVهای dynamic جدید کپی می‌شود</td></tr>
+      <tr><td><code>allowVolumeExpansion</code></td><td>false</td><td>بله</td><td>اجازه‌ی resize کردن PVCها</td></tr>
+      <tr><td><code>mountOptions</code></td><td>تهی</td><td>بله (فقط روی PVهای جدید)</td><td>روی PVهای dynamic جدید کپی می‌شود</td></tr>
+      <tr><td><code>volumeBindingMode</code></td><td><code>Immediate</code></td><td>خیر</td><td>زمان bind و provision</td></tr>
+      <tr><td><code>allowedTopologies</code></td><td>تهی</td><td>بله (فقط روی provisioningهای بعدی)</td><td>محدود کردن zone یا topology محل ساخت volume</td></tr>
+    </tbody></table></div>
+    <p>ستون «قابل تغییر» بر اساس validation در API server است (کد منبع کوبرنتیز؛‏ خارج از مستندات رسمی): فیلدهای <code>provisioner</code>،‏ <code>parameters</code>،‏ <code>reclaimPolicy</code> و <code>volumeBindingMode</code> immutable هستند و برای تغییرشان باید class را حذف و با همان نام دوباره بسازید. حذف یا بازسازی StorageClass روی PVهای موجود اثری ندارد،‏ چون مقادیر لازم در زمان provisioning روی خود PV کپی شده‌اند؛‏ فقط expand کردن PVCهای موجود به وجود class با <code>allowVolumeExpansion: true</code> وابسته است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: provisioner در دنیای CSI</b><p>در عمل امروز تقریبا همه‌ی StorageClassهای production،‏ نام یک CSI driver را در <code>provisioner</code> دارند (مثلا <code>ebs.csi.aws.com</code>،‏ <code>pd.csi.storage.gke.io</code>،‏ <code>rook-ceph.rbd.csi.ceph.com</code>). برای این driverها،‏ provisioning واقعی را sidecar با نام <code>external-provisioner</code> انجام می‌دهد که PVCهای Pending را watch می‌کند،‏ از طریق gRPC فراخوانی <code>CreateVolume</code> را به driver می‌فرستد و سپس PV را می‌سازد. اگر نام provisioner را اشتباه بنویسید،‏ هیچ controllerی آن PVC را برنمی‌دارد و event آن معمولا <code>waiting for a volume to be created, either by external provisioner "..." or manually created by system administrator</code> است (خارج از مستندات رسمی). لیست driverهای نصب‌شده را با <code>kubectl get csidrivers</code> ببینید.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: چرا Immediate در cloud چند-zone خطرناک است</b>
+    <p>فرض کنید cluster در سه zone (a،‏ b،‏ c) node دارد و PVC با class از نوع <code>Immediate</code> ساخته می‌شود. provisioner همان لحظه،‏ بدون اطلاع از Pod،‏ یک EBS disk مثلا در zone a می‌سازد و در PV یک nodeAffinity به zone a می‌گذارد. حالا Pod با یک <code>nodeSelector</code> یا anti-affinity ساخته می‌شود که فقط nodeهای zone b را مجاز می‌داند. scheduler هیچ nodeی پیدا نمی‌کند که هم با Pod و هم با PV سازگار باشد و Pod با پیامی شبیه زیر Pending می‌ماند:</p>
+    <div class="code"><div class="lbl"><span>kubectl describe pod (نمونه)</span><button type="button">کپی</button></div><pre class="out">Warning  FailedScheduling  default-scheduler  0/6 nodes are available: 3 node(s) didn't match Pod's node affinity/selector, 3 node(s) had volume node affinity conflict.
+</pre></div>
+    <p>با <code>WaitForFirstConsumer</code>،‏ ترتیب برعکس می‌شود: scheduler ابتدا node را با در نظر گرفتن همه‌ی محدودیت‌ها انتخاب می‌کند،‏ annotation با نام <code>volume.kubernetes.io/selected-node</code> را روی PVC می‌گذارد و سپس provisioner disk را در zone همان node می‌سازد. توجه کنید در این mode،‏ <code>kubectl get pvc</code> تا وقتی Podی ساخته نشده <code>Pending</code> نشان می‌دهد و event آن <code>WaitForFirstConsumer</code> است: این وضعیت طبیعی است،‏ نه خطا.</p>
+    <div class="code"><div class="lbl"><span>kubectl describe pvc (پیش از ساخت Pod)</span><button type="button">کپی</button></div><pre class="out">Events:
+  Type    Reason                Age   From                         Message
+  ----    ------                ----  ----                         -------
+  Normal  WaitForFirstConsumer  8s    persistentvolume-controller  waiting for first consumer to be created before binding
+</pre></div>
+
+    <figure><div class="plate"><svg viewBox="0 0 680 268" width="680" height="268" role="img" aria-label="مقایسه‌ی Immediate و WaitForFirstConsumer" style="max-width:100%;height:auto;display:block"><defs><marker id="f95-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f95-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker></defs><text x="660" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#b26b00" direction="rtl" text-anchor="start">Immediate</text><text x="350" y="24" font-family="JetBrains Mono, ui-monospace, monospace" font-size="1" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start"></text><rect x="350" y="38" width="310" height="34" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5"></rect><text x="648" y="60" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۱. ساخت PVC</text><line x1="505" y1="72" x2="505" y2="84" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f95-o)"></line><rect x="350" y="86" width="310" height="34" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5"></rect><text x="648" y="108" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۲. ساخت فوری disk در zone a،‏ بی‌خبر از Pod</text><line x1="505" y1="120" x2="505" y2="132" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f95-o)"></line><rect x="350" y="134" width="310" height="34" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5"></rect><text x="648" y="156" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۳. ساخت Pod با nodeSelector روی zone b</text><line x1="505" y1="168" x2="505" y2="180" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f95-o)"></line><rect x="350" y="182" width="310" height="48" rx="8" fill="#fbe5e3" stroke="#b83227" stroke-width="1.5"></rect><text x="648" y="203" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b83227" direction="rtl" text-anchor="start">۴. Pod برای همیشه در Pending می‌ماند</text><text x="648" y="221" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="400" fill="#b83227" direction="ltr" text-anchor="end">volume node affinity conflict</text><text x="330" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">WaitForFirstConsumer</text><text x="20" y="24" font-family="JetBrains Mono, ui-monospace, monospace" font-size="1" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start"></text><rect x="20" y="38" width="310" height="34" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="60" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۱. ساخت PVC؛‏ وضعیت Pending طبیعی است</text><line x1="175" y1="72" x2="175" y2="84" stroke="#12806f" stroke-width="1.6" marker-end="url(#f95-g)"></line><rect x="20" y="86" width="310" height="34" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="108" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۲. ساخت Pod</text><line x1="175" y1="120" x2="175" y2="132" stroke="#12806f" stroke-width="1.6" marker-end="url(#f95-g)"></line><rect x="20" y="134" width="310" height="46" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="156" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#16213a" direction="rtl" text-anchor="start">۳. انتخاب node در zone b توسط scheduler</text><text x="318" y="173" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="end">volume.kubernetes.io/selected-node</text><line x1="175" y1="180" x2="175" y2="192" stroke="#12806f" stroke-width="1.6" marker-end="url(#f95-g)"></line><rect x="20" y="194" width="310" height="48" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="318" y="215" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">۴. ساخت disk در همان zone و bind</text></svg></div><figcaption><b>شکل ۷-۵.</b> <span style="flex:1 1 0;min-width:0">مقایسه‌ی <code>Immediate</code> و <code>WaitForFirstConsumer</code> در یک cluster چند-zone. در حالت دوم scheduler پیش از provisioning،‏ node را انتخاب می‌کند.</span></figcaption></figure>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>ترکیب <code>WaitForFirstConsumer</code> با <code>allowedTopologies</code> یعنی: «در zone همان nodeی که Pod روی آن schedule می‌شود بساز،‏ اما فقط اگر آن zone یکی از a یا b باشد». scheduler هنگام انتخاب node این محدودیت را هم لحاظ می‌کند،‏ پس Pod فقط روی nodeهای zoneهای مجاز قرار می‌گیرد. کاربرد رایج: یک zone که storage backend در آن در دسترس نیست یا هزینه‌ی داده‌ی بین‌zone در آن بالاست (خارج از مستندات رسمی).</p></div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>بقیه‌ی پارامترها در این مثال: <code>csi.storage.k8s.io/fstype: xfs</code> یک پارامتر رزرو‌شده‌ی CSI است که filesystem را هنگام format اول تعیین می‌کند؛‏ <code>type: io1</code> نوع disk در EBS؛‏ <code>iopsPerGB: "50"</code> یعنی IOPS متناسب با اندازه (یک PVC با ۱۰۰Gi،‏ ۵۰۰۰ IOPS می‌گیرد)؛‏ <code>encrypted: "true"</code> رمزنگاری at-rest (خارج از مستندات رسمی؛‏ طبق مستندات EBS CSI driver). توجه کنید همه‌ی valueها رشته‌اند (<code>‎"50"‎</code> نه <code>‎50‎</code>)،‏ چون <code>parameters</code> از نوع <code>map[string]string</code> است.</p></div>
   <div class="deep"><b>توضیح تکمیلی: چرا local بدون WaitForFirstConsumer خراب می‌شود</b>
     <p>فرض کنید سه PV از نوع local روی worker-1،‏ worker-2 و worker-3 دارید و یک Pod با <code>podAntiAffinity</code> یا <code>nodeSelector</code> که فقط worker-3 را مجاز می‌داند. اگر class از نوع <code>Immediate</code> بود،‏ PV controller به محض ساخت PVC،‏ اولین PV مناسب (مثلا worker-1) را bind می‌کرد؛‏ سپس Pod به دلیل تعارض بین nodeAffinity آن PV و nodeSelector خودش هرگز schedule نمی‌شد و PVC هم دیگر آزاد نمی‌شد. با <code>WaitForFirstConsumer</code>،‏ scheduler اول worker-3 را انتخاب می‌کند و فقط سپس PV روی worker-3 bind می‌شود.</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-vac">Volume Attributes Classes</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.36 [stable]</span> (feature gate <code>VolumeAttributesClass</code>؛‏ GA از v1.34 و قفل‌شده روی <code>true</code> از v1.36)</p>
@@ -3612,16 +3696,6 @@ volumeBindingMode: WaitForFirstConsumer
   <p>این feature از نسخه‌ی 1.34 به‌صورت generally available (GA) است و userها امکان غیرفعال کردن آن را دارند.</p>
   <div class="note"><b>اصلاح برای v1.37</b><p>این جمله‌ی مستندات فقط برای v1.34 و v1.35 درست است: از v1.36 مقدار feature gate با نام <code>VolumeAttributesClass</code> روی <code>true</code> قفل (locked) شده و دیگر نمی‌توان آن را غیرفعال کرد.</p></div>
   <p>همچنین فقط می‌توانید از VolumeAttributesClassها با storageی که توسط Container Storage Interface پشتیبانی می‌شود استفاده کنید،‏ و فقط در جایی که CSI driver مربوط،‏ API با نام <code>ModifyVolume</code> را پیاده‌سازی کرده باشد.</p>
-  <div class="deep"><b>توضیح تکمیلی: فرق VolumeAttributesClass با StorageClass</b>
-    <p>StorageClass توصیف می‌کند volume <b>چگونه ساخته شود</b> و بعد از ساخت،‏ PV دیگر با آن تغییر نمی‌کند (پارامترهای آن immutable است و روی PVهای موجود اثری ندارد).‏ VolumeAttributesClass توصیف می‌کند volume <b>در طول عمرش چه ویژگی‌های قابل تغییری</b> (مثل IOPS و throughput) داشته باشد،‏ و با عوض کردن نام آن در PVC،‏ ویژگی‌های یک volume موجود بدون ساخت مجدد و بدون قطع Pod تغییر می‌کند. تشبیه ساده: StorageClass مثل انتخاب «نوع disk» هنگام خرید است،‏ VolumeAttributesClass مثل تغییر «پلن performance» همان disk بعد از خرید.</p>
-    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>StorageClass</th><th>VolumeAttributesClass</th></tr></thead><tbody>
-      <tr><td>فیلد در PVC</td><td><code>storageClassName</code> (immutable بعد از bind)</td><td><code>volumeAttributesClassName</code> (mutable)</td></tr>
-      <tr><td>فیلد driver</td><td><code>provisioner</code></td><td><code>driverName</code></td></tr>
-      <tr><td>اثر روی volume موجود</td><td>ندارد</td><td>volume از طریق <code>ModifyVolume</code> تغییر می‌کند</td></tr>
-      <tr><td>sidecar مسئول</td><td>external-provisioner</td><td>external-provisioner (هنگام ساخت) و external-resizer (هنگام تغییر)</td></tr>
-    </tbody></table></div>
-  </div>
-
   <h4>The VolumeAttributesClass API</h4>
   <p>هر VolumeAttributesClass شامل <code>driverName</code> و <code>parameters</code> است که وقتی یک PersistentVolume (PV) متعلق به آن class باید به‌صورت dynamic provision یا modify شود،‏ استفاده می‌شوند.</p>
   <p>نام یک VolumeAttributesClass object مهم است و روشی است که userها با آن می‌توانند یک class خاص را درخواست کنند. administratorها هنگام اولین ساخت VolumeAttributesClass objectها،‏ نام و پارامترهای دیگر یک class را تنظیم می‌کنند. در حالی که نام یک VolumeAttributesClass object در یک <code>PersistentVolumeClaim</code> قابل تغییر است،‏ پارامترهای یک class موجود immutable هستند.</p>
@@ -3692,6 +3766,19 @@ gold /
     <p>فیلدهای <code>status.currentVolumeAttributesClassName</code> و <code>status.modifyVolumeStatus</code> وضعیت واقعی را نشان می‌دهند: تا وقتی backend تغییر را تایید نکرده،‏ class فعلی همان قبلی می‌ماند. اگر driver پارامتر را رد کند،‏ <code>modifyVolumeStatus.status</code> مقدار <code>Infeasible</code> می‌گیرد و باید PVC را به class قبلی یا یک class معتبر برگردانید (رفتار status طبق API مربوط به PVC؛‏ جزئیات در مستندات CSI external-resizer).</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">فرق VolumeAttributesClass با StorageClass</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: فرق VolumeAttributesClass با StorageClass</b>
+    <p>StorageClass توصیف می‌کند volume <b>چگونه ساخته شود</b> و بعد از ساخت،‏ PV دیگر با آن تغییر نمی‌کند (پارامترهای آن immutable است و روی PVهای موجود اثری ندارد).‏ VolumeAttributesClass توصیف می‌کند volume <b>در طول عمرش چه ویژگی‌های قابل تغییری</b> (مثل IOPS و throughput) داشته باشد،‏ و با عوض کردن نام آن در PVC،‏ ویژگی‌های یک volume موجود بدون ساخت مجدد و بدون قطع Pod تغییر می‌کند. تشبیه ساده: StorageClass مثل انتخاب «نوع disk» هنگام خرید است،‏ VolumeAttributesClass مثل تغییر «پلن performance» همان disk بعد از خرید.</p>
+    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>StorageClass</th><th>VolumeAttributesClass</th></tr></thead><tbody>
+      <tr><td>فیلد در PVC</td><td><code>storageClassName</code> (immutable بعد از bind)</td><td><code>volumeAttributesClassName</code> (mutable)</td></tr>
+      <tr><td>فیلد driver</td><td><code>provisioner</code></td><td><code>driverName</code></td></tr>
+      <tr><td>اثر روی volume موجود</td><td>ندارد</td><td>volume از طریق <code>ModifyVolume</code> تغییر می‌کند</td></tr>
+      <tr><td>sidecar مسئول</td><td>external-provisioner</td><td>external-provisioner (هنگام ساخت) و external-resizer (هنگام تغییر)</td></tr>
+    </tbody></table></div>
+  </div>
+  </details>
+
   <h3 id="ch7-b-dynprov">Dynamic Volume Provisioning</h3>
   <p>Dynamic volume provisioning اجازه می‌دهد storage volumeها بر اساس تقاضا (on-demand) ساخته شوند. بدون dynamic provisioning،‏ cluster administratorها باید به‌صورت دستی فراخوانی‌هایی به cloud یا storage provider خود انجام دهند تا storage volumeهای جدید بسازند،‏ و سپس objectهای <code>PersistentVolume</code> بسازند تا آن‌ها را در کوبرنتیز نمایندگی کنند. feature مربوط به dynamic provisioning نیاز cluster administratorها به pre-provision کردن storage را حذف می‌کند. در عوض،‏ وقتی userها objectهای <code>PersistentVolumeClaim</code> می‌سازند،‏ storage را به‌طور خودکار provision می‌کند.</p>
 
@@ -3737,8 +3824,6 @@ spec:
       storage: 30Gi
 </pre></div>
   <p>این claim منجر می‌شود یک Persistent Disk شبیه SSD به‌طور خودکار provision شود. وقتی claim حذف شود،‏ volume نابود می‌شود.</p>
-  <div class="deep"><b>توضیح تکمیلی: «وقتی claim حذف شود،‏ volume نابود می‌شود»</b><p>این جمله کوتاه مستندات،‏ دلیل بسیاری از حوادث از دست رفتن داده است: چون class <code>fast</code> هیچ <code>reclaimPolicy</code>ی ندارد،‏ پیش‌فرض <code>Delete</code> است و PV dynamic آن را به ارث می‌برد. یک <code>kubectl delete namespace</code> یا <code>helm uninstall</code> که PVC را حذف کند،‏ disk را هم از cloud پاک می‌کند. برای داده‌ی حیاتی یا از class با <code>Retain</code> استفاده کنید یا پیش از هر عملیات حذف،‏ PV را patch کنید (بخش <a href="#ch7-b-pv-reclaim">Reclaim Policy</a>) و در هر حال snapshot مرتب داشته باشید (بخش <a href="#ch7-b-snapshots">Volume Snapshots</a>).</p></div>
-
   <h4>Defaulting Behavior</h4>
   <p>dynamic provisioning می‌تواند طوری روی یک cluster فعال شود که اگر هیچ storage classی مشخص نشده باشد،‏ همه‌ی claimها به‌صورت dynamic provision شوند. یک cluster administrator می‌تواند این رفتار را این‌گونه فعال کند:</p>
   <ul>
@@ -3789,6 +3874,11 @@ dyn-demo   Bound     pvc-6b0d7f3e-9f5a-4b4e-a0c2-1f3b3c2e8d11   1Gi   RWO   loca
     <p>سپس <code>kubectl get pv -o wide</code> نشان می‌دهد PV با نام <code>pvc-&lt;uid&gt;</code> خودکار ساخته شده،‏ <code>RECLAIM POLICY</code> آن <code>Delete</code> است و <code>kubectl get pvc dyn-demo -o yaml</code> annotation با نام <code>volume.kubernetes.io/selected-node</code> را نشان می‌دهد که scheduler پیش از provisioning گذاشته است.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«وقتی claim حذف شود،‏ volume نابود می‌شود»</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: «وقتی claim حذف شود،‏ volume نابود می‌شود»</b><p>این جمله کوتاه مستندات،‏ دلیل بسیاری از حوادث از دست رفتن داده است: چون class <code>fast</code> هیچ <code>reclaimPolicy</code>ی ندارد،‏ پیش‌فرض <code>Delete</code> است و PV dynamic آن را به ارث می‌برد. یک <code>kubectl delete namespace</code> یا <code>helm uninstall</code> که PVC را حذف کند،‏ disk را هم از cloud پاک می‌کند. برای داده‌ی حیاتی یا از class با <code>Retain</code> استفاده کنید یا پیش از هر عملیات حذف،‏ PV را patch کنید (بخش <a href="#ch7-b-pv-reclaim">Reclaim Policy</a>) و در هر حال snapshot مرتب داشته باشید (بخش <a href="#ch7-b-snapshots">Volume Snapshots</a>).</p></div>
+  </details>
+
   <h3 id="ch7-b-snapshots">Volume Snapshots</h3>
   <p>در کوبرنتیز،‏ یک <i>VolumeSnapshot</i> نمایانگر یک snapshot از یک volume روی یک سیستم storage است. این بخش فرض می‌کند با persistent volumeها در کوبرنتیز آشنا هستید.</p>
 
@@ -3809,17 +3899,6 @@ dyn-demo   Bound     pvc-6b0d7f3e-9f5a-4b4e-a0c2-1f3b3c2e8d11   1Gi   RWO   loca
   </ul>
   <p>برای use caseهای پیشرفته،‏ مثل ساخت group snapshot از چند volume،‏ به مستندات خارجی CSI Volume Group Snapshot مراجعه کنید.</p>
   <p>در clusterهایی که یک snapshot فقط از بخشی از cluster قابل استفاده است (مثلا snapshot یک volume در یک zone از یک cluster چند-zoneی بدون storage مشترک)،‏ topology آن snapshot می‌تواند ثبت و هنگام restore از آن رعایت شود. برای جزئیات،‏ به مستندات خارجی CSI مراجعه کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی: نگاشت یک‌به‌یک با مدل PV/PVC</b>
-    <div class="tbl"><table><thead><tr><th>مدل volume</th><th>مدل snapshot</th><th>scope</th><th>چه کسی می‌سازد</th></tr></thead><tbody>
-      <tr><td>PersistentVolumeClaim</td><td>VolumeSnapshot</td><td>namespaced</td><td>user</td></tr>
-      <tr><td>PersistentVolume</td><td>VolumeSnapshotContent</td><td>cluster-scoped</td><td>admin (pre-provisioned) یا snapshot controller (dynamic)</td></tr>
-      <tr><td>StorageClass</td><td>VolumeSnapshotClass</td><td>cluster-scoped</td><td>admin</td></tr>
-      <tr><td>PV controller + external-provisioner</td><td>snapshot controller + csi-snapshotter</td><td>-</td><td>distribution / CSI driver</td></tr>
-    </tbody></table></div>
-    <p>یک نکته‌ی مهم که از اینکه این objectها «CRD هستند» نتیجه می‌شود: روی یک cluster خام (مثلا kubeadm یا kind) <code>kubectl get volumesnapshot</code> خطای <code>the server doesn't have a resource type "volumesnapshot"</code> می‌دهد تا CRDها و snapshot controller از repository با نام kubernetes-csi/external-snapshotter نصب شوند. در managed clusterها معمولا این‌ها از قبل نصب هستند (خارج از مستندات رسمی).</p>
-    <p>همچنین snapshot از دید backend معمولا <b>crash-consistent</b> است،‏ نه application-consistent: مثل این است که برق سرور قطع شده باشد. برای پایگاه‌داده‌ها،‏ یا پیش از snapshot نوشتن را flush/freeze کنید (مثلا <code>fsfreeze</code> یا دستور مخصوص DB) یا به قابلیت recovery خود DB تکیه کنید (خارج از مستندات رسمی).</p>
-  </div>
-
   <h4>Lifecycle of a volume snapshot and volume snapshot content</h4>
   <p><code>VolumeSnapshotContents</code> resourceهایی در cluster هستند. <code>VolumeSnapshots</code> درخواست‌هایی برای آن resourceها هستند. تعامل بین <code>VolumeSnapshotContents</code> و <code>VolumeSnapshots</code> از این lifecycle پیروی می‌کند:</p>
   <h5>Provisioning Volume Snapshot</h5>
@@ -3897,8 +3976,6 @@ spec:
   <p><code>snapshotHandle</code> شناسه‌ی یکتای volume snapshotی است که روی storage backend ساخته شده. این فیلد برای snapshotهای pre-provisioned الزامی است. این فیلد شناسه‌ی CSI snapshot روی سیستم storage را که این <code>VolumeSnapshotContent</code> نمایندگی می‌کند مشخص می‌کند.</p>
   <p><code>sourceVolumeMode</code> mode مربوط به volumeی است که از آن snapshot گرفته شده. مقدار فیلد <code>sourceVolumeMode</code> می‌تواند <code>Filesystem</code> یا <code>Block</code> باشد. اگر source volume mode مشخص نشود،‏ Kubernetes با snapshot طوری رفتار می‌کند که انگار mode مربوط به source volume ناشناخته است.</p>
   <p><code>volumeSnapshotRef</code> ارجاع به <code>VolumeSnapshot</code> متناظر است. توجه کنید وقتی <code>VolumeSnapshotContent</code> به‌عنوان یک snapshot از نوع pre-provisioned ساخته می‌شود،‏ <code>VolumeSnapshot</code> ارجاع‌داده‌شده در <code>volumeSnapshotRef</code> ممکن است هنوز وجود نداشته باشد.</p>
-  <div class="deep"><b>توضیح تکمیلی: کاربرد pre-provisioned snapshot در disaster recovery</b><p>فرض کنید cluster قبلی کاملا از بین رفته اما snapshotهای EBS یا PD در cloud باقی هستند. در cluster جدید هیچ VolumeSnapshotی وجود ندارد. با دانستن ID snapshot در cloud (<code>snap-0abc...</code>)،‏ یک <code>VolumeSnapshotContent</code> با <code>source.snapshotHandle</code> و <code>volumeSnapshotRef</code> می‌سازید،‏ سپس یک <code>VolumeSnapshot</code> با <code>source.volumeSnapshotContentName</code> که به آن اشاره می‌کند،‏ و در نهایت یک PVC با <code>dataSource</code> به آن VolumeSnapshot. این سه‌گام دقیقا همان مسیر «pre-provisioned» است و ابزارهایی مثل Velero هم در پشت صحنه همین کار را می‌کنند (خارج از مستندات رسمی).</p></div>
-
   <h4>Converting the volume mode of a Snapshot</h4>
   <p>اگر API مربوط به <code>VolumeSnapshots</code> نصب‌شده روی cluster شما از فیلد <code>sourceVolumeMode</code> پشتیبانی کند،‏ آنگاه API این قابلیت را دارد که از تبدیل mode یک volume توسط userهای غیرمجاز جلوگیری کند.</p>
   <p>برای بررسی اینکه cluster شما قابلیت این feature را دارد،‏ دستور زیر را اجرا کنید:</p>
@@ -3923,8 +4000,6 @@ spec:
     name: new-snapshot-test
     namespace: default
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا تبدیل mode یک ریسک امنیتی است</b><p>اگر یک snapshot از volume با mode <code>Filesystem</code> به‌صورت <code>Block</code> restore شود،‏ کاربر به بلوک‌های خام disk دسترسی مستقیم پیدا می‌کند و می‌تواند داده‌هایی را بخواند که filesystem حذف‌شده علامت زده ولی هنوز روی disk هستند،‏ یا یک filesystem دستکاری‌شده بسازد که kernel node هنگام mount بعدی آن را parse کند. به همین دلیل پیش‌فرض ممنوع است و فقط admin با annotation روی VolumeSnapshotContent (object cluster-scoped که userها معمولا به آن دسترسی ندارند) اجازه می‌دهد (خارج از مستندات رسمی). توجه: در مثال رسمی بالا annotation به‌صورت یک آیتم لیست نوشته شده،‏ در حالی که <code>metadata.annotations</code> در API یک map است؛‏ در عمل باید آن را بدون خط تیره بنویسید (<code>snapshot.storage.kubernetes.io/allow-volume-mode-change: "true"</code>).</p></div>
-
   <h4>Volume Snapshot Topology</h4>
   <p>در برخی clusterها یک snapshot فقط از بخشی از cluster قابل استفاده است. مثلا،‏ در یک cluster چند-zoneی که storage بین zoneها مشترک نیست،‏ snapshot یک volume در یک zone فقط از همان zone قابل استفاده است: volumeهایی که از آن snapshot restore می‌شوند فقط در جایی می‌توانند ساخته شوند که داده‌ی snapshot قرار دارد.</p>
   <p>وقتی feature با نام <code>VolumeSnapshotTopology</code> فعال باشد،‏ این topology ثبت و رعایت می‌شود:</p>
@@ -3960,6 +4035,22 @@ v1
     <p>volume جدید محتوای لحظه‌ی snapshot (<code>v1</code>) را دارد،‏ مستقل از تغییرات بعدی روی volume اصلی.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">نگاشت یک‌به‌یک با مدل PV/PVC · کاربرد pre-provisioned snapshot در disaster recovery · چرا تبدیل mode یک ریسک امنیتی است</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: نگاشت یک‌به‌یک با مدل PV/PVC</b>
+    <div class="tbl"><table><thead><tr><th>مدل volume</th><th>مدل snapshot</th><th>scope</th><th>چه کسی می‌سازد</th></tr></thead><tbody>
+      <tr><td>PersistentVolumeClaim</td><td>VolumeSnapshot</td><td>namespaced</td><td>user</td></tr>
+      <tr><td>PersistentVolume</td><td>VolumeSnapshotContent</td><td>cluster-scoped</td><td>admin (pre-provisioned) یا snapshot controller (dynamic)</td></tr>
+      <tr><td>StorageClass</td><td>VolumeSnapshotClass</td><td>cluster-scoped</td><td>admin</td></tr>
+      <tr><td>PV controller + external-provisioner</td><td>snapshot controller + csi-snapshotter</td><td>-</td><td>distribution / CSI driver</td></tr>
+    </tbody></table></div>
+    <p>یک نکته‌ی مهم که از اینکه این objectها «CRD هستند» نتیجه می‌شود: روی یک cluster خام (مثلا kubeadm یا kind) <code>kubectl get volumesnapshot</code> خطای <code>the server doesn't have a resource type "volumesnapshot"</code> می‌دهد تا CRDها و snapshot controller از repository با نام kubernetes-csi/external-snapshotter نصب شوند. در managed clusterها معمولا این‌ها از قبل نصب هستند (خارج از مستندات رسمی).</p>
+    <p>همچنین snapshot از دید backend معمولا <b>crash-consistent</b> است،‏ نه application-consistent: مثل این است که برق سرور قطع شده باشد. برای پایگاه‌داده‌ها،‏ یا پیش از snapshot نوشتن را flush/freeze کنید (مثلا <code>fsfreeze</code> یا دستور مخصوص DB) یا به قابلیت recovery خود DB تکیه کنید (خارج از مستندات رسمی).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: کاربرد pre-provisioned snapshot در disaster recovery</b><p>فرض کنید cluster قبلی کاملا از بین رفته اما snapshotهای EBS یا PD در cloud باقی هستند. در cluster جدید هیچ VolumeSnapshotی وجود ندارد. با دانستن ID snapshot در cloud (<code>snap-0abc...</code>)،‏ یک <code>VolumeSnapshotContent</code> با <code>source.snapshotHandle</code> و <code>volumeSnapshotRef</code> می‌سازید،‏ سپس یک <code>VolumeSnapshot</code> با <code>source.volumeSnapshotContentName</code> که به آن اشاره می‌کند،‏ و در نهایت یک PVC با <code>dataSource</code> به آن VolumeSnapshot. این سه‌گام دقیقا همان مسیر «pre-provisioned» است و ابزارهایی مثل Velero هم در پشت صحنه همین کار را می‌کنند (خارج از مستندات رسمی).</p></div>
+  <div class="deep"><b>توضیح تکمیلی: چرا تبدیل mode یک ریسک امنیتی است</b><p>اگر یک snapshot از volume با mode <code>Filesystem</code> به‌صورت <code>Block</code> restore شود،‏ کاربر به بلوک‌های خام disk دسترسی مستقیم پیدا می‌کند و می‌تواند داده‌هایی را بخواند که filesystem حذف‌شده علامت زده ولی هنوز روی disk هستند،‏ یا یک filesystem دستکاری‌شده بسازد که kernel node هنگام mount بعدی آن را parse کند. به همین دلیل پیش‌فرض ممنوع است و فقط admin با annotation روی VolumeSnapshotContent (object cluster-scoped که userها معمولا به آن دسترسی ندارند) اجازه می‌دهد (خارج از مستندات رسمی). توجه: در مثال رسمی بالا annotation به‌صورت یک آیتم لیست نوشته شده،‏ در حالی که <code>metadata.annotations</code> در API یک map است؛‏ در عمل باید آن را بدون خط تیره بنویسید (<code>snapshot.storage.kubernetes.io/allow-volume-mode-change: "true"</code>).</p></div>
+  </details>
+
   <h3 id="ch7-b-snapclass">Volume Snapshot Classes</h3>
   <p>این بخش مفهوم VolumeSnapshotClass را در کوبرنتیز توضیح می‌دهد. آشنایی با volume snapshotها و storage classها پیشنهاد می‌شود.</p>
   <h4>Introduction</h4>
@@ -3992,7 +4083,6 @@ parameters:
   <p>وقتی یک VolumeSnapshot را بدون مشخص کردن یک VolumeSnapshotClass می‌سازید،‏ Kubernetes به‌طور خودکار یک VolumeSnapshotClass پیش‌فرض انتخاب می‌کند که CSI driver آن با CSI driver مربوط به StorageClass آن PVC مطابقت دارد.</p>
   <p>این رفتار اجازه می‌دهد چندین VolumeSnapshotClass object پیش‌فرض در یک cluster هم‌زمان وجود داشته باشند،‏ به شرطی که هر کدام به یک CSI driver یکتا مرتبط باشد.</p>
   <p>همیشه اطمینان حاصل کنید برای هر CSI driver فقط یک VolumeSnapshotClass پیش‌فرض وجود دارد. اگر چندین VolumeSnapshotClass object پیش‌فرض با استفاده از یک CSI driver یکسان ساخته شوند،‏ ساخت VolumeSnapshot شکست می‌خورد،‏ چون کوبرنتیز نمی‌تواند تعیین کند از کدام استفاده کند.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>این رفتار با StorageClass متفاوت است: در StorageClass اگر دو default وجود داشته باشد،‏ جدیدترین برنده است؛‏ اما در VolumeSnapshotClass،‏ دو default برای یک driver منجر به <b>شکست</b> می‌شود. پس روش «اول جدید را default کن،‏ سپس قدیمی را بردار» که برای StorageClass امن بود،‏ اینجا برای مدت کوتاه snapshotهای بدون class را خراب می‌کند؛‏ ترتیب درست این است که ابتدا قدیمی را از default خارج کنید و بلافاصله جدید را default کنید،‏ یا در CronJobهای backup همیشه <code>volumeSnapshotClassName</code> را صریح بنویسید.</p></div>
   <h5>Driver</h5>
   <p>volume snapshot classها یک driver دارند که تعیین می‌کند برای provision کردن VolumeSnapshotها از کدام CSI volume plugin استفاده شود. این فیلد باید مشخص شود.</p>
   <h5>DeletionPolicy</h5>
@@ -4000,6 +4090,11 @@ parameters:
   <p>اگر deletionPolicy برابر <code>Delete</code> باشد،‏ snapshot زیرین در storage همراه با VolumeSnapshotContent object حذف می‌شود. اگر deletionPolicy برابر <code>Retain</code> باشد،‏ هم snapshot زیرین و هم VolumeSnapshotContent باقی می‌مانند.</p>
   <h4>Parameters</h4>
   <p>volume snapshot classها پارامترهایی دارند که volume snapshotهای متعلق به آن volume snapshot class را توصیف می‌کنند. بسته به <code>driver</code>،‏ ممکن است پارامترهای متفاوتی پذیرفته شوند.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>این رفتار با StorageClass متفاوت است: در StorageClass اگر دو default وجود داشته باشد،‏ جدیدترین برنده است؛‏ اما در VolumeSnapshotClass،‏ دو default برای یک driver منجر به <b>شکست</b> می‌شود. پس روش «اول جدید را default کن،‏ سپس قدیمی را بردار» که برای StorageClass امن بود،‏ اینجا برای مدت کوتاه snapshotهای بدون class را خراب می‌کند؛‏ ترتیب درست این است که ابتدا قدیمی را از default خارج کنید و بلافاصله جدید را default کنید،‏ یا در CronJobهای backup همیشه <code>volumeSnapshotClassName</code> را صریح بنویسید.</p></div>
+  </details>
 
   <h3 id="ch7-b-clone">CSI Volume Cloning</h3>
   <p>این بخش مفهوم clone کردن CSI Volumeهای موجود در کوبرنتیز را توضیح می‌دهد. آشنایی با Volumeها پیشنهاد می‌شود.</p>
@@ -4042,6 +4137,8 @@ spec:
   <p>نتیجه یک PVC جدید با نام <code>clone-of-pvc-1</code> است که دقیقا همان محتوای source مشخص‌شده یعنی <code>pvc-1</code> را دارد.</p>
   <h4>Usage</h4>
   <p>با در دسترس قرار گرفتن PVC جدید،‏ PVC clone‌شده مثل هر PVC دیگری مصرف می‌شود. همچنین در این نقطه انتظار می‌رود PVC تازه ساخته‌شده یک object مستقل باشد. می‌تواند به‌صورت مستقل و بدون توجه به PVC اصلی dataSource خود،‏ مصرف،‏ clone،‏ snapshot یا حذف شود. این همچنین به این معناست که source به هیچ وجه به clone تازه ساخته‌شده پیوند ندارد؛‏ source هم ممکن است بدون تاثیر روی clone تازه ساخته‌شده modify یا حذف شود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">clone یا snapshot؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: clone یا snapshot؟</b>
     <div class="tbl"><table><thead><tr><th></th><th>Clone (dataSource: PVC)</th><th>Snapshot + restore</th></tr></thead><tbody>
       <tr><td>تعداد گام</td><td>یک PVC</td><td>VolumeSnapshot و سپس PVC</td></tr>
@@ -4051,6 +4148,7 @@ spec:
     </tbody></table></div>
     <p>شرط «source نباید در حال استفاده باشد» مهم است: بسیاری از driverها برای clone کردن volume در حال mount،‏ یا خطا می‌دهند یا PVC جدید Pending می‌ماند. در عمل برای DB در حال اجرا،‏ snapshot گزینه‌ی امن‌تری است.</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-populators">Volume Populators and Data Sources</h3>
   <p>این بخش <i>volume populators</i> و <i>data sources</i> را در کوبرنتیز توضیح می‌دهد. آشنایی با persistent volumeها پیشنهاد می‌شود.</p>
@@ -4137,8 +4235,12 @@ spec:
     namespace: default
   volumeMode: Filesystem
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا ReferenceGrant در namespace مبدا؟</b><p>اگر هر کسی در <code>ns1</code> می‌توانست فقط با نوشتن <code>namespace: default</code> از snapshotهای <code>default</code> یک volume بسازد،‏ مرز امنیتی namespace (فصل ۱۴) شکسته می‌شد: userی با دسترسی فقط به ns1 می‌توانست داده‌ی production تیم دیگر را بخواند. ReferenceGrant یک «رضایت صریح» از طرف صاحب namespace مبداست: فقط PVCهای ns1،‏ و فقط به همان VolumeSnapshot با نام <code>new-snapshot-demo</code>. این همان الگویی است که Gateway API برای ارجاع HTTPRoute به Service در namespace دیگر استفاده می‌کند.</p></div>
   <p class="next">برای مطالعه‌ی بیشتر: Persistent Volumes ·‏ CSI Volume Cloning ·‏ Volume Snapshots ·‏ feature gateهای ذکرشده در این بخش.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا ReferenceGrant در namespace مبدا؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا ReferenceGrant در namespace مبدا؟</b><p>اگر هر کسی در <code>ns1</code> می‌توانست فقط با نوشتن <code>namespace: default</code> از snapshotهای <code>default</code> یک volume بسازد،‏ مرز امنیتی namespace (فصل ۱۴) شکسته می‌شد: userی با دسترسی فقط به ns1 می‌توانست داده‌ی production تیم دیگر را بخواند. ReferenceGrant یک «رضایت صریح» از طرف صاحب namespace مبداست: فقط PVCهای ns1،‏ و فقط به همان VolumeSnapshot با نام <code>new-snapshot-demo</code>. این همان الگویی است که Gateway API برای ارجاع HTTPRoute به Service در namespace دیگر استفاده می‌کند.</p></div>
+  </details>
 
   <h3 id="ch7-b-capacity">Storage Capacity</h3>
   <p>storage capacity محدود است و ممکن است بسته به nodeی که یک Pod روی آن اجرا می‌شود متفاوت باشد: network-attached storage ممکن است از همه‌ی nodeها قابل دسترسی نباشد،‏ یا storage از ابتدا محلی (local) یک node باشد.</p>
@@ -4173,6 +4275,8 @@ spec:
   <h4>Limitations</h4>
   <p>storage capacity tracking شانس اینکه scheduling در اولین تلاش موفق شود را افزایش می‌دهد،‏ اما نمی‌تواند آن را تضمین کند،‏ چون scheduler باید بر اساس اطلاعاتی که احتمالا قدیمی است تصمیم بگیرد. معمولا همان مکانیزم retry که برای scheduling بدون هیچ اطلاعات storage capacity وجود دارد،‏ شکست‌های scheduling را مدیریت می‌کند.</p>
   <p>یک موقعیت که در آن scheduling ممکن است برای همیشه شکست بخورد،‏ وقتی است که یک Pod از چند volume استفاده می‌کند: یک volume ممکن است از قبل در یک topology segment ساخته شده باشد که سپس capacity کافی برای volume دیگر باقی نگذارد. برای بازیابی از این وضعیت دخالت دستی لازم است،‏ مثلا با افزایش capacity یا حذف volumeی که از قبل ساخته شده.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نگاه عملی به CSIStorageCapacity</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نگاه عملی به CSIStorageCapacity</b>
     <p>این feature بیشترین ارزش را برای storage محلی با capacity محدود دارد (مثلا driverهای LVM محلی مثل TopoLVM یا OpenEBS LVM LocalPV) که هر node مقدار مشخصی فضای خالی دارد (خارج از مستندات رسمی). بدون آن،‏ scheduler ممکن است Pod را روی nodeی بگذارد که فقط ۵Gi فضا دارد در حالی که PVC ۵۰Gi خواسته،‏ سپس provisioning شکست بخورد و چرخه‌ی «Rescheduling» بالا بارها تکرار شود.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get csidriver topolvm.io -o jsonpath='{.spec.storageCapacity}{"\n"}'
@@ -4186,6 +4290,7 @@ topolvm     csisc-tw8zr   topolvm-ssd        12d
 </pre></div>
     <p>با <code>kubectl get csistoragecapacities -n topolvm csisc-7xk2p -o yaml</code> فیلدهای <code>capacity</code> (مثلا <code>412Gi</code>) و <code>nodeTopology</code> (label selector که مثلا به یک hostname اشاره می‌کند) را می‌بینید؛‏ این دقیقا عددی است که scheduler با اندازه‌ی PVC مقایسه می‌کند.</p>
   </div>
+  </details>
 
   <h3 id="ch7-b-limits">Node-specific Volume Limits</h3>
   <p>این بخش حداکثر تعداد volumeهایی را که می‌توانند برای cloud providerهای مختلف به یک Node attach شوند توضیح می‌دهد.</p>
@@ -4216,15 +4321,6 @@ topolvm     csisc-tw8zr   topolvm-ssd        12d
     <li>اگر یک CSI storage driver حداکثر تعداد volumeها برای یک Node را اعلام کند (با استفاده از <code>NodeGetInfo</code>)،‏ kube-scheduler آن محدودیت را رعایت می‌کند. برای جزئیات به CSI specifications مراجعه کنید.</li>
     <li>برای volumeهایی که توسط in-tree pluginهایی مدیریت می‌شوند که به یک CSI driver migrate شده‌اند،‏ حداکثر تعداد volumeها همانی خواهد بود که CSI driver گزارش می‌دهد.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: دیدن limit واقعی یک node</b>
-    <p>برای CSI driverها،‏ عدد اعلام‌شده توسط <code>NodeGetInfo</code> در object مربوط به <code>CSINode</code> ثبت می‌شود و scheduler از آن استفاده می‌کند:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get csinode ip-10-0-3-17.ec2.internal -o jsonpath='{range .spec.drivers[*]}{.name}{"\t"}{.allocatable.count}{"\n"}{end}'
-</pre></div>
-    <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">ebs.csi.aws.com	25
-</pre></div>
-    <p>وقتی همه‌ی ۲۵ جایگاه پر باشند،‏ Pod بعدی که یک EBS volume جدید لازم دارد روی این node schedule نمی‌شود و event آن چیزی شبیه <code>node(s) exceed max volume count</code> است. این در nodeهای بزرگ با تعداد زیاد Podهای stateful کوچک (مثلا ۴۰ replica از Redis هر کدام با یک PVC) رایج است: CPU و memory آزاد هست اما Pod Pending می‌ماند (خارج از مستندات رسمی).</p>
-  </div>
-
   <h5>Mutable CSI Node Allocatable Count</h5>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.36 [stable]</span> (پیش‌فرض <code>true</code>،‏ feature gate <code>MutableCSINodeAllocatableCount</code>)</p>
   <p>CSI driverها می‌توانند حداکثر تعداد volumeهایی را که می‌توانند به یک Node attach شوند،‏ در زمان اجرا به‌صورت dynamic تنظیم کنند. این کار دقت scheduling را افزایش می‌دهد و شکست‌های scheduling Pod به دلیل تغییرات در دسترس بودن resource را کاهش می‌دهد.</p>
@@ -4244,8 +4340,6 @@ spec:
 </pre></div>
   <p>Kubelet به‌صورت دوره‌ای endpoint با نام <code>NodeGetInfo</code> مربوط به CSI driver متناظر را فراخوانی می‌کند تا حداکثر تعداد volumeهای قابل attach را،‏ با استفاده از بازه‌ی مشخص‌شده در <code>nodeAllocatableUpdatePeriodSeconds</code>،‏ تازه کند. حداقل مقدار مجاز برای این فیلد ۱۰ ثانیه است.</p>
   <p>اگر یک عملیات volume attachment با خطای <code>ResourceExhausted</code> (gRPC code 8) شکست بخورد،‏ Kubernetes یک به‌روزرسانی فوری برای تعداد volumeهای allocatable آن Node trigger می‌کند. علاوه بر این،‏ kubelet Podهای تحت تاثیر را به‌عنوان Failed علامت‌گذاری می‌کند و به controllerهای آن‌ها اجازه می‌دهد ساخت مجدد را مدیریت کنند. این کار از گیر کردن نامحدود Podها در وضعیت <code>ContainerCreating</code> جلوگیری می‌کند.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا limit می‌تواند در زمان اجرا تغییر کند</b><p>تعداد جایگاه‌های attach در بسیاری از cloudها با تعداد ENI (network interface) یا diskهایی که خارج از کوبرنتیز به VM وصل شده‌اند مشترک است. اگر یک agent خارجی یک ENI اضافه کند یا یک admin دستی یک disk به VM وصل کند،‏ جایگاه‌های آزاد برای CSI کم می‌شود،‏ اما عدد ثبت‌شده در CSINode (که فقط هنگام register شدن driver پر می‌شد) قدیمی می‌ماند. به‌روزرسانی دوره‌ای و واکنش فوری به <code>ResourceExhausted</code> این شکاف را می‌بندد.</p></div>
-
   <h5>Preventing Pod placement without CSI driver</h5>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.37 [beta]</span> (پیش‌فرض <code>true</code>،‏ feature gate <code>VolumeLimitScaling</code>)</p>
   <p>feature gate با نام <code>VolumeLimitScaling</code> در Kubernetes v1.37 به‌صورت پیش‌فرض فعال است.</p>
@@ -4258,11 +4352,23 @@ metadata:
 spec:
   preventPodSchedulingIfMissing: true
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی</b><p>سناریوی رایج: یک node تازه به cluster اضافه شده و DaemonSet مربوط به CSI node plugin هنوز روی آن Ready نشده (image در حال pull است). بدون این فیلد،‏ scheduler ممکن است یک Pod stateful را روی همین node بگذارد؛‏ چون CSINode هنوز driver را ندارد،‏ هیچ limitی هم برای آن ثبت نشده و Pod در <code>ContainerCreating</code> با خطای <code>driver name ... not found in the list of registered CSI drivers</code> گیر می‌کند. با <code>preventPodSchedulingIfMissing: true</code>،‏ scheduler چنین nodeی را برای Podهای دارای volume آن driver رد می‌کند تا driver register شود.</p></div>
-
   <h5>CSI volume attach limits and cluster autoscaler</h5>
   <p>Cluster autoscaler وقتی <code>--enable-csi-node-aware-scheduling=true</code> باشد،‏ می‌تواند محدودیت‌های CSI volume را در نظر بگیرد. این گزینه مستقل از feature gate با نام <code>VolumeLimitScaling</code> است.</p>
   <p>اگر از cluster autoscaler استفاده می‌کنید،‏ فقط وقتی <code>spec.preventPodSchedulingIfMissing</code> را روی <code>true</code> تنظیم کنید که cluster autoscaler با <code>--enable-csi-node-aware-scheduling=true</code> پیکربندی شده باشد. در غیر این صورت،‏ شبیه‌سازی‌های scheduling آن شامل اطلاعات لازم <code>CSINode</code> برای nodeهای جدید نمی‌شود،‏ و cluster autoscaler ممکن است برای Podهای Pending که از CSI volumeها استفاده می‌کنند در scale up شکست بخورد (فصل ۱۰).</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">دیدن limit واقعی یک node · چرا limit می‌تواند در زمان اجرا تغییر کند</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: دیدن limit واقعی یک node</b>
+    <p>برای CSI driverها،‏ عدد اعلام‌شده توسط <code>NodeGetInfo</code> در object مربوط به <code>CSINode</code> ثبت می‌شود و scheduler از آن استفاده می‌کند:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get csinode ip-10-0-3-17.ec2.internal -o jsonpath='{range .spec.drivers[*]}{.name}{"\t"}{.allocatable.count}{"\n"}{end}'
+</pre></div>
+    <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">ebs.csi.aws.com	25
+</pre></div>
+    <p>وقتی همه‌ی ۲۵ جایگاه پر باشند،‏ Pod بعدی که یک EBS volume جدید لازم دارد روی این node schedule نمی‌شود و event آن چیزی شبیه <code>node(s) exceed max volume count</code> است. این در nodeهای بزرگ با تعداد زیاد Podهای stateful کوچک (مثلا ۴۰ replica از Redis هر کدام با یک PVC) رایج است: CPU و memory آزاد هست اما Pod Pending می‌ماند (خارج از مستندات رسمی).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا limit می‌تواند در زمان اجرا تغییر کند</b><p>تعداد جایگاه‌های attach در بسیاری از cloudها با تعداد ENI (network interface) یا diskهایی که خارج از کوبرنتیز به VM وصل شده‌اند مشترک است. اگر یک agent خارجی یک ENI اضافه کند یا یک admin دستی یک disk به VM وصل کند،‏ جایگاه‌های آزاد برای CSI کم می‌شود،‏ اما عدد ثبت‌شده در CSINode (که فقط هنگام register شدن driver پر می‌شد) قدیمی می‌ماند. به‌روزرسانی دوره‌ای و واکنش فوری به <code>ResourceExhausted</code> این شکاف را می‌بندد.</p></div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>سناریوی رایج: یک node تازه به cluster اضافه شده و DaemonSet مربوط به CSI node plugin هنوز روی آن Ready نشده (image در حال pull است). بدون این فیلد،‏ scheduler ممکن است یک Pod stateful را روی همین node بگذارد؛‏ چون CSINode هنوز driver را ندارد،‏ هیچ limitی هم برای آن ثبت نشده و Pod در <code>ContainerCreating</code> با خطای <code>driver name ... not found in the list of registered CSI drivers</code> گیر می‌کند. با <code>preventPodSchedulingIfMissing: true</code>،‏ scheduler چنین nodeی را برای Podهای دارای volume آن driver رد می‌کند تا driver register شود.</p></div>
+  </details>
 
   <h3 id="ch7-b-health">Volume Health Monitoring</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.21 [alpha]</span> (پیش‌فرض <code>false</code>،‏ feature gate <code>CSIVolumeHealth</code>)</p>
@@ -4403,14 +4509,18 @@ status:
     <li><code>azureFile</code></li>
     <li><code>vsphereVolume</code></li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: پیامد عملی برای clusterهای mixed</b><p>در یک cluster با nodeهای Linux و Windows،‏ manifestی که روی Linux کار می‌کند ممکن است روی Windows بی‌صدا شکست بخورد: مثلا Podی که ConfigMap را با <code>subPath</code> mount می‌کند،‏ یا از <code>emptyDir.medium: Memory</code> استفاده می‌کند،‏ یا PVC آن از NFS یا <code>volumeMode: Block</code> است. همچنین expansion آنلاین (بخش <a href="#ch7-b-expand-pvc">Expanding Persistent Volumes Claims</a>) روی Windows کار نمی‌کند چون resizefs پشتیبانی نمی‌شود. برای جلوگیری از چنین اشتباهاتی،‏ workloadهای Windows را با <code>nodeSelector: kubernetes.io/os: windows</code> صریح هدف بگیرید و برای Linux هم <code>kubernetes.io/os: linux</code> بگذارید (فصل ۹).</p></div>
   <p class="next">برای مطالعه‌ی بیشتر: Configure a Pod to Use a PersistentVolume for Storage ·‏ Change the default StorageClass ·‏ Storage Capacity Constraints for Pod Scheduling KEP ·‏ KEP-1432 ·‏ CSI driver documentation.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">پیامد عملی برای clusterهای mixed</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: پیامد عملی برای clusterهای mixed</b><p>در یک cluster با nodeهای Linux و Windows،‏ manifestی که روی Linux کار می‌کند ممکن است روی Windows بی‌صدا شکست بخورد: مثلا Podی که ConfigMap را با <code>subPath</code> mount می‌کند،‏ یا از <code>emptyDir.medium: Memory</code> استفاده می‌کند،‏ یا PVC آن از NFS یا <code>volumeMode: Block</code> است. همچنین expansion آنلاین (بخش <a href="#ch7-b-expand-pvc">Expanding Persistent Volumes Claims</a>) روی Windows کار نمی‌کند چون resizefs پشتیبانی نمی‌شود. برای جلوگیری از چنین اشتباهاتی،‏ workloadهای Windows را با <code>nodeSelector: kubernetes.io/os: windows</code> صریح هدف بگیرید و برای Linux هم <code>kubernetes.io/os: linux</code> بگذارید (فصل ۹).</p></div>
+  </details>
 
   <h3 id="ch7-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>داده‌ی فروشگاه از Pod جدا شد و هر شب یک backup دارد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>از دست رفتن داده با ساخته شدن دوباره‌ی Pod</td><td>volumeClaimTemplates در StatefulSet و PVC به نام data-postgres-0؛‏ انتقال داده با pg_dump پیش از ساختن دوباره</td><td>گام‌های ۳ تا ۵</td></tr><tr><td>پاک شدن داده با حذف اشتباه PVC</td><td>reclaimPolicy برابر Retain برای PV و persistentVolumeClaimRetentionPolicy برابر Retain</td><td>گام‌های ۲ و ۶</td></tr><tr><td>نبود backup</td><td>CronJob به نام shop-backup با pg_dump در PVC جدا و پاک کردن فایل‌های قدیمی‌تر از هفت روز</td><td>گام ۷</td></tr><tr><td>access log که disk را پر می‌کند</td><td>sizeLimit برای emptyDir به نام logs</td><td>گام ۸</td></tr></tbody></table></div><p><b>فایل‌های تازه یا تغییرکرده:</b></p><div class="tbl"><table><thead><tr><th>فایل</th><th>تغییر</th></tr></thead><tbody><tr><td><code>postgres.yaml</code></td><td>volumeClaimTemplates و PGDATA و persistentVolumeClaimRetentionPolicy</td></tr><tr><td><code>shop-backup.yaml</code></td><td>PVC به نام shop-backups و CronJob به نام shop-backup</td></tr><tr><td><code>shop-api.yaml</code></td><td>sizeLimit برای emptyDir به نام logs</td></tr><tr><td><code>orders-storage.yaml</code> و <code>disk-hog.yaml</code></td><td>فقط برای آزمایش؛‏ منابعشان پاک شد</td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> داده و backup روی disk همان Node هستند و backup هنوز به بیرون از cluster فرستاده نمی‌شود؛‏ PostgreSQL فقط یک replica دارد و با خرابی Node از دسترس خارج می‌شود (فصل ۹ برای جای Pod و drain امن؛‏ HA واقعی پایگاه‌داده معمولاً کار یک Operator است،‏ فصل ۱۵)؛‏ فایل‌های YAML پروژه زیاد و پراکنده شده‌اند؛‏ فروشگاه هنوز HTTPS ندارد.</p><p><b>هفته‌ی بعد:</b> فایل‌های پروژه مرتب می‌شوند،‏ محیط staging جدا می‌شود و با Kustomize برای هر محیط تنظیمات جدا نوشته می‌شود.</p></div>
 
-  <div id="ch7-ex3" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۷،‏ بخش دوم <small>۱۶ تمرین</small></div>
+  <details id="ch7-ex3" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۷،‏ بخش دوم <small>۱۶ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>چرا کوبرنتیز به‌جای اینکه Pod مستقیما به یک PersistentVolume اشاره کند،‏ یک لایه‌ی میانی به نام PersistentVolumeClaim دارد؟ حداقل سه مزیت را بر اساس مستندات توضیح دهید.
         <details class="ans"><summary>پاسخ</summary>
@@ -4771,10 +4881,10 @@ allowedTopologies:
 </pre></div>
           <p><code>allowedTopologies</code> اینجا اختیاری است (مستندات: با WaitForFirstConsumer «در بیشتر موقعیت‌ها دیگر لازم نیست») اما به‌عنوان guardrail جلوی ساخته شدن disk در zone b را حتی در صورت اشتباه در nodeSelector می‌گیرد. <b>پیشگیری:</b> در clusterهای multi-zone هیچ StorageClass از نوع block تک-zone با <code>Immediate</code> نگه ندارید (Topology Awareness در Dynamic Provisioning).</p></details></li>
     </ol>
-  </div>
+  </details>
 
-  <div id="ch7-ex4" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۷ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch7-ex4" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۷ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>PersistentVolume و PersistentVolumeClaim و StorageClass چه فرقی دارند؟
         <details class="ans"><summary>پاسخ</summary>
@@ -4857,7 +4967,7 @@ allowedTopologies:
           <p>VolumeSnapshot از CSI driver یک snapshot سطح disk می‌خواهد. این snapshot معمولاً crash-consistent است؛‏ یعنی شبیه قطع ناگهانی برق. پایگاه داده‌هایی مثل PostgreSQL به‌خاطر WAL معمولاً از آن بازیابی می‌شوند،‏ ولی سازگاری کامل (application-consistent) نیاز به هماهنگی با خود پایگاه داده دارد: قفل یا flush پیش از snapshot،‏ یا backup منطقی و فیزیکی با ابزار خود پایگاه داده. snapshot معمولاً در همان storage است؛‏ اگر storage از بین برود،‏ snapshot هم می‌رود.</p><p><b>نکته‌ی امتیازآور:</b> VolumeSnapshot به CSI driver با پشتیبانی snapshot و snapshot controller و CRDها نیاز دارد و بخشی از هسته‌ی کوبرنتیز نصب نمی‌شود. استراتژی کامل backup شامل کپی به بیرون از cluster و آزمون دوره‌ای بازگردانی است.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch7-recap">
     <div class="recap-h">خلاصه‌ی فصل ۷ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

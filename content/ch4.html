@@ -472,6 +472,12 @@ job.batch/shop-migrate   Complete   1/1           6s         8m
   </ul>
   <p>در اکوسیستم گسترده‌تر کوبرنتیز،‏ workload resourceهای third-party هم پیدا می‌کنید که رفتارهای بیشتری فراهم می‌کنند. با استفاده از یک custom resource definition (CRD) می‌توانید یک workload resource از third-party اضافه کنید،‏ اگر رفتار خاصی می‌خواهید که بخشی از هسته‌ی کوبرنتیز نیست. برای مثال،‏ اگر بخواهید گروهی از Podها را برای برنامه‌تان اجرا کنید اما کار را متوقف کنید مگر این‌که <i>همه‌ی</i> Podها در دسترس باشند (شاید برای یک task توزیع‌شده با throughput بالا)،‏ می‌توانید یک extension پیاده‌سازی یا نصب کنید که این قابلیت را فراهم کند.</p>
 
+  <h4>جای‌گذاری workloadها <small>(Workload placement)</small></h4>
+  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.37 [beta]</span> (feature gate: <code>GenericWorkload</code>،‏ پیش‌فرض: غیرفعال)</p>
+  <p>در حالی که workload resourceهای استاندارد (مثل Deploymentها و Jobها) lifecycle Podها را مدیریت می‌کنند،‏ ممکن است نیازهای scheduling پیچیده‌ای داشته باشید که در آن‌ها گروه‌هایی از Podها باید به‌عنوان یک واحد واحد در نظر گرفته شوند.</p>
+  <p><b>Workload API</b> به شما اجازه می‌دهد <code>PodGroupTemplates</code> تعریف کنید تا Podها را گروه‌بندی کرده و policyهای scheduling پیشرفته را روی آن‌ها اعمال کنید،‏ مثل <b>gang scheduling</b>. controllerها در زمان اجرا از روی این templateها objectهای <b>PodGroup</b> می‌سازند،‏ و <code>Pods</code> از طریق فیلد <code>spec.schedulingGroup</code> به <code>PodGroup</code> خود ارجاع می‌دهند. این به‌ویژه برای batch processing و workloadهای machine learning مفید است که در آن‌ها placement به‌صورت «all-or-nothing» (یا همه یا هیچ) لازم است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">کدام workload resource برای چه کاری؟ · gang scheduling در training توزیع‌شده</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کدام workload resource برای چه کاری؟</b>
   <div class="tbl"><table><thead><tr><th>resource</th><th>هویت Pod</th><th>ترتیب ایجاد/حذف</th><th>Storage</th><th>مثال واقعی</th></tr></thead><tbody>
   <tr><td>Deployment (+ReplicaSet)</td><td>interchangeable،‏ نام تصادفی</td><td>بدون ترتیب</td><td>معمولاً بدون PVC اختصاصی</td><td>API وب،‏ frontend،‏ worker بدون state</td></tr>
@@ -480,12 +486,8 @@ job.batch/shop-migrate   Complete   1/1           6s         8m
   <tr><td>Job / CronJob</td><td>Podهایی که تمام می‌شوند</td><td>—</td><td>—</td><td>migration database،‏ backup شبانه</td></tr>
   </tbody></table></div>
   <p>قاعده‌ی سرانگشتی: اگر پاک‌کردن یک Pod تصادفی و ساختن Pod دیگری با نام دیگر روی Node دیگر هیچ مشکلی برای برنامه ایجاد نمی‌کند،‏ Deployment؛‏ اگر برنامه به «این Pod همان عضو شماره‌ی ۲ با همان disk است» اهمیت می‌دهد،‏ StatefulSet.‏ DaemonSet،‏ Job،‏ CronJob و ReplicationController در بخش دوم همین فصل پوشش داده می‌شوند.</p></div>
-
-  <h4>جای‌گذاری workloadها <small>(Workload placement)</small></h4>
-  <p><span class="fs">وضعیت قابلیت: Kubernetes v1.37 [beta]</span> (feature gate: <code>GenericWorkload</code>،‏ پیش‌فرض: غیرفعال)</p>
-  <p>در حالی که workload resourceهای استاندارد (مثل Deploymentها و Jobها) lifecycle Podها را مدیریت می‌کنند،‏ ممکن است نیازهای scheduling پیچیده‌ای داشته باشید که در آن‌ها گروه‌هایی از Podها باید به‌عنوان یک واحد واحد در نظر گرفته شوند.</p>
-  <p><b>Workload API</b> به شما اجازه می‌دهد <code>PodGroupTemplates</code> تعریف کنید تا Podها را گروه‌بندی کرده و policyهای scheduling پیشرفته را روی آن‌ها اعمال کنید،‏ مثل <b>gang scheduling</b>. controllerها در زمان اجرا از روی این templateها objectهای <b>PodGroup</b> می‌سازند،‏ و <code>Pods</code> از طریق فیلد <code>spec.schedulingGroup</code> به <code>PodGroup</code> خود ارجاع می‌دهند. این به‌ویژه برای batch processing و workloadهای machine learning مفید است که در آن‌ها placement به‌صورت «all-or-nothing» (یا همه یا هیچ) لازم است.</p>
   <div class="deep"><b>توضیح تکمیلی: gang scheduling در training توزیع‌شده</b><p>مثال: یک training توزیع‌شده با ۸ worker که هر کدام یک GPU می‌خواهد. اگر scheduler فقط ۶ تا از آن‌ها را جا بدهد،‏ آن ۶ Pod بیکار منتظر ۲ Pod دیگر می‌مانند و ۶ GPU را قفل می‌کنند. gang scheduling (schedule کردن همه‌ی Podهای یک گروه با هم،‏ یا هیچ‌کدام) تضمین می‌کند یا هر ۸ Pod با هم placement شوند یا هیچ‌کدام. جزئیات در فصل ۹ (Scheduling) آمده است.</p></div>
+  </details>
 
   <h3 id="ch4-a-controllers">مدیریت workloadها با controllerها <small>(Workload Management)</small></h3>
   <p>کوبرنتیز چند API داخلی برای مدیریت declarative workloadهای شما و componentهای آن workloadها فراهم می‌کند.</p>
@@ -498,7 +500,10 @@ job.batch/shop-migrate   Complete   1/1           6s         8m
     <li>یک <b>DaemonSet</b> Podهایی را تعریف می‌کند که امکاناتی محلیِ یک Node مشخص فراهم می‌کنند؛‏ برای مثال یک driver که به containerهای آن Node اجازه‌ی دسترسی به یک سیستم storage را می‌دهد. وقتی از DaemonSet استفاده می‌کنید که آن driver یا سرویس سطح Node باید روی همان Nodeی اجرا شود که در آن مفید است. هر Pod در یک DaemonSet نقشی شبیه یک system daemon روی server کلاسیک Unix / POSIX دارد. یک DaemonSet ممکن است برای عملکرد cluster بنیادی باشد،‏ مثل pluginی (جزء قابل‌اتصالی که رفتار سیستم را گسترش می‌دهد) که به آن Node اجازه‌ی دسترسی به cluster networking را می‌دهد؛‏ ممکن است به مدیریت Node کمک کند؛‏ یا امکانات کم‌اهمیت‌تری فراهم کند که پلتفرم container را بهبود می‌دهد. می‌توانید DaemonSetها (و Podهایشان) را روی همه‌ی Nodeهای cluster یا فقط روی زیرمجموعه‌ای اجرا کنید (برای مثال،‏ driver شتاب‌دهنده‌ی GPU را فقط روی Nodeهایی نصب کنید که GPU دارند).</li>
     <li>می‌توانید از <b>Job</b> و / یا <b>CronJob</b> برای تعریف taskهایی استفاده کنید که تا پایان اجرا می‌شوند و سپس متوقف می‌شوند. یک Job نماینده‌ی یک task یک‌باره است،‏ در حالی که هر CronJob طبق یک schedule تکرار می‌شود.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">controller و reconciliation</span></summary>
   <div class="deep"><b>توضیح تکمیلی: controller و reconciliation</b><p>هر کدام از این APIها یک controller در <code>kube-controller-manager</code> دارد (deployment-controller،‏ replicaset-controller،‏ statefulset-controller و ...) که یک control loop اجرا می‌کند: desired state (وضعیتی که شما اعلام کرده‌اید و controller باید به آن برسد) را از <code>.spec</code> می‌خواند،‏ current state را (Podهای موجود) مشاهده می‌کند و اختلاف را با ساختن یا حذف Pod برطرف می‌کند (reconciliation). به همین دلیل وقتی یک Pod از یک Deployment را پاک می‌کنید،‏ چند ثانیه بعد یک Pod جدید ظاهر می‌شود: این همان self-healing (یا auto healing) است. سلسله‌مراتب مالکیت با <code>ownerReferences</code> (ارجاع هر شیء وابسته به مالکش) ثبت می‌شود: <code>Deployment → ReplicaSet → Pod</code> و <code>StatefulSet → Pod</code> (فصل ۱۲،‏ garbage collection).</p></div>
+  </details>
 
   <h3 id="ch4-a-management">مدیریت عملی workloadها <small>(Managing Workloads)</small></h3>
   <p>برنامه‌تان را deploy کرده‌اید و آن را از طریق یک Service در دسترس قرار داده‌اید. حالا چه؟ کوبرنتیز تعدادی ابزار برای کمک به مدیریت deployment برنامه‌تان فراهم می‌کند،‏ از جمله scaling و به‌روزرسانی.</p>
@@ -669,15 +674,6 @@ kubectl rollout status deployment/my-deployment --timeout 10m # 10 minute timeou
 kubectl rollout status statefulsets/backing-stateful-component --watch=false
 </pre></div>
   <p>همچنین می‌توانید یک rollout را pause،‏ resume یا cancel کنید. مستندات <code>kubectl rollout</code> را برای جزئیات بیشتر ببینید.</p>
-  <div class="deep"><b>توضیح تکمیلی: rollout status در CI/CD</b><p>مهم‌ترین کاربرد <code>kubectl rollout status --timeout</code> در pipeline است: exit code صفر یعنی rollout کامل شد و exit code غیرصفر یعنی timeout یا عبور از progress deadline. یک pipeline معمولی این شکلی است (خارج از مستندات رسمی):</p>
-<div class="code"><div class="lbl"><span>deploy.sh</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f k8s/
-if ! kubectl rollout status deployment/api --timeout 5m; then
-  echo "rollout failed, rolling back"
-  kubectl rollout undo deployment/api
-  exit 1
-fi
-</pre></div></div>
-
   <h4>canary deployment</h4>
   <p>سناریوی دیگری که در آن چند label لازم است،‏ تمایز قائل شدن بین deploymentهای releaseها یا configurationهای مختلف یک component است. practice رایج این است که یک <i>canary</i> از release جدید برنامه (که با image tag در Pod template مشخص می‌شود) در کنار release قبلی deploy شود تا release جدید بتواند پیش از rollout کامل،‏ ترافیک واقعی production دریافت کند.</p>
   <p>برای نمونه،‏ می‌توانید از label <code>track</code> برای تمایز releaseهای مختلف استفاده کنید. release اصلی و پایدار label <code>track</code> با مقدار <code>stable</code> خواهد داشت:</p>
@@ -708,8 +704,6 @@ image: gb-frontend:v4
    tier: frontend
 </pre></div>
   <p>می‌توانید تعداد replicaهای releaseهای stable و canary (انتشار نسخه‌ی تازه برای بخش کوچکی از ترافیک پیش از انتشار کامل) را تنظیم کنید تا نسبتی از ترافیک واقعی production که هر release دریافت می‌کند را تعیین کنید (در این مثال،‏ 3:1). وقتی مطمئن شدید،‏ می‌توانید track پایدار را به release جدید برنامه به‌روزرسانی کنید و canary را حذف کنید. برای دیدن جزئیات،‏ tutorial «Deploy a Release Using a Canary Deployment» را دنبال کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا selector دو Deployment نباید با هم overlap داشته باشد؟</b><p>selector هر Deployment باید <code>track</code> را هم شامل شود (<code>app=guestbook,tier=frontend,track=stable</code> در برابر <code>track=canary</code>)؛‏ وگرنه دو Deployment Podهای یکدیگر را «مال خود» می‌دانند و با هم دعوا می‌کنند (بخش Selector را ببینید). اما selector سرویس عمداً <code>track</code> را ندارد تا هر دو گروه را پوشش دهد. توجه کنید که تقسیم ترافیک بر اساس تعداد endpointهاست،‏ پس نسبت 3:1 تقریبی است و به load balancing kube-proxy بستگی دارد؛‏ برای درصدهای دقیق (مثلاً 1%) معمولاً از Ingress/Gateway API یا service mesh با وزن‌دهی استفاده می‌شود (خارج از مستندات رسمی؛‏ فصل ۵).</p></div>
-
   <h4>به‌روزرسانی annotationها <small>(Updating annotations)</small></h4>
   <p>گاهی می‌خواهید annotationهایی به resourceها پیوست کنید. annotationها metadata دلخواه و غیرشناسایی‌کننده‌اند که توسط clientهای API مثل ابزارها یا libraryها بازیابی می‌شوند. این کار را می‌توان با <code>kubectl annotate</code> انجام داد. برای مثال:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl annotate pods my-nginx-v4-9gw19 description='my frontend running nginx'
@@ -777,6 +771,19 @@ deployment.apps/my-nginx replaced
 </pre></div>
   <div class="warn"><b>هشدار</b><p>(خارج از مستندات رسمی) <code>replace --force</code> ابتدا object را حذف می‌کند؛‏ برای یک Deployment یعنی همه‌ی Podهای آن هم حذف و دوباره ساخته می‌شوند و یک downtime کوتاه رخ می‌دهد. در production فقط وقتی از آن استفاده کنید که فیلد immutable (مثل <code>.spec.selector</code>) را باید تغییر دهید و downtime قابل قبول است.</p></div>
   <p class="next">ادامه: how to use kubectl for application introspection and debugging (فصل ۱۱).</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">rollout status در CI/CD · چرا selector دو Deployment نباید با هم overlap داشته باشد؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: rollout status در CI/CD</b><p>مهم‌ترین کاربرد <code>kubectl rollout status --timeout</code> در pipeline است: exit code صفر یعنی rollout کامل شد و exit code غیرصفر یعنی timeout یا عبور از progress deadline. یک pipeline معمولی این شکلی است (خارج از مستندات رسمی):</p>
+<div class="code"><div class="lbl"><span>deploy.sh</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f k8s/
+if ! kubectl rollout status deployment/api --timeout 5m; then
+  echo "rollout failed, rolling back"
+  kubectl rollout undo deployment/api
+  exit 1
+fi
+</pre></div></div>
+  <div class="deep"><b>توضیح تکمیلی: چرا selector دو Deployment نباید با هم overlap داشته باشد؟</b><p>selector هر Deployment باید <code>track</code> را هم شامل شود (<code>app=guestbook,tier=frontend,track=stable</code> در برابر <code>track=canary</code>)؛‏ وگرنه دو Deployment Podهای یکدیگر را «مال خود» می‌دانند و با هم دعوا می‌کنند (بخش Selector را ببینید). اما selector سرویس عمداً <code>track</code> را ندارد تا هر دو گروه را پوشش دهد. توجه کنید که تقسیم ترافیک بر اساس تعداد endpointهاست،‏ پس نسبت 3:1 تقریبی است و به load balancing kube-proxy بستگی دارد؛‏ برای درصدهای دقیق (مثلاً 1%) معمولاً از Ingress/Gateway API یا service mesh با وزن‌دهی استفاده می‌شود (خارج از مستندات رسمی؛‏ فصل ۵).</p></div>
+  </details>
 
   <h3 id="ch4-a-deployment">Deployment</h3>
   <p>یک <i>Deployment</i> به‌روزرسانی‌های declarative برای Podها و ReplicaSetها فراهم می‌کند.</p>
@@ -899,6 +906,8 @@ Deployment/nginx-deployment
   <div class="warn"><b>هشدار</b><p>این label را تغییر ندهید.</p></div>
   <p>label <code>pod-template-hash</code> توسط Deployment controller به هر ReplicaSetی که یک Deployment می‌سازد یا adopt می‌کند اضافه می‌شود.</p>
   <p>این label تضمین می‌کند ReplicaSetهای فرزند یک Deployment با هم overlap نداشته باشند. این label با hash کردن <code>PodTemplate</code> مربوط به ReplicaSet تولید می‌شود و hash حاصل به‌عنوان مقدار label به selector مربوط به ReplicaSet،‏ به labelهای Pod template،‏ و به هر Pod موجودی که ReplicaSet ممکن است داشته باشد اضافه می‌شود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا hash لازم است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا hash لازم است؟</b><p>selector خود Deployment فقط <code>app=nginx</code> است،‏ پس هم Podهای نسخه‌ی قدیم و هم نسخه‌ی جدید با آن match می‌شوند. اگر ReplicaSetها هم فقط <code>app=nginx</code> را انتخاب می‌کردند،‏ ReplicaSet جدید Podهای قدیمی را هم «مال خود» حساب می‌کرد و rolling update (جایگزینی تدریجی Podهای قدیمی با Podهای جدید بدون قطع سرویس) ممکن نبود. با اضافه شدن <code>pod-template-hash</code>،‏ selector هر ReplicaSet عملاً <code>app=nginx,pod-template-hash=75675f5897</code> می‌شود و هر ReplicaSet فقط Podهای خودش را می‌شمارد:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get rs -l app=nginx -o custom-columns=NAME:.metadata.name,SELECTOR:.spec.selector.matchLabels
 </pre></div>
@@ -906,6 +915,7 @@ Deployment/nginx-deployment
 nginx-deployment-75675f5897   map[app:nginx pod-template-hash:75675f5897]
 </pre></div>
   <p>از آن‌جا که hash از روی template محاسبه می‌شود،‏ اگر template را به نسخه‌ی قبلی برگردانید (rollback)،‏ Deployment همان ReplicaSet قدیمی را دوباره scale up می‌کند به‌جای این‌که ReplicaSet تازه بسازد.</p></div>
+  </details>
 
   <h3 id="ch4-a-deploy-update">به‌روزرسانی Deployment <small>(Updating a Deployment)</small></h3>
   <div class="note"><b>نکته</b><p>rollout یک Deployment اگر و فقط اگر Pod template آن (یعنی <code>.spec.template</code>) تغییر کند آغاز می‌شود؛‏ برای مثال اگر labelها یا container imageهای template به‌روزرسانی شوند. به‌روزرسانی‌های دیگر،‏ مثل scaling کردن Deployment،‏ rollout را آغاز نمی‌کنند.</p></div>
@@ -1006,16 +1016,6 @@ Pod Template:
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/b87e11c627.svg" alt="Rolling update step 1"></div><figcaption><b>شکل ۴-۳.</b> شروع rolling update: همه‌ی Podهای Deployment هنوز نسخه‌ی قدیمی را اجرا می‌کنند و Service ترافیک را بین آن‌ها پخش می‌کند. منبع: <span class="en">tutorials/kubernetes-basics/update</span></figcaption></figure>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/36331e2024.svg" alt="Rolling update step 2"></div><figcaption><b>شکل ۴-۴.</b> یک Pod با نسخه‌ی جدید ساخته می‌شود (در محدوده‌ی maxSurge) و پس از Ready شدن،‏ endpoint آن به Service اضافه می‌شود. منبع: <span class="en">tutorials/kubernetes-basics/update</span></figcaption></figure>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/c9d3c962fd.svg" alt="Rolling update step 3"></div><figcaption><b>شکل ۴-۵.</b> Podهای قدیمی یکی‌یکی حذف و با Podهای جدید جایگزین می‌شوند،‏ به‌طوری که تعداد Podهای available هرگز از <code>replicas - maxUnavailable</code> کمتر نشود. منبع: <span class="en">tutorials/kubernetes-basics/update</span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: حساب دقیق maxSurge و maxUnavailable</b><p>درصدها به عدد مطلق تبدیل می‌شوند: <b>maxSurge به بالا گرد می‌شود</b> و <b>maxUnavailable به پایین</b>. برای replicas=3 و پیش‌فرض 25%: <code>ceil(0.75)=1</code> surge و <code>floor(0.75)=0</code> unavailable. یعنی حداکثر 4 Pod و حداقل 3 Pod available — دقیقاً همان رفتاری که در Events بالا دیدید (اول scale up به 1،‏ بعد scale down قدیمی). چند مثال دیگر:</p>
-  <div class="tbl"><table><thead><tr><th>replicas</th><th>maxSurge</th><th>maxUnavailable</th><th>حداکثر کل Pod</th><th>حداقل available</th></tr></thead><tbody>
-  <tr><td>3</td><td>25% ← 1</td><td>25% ← 0</td><td>4</td><td>3</td></tr>
-  <tr><td>4</td><td>25% ← 1</td><td>25% ← 1</td><td>5</td><td>3</td></tr>
-  <tr><td>10</td><td>25% ← 3</td><td>25% ← 2</td><td>13</td><td>8</td></tr>
-  <tr><td>10</td><td>0</td><td>1</td><td>10</td><td>9</td></tr>
-  <tr><td>10</td><td>100%</td><td>0</td><td>20</td><td>10</td></tr>
-  </tbody></table></div>
-  <p>دو حالت افراطی: <code>maxSurge: 0</code> برای clusterهایی که ظرفیت اضافه ندارند (resource quota سخت یا Nodeهای پر) — rollout با کم کردن ظرفیت انجام می‌شود. <code>maxUnavailable: 0</code> برای سرویس‌هایی که حتی یک Pod کمتر را تحمل نمی‌کنند — ولی به ظرفیت اضافه برای Podهای surge نیاز دارد. هر دو نمی‌توانند هم‌زمان 0 باشند،‏ چون rollout هیچ راهی برای پیشرفت نخواهد داشت.</p></div>
-
     <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" width="100%" style="max-width:760px;height:auto" role="img" aria-label="گام‌های rolling update با چهار replica و maxSurge و maxUnavailable برابر یک"><defs><marker id="f7ru-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f7ru-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f7ru-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f7ru-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f7ru-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><text x="380" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">گام‌های یک rolling update</text><text x="380" y="48" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">replicas: 4    maxSurge: 25% (1)    maxUnavailable: 25% (1)</text><rect x="74" y="269" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><rect x="74" y="235" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><rect x="74" y="201" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><rect x="74" y="167" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="100" y="322" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">گام ۰</text><text x="100" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">قدیمی ۴؛ جدید ۰</text><line x1="138" y1="240" x2="190" y2="240" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7ru-a4a5672)"></line><rect x="204" y="269" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><rect x="204" y="235" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><rect x="204" y="201" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><rect x="204" y="167" width="52" height="28" rx="5" fill="#ffffff" stroke="#12806f" stroke-width="1.4" stroke-dasharray="4 3"></rect><rect x="204" y="133" width="52" height="28" rx="5" fill="#ffffff" stroke="#12806f" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="230" y="322" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">گام ۱</text><text x="230" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">قدیمی ۳؛ جدید ۲</text><line x1="268" y1="240" x2="320" y2="240" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7ru-a4a5672)"></line><rect x="334" y="269" width="52" height="28" rx="5" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><rect x="334" y="235" width="52" height="28" rx="5" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><rect x="334" y="201" width="52" height="28" rx="5" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><rect x="334" y="167" width="52" height="28" rx="5" fill="#ffffff" stroke="#12806f" stroke-width="1.4" stroke-dasharray="4 3"></rect><rect x="334" y="133" width="52" height="28" rx="5" fill="#ffffff" stroke="#12806f" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="360" y="322" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">گام ۲</text><text x="360" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">قدیمی ۱؛ جدید ۴</text><line x1="398" y1="240" x2="450" y2="240" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7ru-a4a5672)"></line><rect x="464" y="269" width="52" height="28" rx="5" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><rect x="464" y="235" width="52" height="28" rx="5" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><rect x="464" y="201" width="52" height="28" rx="5" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><rect x="464" y="167" width="52" height="28" rx="5" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="490" y="322" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">گام ۳</text><text x="490" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">قدیمی ۰؛ جدید ۴</text><line x1="50" y1="130" x2="540" y2="130" stroke="#b83227" stroke-width="1.3" stroke-dasharray="6 4"></line><line x1="50" y1="198" x2="540" y2="198" stroke="#b26b00" stroke-width="1.3" stroke-dasharray="6 4"></line><text x="548" y="134" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b83227" text-anchor="end" direction="rtl">سقف کل Podها برابر ۵</text><text x="548" y="202" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b26b00" text-anchor="end" direction="rtl">کف Podهای available برابر ۳</text><line x1="50" y1="300" x2="540" y2="300" stroke="#4a5672" stroke-width="1.2"></line><rect x="560" y="222" width="190" height="96" rx="8" fill="#eef2f9" stroke="#c9d3e6" stroke-width="1.4"></rect><rect x="720" y="236" width="20" height="16" rx="3" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="712" y="249" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="start" direction="rtl">نسخه‌ی قدیمی</text><rect x="720" y="262" width="20" height="16" rx="3" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="712" y="275" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="start" direction="rtl">نسخه‌ی جدید و ready</text><rect x="720" y="288" width="20" height="16" rx="3" fill="#ffffff" stroke="#12806f" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="712" y="301" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="start" direction="rtl">نسخه‌ی جدید، هنوز ready نیست</text></svg></div><figcaption><b>شکل ۴-۶.</b> <span style="flex:1 1 0;min-width:0">در هر لحظه controller دو مرز را رعایت می‌کند: تعداد کل Podها حداکثر <code>replicas + maxSurge</code> و تعداد Podهای available حداقل <code>replicas - maxUnavailable</code>. هر Pod جدید فقط وقتی available حساب می‌شود که ready شده و <code>minReadySeconds</code> هم گذشته باشد؛‏ تنها در این صورت راه حذف Pod قدیمی بعدی باز می‌شود. گام‌ها ساده‌شده‌اند و controller ممکن است آن‌ها را در چند reconcile کوچک‌تر انجام دهد.</span></figcaption></figure>
   <h4>چند به‌روزرسانی هم‌زمان <small>(Rollover)</small></h4>
   <p>هر بار که یک Deployment جدید توسط Deployment controller مشاهده می‌شود،‏ یک ReplicaSet برای بالا آوردن Podهای مطلوب ساخته می‌شود. اگر Deployment به‌روزرسانی شود،‏ ReplicaSet موجودی که Podهایی را کنترل می‌کند که labelهایشان با <code>.spec.selector</code> match می‌شود ولی templateشان با <code>.spec.template</code> match نمی‌شود،‏ scale down می‌شود. در نهایت ReplicaSet جدید تا <code>.spec.replicas</code> scale می‌شود و همه‌ی ReplicaSetهای قدیمی تا 0 scale می‌شوند.</p>
@@ -1037,6 +1037,19 @@ Pod Template:
 <div class="code"><div class="lbl"><span>output (نمونه)</span><button type="button">کپی</button></div><pre class="out">The Deployment "nginx-deployment" is invalid: spec.selector: Invalid value: ...: field is immutable
 </pre></div>
   <p>مسیر درست بدون downtime: <code>kubectl delete deployment nginx-deployment --cascade=orphan</code>،‏ سپس Deployment جدید را با selector و template جدید apply کنید. Deployment جدید Podهای قبلی را نمی‌بیند (label جدید را ندارند) و Podهای خودش را می‌سازد؛‏ پس از Ready شدن آن‌ها،‏ ReplicaSet orphanشده‌ی قدیمی را با <code>kubectl delete rs &lt;old-rs&gt;</code> حذف کنید. در این فاصله Service (اگر selectorش مشترک باشد) به هر دو گروه ترافیک می‌دهد.</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">حساب دقیق maxSurge و maxUnavailable</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: حساب دقیق maxSurge و maxUnavailable</b><p>درصدها به عدد مطلق تبدیل می‌شوند: <b>maxSurge به بالا گرد می‌شود</b> و <b>maxUnavailable به پایین</b>. برای replicas=3 و پیش‌فرض 25%: <code>ceil(0.75)=1</code> surge و <code>floor(0.75)=0</code> unavailable. یعنی حداکثر 4 Pod و حداقل 3 Pod available — دقیقاً همان رفتاری که در Events بالا دیدید (اول scale up به 1،‏ بعد scale down قدیمی). چند مثال دیگر:</p>
+  <div class="tbl"><table><thead><tr><th>replicas</th><th>maxSurge</th><th>maxUnavailable</th><th>حداکثر کل Pod</th><th>حداقل available</th></tr></thead><tbody>
+  <tr><td>3</td><td>25% ← 1</td><td>25% ← 0</td><td>4</td><td>3</td></tr>
+  <tr><td>4</td><td>25% ← 1</td><td>25% ← 1</td><td>5</td><td>3</td></tr>
+  <tr><td>10</td><td>25% ← 3</td><td>25% ← 2</td><td>13</td><td>8</td></tr>
+  <tr><td>10</td><td>0</td><td>1</td><td>10</td><td>9</td></tr>
+  <tr><td>10</td><td>100%</td><td>0</td><td>20</td><td>10</td></tr>
+  </tbody></table></div>
+  <p>دو حالت افراطی: <code>maxSurge: 0</code> برای clusterهایی که ظرفیت اضافه ندارند (resource quota سخت یا Nodeهای پر) — rollout با کم کردن ظرفیت انجام می‌شود. <code>maxUnavailable: 0</code> برای سرویس‌هایی که حتی یک Pod کمتر را تحمل نمی‌کنند — ولی به ظرفیت اضافه برای Podهای surge نیاز دارد. هر دو نمی‌توانند هم‌زمان 0 باشند،‏ چون rollout هیچ راهی برای پیشرفت نخواهد داشت.</p></div>
+  </details>
 
   <h3 id="ch4-a-deploy-rollback">rollback کردن Deployment <small>(Rolling Back a Deployment)</small></h3>
   <p>گاهی ممکن است بخواهید یک Deployment را rollback کنید؛‏ برای مثال وقتی Deployment پایدار نیست،‏ مثلاً crash loop دارد. به‌طور پیش‌فرض،‏ کل تاریخچه‌ی rollout مربوط به Deployment در سیستم نگه داشته می‌شود تا هر وقت خواستید rollback کنید (می‌توانید این را با تغییر revision history limit عوض کنید).</p>
@@ -1114,8 +1127,6 @@ Events:
 </pre></div>
       برای رفع این مشکل،‏ باید به یک revision قبلی و پایدار از Deployment rollback کنید.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: چرا rollout بد فقط یک Pod خراب ساخت؟</b><p>با replicas=3:‏ maxSurge=1 و maxUnavailable=0.‏ controller یک Pod جدید (surge) می‌سازد؛‏ برای حذف یک Pod قدیمی باید available حداقل 3 بماند،‏ و چون Pod جدید هرگز available نمی‌شود،‏ هیچ Pod قدیمی حذف نمی‌شود و هیچ Pod جدید دیگری هم ساخته نمی‌شود (سقف کل 4). نتیجه: سرویس با 3 Pod سالم قدیمی کار می‌کند و خرابی «محصور» می‌ماند. این همان خاصیتی است که rolling update را از Recreate امن‌تر می‌کند. اگر maxUnavailable بزرگ‌تر بود (مثلاً 1)،‏ یک Pod قدیمی هم حذف می‌شد و ظرفیت کاهش می‌یافت.</p></div>
-
   <h4>بررسی تاریخچه‌ی rollout <small>(Checking Rollout History of a Deployment)</small></h4>
   <p>مراحل زیر را برای بررسی تاریخچه‌ی rollout دنبال کنید:</p>
   <ol>
@@ -1219,7 +1230,11 @@ Events:
   Normal  ScalingReplicaSet   15s   deployment-controller  Scaled down replica set nginx-deployment-595696685f to 0
 </pre></div></li>
   </ol>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا rollout بد فقط یک Pod خراب ساخت؟ · rollback یعنی «rollout رو به جلو» با template قدیمی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا rollout بد فقط یک Pod خراب ساخت؟</b><p>با replicas=3:‏ maxSurge=1 و maxUnavailable=0.‏ controller یک Pod جدید (surge) می‌سازد؛‏ برای حذف یک Pod قدیمی باید available حداقل 3 بماند،‏ و چون Pod جدید هرگز available نمی‌شود،‏ هیچ Pod قدیمی حذف نمی‌شود و هیچ Pod جدید دیگری هم ساخته نمی‌شود (سقف کل 4). نتیجه: سرویس با 3 Pod سالم قدیمی کار می‌کند و خرابی «محصور» می‌ماند. این همان خاصیتی است که rolling update را از Recreate امن‌تر می‌کند. اگر maxUnavailable بزرگ‌تر بود (مثلاً 1)،‏ یک Pod قدیمی هم حذف می‌شد و ظرفیت کاهش می‌یافت.</p></div>
   <div class="deep"><b>توضیح تکمیلی: rollback یعنی «rollout رو به جلو» با template قدیمی</b><p>به annotation <code>deployment.kubernetes.io/revision=4</code> دقت کنید: rollback به revision 2 یک revision <b>جدید</b> (4) می‌سازد و revision 2 از فهرست history ناپدید می‌شود (چون همان ReplicaSet دوباره فعال شده است). یعنی rollback چیزی جز کپی کردن <code>.spec.template</code> از ReplicaSet قدیمی به Deployment نیست،‏ و سپس یک rolling update عادی با همان maxSurge/maxUnavailable انجام می‌شود. نکته‌ی مهم در GitOps (خارج از مستندات رسمی): اگر manifest در Git همچنان image خراب را دارد،‏ <code>kubectl rollout undo</code> در sync بعدی ابزار GitOps بازنویسی می‌شود؛‏ rollback واقعی باید با revert در Git انجام شود.</p></div>
+  </details>
 
   <h3 id="ch4-a-deploy-scale">scale کردن Deployment <small>(Scaling a Deployment)</small></h3>
   <p>می‌توانید با دستور زیر یک Deployment را scale کنید:</p>
@@ -1270,7 +1285,10 @@ nginx-deployment     15        18        7            8           7m
 nginx-deployment-1989198191   7         7         0         7m
 nginx-deployment-618515232    11        11        11        7m
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">حساب proportional scaling</span></summary>
   <div class="deep"><b>توضیح تکمیلی: حساب proportional scaling</b><p>قبل از scale: قدیمی 8 + جدید 5 = 13 = 10 + maxSurge(3). قدیمی 8 است چون 10 − maxUnavailable(2) = 8. وقتی replicas به 15 می‌رسد،‏ maxSurge هم (عدد مطلق 3) ثابت است،‏ پس سقف کل 18 می‌شود؛‏ یعنی 5 Pod اضافه. سهم هر ReplicaSet تقریباً متناسب با اندازه‌اش است: 8/13×5 ≈ 3.08 ← 3 برای قدیمی و 5/13×5 ≈ 1.9 ← 2 برای جدید. نتیجه: 11 و 7،‏ مجموع 18 = CURRENT. چرا این رفتار امن است؟ اگر هر 5 Pod به ReplicaSet جدید (که هیچ Pod سالمی ندارد) داده می‌شد،‏ autoscaler فکر می‌کرد ظرفیت را افزایش داده،‏ در حالی که هیچ ظرفیت واقعی اضافه نشده بود.</p></div>
+  </details>
 
   <h3 id="ch4-a-deploy-pause">pause و resume کردن rollout <small>(Pausing and Resuming a rollout of a Deployment)</small></h3>
   <p>وقتی یک Deployment را به‌روزرسانی می‌کنید،‏ یا قصد دارید این کار را بکنید،‏ می‌توانید rolloutهای آن Deployment را پیش از آغاز یک یا چند به‌روزرسانی pause کنید. وقتی آماده‌ی اعمال آن تغییرات بودید،‏ rolloutهای Deployment را resume می‌کنید. این رویکرد به شما اجازه می‌دهد بین pause و resume چند اصلاح اعمال کنید بدون این‌که rolloutهای غیرضروری آغاز شوند.</p>
@@ -1349,7 +1367,10 @@ nginx-3926361531   3         3         3         28s
 </pre></div></li>
   </ul>
   <div class="note"><b>نکته</b><p>نمی‌توانید یک Deployment pauseشده را تا وقتی resume نکرده‌اید rollback کنید.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">pause در عمل</span></summary>
   <div class="deep"><b>توضیح تکمیلی: pause در عمل</b><p>بدون pause،‏ سه دستور پشت‌سرهم (<code>set image</code>،‏ <code>set resources</code>،‏ <code>set env</code>) سه ReplicaSet و سه revision می‌سازند و Podها بی‌دلیل دو بار جایگزین می‌شوند (rollover). با pause،‏ هر سه تغییر در یک revision و یک rolling update اعمال می‌شوند. توجه کنید که scaling در حالت pause همچنان کار می‌کند (با proportional scaling)،‏ چون scaling به template ربطی ندارد.</p></div>
+  </details>
 
   <h3 id="ch4-a-deploy-status">وضعیت Deployment <small>(Deployment status)</small></h3>
   <p>یک Deployment در طول lifecycle خود وارد stateهای مختلفی می‌شود. ممکن است هنگام rollout یک ReplicaSet جدید <b>progressing</b> باشد،‏ ممکن است <b>complete</b> باشد،‏ یا ممکن است در پیشرفت <b>fail</b> شود.</p>
@@ -1491,6 +1512,8 @@ error: deployment "nginx" exceeded its progress deadline
 
   <h4>کار با Deployment ناموفق <small>(Operating on a failed deployment)</small></h4>
   <p>همه‌ی اقداماتی که روی یک Deployment کامل اعمال می‌شوند،‏ روی یک Deployment failشده هم اعمال می‌شوند. می‌توانید آن را scale up/down کنید،‏ به یک revision قبلی rollback کنید،‏ یا حتی اگر لازم است چند تغییر در Pod template مربوط به Deployment اعمال کنید،‏ آن را pause کنید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">دو condition،‏ دو سؤال متفاوت</span></summary>
   <div class="deep"><b>توضیح تکمیلی: دو condition،‏ دو سؤال متفاوت</b>
   <div class="tbl"><table><thead><tr><th>condition</th><th>به چه سؤالی پاسخ می‌دهد</th><th>مقادیر مهم reason</th></tr></thead><tbody>
   <tr><td><code>Available</code></td><td>آیا الان حداقل <code>replicas - maxUnavailable</code> Pod available داریم؟ (سلامت سرویس)</td><td><code>MinimumReplicasAvailable</code> / <code>MinimumReplicasUnavailable</code></td></tr>
@@ -1502,6 +1525,7 @@ error: deployment "nginx" exceeded its progress deadline
   -o jsonpath='{.status.conditions[?(@.type=="Progressing")].reason}{"\n"}'
 </pre></div>
   <p>(خارج از مستندات رسمی) در Prometheus با kube-state-metrics معمولاً از متریک <code>kube_deployment_status_condition{condition="Progressing",status="false"}</code> برای alert استفاده می‌شود.</p></div>
+  </details>
 
   <h3 id="ch4-a-deploy-cleanup">سیاست پاک‌سازی <small>(Clean up Policy)</small></h3>
   <p>می‌توانید فیلد <code>.spec.revisionHistoryLimit</code> را در یک Deployment تنظیم کنید تا مشخص کنید چند ReplicaSet قدیمی از این Deployment را می‌خواهید نگه دارید. بقیه در پس‌زمینه garbage-collect می‌شوند. به‌طور پیش‌فرض این مقدار 10 است.</p>
@@ -1581,8 +1605,6 @@ kubectl run curl --image=curlimages/curl --rm -it --restart=Never -- \
   <p><code>.spec.replicas</code> یک فیلد اختیاری است که تعداد Podهای مطلوب را مشخص می‌کند. پیش‌فرض آن 1 است.</p>
   <p>اگر یک Deployment را به‌صورت دستی scale کنید،‏ مثلاً با <code>kubectl scale deployment deployment --replicas=X</code>،‏ و سپس آن Deployment را بر اساس یک manifest به‌روزرسانی کنید (برای مثال با اجرای <code>kubectl apply -f deployment.yaml</code>)،‏ اعمال آن manifest scaling دستی‌ای را که قبلاً انجام داده بودید بازنویسی می‌کند.</p>
   <p>اگر یک HorizontalPodAutoscaler (یا هر API مشابه برای horizontal scaling) scaling یک Deployment را مدیریت می‌کند،‏ <code>.spec.replicas</code> را تنظیم نکنید. به‌جای آن اجازه دهید control plane فیلد <code>.spec.replicas</code> را به‌طور خودکار مدیریت کند.</p>
-  <div class="deep"><b>توضیح تکمیلی: جنگ بین HPA و apply</b><p>اگر manifest شما <code>replicas: 3</code> داشته باشد و HPA آن را در ساعت اوج به 20 رسانده باشد،‏ هر <code>kubectl apply</code> (مثلاً از pipeline) ناگهان Deployment را به 3 برمی‌گرداند؛‏ 17 Pod حذف می‌شوند تا HPA در چرخه‌ی بعدی دوباره scale up کند. راه‌حل مستندات: فیلد <code>replicas</code> را از manifest حذف کنید. در Helm/Kustomize (خارج از مستندات رسمی) معمولاً وقتی HPA فعال است فیلد replicas از template حذف می‌شود.</p></div>
-
   <h4>selector</h4>
   <p><code>.spec.selector</code> یک فیلد الزامی است که یک label selector برای Podهای هدف این Deployment مشخص می‌کند.</p>
   <p><code>.spec.selector</code> باید با <code>.spec.template.metadata.labels</code> match شود،‏ وگرنه توسط API رد می‌شود.</p>
@@ -1684,21 +1706,12 @@ spec:
       maxSurge: 1
       maxUnavailable: 1
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: رفتار سه مثال بالا با replicas=3</b>
-  <div class="tbl"><table><thead><tr><th>مثال</th><th>maxSurge (مؤثر)</th><th>maxUnavailable (مؤثر)</th><th>بازه‌ی Pod</th><th>رفتار</th></tr></thead><tbody>
-  <tr><td>Max Unavailable</td><td>25% ← 1 (پیش‌فرض)</td><td>1</td><td>2 تا 4 available/کل</td><td>هم‌زمان یک Pod قدیمی حذف و یک Pod جدید ساخته می‌شود؛‏ سریع‌تر،‏ با افت موقت ظرفیت</td></tr>
-  <tr><td>Max Surge</td><td>1</td><td>25% ← 0 (پیش‌فرض)</td><td>3 تا 4</td><td>ظرفیت هرگز کم نمی‌شود؛‏ یکی‌یکی جلو می‌رود</td></tr>
-  <tr><td>Hybrid</td><td>1</td><td>1</td><td>2 تا 4</td><td>در هر مرحله تا 2 Pod عوض می‌شود؛‏ سریع‌ترین از این سه</td></tr>
-  </tbody></table></div></div>
-
   <h4>progressDeadlineSeconds</h4>
   <p><code>.spec.progressDeadlineSeconds</code> یک فیلد اختیاری است که تعداد ثانیه‌هایی را مشخص می‌کند که می‌خواهید منتظر پیشرفت Deployment بمانید پیش از این‌که سیستم گزارش دهد Deployment در پیشرفت fail شده است — که به‌صورت یک condition با <code>type: Progressing</code>،‏ <code>status: "False"</code> و <code>reason: ProgressDeadlineExceeded</code> در status مربوط به resource نمایان می‌شود. Deployment controller به retry کردن Deployment ادامه می‌دهد. پیش‌فرض آن 600 است.</p>
   <p>اگر مشخص شود،‏ این فیلد باید از <code>.spec.minReadySeconds</code> بزرگ‌تر باشد.</p>
 
   <h4>minReadySeconds</h4>
   <p><code>.spec.minReadySeconds</code> یک فیلد اختیاری است که حداقل تعداد ثانیه‌هایی را مشخص می‌کند که یک Pod تازه ساخته‌شده باید بدون crash کردن هیچ‌یک از containerهایش ready باشد تا available در نظر گرفته شود. پیش‌فرض آن 0 است (Pod به محض ready شدن available در نظر گرفته می‌شود). برای یادگیری این‌که یک Pod چه زمانی ready در نظر گرفته می‌شود،‏ Container Probes را ببینید (فصل ۳).</p>
-  <div class="deep"><b>توضیح تکمیلی: minReadySeconds به‌عنوان دوره‌ی آزمایشی</b><p>minReadySeconds یک «دوره‌ی آزمایشی» برای Pod جدید است. برنامه‌ای که پس از ۲۰ ثانیه به دلیل memory leak یا اتصال ناموفق به database crash می‌کند،‏ ممکن است readiness probe را در ثانیه‌ی ۵ پاس کند. با <code>minReadySeconds: 30</code>،‏ Deployment تا ۳۰ ثانیه آن Pod را available حساب نمی‌کند،‏ پس Pod قدیمی بعدی را حذف نمی‌کند و خرابی در یک Pod محصور می‌ماند.</p></div>
-
   <h4>شمارش Podهای در حال terminate <small>(Terminating Pods)</small></h4>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.35 [beta]</span> (feature gate: <code>DeploymentReplicaSetTerminatingReplicas</code>،‏ پیش‌فرض: فعال)</p>
   <p>Podهای در حال termination را فقط در صورتی می‌توانید ببینید که feature gate (کلید روشن و خاموش کردن قابلیت‌های جدید یا آزمایشی) با نام <code>DeploymentReplicaSetTerminatingReplicas</code> روی API server و روی kube-controller-manager فعال باشد؛‏ این gate از v1.35 به‌طور پیش‌فرض فعال است.</p>
@@ -1711,6 +1724,18 @@ spec:
 
   <h4>paused</h4>
   <p><code>.spec.paused</code> یک فیلد boolean اختیاری برای pause و resume کردن یک Deployment است. تنها تفاوت بین یک Deployment pauseشده و یک Deployment غیر pause این است که هر تغییری در PodTemplateSpec مربوط به Deployment pauseشده،‏ تا وقتی pause است،‏ rollout جدیدی آغاز نمی‌کند. یک Deployment هنگام ساخت به‌طور پیش‌فرض pause نیست.</p>
+  <p class="next">ادامه: Pods (فصل ۳) · Run a stateless application using a Deployment ·‏ Deployment API reference ·‏ PodDisruptionBudget (فصل ۹) · create a Deployment with kubectl</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">جنگ بین HPA و apply · رفتار سه مثال بالا با replicas=3 · minReadySeconds به‌عنوان دوره‌ی آزمایشی · خلاصه‌ی همه‌ی فیلدهای spec مربوط به Deployment</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: جنگ بین HPA و apply</b><p>اگر manifest شما <code>replicas: 3</code> داشته باشد و HPA آن را در ساعت اوج به 20 رسانده باشد،‏ هر <code>kubectl apply</code> (مثلاً از pipeline) ناگهان Deployment را به 3 برمی‌گرداند؛‏ 17 Pod حذف می‌شوند تا HPA در چرخه‌ی بعدی دوباره scale up کند. راه‌حل مستندات: فیلد <code>replicas</code> را از manifest حذف کنید. در Helm/Kustomize (خارج از مستندات رسمی) معمولاً وقتی HPA فعال است فیلد replicas از template حذف می‌شود.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: رفتار سه مثال بالا با replicas=3</b>
+  <div class="tbl"><table><thead><tr><th>مثال</th><th>maxSurge (مؤثر)</th><th>maxUnavailable (مؤثر)</th><th>بازه‌ی Pod</th><th>رفتار</th></tr></thead><tbody>
+  <tr><td>Max Unavailable</td><td>25% ← 1 (پیش‌فرض)</td><td>1</td><td>2 تا 4 available/کل</td><td>هم‌زمان یک Pod قدیمی حذف و یک Pod جدید ساخته می‌شود؛‏ سریع‌تر،‏ با افت موقت ظرفیت</td></tr>
+  <tr><td>Max Surge</td><td>1</td><td>25% ← 0 (پیش‌فرض)</td><td>3 تا 4</td><td>ظرفیت هرگز کم نمی‌شود؛‏ یکی‌یکی جلو می‌رود</td></tr>
+  <tr><td>Hybrid</td><td>1</td><td>1</td><td>2 تا 4</td><td>در هر مرحله تا 2 Pod عوض می‌شود؛‏ سریع‌ترین از این سه</td></tr>
+  </tbody></table></div></div>
+  <div class="deep"><b>توضیح تکمیلی: minReadySeconds به‌عنوان دوره‌ی آزمایشی</b><p>minReadySeconds یک «دوره‌ی آزمایشی» برای Pod جدید است. برنامه‌ای که پس از ۲۰ ثانیه به دلیل memory leak یا اتصال ناموفق به database crash می‌کند،‏ ممکن است readiness probe را در ثانیه‌ی ۵ پاس کند. با <code>minReadySeconds: 30</code>،‏ Deployment تا ۳۰ ثانیه آن Pod را available حساب نمی‌کند،‏ پس Pod قدیمی بعدی را حذف نمی‌کند و خرابی در یک Pod محصور می‌ماند.</p></div>
   <div class="deep"><b>توضیح تکمیلی: خلاصه‌ی همه‌ی فیلدهای spec مربوط به Deployment</b>
   <div class="tbl"><table><thead><tr><th>فیلد</th><th>الزامی؟</th><th>پیش‌فرض</th><th>نکته</th></tr></thead><tbody>
   <tr><td><code>.spec.selector</code></td><td>بله</td><td>—</td><td>immutable؛‏ باید با labelهای template match شود</td></tr>
@@ -1724,7 +1749,7 @@ spec:
   <tr><td><code>.spec.revisionHistoryLimit</code></td><td>خیر</td><td>10</td><td>0 = بدون rollback</td></tr>
   <tr><td><code>.spec.paused</code></td><td>خیر</td><td>false</td><td>—</td></tr>
   </tbody></table></div></div>
-  <p class="next">ادامه: Pods (فصل ۳) · Run a stateless application using a Deployment ·‏ Deployment API reference ·‏ PodDisruptionBudget (فصل ۹) · create a Deployment with kubectl</p>
+  </details>
 
   <h3 id="ch4-a-replicaset">ReplicaSet</h3>
   <p>هدف یک ReplicaSet نگه‌داشتن یک مجموعه‌ی پایدار از Podهای replica است که در هر لحظه در حال اجرا هستند. به همین دلیل،‏ معمولاً برای تضمین availability یک تعداد مشخص از Podهای یکسان استفاده می‌شود.</p>
@@ -1737,8 +1762,6 @@ spec:
   <h4>کاربرد مستقیم ReplicaSet <small>(When to use a ReplicaSet)</small></h4>
   <p>یک ReplicaSet تضمین می‌کند که تعداد مشخصی از pod replicaها در هر لحظه در حال اجرا هستند. با این حال،‏ یک Deployment مفهومی سطح بالاتر است که ReplicaSetها را مدیریت می‌کند و به‌همراه بسیاری از ویژگی‌های مفید دیگر،‏ به‌روزرسانی‌های declarative برای Podها فراهم می‌کند. بنابراین،‏ استفاده از Deploymentها به‌جای استفاده‌ی مستقیم از ReplicaSetها توصیه می‌شود،‏ مگر این‌که به orchestration سفارشی برای به‌روزرسانی نیاز داشته باشید یا اصلاً به به‌روزرسانی نیاز نداشته باشید.</p>
   <p>این عملاً یعنی ممکن است هرگز نیاز نداشته باشید objectهای ReplicaSet را دست‌کاری کنید: به‌جای آن از یک Deployment استفاده کنید و برنامه‌ی خود را در بخش spec آن تعریف کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی: ReplicaSet در عمل</b><p>ReplicaSet امروز عملاً همیشه به‌صورت غیرمستقیم و از طریق Deployment استفاده می‌شود. وقتی <code>kubectl get rs</code> را روی clusterی اجرا می‌کنید که با Deploymentها ساخته شده،‏ نام‌هایی مثل <code>nginx-deployment-66b6c48dd5</code> می‌بینید که Deployment آن‌ها را ساخته است. شناخت مستقیم ReplicaSet برای درک درست rolling update،‏ rollback و troubleshooting Deployment ضروری است،‏ حتی اگر خودتان manifest ReplicaSet ننویسید.</p></div>
-
   <h4>مثال <small>(Example)</small></h4>
   <p>مثال زیر ساختار یک ReplicaSet را نشان می‌دهد:</p>
 <div class="code"><div class="lbl"><span>controllers/frontend.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
@@ -2010,6 +2033,11 @@ spec:
   <p>ReplicaSetها جانشین ReplicationControllerها هستند. این دو هدف یکسانی دارند و به‌شکل مشابهی رفتار می‌کنند،‏ با این تفاوت که یک ReplicationController از الزامات selector مبتنی بر set که در راهنمای کاربری labelها توضیح داده شده پشتیبانی نمی‌کند. به همین دلیل،‏ ReplicaSetها بر ReplicationControllerها ترجیح داده می‌شوند.</p>
   <p class="next">ادامه: Pods (فصل ۳) · Deployments ·‏ Run a Stateless Application Using a Deployment ·‏ PodDisruptionBudget (فصل ۹) · ReplicationController</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">ReplicaSet در عمل</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: ReplicaSet در عمل</b><p>ReplicaSet امروز عملاً همیشه به‌صورت غیرمستقیم و از طریق Deployment استفاده می‌شود. وقتی <code>kubectl get rs</code> را روی clusterی اجرا می‌کنید که با Deploymentها ساخته شده،‏ نام‌هایی مثل <code>nginx-deployment-66b6c48dd5</code> می‌بینید که Deployment آن‌ها را ساخته است. شناخت مستقیم ReplicaSet برای درک درست rolling update،‏ rollback و troubleshooting Deployment ضروری است،‏ حتی اگر خودتان manifest ReplicaSet ننویسید.</p></div>
+  </details>
+
   <h3 id="ch4-a-statefulset">StatefulSet</h3>
   <p>StatefulSet یک workload API object است که برای مدیریت برنامه‌های stateful استفاده می‌شود.</p>
   <p>StatefulSet مسئول deployment و scaling یک مجموعه از Podها است،‏ <b>و تضمین‌هایی درباره‌ی ordering و uniqueness</b> این Podها فراهم می‌کند.</p>
@@ -2139,8 +2167,6 @@ spec:
   <tr><td>kube.local</td><td>foo/nginx</td><td>foo/web</td><td>nginx.foo.svc.kube.local</td><td>web-{0..N-1}.nginx.foo.svc.kube.local</td><td>web-{0..N-1}</td></tr>
   </tbody></table></div>
   <div class="note"><b>نکته</b><p>cluster Domain مگر این‌که به‌شکل دیگری پیکربندی شود،‏ روی <code>cluster.local</code> تنظیم می‌شود.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: کاربرد DNS پایدار</b><p>این DNS پایدار همان چیزی است که مثال MySQL replicated را ممکن می‌کند: replicaها همیشه primary را با نام <code>mysql-0.mysql</code> پیدا می‌کنند،‏ حتی اگر Pod با IP جدیدی روی node دیگری reschedule شده باشد. این تفاوت اصلی با Deployment است: پشت یک Service معمولی در Deployment،‏ هیچ راهی برای خطاب کردن «همان replica قبلی» وجود ندارد؛‏ در StatefulSet این امکان با نام پایدار وجود دارد.</p></div>
-
   <h4>storage پایدار <small>(Stable Storage)</small></h4>
   <p>برای هر ورودی VolumeClaimTemplate تعریف‌شده در یک StatefulSet،‏ هر Pod یک PersistentVolumeClaim دریافت می‌کند. در مثال nginx بالا،‏ هر Pod یک PersistentVolume تکی با StorageClass برابر <code>my-storage-class</code> و 1 GiB فضای provision‌شده دریافت می‌کند. اگر هیچ StorageClassی مشخص نشده باشد،‏ از StorageClass پیش‌فرض استفاده می‌شود. وقتی یک Pod روی یک node (re)schedule می‌شود،‏ <code>volumeMounts</code> آن PersistentVolumeهای مرتبط با PersistentVolume Claimهایش را mount می‌کند. توجه کنید PersistentVolumeهای مرتبط با PersistentVolume Claim مربوط به Podها،‏ هنگام حذف Podها یا StatefulSet حذف نمی‌شوند. این کار باید به‌صورت دستی انجام شود.</p>
 
@@ -2318,6 +2344,11 @@ spec:
   <p>اگر یک StatefulSet را به‌صورت دستی،‏ از طریق <code>kubectl scale statefulset statefulset --replicas=X</code>،‏ scale کنید،‏ و سپس آن StatefulSet را بر اساس یک manifest به‌روزرسانی کنید (برای مثال با اجرای <code>kubectl apply -f statefulset.yaml</code>)،‏ اعمال آن manifest scaling دستی‌ای را که پیش‌تر انجام داده بودید بازنویسی می‌کند.</p>
   <p>اگر یک HorizontalPodAutoscaler (یا هر API مشابه برای horizontal scaling) scaling یک StatefulSet را مدیریت می‌کند،‏ <code>.spec.replicas</code> را تنظیم نکنید. به‌جای آن اجازه دهید control plane فیلد <code>.spec.replicas</code> را به‌طور خودکار مدیریت کند.</p>
 
+  <p class="next">ادامه: Pods (فصل ۳) · deploying a stateful application ·‏ deploying Cassandra with Stateful Sets ·‏ scale a StatefulSet ·‏ delete a StatefulSet ·‏ PodDisruptionBudget (فصل ۹)</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">کاربرد DNS پایدار · StatefulSet در مقایسه با Deployment</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: کاربرد DNS پایدار</b><p>این DNS پایدار همان چیزی است که مثال MySQL replicated را ممکن می‌کند: replicaها همیشه primary را با نام <code>mysql-0.mysql</code> پیدا می‌کنند،‏ حتی اگر Pod با IP جدیدی روی node دیگری reschedule شده باشد. این تفاوت اصلی با Deployment است: پشت یک Service معمولی در Deployment،‏ هیچ راهی برای خطاب کردن «همان replica قبلی» وجود ندارد؛‏ در StatefulSet این امکان با نام پایدار وجود دارد.</p></div>
   <div class="deep"><b>توضیح تکمیلی: StatefulSet در مقایسه با Deployment</b>
   <div class="tbl"><table><thead><tr><th>ویژگی</th><th>Deployment / ReplicaSet</th><th>StatefulSet</th></tr></thead><tbody>
   <tr><td>نام Pod</td><td>تصادفی (<code>pod-template-hash</code> + random suffix)</td><td>پایدار: <code>&lt;name&gt;-0</code>, <code>&lt;name&gt;-1</code>, ...</td></tr>
@@ -2327,7 +2358,7 @@ spec:
   <tr><td>rolling update</td><td>maxSurge/maxUnavailable،‏ جایگزینی موازی</td><td>از بزرگ‌ترین ordinal به کوچک‌ترین،‏ بدون surge؛‏ کنترل با partition و maxUnavailable</td></tr>
   <tr><td>مورد استفاده</td><td>web server،‏ API stateless</td><td>database،‏ message queue،‏ هر چیزی با identity/storage per-instance</td></tr>
   </tbody></table></div></div>
-  <p class="next">ادامه: Pods (فصل ۳) · deploying a stateful application ·‏ deploying Cassandra with Stateful Sets ·‏ scale a StatefulSet ·‏ delete a StatefulSet ·‏ PodDisruptionBudget (فصل ۹)</p>
+  </details>
 
   <h3 id="ch4-a-statefulset-mysql">مثال کاربردی: MySQL تکرارشده با StatefulSet <small>(Run a Replicated Stateful Application)</small></h3>
   <p>این بخش مفاهیم کلیدی task رسمی «Run a Replicated Stateful Application» را با یک مثال کامل نشان می‌دهد: یک MySQL database replicated با یک primary و چند replica،‏ با replication ناهمگام و row-based. این پیکربندی برای production نیست (تنظیمات MySQL روی مقادیر پیش‌فرض insecure باقی می‌مانند)؛‏ هدف نشان دادن الگوهای کلی اجرای برنامه‌های stateful روی کوبرنتیز است.</p>
@@ -2576,8 +2607,6 @@ mysql-2   2/2       Running   0          1m
   <p><b>ساخت پیکربندی</b> — پیش از راه‌اندازی هر container در spec مربوط به Pod،‏ ابتدا init containerها به ترتیب تعریف‌شده اجرا می‌شوند. اولین init container،‏ به نام <code>init-mysql</code>،‏ فایل‌های پیکربندی خاص MySQL را بر اساس ordinal index می‌سازد. script ordinal index خود را با استخراج آن از انتهای نام Pod تعیین می‌کند (که با دستور <code>hostname</code> برگردانده می‌شود)،‏ سپس آن ordinal را (با یک offset عددی برای اجتناب از مقادیر رزرو شده) در یک فایل به نام <code>server-id.cnf</code> در دایرکتوری <code>conf.d</code> مربوط به MySQL ذخیره می‌کند. این کار identity یکتا و پایداری را که StatefulSet فراهم می‌کند به دامنه‌ی server IDهای MySQL — که به همان ویژگی‌ها نیاز دارند — ترجمه می‌کند. script init-mysql همچنین یا <code>primary.cnf</code> یا <code>replica.cnf</code> را از ConfigMap با کپی کردن محتوا در <code>conf.d</code> اعمال می‌کند. چون topology مثال از یک primary MySQL server تکی و هر تعداد replica تشکیل شده است،‏ script ordinal 0 را primary server در نظر می‌گیرد و بقیه را replica. در ترکیب با تضمین ترتیب deployment مربوط به StatefulSet controller،‏ این کار تضمین می‌کند primary MySQL server پیش از ساخت replicaها Ready باشد،‏ تا آن‌ها بتوانند replication را آغاز کنند.</p>
   <p><b>clone کردن داده‌ی موجود</b> — به‌طور کلی،‏ وقتی یک Pod جدید به‌عنوان replica به set می‌پیوندد،‏ باید فرض کند primary MySQL server ممکن است از قبل روی خود داده داشته باشد. همچنین باید فرض کند replication logها ممکن است تا ابتدای زمان برنگردند. این فرض‌های محافظه‌کارانه کلید این هستند که یک StatefulSet در حال اجرا بتواند در طول زمان scale up و down شود،‏ به‌جای این‌که به اندازه‌ی اولیه‌ی خود ثابت بماند. دومین init container،‏ به نام <code>clone-mysql</code>،‏ یک عملیات clone را روی یک Pod replica اجرا می‌کند،‏ اولین باری که روی یک PersistentVolume خالی راه‌اندازی می‌شود. این یعنی همه‌ی داده‌های موجود را از یک Pod دیگر در حال اجرا کپی می‌کند،‏ به‌طوری که state محلی آن به‌اندازه‌ی کافی consistent باشد تا بتواند شروع به replicate کردن از primary server کند. خود MySQL هیچ مکانیزمی برای این کار فراهم نمی‌کند،‏ پس این مثال از یک ابزار متن‌باز محبوب به نام Percona XtraBackup استفاده می‌کند. در طول clone،‏ server MySQL منبع ممکن است افت performance را تجربه کند. برای کاهش اثر روی primary MySQL server،‏ script به هر Pod دستور می‌دهد از Podی که ordinal index آن یک واحد کمتر است clone کند. این کار به این دلیل کار می‌کند که StatefulSet controller همیشه تضمین می‌کند Pod شماره‌ی N پیش از راه‌اندازی Pod شماره‌ی N+1،‏ Ready باشد.</p>
   <p><b>شروع replication</b> — پس از تکمیل موفق init containerها،‏ containerهای معمولی اجرا می‌شوند. Podهای MySQL شامل یک container با نام <code>mysql</code> هستند که server واقعی <code>mysqld</code> را اجرا می‌کند،‏ و یک container <code>xtrabackup</code> که نقش یک sidecar را ایفا می‌کند. sidecar xtrabackup فایل‌های داده‌ی cloneشده را بررسی می‌کند و تعیین می‌کند آیا لازم است replication MySQL را روی replica مقداردهی اولیه کند. اگر لازم باشد،‏ منتظر می‌ماند تا <code>mysqld</code> آماده شود و سپس دستورهای <code>CHANGE MASTER TO</code> و <code>START SLAVE</code> را با پارامترهای replication استخراج‌شده از فایل‌های clone XtraBackup اجرا می‌کند. به محض شروع replication توسط یک replica،‏ آن primary MySQL server خود را به یاد می‌سپارد و در صورت restart server یا قطع اتصال،‏ به‌طور خودکار دوباره وصل می‌شود. همچنین،‏ چون replicaها primary server را با نام DNS پایدار آن (<code>mysql-0.mysql</code>) پیدا می‌کنند،‏ حتی اگر به دلیل reschedule شدن یک Pod IP جدید بگیرد،‏ آن را به‌طور خودکار پیدا می‌کنند. در نهایت،‏ پس از شروع replication،‏ container xtrabackup به اتصالات از سایر Podهایی که درخواست clone داده می‌دهند گوش می‌دهد؛‏ این server تا زمانی نامحدود بالا می‌ماند،‏ برای صورتی که StatefulSet scale up شود یا Pod بعدی PersistentVolumeClaim خود را از دست بدهد و نیاز به تکرار clone داشته باشد.</p>
-  <div class="deep"><b>توضیح تکمیلی: الگوی init container و sidecar</b><p>این سه مرحله (ساخت پیکربندی،‏ clone کردن داده و شروع replication) نمونه‌ی کلاسیک الگوی «init container + sidecar» برای برنامه‌های stateful است: init containerها یک‌بار،‏ پیش از شروع container اصلی،‏ کارهای مقداردهی اولیه‌ی وابسته به ordinal را انجام می‌دهند (init container در فصل ۳ توضیح داده شد)،‏ و sidecar (xtrabackup) در کنار container اصلی در طول عمر Pod اجرا می‌ماند و کارهای جانبی (سرویس‌دهی clone به Podهای بعدی) را انجام می‌دهد. این الگو را می‌توانید برای هر database یا message queue دیگری که به replication یا clustering نیاز دارد (PostgreSQL،‏ Kafka،‏ etcd،‏ ...) تعمیم دهید.</p></div>
-
   <h4>مفهوم کلیدی: ترافیک client،‏ شبیه‌سازی خرابی و scaling <small>(Sending client traffic)</small></h4>
   <p>برای write باید مستقیماً به primary با hostname پایدار <code>mysql-0.mysql</code> وصل شوید؛‏ برای read از <code>mysql-read</code> استفاده می‌شود که بین همه‌ی Podهای Ready توزیع می‌کند:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run mysql-client --image=mysql:5.7 -i --rm --restart=Never --\
@@ -2607,8 +2636,13 @@ kubectl scale statefulset mysql --replicas=3
   <p>۱) سه manifest بالا (ConfigMap،‏ Services،‏ StatefulSet) را روی cluster k3s اعمال کنید (سه replica از MySQL حدود ۱٫۵ گیگابایت memory لازم دارند؛‏ هر سه روی همان یک Node اجرا می‌شوند و StorageClass پیش‌فرض local-path برای هر کدام PVC می‌سازد) و با <code>kubectl get pods -l app=mysql -w</code> ترتیب راه‌اندازی <code>mysql-0</code> ← <code>mysql-1</code> ← <code>mysql-2</code> را مشاهده کنید. ۲) داده‌ای در <code>mysql-0.mysql</code> بنویسید و از <code>mysql-read</code> بخوانید. ۳) با شکستن readiness probe یک replica،‏ مشاهده کنید که writeها هم‌چنان کار می‌کنند اما آن replica از چرخه‌ی read حذف می‌شود. ۴) StatefulSet را به ۵ scale کنید و تأیید کنید replicaهای جدید داده‌ی قبلی را دارند (نتیجه‌ی clone init container). ۵) دوباره به ۳ scale down کنید و با <code>kubectl get pvc -l app=mysql</code> ببینید PVCهای اضافه هنوز باقی مانده‌اند.</p></div>
   <p class="next">ادامه: scale a StatefulSet ·‏ debug a StatefulSet ·‏ delete a StatefulSet ·‏ force delete StatefulSet Pods</p>
 
-  <div id="ch4-ex1" class="ex">
-  <div class="ex-h">تمرین‌های فصل ۴،‏ بخش اول <small>۱۶ تمرین</small></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">الگوی init container و sidecar</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: الگوی init container و sidecar</b><p>این سه مرحله (ساخت پیکربندی،‏ clone کردن داده و شروع replication) نمونه‌ی کلاسیک الگوی «init container + sidecar» برای برنامه‌های stateful است: init containerها یک‌بار،‏ پیش از شروع container اصلی،‏ کارهای مقداردهی اولیه‌ی وابسته به ordinal را انجام می‌دهند (init container در فصل ۳ توضیح داده شد)،‏ و sidecar (xtrabackup) در کنار container اصلی در طول عمر Pod اجرا می‌ماند و کارهای جانبی (سرویس‌دهی clone به Podهای بعدی) را انجام می‌دهد. این الگو را می‌توانید برای هر database یا message queue دیگری که به replication یا clustering نیاز دارد (PostgreSQL،‏ Kafka،‏ etcd،‏ ...) تعمیم دهید.</p></div>
+  </details>
+
+  <details id="ch4-ex1" class="ex">
+  <summary class="ex-h">تمرین‌های فصل ۴،‏ بخش اول <small>۱۶ تمرین</small></summary>
   <ol>
     <li><span class="lvl l1">مفهومی</span>چرا مستندات رسمی کوبرنتیز توصیه می‌کند به‌جای دست‌کاری مستقیم ReplicaSet،‏ از Deployment استفاده شود؟ چه چیزی را Deployment روی ReplicaSet اضافه می‌کند؟
       <details class="ans"><summary>پاسخ</summary><p>یک ReplicaSet فقط تضمین می‌کند تعداد مشخصی Pod replica در حال اجرا باشد؛‏ هیچ مکانیزم داخلی‌ای برای rolling update،‏ rollback،‏ یا pause/resume ندارد. Deployment یک لایه‌ی بالاتر است که ReplicaSetها را می‌سازد و مدیریت می‌کند و declarative update فراهم می‌کند: وقتی pod template تغییر می‌کند،‏ یک ReplicaSet جدید می‌سازد و به‌تدریج قدیمی را scale down و جدید را scale up می‌کند (رفتاری که ReplicaSet به‌تنهایی ندارد). به همین دلیل تنها زمانی مستقیماً از ReplicaSet استفاده می‌شود که به orchestration سفارشی نیاز باشد یا اصلاً نیازی به به‌روزرسانی نباشد.</p></details></li>
@@ -2719,7 +2753,7 @@ kubectl get events -A --field-selector reason=Evicted
           <p>در حالت دوم هم هر Service با selector <code>app: web</code> ترافیک را بین هر دو گروه پخش می‌کند. درس عملی: selector و labelهای هر workload را یکتا نگه دارید (مثلاً با <code>app.kubernetes.io/instance</code>).</p>
         </details></li>
   </ol>
-  </div>
+  </details>
 <!-- chapter 7 part b -->
 <h3 id="ch4-b-daemonset">DaemonSet</h3>
 <p>یک <b>DaemonSet</b> تضمین می‌کند که همه‌ی Nodeها (یا بعضی از آن‌ها) یک کپی از یک Pod را اجرا کنند. وقتی Nodeهای جدید به cluster اضافه می‌شوند،‏ Podها هم روی آن‌ها اضافه می‌شوند. وقتی Nodeها از cluster حذف می‌شوند،‏ آن Podها با garbage collection (پاک‌سازی خودکار اشیای بی‌مالک یا بی‌استفاده) پاک می‌شوند. حذف کردن یک DaemonSet،‏ Podهایی را که ساخته است پاک می‌کند.</p>
@@ -2730,10 +2764,13 @@ kubectl get events -A --field-selector reason=Evicted
   <li>اجرای یک daemon برای monitoring هر Node (node monitoring).</li>
 </ul>
 <p>در یک حالت ساده،‏ برای هر نوع daemon یک DaemonSet استفاده می‌شود که همه‌ی Nodeها را پوشش می‌دهد. در یک چیدمان پیچیده‌تر ممکن است برای یک نوع daemon چند DaemonSet داشته باشید که flagهای متفاوت و/یا memory و cpu requestهای متفاوتی برای انواع سخت‌افزار دارند.</p>
-<div class="deep"><b>توضیح تکمیلی: تعداد Pod در DaemonSet</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">تعداد Pod در DaemonSet</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: تعداد Pod در DaemonSet</b>
 <p>تفاوت اصلی DaemonSet با Deployment در این است که در DaemonSet شما تعداد replicaها را تعیین نمی‌کنید؛‏ تعداد Podها <b>تابع تعداد Nodeهای واجد شرایط</b> است. اگر cluster شما ۵ Node داشته باشد،‏ ۵ Pod خواهید داشت؛‏ اگر cluster autoscaler یک Node ششم اضافه کند،‏ DaemonSet controller بدون دخالت شما Pod ششم را می‌سازد. یعنی desired state در DaemonSet به شکل «یک Pod روی هر Node مناسب» تعریف می‌شود،‏ نه «N عدد Pod».</p>
 <p>مثال «چند DaemonSet برای یک نوع daemon»: فرض کنید در cluster هم Nodeهای معمولی دارید و هم Nodeهای GPU با ۵۱۲ گیگابایت RAM.‏ agent مانیتورینگ روی Nodeهای GPU باید exporter مخصوص GPU را هم فعال کند و memory بیشتری لازم دارد. پس دو DaemonSet می‌سازید: <code>node-agent-standard</code> با <code>nodeSelector</code> برای Nodeهای معمولی و <code>node-agent-gpu</code> با <code>nodeSelector</code> برای Nodeهای GPU،‏ هرکدام با flagها و requestهای خودش.</p>
 </div>
+  </details>
 
 <h3 id="ch4-b-ds-spec">نوشتن spec برای DaemonSet <small>(Writing a DaemonSet Spec)</small></h3>
 <h4>ساختن DaemonSet <small>(Create a DaemonSet)</small></h4>
@@ -2787,16 +2824,6 @@ spec:
 <p>یک DaemonSet بر اساس این فایل YAML بسازید:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/controllers/daemonset.yaml
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: خط به خط این manifest</b>
-<ul>
-  <li><code>namespace: kube-system</code>: agentهای سطح Node معمولاً در namespace سیستمی قرار می‌گیرند تا از workloadهای کاربران جدا باشند.</li>
-  <li><code>selector.matchLabels</code> و <code>template.metadata.labels</code> هر دو <code>name: fluentd-elasticsearch</code> هستند؛‏ این تطابق اجباری است (پایین‌تر توضیح داده شده).</li>
-  <li>دو <code>toleration</code> برای دو taint (علامتی روی Node که Podهای بدون toleration مناسب را دور نگه می‌دارد) با کلیدهای <code>node-role.kubernetes.io/control-plane</code> و <code>node-role.kubernetes.io/master</code> (نام قدیمی) با <code>effect: NoSchedule</code>؛‏ بدون این‌ها Pod روی Nodeهای control plane که این taint را دارند قرار نمی‌گیرد و logهای آن Nodeها جمع نمی‌شود.</li>
-  <li><code>resources</code>: هر Node یک کپی اجرا می‌کند،‏ پس 100m CPU و 200Mi memory در تعداد Nodeها ضرب می‌شود. روی ۲۰۰ Node یعنی ۲۰ هسته CPU و حدود ۴۰ گیگابایت memory فقط برای logging رزرو شده است. به همین دلیل سایزبندی DaemonSet بسیار مهم است.</li>
-  <li><code>hostPath: /var/log</code>: Pod به دایرکتوری log خود Node دسترسی پیدا می‌کند؛‏ این همان چیزی است که agent را «node-level» می‌کند.</li>
-  <li><code>priorityClassName</code> (کامنت شده): اگر Node پر باشد،‏ Pod با priority بالاتر می‌تواند باعث preemption (بیرون کردن Podهای کم‌اولویت برای باز کردن جا برای Pod پراولویت) سایر Podها شود (بخش بعد).</li>
-</ul>
-</div>
 <div class="lab"><b>آزمایش عملی: DaemonSet و taint روی k3s</b>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f https://k8s.io/examples/controllers/daemonset.yaml
 kubectl -n kube-system get ds fluentd-elasticsearch
@@ -2831,12 +2858,6 @@ fluentd-elasticsearch-r4t9n   1/1     Running   0          3s
 <p><code>.spec.template</code> یک pod template است. schema آن دقیقاً مانند یک Pod است،‏ با این تفاوت که nested (تو در تو) است و <code>apiVersion</code> یا <code>kind</code> ندارد.</p>
 <p>علاوه بر فیلدهای الزامی یک Pod،‏ pod template در یک DaemonSet باید labelهای مناسب را مشخص کند (بخش Pod Selector را ببینید).</p>
 <p>Pod Template در یک DaemonSet باید <code>RestartPolicy</code> برابر با <code>Always</code> داشته باشد،‏ یا اصلاً مشخص نشده باشد که در این صورت به‌طور پیش‌فرض <code>Always</code> می‌شود.</p>
-<div class="deep"><b>توضیح تکمیلی: چرا فقط Always؟</b>
-<p>daemon ذاتاً برنامه‌ای است که قرار نیست تمام شود. اگر <code>restartPolicy: OnFailure</code> مجاز بود و container با exit code صفر خارج می‌شد،‏ Pod به فاز <code>Succeeded</code> می‌رفت و Node بدون agent می‌ماند. با <code>Always</code>،‏ kubelet هر خروجی (موفق یا ناموفق) را با restart container پاسخ می‌دهد. اگر manifestی با <code>restartPolicy: Never</code> بفرستید،‏ API server آن را با خطای validation رد می‌کند؛‏ نمونه‌ی پیام (خارج از مستندات رسمی،‏ متن دقیق ممکن است در نسخه‌ها فرق کند):</p>
-<div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">The DaemonSet "bad-ds" is invalid: spec.template.spec.restartPolicy: Unsupported value: "Never": supported values: "Always"
-</pre></div>
-</div>
-
 <h4>Pod selector</h4>
 <p>فیلد <code>.spec.selector</code> یک pod selector است. این فیلد مانند <code>.spec.selector</code> یک Job کار می‌کند.</p>
 <p>شما باید یک pod selector مشخص کنید که با labelهای <code>.spec.template</code> مطابقت داشته باشد. همچنین وقتی یک DaemonSet ساخته شد،‏ <code>.spec.selector</code> آن <b>قابل تغییر (mutate) نیست</b>. تغییر pod selector می‌تواند منجر به orphan شدن ناخواسته‌ی Podها شود،‏ و این کار برای کاربران گیج‌کننده بود.</p>
@@ -2847,19 +2868,6 @@ fluentd-elasticsearch-r4t9n   1/1     Running   0          3s
 </ul>
 <p>وقتی هر دو مشخص شوند،‏ نتیجه با هم AND می‌شود.</p>
 <p><code>.spec.selector</code> باید با <code>.spec.template.metadata.labels</code> مطابقت داشته باشد. configی که این دو در آن با هم مطابقت نداشته باشند توسط API رد می‌شود.</p>
-<div class="deep"><b>توضیح تکمیلی: مثال matchLabels + matchExpressions</b>
-<div class="code"><div class="lbl"><span>selector نمونه</span><button type="button">کپی</button></div><pre class="yaml">selector:
-  matchLabels:
-    app: node-exporter
-  matchExpressions:
-  - key: tier
-    operator: In
-    values: ["monitoring", "observability"]
-# Pod needs app=node-exporter AND tier in one of the values above
-</pre></div>
-<p>چرا selector تغییرناپذیر است؟ فرض کنید selector از <code>app=agent</code> به <code>app=agent-v2</code> عوض شود. Podهای فعلی (با label <code>app=agent</code>) دیگر match نمی‌شوند؛‏ controller آن‌ها را «مال خودش» نمی‌داند (orphan می‌شوند و همچنان روی Nodeها اجرا می‌مانند) و در همان حال Podهای جدید می‌سازد؛‏ نتیجه دو agent روی هر Node است. برای جلوگیری از این وضعیت گیج‌کننده،‏ کوبرنتیز تغییر selector را ممنوع کرده است؛‏ اگر واقعاً لازم است،‏ DaemonSet را حذف و با selector جدید دوباره بسازید.</p>
-</div>
-
 <h4>اجرای Pod فقط روی برخی Nodeها <small>(Running Pods on select Nodes)</small></h4>
 <p>اگر یک <code>.spec.template.spec.nodeSelector</code> مشخص کنید،‏ DaemonSet controller روی Nodeهایی Pod می‌سازد که با آن node selector مطابقت دارند. به همین شکل،‏ اگر یک <code>.spec.template.spec.affinity</code> مشخص کنید،‏ DaemonSet controller روی Nodeهایی Pod می‌سازد که با آن node affinity (قاعده‌ای برای جذب Pod به Nodeهایی با label مشخص) مطابقت دارند. اگر هیچ‌کدام را مشخص نکنید،‏ DaemonSet controller روی همه‌ی Nodeها Pod می‌سازد.</p>
 <div class="lab"><b>آزمایش عملی: DaemonSet فقط روی Nodeهای دارای SSD</b>
@@ -2894,6 +2902,37 @@ kubectl get pods -l app=ssd-agent   # Pod is Terminating
 <p>این آزمایش همان رفتاری است که در بخش Updating a DaemonSet آمده: تغییر label یک Node فوراً باعث اضافه یا حذف شدن Pod روی آن Node می‌شود.</p>
 </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">خط به خط این manifest · چرا فقط Always؟ · مثال matchLabels + matchExpressions</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: خط به خط این manifest</b>
+<ul>
+  <li><code>namespace: kube-system</code>: agentهای سطح Node معمولاً در namespace سیستمی قرار می‌گیرند تا از workloadهای کاربران جدا باشند.</li>
+  <li><code>selector.matchLabels</code> و <code>template.metadata.labels</code> هر دو <code>name: fluentd-elasticsearch</code> هستند؛‏ این تطابق اجباری است (پایین‌تر توضیح داده شده).</li>
+  <li>دو <code>toleration</code> برای دو taint (علامتی روی Node که Podهای بدون toleration مناسب را دور نگه می‌دارد) با کلیدهای <code>node-role.kubernetes.io/control-plane</code> و <code>node-role.kubernetes.io/master</code> (نام قدیمی) با <code>effect: NoSchedule</code>؛‏ بدون این‌ها Pod روی Nodeهای control plane که این taint را دارند قرار نمی‌گیرد و logهای آن Nodeها جمع نمی‌شود.</li>
+  <li><code>resources</code>: هر Node یک کپی اجرا می‌کند،‏ پس 100m CPU و 200Mi memory در تعداد Nodeها ضرب می‌شود. روی ۲۰۰ Node یعنی ۲۰ هسته CPU و حدود ۴۰ گیگابایت memory فقط برای logging رزرو شده است. به همین دلیل سایزبندی DaemonSet بسیار مهم است.</li>
+  <li><code>hostPath: /var/log</code>: Pod به دایرکتوری log خود Node دسترسی پیدا می‌کند؛‏ این همان چیزی است که agent را «node-level» می‌کند.</li>
+  <li><code>priorityClassName</code> (کامنت شده): اگر Node پر باشد،‏ Pod با priority بالاتر می‌تواند باعث preemption (بیرون کردن Podهای کم‌اولویت برای باز کردن جا برای Pod پراولویت) سایر Podها شود (بخش بعد).</li>
+</ul>
+</div>
+  <div class="deep"><b>توضیح تکمیلی: چرا فقط Always؟</b>
+<p>daemon ذاتاً برنامه‌ای است که قرار نیست تمام شود. اگر <code>restartPolicy: OnFailure</code> مجاز بود و container با exit code صفر خارج می‌شد،‏ Pod به فاز <code>Succeeded</code> می‌رفت و Node بدون agent می‌ماند. با <code>Always</code>،‏ kubelet هر خروجی (موفق یا ناموفق) را با restart container پاسخ می‌دهد. اگر manifestی با <code>restartPolicy: Never</code> بفرستید،‏ API server آن را با خطای validation رد می‌کند؛‏ نمونه‌ی پیام (خارج از مستندات رسمی،‏ متن دقیق ممکن است در نسخه‌ها فرق کند):</p>
+<div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">The DaemonSet "bad-ds" is invalid: spec.template.spec.restartPolicy: Unsupported value: "Never": supported values: "Always"
+</pre></div>
+</div>
+  <div class="deep"><b>توضیح تکمیلی: مثال matchLabels + matchExpressions</b>
+<div class="code"><div class="lbl"><span>selector نمونه</span><button type="button">کپی</button></div><pre class="yaml">selector:
+  matchLabels:
+    app: node-exporter
+  matchExpressions:
+  - key: tier
+    operator: In
+    values: ["monitoring", "observability"]
+# Pod needs app=node-exporter AND tier in one of the values above
+</pre></div>
+<p>چرا selector تغییرناپذیر است؟ فرض کنید selector از <code>app=agent</code> به <code>app=agent-v2</code> عوض شود. Podهای فعلی (با label <code>app=agent</code>) دیگر match نمی‌شوند؛‏ controller آن‌ها را «مال خودش» نمی‌داند (orphan می‌شوند و همچنان روی Nodeها اجرا می‌مانند) و در همان حال Podهای جدید می‌سازد؛‏ نتیجه دو agent روی هر Node است. برای جلوگیری از این وضعیت گیج‌کننده،‏ کوبرنتیز تغییر selector را ممنوع کرده است؛‏ اگر واقعاً لازم است،‏ DaemonSet را حذف و با selector جدید دوباره بسازید.</p>
+</div>
+  </details>
+
 <h3 id="ch4-b-ds-scheduling">schedule شدن Podهای DaemonSet <small>(How Daemon Pods are scheduled)</small></h3>
 <p>یک DaemonSet را می‌توان برای اطمینان از این‌که همه‌ی Nodeهای واجد شرایط (eligible) یک کپی از یک Pod را اجرا کنند استفاده کرد. DaemonSet controller برای هر Node واجد شرایط یک Pod می‌سازد و فیلد <code>spec.affinity.nodeAffinity</code> آن Pod را طوری اضافه می‌کند که با host هدف مطابقت کند. پس از ساخته شدن Pod،‏ معمولاً default scheduler کار را به دست می‌گیرد و Pod را با تنظیم فیلد <code>.spec.nodeName</code> به host هدف bind می‌کند. اگر Pod جدید روی Node جا نشود،‏ default scheduler ممکن است بر اساس priority آن Pod جدید،‏ بعضی از Podهای موجود را preempt (evict) کند.</p>
 <div class="note"><b>نکته</b><p>اگر مهم است که Pod مربوط به DaemonSet روی هر Node اجرا شود،‏ اغلب مطلوب است که <code>.spec.template.spec.priorityClassName</code> مربوط به DaemonSet را روی یک PriorityClass (شیئی که اولویت Podها را تعیین می‌کند) با priority بالاتر تنظیم کنید تا مطمئن شوید این eviction رخ می‌دهد.</p></div>
@@ -2908,17 +2947,6 @@ kubectl get pods -l app=ssd-agent   # Pod is Terminating
         values:
         - target-host-name
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: دو مرحله‌ی تصمیم‌گیری</b>
-<ol>
-  <li><b>DaemonSet controller</b> تصمیم می‌گیرد «کدام Nodeها واجد شرایط‌اند» (با در نظر گرفتن nodeSelector،‏ nodeAffinity اصلی و taintها/tolerationها) و برای هر کدام یک Pod می‌سازد که با <code>matchFields</code> روی <code>metadata.name</code> به همان Node قفل شده است.</li>
-  <li><b>kube-scheduler</b> (یا schedulerی که در <code>schedulerName</code> آمده) همان Pod را مانند هر Pod دیگر پردازش می‌کند: resourceها را چک می‌کند و در صورت کمبود،‏ preemption انجام می‌دهد. چون affinity فقط یک Node را مجاز می‌کند،‏ scheduler انتخاب دیگری ندارد؛‏ یا روی همان Node جا می‌شود یا Pending می‌ماند.</li>
-</ol>
-<p>می‌توانید این affinity را خودتان ببینید:</p>
-<div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl -n kube-system get pod fluentd-elasticsearch-q7m4d -o jsonpath='{.spec.affinity.nodeAffinity}' | python3 -m json.tool
-</pre></div>
-<p>نکته‌ی production: اگر یک Node از نظر memory پر باشد و Pod مربوط به DaemonSet priority پیش‌فرض (صفر) داشته باشد،‏ Pod در حالت <code>Pending</code> با event <code>FailedScheduling ... Insufficient memory</code> می‌ماند و Node بدون agent (مثلاً بدون CNI یا log shipper) کار می‌کند. به همین دلیل اجزای حیاتی مثل CNI و kube-proxy معمولاً از PriorityClass سیستمی <code>system-node-critical</code> استفاده می‌کنند (فصل ۹).</p>
-</div>
-
   <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 370" width="100%" style="max-width:760px;height:auto" role="img" aria-label="دو گام قرار گرفتن Pod یک DaemonSet روی Node"><defs><marker id="f7ds-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f7ds-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f7ds-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f7ds-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f7ds-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><text x="380" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">قرار گرفتن Pod یک DaemonSet در دو گام</text><rect x="20" y="44" width="210" height="96" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="125" y="68" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">DaemonSet controller</text><text x="125" y="92" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">گام ۱: انتخاب Nodeهای مناسب</text><text x="125" y="110" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">با nodeSelector و affinity</text><text x="125" y="128" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">و taint و toleration</text><rect x="275" y="44" width="220" height="96" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.4"></rect><text x="385" y="68" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">ساخت Pod برای هر Node</text><text x="385" y="94" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">nodeAffinity:</text><text x="385" y="112" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">matchFields</text><text x="385" y="130" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">metadata.name In [node-a]</text><rect x="540" y="44" width="200" height="96" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="640" y="68" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">kube-scheduler</text><text x="640" y="92" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">گام ۲: بررسی منابع و bind</text><text x="640" y="110" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">در کمبود منابع: preemption</text><text x="640" y="128" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">وگرنه Pod در Pending</text><line x1="230" y1="92" x2="273" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7ds-a4a5672)"></line><line x1="495" y1="92" x2="538" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7ds-a4a5672)"></line><text x="380" y="178" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#4a5672" text-anchor="middle" direction="rtl">نتیجه‌ی گام ۱ برای سه Node نمونه</text><rect x="20" y="194" width="200" height="86" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="120.0" y="218" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">node-c</text><text x="120.0" y="243" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">با nodeSelector مطابقت ندارد؛</text><text x="120.0" y="262" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">Podی ساخته نمی‌شود</text><rect x="275" y="194" width="220" height="86" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="385.0" y="218" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">node-b (control plane)</text><text x="385.0" y="243" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">دارای taint و بدون toleration؛</text><text x="385.0" y="262" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">Podی ساخته نمی‌شود</text><rect x="540" y="194" width="200" height="86" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="640.0" y="218" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">node-a</text><text x="640.0" y="243" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">مناسب است؛</text><text x="640.0" y="262" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">یک Pod روی آن اجرا می‌شود</text><line x1="640" y1="140" x2="640" y2="192" stroke="#12806f" stroke-width="1.6" marker-end="url(#f7ds-a12806f)"></line><rect x="20" y="300" width="720" height="54" rx="8" fill="#eef2f9" stroke="#c9d3e6" stroke-width="1.4"></rect><text x="380" y="322" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">به‌لطف tolerationهای خودکار، Pod روی Nodeهای NotReady یا cordonشده هم می‌ماند؛</text><text x="380" y="342" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">ولی taintهای سفارشی و taint مربوط به control plane را خودتان باید tolerate کنید.</text></svg></div><figcaption><b>شکل ۴-۸.</b> <span style="flex:1 1 0;min-width:0">تصمیم «کدام Nodeها» با DaemonSet controller است و تصمیم «آیا جا هست» با scheduler. چون nodeAffinity هر Pod فقط یک Node را مجاز می‌کند،‏ scheduler گزینه‌ی دیگری ندارد: Pod یا روی همان Node قرار می‌گیرد یا Pending می‌ماند. برای agentهای حیاتی از PriorityClass بالا استفاده کنید تا preemption ممکن باشد.</span></figcaption></figure>
   <h4>taint و toleration</h4>
 <p>DaemonSet controller به‌طور خودکار مجموعه‌ای از tolerationها را به Podهای DaemonSet اضافه می‌کند:</p>
@@ -2934,7 +2962,19 @@ kubectl get pods -l app=ssd-agent   # Pod is Terminating
 <p>شما هم می‌توانید tolerationهای خودتان را با تعریف آن‌ها در Pod template مربوط به DaemonSet به Podهای آن اضافه کنید.</p>
 <p>از آن‌جا که DaemonSet controller toleration <code>node.kubernetes.io/unschedulable:NoSchedule</code> را به‌طور خودکار تنظیم می‌کند،‏ کوبرنتیز می‌تواند Podهای DaemonSet را روی Nodeهایی اجرا کند که به‌عنوان <i>unschedulable</i> علامت خورده‌اند.</p>
 <p>اگر از یک DaemonSet برای فراهم کردن یک کارکرد مهم در سطح Node،‏ مثل cluster networking،‏ استفاده می‌کنید،‏ مفید است که کوبرنتیز Podهای DaemonSet را قبل از ready شدن Nodeها روی آن‌ها قرار دهد. برای مثال،‏ بدون آن toleration ویژه،‏ ممکن است در یک وضعیت deadlock گیر کنید: Node به‌عنوان ready علامت نمی‌خورد چون network plugin (جزئی که شبکه‌ی Podها را پیاده‌سازی می‌کند) روی آن اجرا نمی‌شود،‏ و در همان حال network plugin روی آن Node اجرا نمی‌شود چون Node هنوز ready نیست.</p>
-<div class="deep"><b>توضیح تکمیلی: آنچه این جدول در عمل یعنی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">دو مرحله‌ی تصمیم‌گیری · آنچه این جدول در عمل یعنی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: دو مرحله‌ی تصمیم‌گیری</b>
+<ol>
+  <li><b>DaemonSet controller</b> تصمیم می‌گیرد «کدام Nodeها واجد شرایط‌اند» (با در نظر گرفتن nodeSelector،‏ nodeAffinity اصلی و taintها/tolerationها) و برای هر کدام یک Pod می‌سازد که با <code>matchFields</code> روی <code>metadata.name</code> به همان Node قفل شده است.</li>
+  <li><b>kube-scheduler</b> (یا schedulerی که در <code>schedulerName</code> آمده) همان Pod را مانند هر Pod دیگر پردازش می‌کند: resourceها را چک می‌کند و در صورت کمبود،‏ preemption انجام می‌دهد. چون affinity فقط یک Node را مجاز می‌کند،‏ scheduler انتخاب دیگری ندارد؛‏ یا روی همان Node جا می‌شود یا Pending می‌ماند.</li>
+</ol>
+<p>می‌توانید این affinity را خودتان ببینید:</p>
+<div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl -n kube-system get pod fluentd-elasticsearch-q7m4d -o jsonpath='{.spec.affinity.nodeAffinity}' | python3 -m json.tool
+</pre></div>
+<p>نکته‌ی production: اگر یک Node از نظر memory پر باشد و Pod مربوط به DaemonSet priority پیش‌فرض (صفر) داشته باشد،‏ Pod در حالت <code>Pending</code> با event <code>FailedScheduling ... Insufficient memory</code> می‌ماند و Node بدون agent (مثلاً بدون CNI یا log shipper) کار می‌کند. به همین دلیل اجزای حیاتی مثل CNI و kube-proxy معمولاً از PriorityClass سیستمی <code>system-node-critical</code> استفاده می‌کنند (فصل ۹).</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی: آنچه این جدول در عمل یعنی</b>
 <ul>
   <li>وقتی یک Node را <code>kubectl cordon</code> یا <code>kubectl drain</code> می‌کنید،‏ Node taint <code>node.kubernetes.io/unschedulable:NoSchedule</code> می‌گیرد. Podهای Deployment دیگر روی آن نمی‌آیند،‏ ولی Podهای DaemonSet می‌آیند. به همین دلیل <code>kubectl drain</code> گزینه‌ی <code>--ignore-daemonsets</code> دارد: حذف Podهای DaemonSet بی‌فایده است چون controller بلافاصله آن‌ها را برمی‌گرداند (فصل ۹).</li>
   <li>tolerationهای <code>NoExecute</code> برای <code>not-ready</code> و <code>unreachable</code> <b>بدون</b> <code>tolerationSeconds</code> اضافه می‌شوند؛‏ پس برخلاف Podهای عادی که به‌طور پیش‌فرض ۳۰۰ ثانیه پس از NotReady شدن Node evict می‌شوند (خارج از مستندات این صفحه؛‏ رفتار DefaultTolerationSeconds در فصل ۹)،‏ Pod مربوط به DaemonSet روی Node باقی می‌ماند.</li>
@@ -2944,6 +2984,7 @@ kubectl get pods -l app=ssd-agent   # Pod is Terminating
 </pre></div>
 <p>در خروجی،‏ علاوه بر دو tolerationی که در manifest نوشته‌اید،‏ ورودی‌هایی برای <code>not-ready</code>،‏ <code>unreachable</code>،‏ <code>disk-pressure</code>،‏ <code>memory-pressure</code>،‏ <code>pid-pressure</code> و <code>unschedulable</code> خواهید دید (و <code>network-unavailable</code> فقط اگر <code>hostNetwork: true</code> باشد).</p>
 </div>
+  </details>
 
 <h3 id="ch4-b-ds-communicating">ارتباط با Podهای DaemonSet <small>(Communicating with Daemon Pods)</small></h3>
 <p>چند الگوی ممکن برای ارتباط با Podهای یک DaemonSet:</p>
@@ -2953,7 +2994,9 @@ kubectl get pods -l app=ssd-agent   # Pod is Terminating
   <li><b>DNS</b>: یک headless service با همان pod selector بسازید،‏ و سپس DaemonSetها را با استفاده از resource <code>endpoints</code> یا بازیابی چند A record از DNS کشف کنید.</li>
   <li><b>Service</b>: یک service با همان Pod selector بسازید و از آن service برای رسیدن به یک daemon روی یک Node تصادفی استفاده کنید. از Service Internal Traffic Policy برای محدود کردن به Podهای همان Node استفاده کنید.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: کدام الگو برای چه کاری؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام الگو برای چه کاری؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: کدام الگو برای چه کاری؟</b>
 <div class="tbl"><table><thead><tr><th>الگو</th><th>مثال واقعی</th><th>نکته</th></tr></thead><tbody>
 <tr><td>Push</td><td>Fluent Bit که logها را به Elasticsearch/Loki می‌فرستد؛‏ node-exporter در حالت remote-write</td><td>ساده‌ترین الگو؛‏ کسی به daemon وصل نمی‌شود.</td></tr>
 <tr><td>NodeIP and Known Port</td><td>agent مربوط به tracing روی <code>hostPort: 6831</code>؛‏ برنامه با Downward API مقدار <code>status.hostIP</code> را می‌خواند و به همان Node می‌فرستد</td><td>ترافیک از Node خارج نمی‌شود؛‏ اما port روی Node اشغال می‌شود.</td></tr>
@@ -2973,13 +3016,16 @@ spec:
     targetPort: 4317
 </pre></div>
 </div>
+  </details>
 
 <h3 id="ch4-b-ds-updating">به‌روزرسانی DaemonSet <small>(Updating a DaemonSet)</small></h3>
 <p>اگر labelهای Nodeها تغییر کنند،‏ DaemonSet بلافاصله Pod را به Nodeهایی که تازه match شده‌اند اضافه می‌کند و Pod را از Nodeهایی که دیگر match نمی‌شوند حذف می‌کند.</p>
 <p>می‌توانید Podهایی را که یک DaemonSet می‌سازد تغییر دهید. اما Podها اجازه‌ی به‌روزرسانی همه‌ی فیلدها را نمی‌دهند. همچنین DaemonSet controller دفعه‌ی بعد که یک Node (حتی با همان نام) ساخته شود از template اصلی استفاده خواهد کرد.</p>
 <p>می‌توانید یک DaemonSet را حذف کنید. اگر با <code>kubectl</code> گزینه‌ی <code>--cascade=orphan</code> را مشخص کنید،‏ Podها روی Nodeها باقی می‌مانند. اگر بعداً یک DaemonSet جدید با همان selector بسازید،‏ DaemonSet جدید Podهای موجود را adopt می‌کند. اگر نیاز به جایگزینی Podی باشد،‏ DaemonSet آن‌ها را طبق <code>updateStrategy</code> خودش جایگزین می‌کند.</p>
 <p>می‌توانید روی یک DaemonSet rolling update انجام دهید.</p>
-<div class="deep"><b>توضیح تکمیلی: updateStrategy (از صفحه‌ی task مربوط به rolling update)</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">updateStrategy (از صفحه‌ی task مربوط به rolling update)</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: updateStrategy (از صفحه‌ی task مربوط به rolling update)</b>
 <p>DaemonSet دو نوع <code>updateStrategy</code> دارد: <code>RollingUpdate</code> (پیش‌فرض) که پس از تغییر template،‏ Podهای قدیمی را به‌طور کنترل‌شده kill و Pod جدید می‌سازد،‏ و <code>OnDelete</code> که Pod جدید فقط وقتی ساخته می‌شود که خودتان Pod قدیمی را دستی حذف کنید. در <code>RollingUpdate</code> فیلدهای <code>maxUnavailable</code> (پیش‌فرض 1) و <code>maxSurge</code> (پیش‌فرض 0) سرعت rollout را کنترل می‌کنند. (این جزئیات در صفحه‌ی Perform a Rolling Update on a DaemonSet آمده است.)</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># change the image and follow the rollout
 kubectl -n kube-system set image ds/fluentd-elasticsearch fluentd-elasticsearch=quay.io/fluentd_elasticsearch/fluentd:v5.0.2
@@ -2994,6 +3040,7 @@ kubectl -n kube-system get pods -l name=fluentd-elasticsearch -o jsonpath='{.ite
 # new DaemonSet uid: Pods were adopted, not recreated
 </pre></div>
 </div>
+  </details>
 
 <h3 id="ch4-b-ds-alternatives">جایگزین‌های DaemonSet <small>(Alternatives to DaemonSet)</small></h3>
 <h4>init script</h4>
@@ -3011,7 +3058,11 @@ kubectl -n kube-system get pods -l name=fluentd-elasticsearch -o jsonpath='{.ite
 <p>DaemonSetها از این نظر شبیه Deploymentها هستند که هر دو Pod می‌سازند،‏ و آن Podها processهایی دارند که انتظار نمی‌رود terminate شوند (مثل web serverها،‏ storage serverها).</p>
 <p>برای serviceهای stateless،‏ مثل frontendها،‏ که در آن‌ها scaling تعداد replicaها به بالا و پایین و rollout کردن به‌روزرسانی‌ها مهم‌تر از کنترل دقیق این است که Pod روی کدام host اجرا شود،‏ از Deployment استفاده کنید. وقتی مهم است که یک کپی از Pod همیشه روی همه یا بعضی hostها اجرا شود،‏ اگر DaemonSet کارکردی در سطح Node فراهم می‌کند که به سایر Podها اجازه می‌دهد روی آن Node خاص به‌درستی اجرا شوند،‏ از DaemonSet استفاده کنید.</p>
 <p>برای مثال،‏ network pluginها اغلب شامل یک جزء هستند که به‌صورت DaemonSet اجرا می‌شود. جزء DaemonSet مطمئن می‌شود Nodeی که روی آن اجرا می‌شود cluster networking سالم دارد.</p>
-<div class="deep"><b>توضیح تکمیلی: جدول مقایسه</b>
+<p class="next">ادامه‌ی مطالعه: Pods ·‏ static Pods ·‏ Perform a rolling update on a DaemonSet ·‏ Perform a rollback on a DaemonSet ·‏ how Kubernetes assigns Pods to Nodes ·‏ device plugins و add ons ·‏ DaemonSet API object definition</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جدول مقایسه</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: جدول مقایسه</b>
 <div class="tbl"><table><thead><tr><th>گزینه</th><th>مدیریت با kubectl</th><th>جایگزینی خودکار</th><th>وابسته به apiserver</th><th>کاربرد نمونه</th></tr></thead><tbody>
 <tr><td>systemd / init script</td><td>خیر</td><td>توسط systemd (فقط روی همان Node)</td><td>خیر</td><td>containerd،‏ خود kubelet</td></tr>
 <tr><td>Bare Pod با nodeName</td><td>بله</td><td>خیر</td><td>بله</td><td>تقریباً هیچ؛‏ ضدالگو</td></tr>
@@ -3020,16 +3071,19 @@ kubectl -n kube-system get pods -l name=fluentd-elasticsearch -o jsonpath='{.ite
 <tr><td>Deployment</td><td>بله</td><td>بله</td><td>بله</td><td>serviceهای stateless؛‏ جای Pod مهم نیست</td></tr>
 </tbody></table></div>
 </div>
-<p class="next">ادامه‌ی مطالعه: Pods ·‏ static Pods ·‏ Perform a rolling update on a DaemonSet ·‏ Perform a rollback on a DaemonSet ·‏ how Kubernetes assigns Pods to Nodes ·‏ device plugins و add ons ·‏ DaemonSet API object definition</p>
+  </details>
 
 <h3 id="ch4-b-job">Job</h3>
 <p>یک Job یک یا چند Pod می‌سازد و اجرای Podها را تا زمانی که تعداد مشخصی از آن‌ها با موفقیت terminate شوند،‏ دوباره امتحان (retry) می‌کند. وقتی Podها با موفقیت کامل می‌شوند،‏ Job تعداد completionهای موفق را دنبال (track) می‌کند. وقتی به تعداد مشخص‌شده‌ی completion موفق رسید،‏ task (یعنی Job) کامل شده است. حذف یک Job،‏ Podهایی را که ساخته پاک می‌کند. suspend کردن یک Job،‏ Podهای فعال آن را حذف می‌کند تا زمانی که Job دوباره resume شود.</p>
 <p>یک حالت ساده این است که یک object از نوع Job بسازید تا یک Pod را به‌طور قابل اطمینان تا پایان (to completion) اجرا کند. object مربوط به Job در صورتی که Pod اول fail شود یا حذف شود (مثلاً به دلیل خرابی سخت‌افزاری Node یا reboot شدن Node) یک Pod جدید راه می‌اندازد.</p>
 <p>همچنین می‌توانید از یک Job برای اجرای چند Pod به‌صورت موازی استفاده کنید.</p>
 <p>اگر می‌خواهید یک Job را (چه یک task تکی،‏ چه چند task موازی) طبق یک schedule اجرا کنید،‏ CronJob را ببینید (پایین‌تر در همین فصل).</p>
-<div class="deep"><b>توضیح تکمیلی: Job در برابر Deployment</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Job در برابر Deployment</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: Job در برابر Deployment</b>
 <p>در Deployment،‏ desired state «N Pod همیشه در حال اجرا» است و اگر container تمام شود،‏ این یک خرابی است. در Job،‏ desired state «N بار اجرای <b>موفق</b> تا پایان» است و خروج container با exit code صفر یعنی موفقیت. به همین دلیل Job برای migration database،‏ ساخت گزارش،‏ پردازش batch،‏ train کردن مدل و backup مناسب است،‏ و Deployment برای web server و API.</p>
 </div>
+  </details>
 
 <h3 id="ch4-b-job-example">اجرای یک Job نمونه <small>(Running an example Job)</small></h3>
 <p>در ادامه یک config نمونه برای Job آمده است. این Job عدد π را تا ۲۰۰۰ رقم محاسبه و چاپ می‌کند. کامل شدن آن حدود ۱۰ ثانیه طول می‌کشد.</p>
@@ -3159,7 +3213,9 @@ echo $pods
 <p>خروجی مشابه این است:</p>
 <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748815209209628292540917153643678925903600113305305488204665213841469519415116094330572703657595919530921861173819326117931051185480744623799627495673518857527248912279381830119491298336733624406566430860213949463952247371907021798609437027705392171762931767523846748184676694051320005681271452635608277857713427577896091736371787214684409012249534301465495853710507922796892589235420199561121290219608640344181598136297747713099605187072113499999983729780499510597317328160963185950244594553469083026425223082533446850352619311881710100031378387528865875332083814206171776691473035982534904287554687311595628638823537875937519577818577805321712268066130019278766111959092164201989380952572010654858632788659361533818279682303019520353018529689957736225994138912497217752834791315155748572424541506959508295331168617278558890750983817546374649393192550604009277016711390098488240128583616035637076601047101819429555961989467678374494482553797747268471040475346462080466842590694912933136770289891521047521620569660240580381501935112533824300355876402474964732639141992726042699227967823547816360093417216412199245863150302861829745557067498385054945885869269956909272107975093029553211653449872027559602364806654991198818347977535663698074265425278625518184175746728909777727938000816470600161452491921732172147723501414419735685481613611573525521334757418494684385233239073941433345477624168625189835694855620992192221842725502542568876717904946016534668049886272327917860857843838279679766814541009538837863609506800642251252051173929848960841284886269456042419652850222106611863067442786220391949450471237137869609563643719172874677646575739624138908658326459958133904780275901
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی: خواندن خروجی‌ها</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">خواندن خروجی‌ها</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: خواندن خروجی‌ها</b>
 <ul>
   <li>در <code>-o yaml</code> ببینید چه فیلدهایی را شما ننوشتید ولی defaulting اضافه کرده است: <code>completionMode: NonIndexed</code>،‏ <code>completions: 1</code>،‏ <code>parallelism: 1</code>،‏ <code>suspend: false</code> و یک <code>selector</code> که بر اساس <code>controller-uid</code> (همان uid خود Job) ساخته شده است. این selector تضمین می‌کند Podهای دو Job هرگز با هم قاطی نشوند.</li>
   <li>فیلد <code>status.uncountedTerminatedPods</code> به مکانیزم Job tracking with finalizers مربوط است (بخش Advanced usage).</li>
@@ -3172,6 +3228,7 @@ kubectl get job pi
 # pi     Complete   1/1           12s        40s
 </pre></div>
 </div>
+  </details>
 
 <h3 id="ch4-b-job-spec">نوشتن spec برای Job <small>(Writing a Job spec)</small></h3>
 <p>مانند همه‌ی configهای دیگر کوبرنتیز،‏ یک Job به فیلدهای <code>apiVersion</code>،‏ <code>kind</code> و <code>metadata</code> نیاز دارد.</p>
@@ -3186,7 +3243,9 @@ kubectl get job pi
 <p>فقط <code>RestartPolicy</code> برابر با <code>Never</code> یا <code>OnFailure</code> مجاز است.</p>
 <h4>Pod selector</h4>
 <p>فیلد <code>.spec.selector</code> اختیاری است. تقریباً در همه‌ی موارد نباید آن را مشخص کنید. بخش Specifying your own Pod selector را ببینید.</p>
-<div class="deep"><b>توضیح تکمیلی: Never در برابر OnFailure</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Never در برابر OnFailure</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: Never در برابر OnFailure</b>
 <div class="tbl"><table><thead><tr><th></th><th><code>restartPolicy: OnFailure</code></th><th><code>restartPolicy: Never</code></th></tr></thead><tbody>
 <tr><td>وقتی container fail می‌شود</td><td>kubelet همان container را در <b>همان Pod و همان Node</b> restart می‌کند</td><td>Pod به فاز <code>Failed</code> می‌رود و Job controller یک <b>Pod جدید</b> می‌سازد</td></tr>
 <tr><td>شمارش برای backoffLimit</td><td>تعداد restartهای containerها</td><td>تعداد Podهای <code>Failed</code></td></tr>
@@ -3195,6 +3254,7 @@ kubectl get job pi
 </tbody></table></div>
 <p>مقدار <code>Always</code> (پیش‌فرض Pod) برای Job رد می‌شود،‏ چون با مفهوم «تمام شدن» تناقض دارد.</p>
 </div>
+  </details>
 
 <h3 id="ch4-b-job-parallel">اجرای موازی Jobها <small>(Parallel execution for Jobs)</small></h3>
 <p>سه نوع اصلی task برای اجرا به‌عنوان Job مناسب‌اند:</p>
@@ -3218,14 +3278,6 @@ kubectl get job pi
 <p>برای یک Job با <i>fixed completion count</i>،‏ باید <code>.spec.completions</code> را برابر تعداد completionهای لازم قرار دهید. می‌توانید <code>.spec.parallelism</code> را تنظیم کنید،‏ یا تنظیم‌نشده بگذارید که به‌طور پیش‌فرض 1 می‌شود.</p>
 <p>برای یک Job از نوع <i>work queue</i>،‏ باید <code>.spec.completions</code> را تنظیم‌نشده بگذارید و <code>.spec.parallelism</code> را روی یک عدد صحیح نامنفی قرار دهید.</p>
 <p>برای اطلاعات بیشتر درباره‌ی نحوه‌ی استفاده از انواع مختلف Job،‏ بخش Job patterns را ببینید.</p>
-<div class="deep"><b>توضیح تکمیلی: سه نوع در یک نگاه</b>
-<div class="tbl"><table><thead><tr><th>نوع</th><th><code>completions</code></th><th><code>parallelism</code></th><th>چه وقت کامل است؟</th><th>مثال production</th></tr></thead><tbody>
-<tr><td>Non-parallel</td><td>unset (=1)</td><td>unset (=1)</td><td>یک Pod موفق</td><td>schema migration قبل از deploy</td></tr>
-<tr><td>Fixed completion count</td><td>W</td><td>دلخواه</td><td>W Pod موفق (یا یک موفق برای هر index در Indexed)</td><td>transcode کردن ۱۰۰ فایل ویدیو،‏ هر Pod یک فایل</td></tr>
-<tr><td>Work queue</td><td>unset</td><td>P</td><td>حداقل یک Pod موفق و همه terminate شده</td><td>۵ worker که از Redis/RabbitMQ کار می‌گیرند تا صف خالی شود</td></tr>
-</tbody></table></div>
-</div>
-
 <h4>کنترل parallelism <small>(Controlling parallelism)</small></h4>
 <p>parallelism درخواستی (<code>.spec.parallelism</code>) را می‌توان روی هر مقدار نامنفی تنظیم کرد. اگر مشخص نشود،‏ به‌طور پیش‌فرض 1 است. اگر 0 مشخص شود،‏ Job عملاً pause می‌شود تا زمانی که این مقدار افزایش یابد.</p>
 <p>parallelism واقعی (تعداد Podهایی که در هر لحظه در حال اجرا هستند) ممکن است به دلایل مختلفی بیشتر یا کمتر از parallelism درخواستی باشد:</p>
@@ -3314,6 +3366,17 @@ idx-2-p9bzt   0/1     Completed   0          15s   2
 </pre></div>
 </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">سه نوع در یک نگاه</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: سه نوع در یک نگاه</b>
+<div class="tbl"><table><thead><tr><th>نوع</th><th><code>completions</code></th><th><code>parallelism</code></th><th>چه وقت کامل است؟</th><th>مثال production</th></tr></thead><tbody>
+<tr><td>Non-parallel</td><td>unset (=1)</td><td>unset (=1)</td><td>یک Pod موفق</td><td>schema migration قبل از deploy</td></tr>
+<tr><td>Fixed completion count</td><td>W</td><td>دلخواه</td><td>W Pod موفق (یا یک موفق برای هر index در Indexed)</td><td>transcode کردن ۱۰۰ فایل ویدیو،‏ هر Pod یک فایل</td></tr>
+<tr><td>Work queue</td><td>unset</td><td>P</td><td>حداقل یک Pod موفق و همه terminate شده</td><td>۵ worker که از Redis/RabbitMQ کار می‌گیرند تا صف خالی شود</td></tr>
+</tbody></table></div>
+</div>
+  </details>
+
 <h3 id="ch4-b-job-workload">یکپارچگی با Workload API <small>(Integrate with Workload APIs)</small></h3>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.36 [alpha]</span> (feature gate: <code>WorkloadWithJob</code>،‏ پیش‌فرض: غیرفعال)</p>
 <p>وقتی feature gate <code>WorkloadWithJob</code> فعال باشد،‏ Job controller پیکربندی <code>.spec.scheduling</code> یک Job را،‏ قبل از ساختن هر Podی،‏ به objectهای Workload و PodGroup (<code>scheduling.k8s.io/v1beta1</code>) کامپایل می‌کند. این به شما اجازه می‌دهد قصد (intent) صریح scheduling را برای یک Job بیان کنید،‏ مانند gang scheduling (همه‌ی Podها با هم schedule شوند یا هیچ‌کدام)،‏ هم‌مکانی topology (topology co-location) و رفتار disruption.</p>
@@ -3396,9 +3459,12 @@ spec:
   <li>فقط <code>schedulingPolicy.gang.minCount</code> قابل تغییر است؛‏ همه‌ی فیلدهای دیگر <code>.spec.scheduling</code> پس از ساخت immutable هستند.</li>
   <li>Jobهای suspend‌شده objectهای <code>Workload</code> و <code>PodGroup</code> خود را نگه می‌دارند؛‏ این objectها هنگام suspend حذف نمی‌شوند و هنگام resume دوباره ساخته نمی‌شوند.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی: چرا gang scheduling؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا gang scheduling؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا gang scheduling؟</b>
 <p>در train توزیع‌شده (مثلاً PyTorch DDP با ۸ GPU)،‏ اگر فقط ۶ Pod از ۸ Pod schedule شوند،‏ آن ۶ Pod GPUها را اشغال می‌کنند و منتظر ۲ همتای دیگر می‌مانند که هرگز جا نمی‌شوند؛‏ نتیجه هدر رفتن GPUهای گران و حتی deadlock بین دو Job است که هرکدام نیمی از GPUها را گرفته‌اند. gang scheduling این «همه یا هیچ» را تضمین می‌کند. <code>disruptionMode: all</code> هم منطقی است،‏ چون از دست رفتن یک worker معمولاً کل train را بی‌فایده می‌کند. این ویژگی در v1.37 هنوز alpha و به‌طور پیش‌فرض خاموش است؛‏ در production معمولاً از ابزارهایی مثل Kueue یا Volcano برای همین هدف استفاده می‌شود (خارج از مستندات رسمی). جزئیات gang scheduling در فصل ۹.</p>
 </div>
+  </details>
 
 <h3 id="ch4-b-job-failures">رسیدگی به شکست Pod و container <small>(Handling Pod and container failures)</small></h3>
 <p>یک container در یک Pod ممکن است به دلایل مختلفی fail شود،‏ مثلاً به این دلیل که process درون آن با exit code غیرصفر خارج شده،‏ یا container به دلیل عبور از memory limit کشته شده،‏ و غیره. اگر این اتفاق بیفتد و <code>.spec.template.spec.restartPolicy = "OnFailure"</code> باشد،‏ Pod روی Node باقی می‌ماند ولی container دوباره اجرا می‌شود. بنابراین برنامه‌ی شما باید حالتی را که به‌صورت محلی restart می‌شود مدیریت کند،‏ یا در غیر این صورت <code>.spec.template.spec.restartPolicy = "Never"</code> را مشخص کنید. برای اطلاعات بیشتر درباره‌ی <code>restartPolicy</code>،‏ pod lifecycle را ببینید (فصل ۳).</p>
@@ -3409,15 +3475,6 @@ spec:
 <p>اگر <code>.spec.parallelism</code> و <code>.spec.completions</code> را هر دو بزرگ‌تر از 1 مشخص کنید،‏ ممکن است چند Pod همزمان در حال اجرا باشند. بنابراین Podهای شما باید نسبت به concurrency هم مقاوم (tolerant) باشند.</p>
 <p>اگر فیلد <code>.spec.podFailurePolicy</code> را مشخص کنید،‏ Job controller یک Pod در حال terminate شدن (Podی که فیلد <code>.metadata.deletionTimestamp</code> آن تنظیم شده) را تا زمانی که terminal نشده (یعنی <code>.status.phase</code> آن <code>Failed</code> یا <code>Succeeded</code> نشده) به‌عنوان fail در نظر نمی‌گیرد. اما Job controller به محض آشکار شدن termination،‏ یک Pod جایگزین می‌سازد. وقتی Pod terminate شد،‏ Job controller با در نظر گرفتن این Pod تازه terminate‌شده،‏ <code>.backoffLimit</code> و <code>.podFailurePolicy</code> مربوط به Job را ارزیابی می‌کند.</p>
 <p>اگر هر یک از این الزامات برقرار نباشد،‏ Job controller یک Pod در حال terminate را فوراً به‌عنوان fail می‌شمارد،‏ حتی اگر آن Pod بعداً با <code>phase: "Succeeded"</code> terminate شود.</p>
-<div class="deep"><b>توضیح تکمیلی: idempotency،‏ مهم‌ترین درس این بخش</b>
-<p>دو جمله‌ی کلیدی بالا: «همان برنامه ممکن است دو بار اجرا شود» و «Podها باید tolerant به concurrency باشند». نتیجه‌ی عملی: Job شما باید <b>idempotent</b> (اجرای چندباره‌اش همان نتیجه‌ی یک بار را دارد) باشد. مثال‌ها:</p>
-<ul>
-  <li>Job ارسال ایمیل صورتحساب: قبل از ارسال،‏ در database چک کند که <code>invoice_sent_at</code> خالی است و با یک تراکنش آن را علامت بزند؛‏ وگرنه اجرای دوباره = ایمیل تکراری به مشتری.</li>
-  <li>Job migration database: از ابزاری استفاده کنید که نسخه‌ی schema را در یک جدول نگه می‌دارد (مثل Flyway یا Liquibase،‏ خارج از مستندات رسمی) تا اجرای دوم کاری انجام ندهد،‏ و از lock database برای جلوگیری از اجرای همزمان استفاده کنید.</li>
-  <li>Job نوشتن فایل خروجی: در یک مسیر موقت بنویسد و در پایان با rename اتمیک آن را جابه‌جا کند،‏ تا خروجی نیمه‌کاره‌ی اجرای قطع‌شده با خروجی نهایی اشتباه گرفته نشود.</li>
-</ul>
-</div>
-
 <h4>سیاست backoff برای شکست Pod <small>(Pod backoff failure policy)</small></h4>
 <p>موقعیت‌هایی هست که می‌خواهید یک Job را پس از تعدادی retry،‏ به دلیل یک خطای منطقی در configuration و غیره،‏ failed کنید. برای این کار،‏ <code>.spec.backoffLimit</code> را تنظیم کنید تا تعداد retryها پیش از failed در نظر گرفتن Job مشخص شود.</p>
 <p><code>.spec.backoffLimit</code> به‌طور پیش‌فرض روی 6 تنظیم می‌شود،‏ مگر این‌که backoff limit per index (فقط برای Indexed Job) مشخص شده باشد. وقتی <code>.spec.backoffLimitPerIndex</code> مشخص شده باشد،‏ <code>.spec.backoffLimit</code> به‌طور پیش‌فرض 2147483647 (MaxInt32) می‌شود.</p>
@@ -3523,11 +3580,6 @@ spec:
 </pre></div>
 <p>Job controller condition <code>FailureTarget</code> را به Job اضافه می‌کند تا Job termination and cleanup را آغاز کند. وقتی همه‌ی Podهای Job terminate شدند،‏ Job controller condition <code>Failed</code> را با همان مقادیر <code>reason</code> و <code>message</code> مربوط به condition <code>FailureTarget</code> اضافه می‌کند. برای جزئیات،‏ Termination of Job pods را ببینید.</p>
 <p>علاوه بر این،‏ ممکن است بخواهید backoff per index را همراه با یک pod failure policy استفاده کنید. هنگام استفاده از backoff per index،‏ یک action جدید به نام <code>FailIndex</code> در دسترس است که به شما اجازه می‌دهد از retryهای غیرضروری درون یک index جلوگیری کنید.</p>
-<div class="deep"><b>توضیح تکمیلی: چرا backoffLimit سراسری برای Indexed Job کافی نیست؟</b>
-<p>فرض کنید یک Job با ۱۰۰۰ index دارید که هر index یک فایل ورودی را پردازش می‌کند و ۳ فایل خراب هستند. با <code>backoffLimit: 6</code> سراسری،‏ ۳ فایل خراب هرکدام چند بار fail می‌شوند،‏ مجموع failها به ۶ می‌رسد و <b>کل Job</b> در حالی که شاید ۴۰۰ index هنوز شروع نشده‌اند متوقف می‌شود. با <code>backoffLimitPerIndex: 2</code>،‏ هر فایل خراب حداکثر ۳ بار امتحان می‌شود،‏ در <code>failedIndexes</code> ثبت می‌شود و بقیه‌ی ۹۹۷ فایل پردازش می‌شوند. در پایان می‌دانید دقیقاً کدام indexها را باید بررسی کنید. <code>maxFailedIndexes</code> هم ترمز اضطراری است: اگر ۵۰ index fail شدند،‏ احتمالاً مشکل سیستمی است (مثلاً storage خراب) و ادامه دادن فقط هزینه است.</p>
-<p>محاسبه‌ی خروجی بالا: indexهای زوج (0,2,4,6,8) هر کدام ۲ بار fail می‌شوند (اجرای اول + ۱ retry) = ۱۰ Pod failed؛‏ indexهای فرد هرکدام یک Pod موفق = ۵ succeeded. تعداد failed indexها (۵) از <code>maxFailedIndexes: 5</code> <b>بیشتر</b> نشده،‏ پس همه‌ی indexها اجرا شدند،‏ ولی Job در پایان به دلیل وجود failed index با <code>reason: FailedIndexes</code> fail شد.</p>
-</div>
-
 <h4>سیاست شکست Pod <small>(Pod failure policy)</small></h4>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.31 [stable]</span> (feature gate: <code>JobPodFailurePolicy</code>،‏ همیشه فعال)</p>
 <p>یک Pod failure policy که با فیلد <code>.spec.podFailurePolicy</code> تعریف می‌شود،‏ cluster شما را قادر می‌سازد failهای Pod را بر اساس exit codeهای container و conditionهای Pod مدیریت کند.</p>
@@ -3592,7 +3644,23 @@ spec:
 <div class="note"><b>نکته</b><p>وقتی از یک <code>podFailurePolicy</code> استفاده می‌کنید،‏ job controller فقط Podهایی را که در فاز <code>Failed</code> هستند match می‌کند. Podهایی که deletion timestamp دارند ولی در یک فاز terminal (<code>Failed</code> یا <code>Succeeded</code>) نیستند،‏ همچنان در حال terminate شدن در نظر گرفته می‌شوند. این یعنی Podهای در حال terminate،‏ tracking finalizer (نشانه‌ای که حذف شیء را تا انجام کار پاک‌سازی یک controller نگه می‌دارد) را تا رسیدن به یک فاز terminal نگه می‌دارند. از کوبرنتیز 1.27،‏ kubelet Podهای حذف‌شده را به یک فاز terminal منتقل می‌کند (Pod Phase را ببینید). این تضمین می‌کند که finalizerهای Podهای حذف‌شده توسط Job controller برداشته شوند.</p></div>
 <div class="note"><b>نکته</b><p>از Kubernetes v1.28،‏ وقتی از Pod failure policy استفاده می‌شود،‏ Job controller،‏ Podهای در حال terminate را فقط وقتی دوباره می‌سازد که این Podها به فاز terminal <code>Failed</code> برسند. این رفتار مشابه <code>podReplacementPolicy: Failed</code> است. برای اطلاعات بیشتر،‏ Pod replacement policy را ببینید.</p></div>
 <p>وقتی از <code>podFailurePolicy</code> استفاده می‌کنید و Job به دلیل match شدن Pod با rule دارای action <code>FailJob</code> fail می‌شود،‏ Job controller با اضافه کردن condition <code>FailureTarget</code> فرایند termination مربوط به Job را آغاز می‌کند. برای جزئیات بیشتر،‏ Job termination and cleanup را ببینید.</p>
-<div class="deep"><b>توضیح تکمیلی: طراحی یک podFailurePolicy برای production</b>
+  <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 380" width="100%" style="max-width:760px;height:auto" role="img" aria-label="رسیدگی Job controller به شکست یک Pod با podFailurePolicy و backoffLimit"><defs><marker id="f7jf-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f7jf-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f7jf-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f7jf-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f7jf-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><text x="380" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">از شکست یک Pod تا تصمیم درباره‌ی Job</text><rect x="20" y="160" width="150" height="64" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.4"></rect><text x="95" y="186" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">شکست یک Pod</text><text x="95" y="208" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">phase: Failed</text><rect x="205" y="146" width="170" height="92" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="290" y="170" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">podFailurePolicy</text><text x="290" y="194" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">بررسی ruleها به ترتیب؛</text><text x="290" y="212" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">اولین rule منطبق</text><text x="290" y="230" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">نوع action را تعیین می‌کند</text><line x1="170" y1="192" x2="203" y2="192" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7jf-a4a5672)"></line><rect x="420" y="44" width="150" height="56" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="495" y="66" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">FailJob</text><text x="495" y="87" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">شکست فوری کل Job</text><path d="M375,192 C398,192 398,72 418,72" fill="none" stroke="#b83227" stroke-width="1.6" marker-end="url(#f7jf-ab83227)"></path><rect x="583" y="44" width="167" height="56" rx="10" fill="#ffffff" stroke="#b83227" stroke-width="1.4"></rect><text x="666" y="66" font-family="'JetBrains Mono', Consolas, monospace" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">Job: Failed</text><text x="666" y="84" font-family="'JetBrains Mono', Consolas, monospace" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">reason: PodFailurePolicy</text><line x1="570" y1="72" x2="581" y2="72" stroke="#b83227" stroke-width="1.6" marker-end="url(#f7jf-ab83227)"></line><rect x="420" y="118" width="150" height="56" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="495" y="140" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="ltr">FailIndex</text><text x="495" y="161" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">فقط همین index</text><path d="M375,192 C398,192 398,146 418,146" fill="none" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f7jf-ab26b00)"></path><rect x="583" y="118" width="167" height="56" rx="10" fill="#ffffff" stroke="#b26b00" stroke-width="1.4"></rect><text x="666" y="140" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">ثبت index در failedIndexes</text><text x="666" y="158" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">(با backoffLimitPerIndex)</text><line x1="570" y1="146" x2="581" y2="146" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f7jf-ab26b00)"></line><rect x="420" y="192" width="150" height="56" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="495" y="214" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">Ignore</text><text x="495" y="235" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">شمارنده زیاد نمی‌شود</text><path d="M375,192 C398,192 398,220 418,220" fill="none" stroke="#12806f" stroke-width="1.6" marker-end="url(#f7jf-a12806f)"></path><rect x="583" y="192" width="167" height="56" rx="10" fill="#ffffff" stroke="#12806f" stroke-width="1.4"></rect><text x="666" y="214" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">ساخت Pod جایگزین؛</text><text x="666" y="232" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">بدون مصرف retry</text><line x1="570" y1="220" x2="581" y2="220" stroke="#12806f" stroke-width="1.6" marker-end="url(#f7jf-a12806f)"></line><rect x="420" y="266" width="150" height="56" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="495" y="288" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">Count</text><text x="495" y="309" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">یا نبود rule منطبق</text><path d="M375,192 C398,192 398,294 418,294" fill="none" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f7jf-a326ce5)"></path><rect x="583" y="266" width="167" height="76" rx="10" fill="#ffffff" stroke="#326ce5" stroke-width="1.4"></rect><text x="666" y="288" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">مقایسه‌ی شمارنده با backoffLimit</text><text x="666" y="306" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">در صورت رسیدن: Job Failed</text><text x="666" y="324" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">وگرنه Pod جایگزین با back-off</text><line x1="570" y1="294" x2="581" y2="294" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f7jf-a326ce5)"></line><rect x="20" y="344" width="400" height="30" rx="8" fill="#eef2f9" stroke="#c9d3e6" stroke-width="1.4"></rect><text x="220" y="364" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">شرط استفاده از podFailurePolicy این است که restartPolicy برابر Never باشد</text></svg></div><figcaption><b>شکل ۴-۹.</b> <span style="flex:1 1 0;min-width:0">برای هر Pod شکست‌خورده،‏ ruleهای <code>podFailurePolicy</code> به ترتیب بررسی می‌شوند. اگر ruleی منطبق نشود یا policy تعریف نشده باشد،‏ رفتار پیش‌فرض <code>Count</code> است: شمارنده‌ی شکست زیاد می‌شود و Pod جایگزین با تأخیر نمایی (ده،‏ بیست،‏ چهل ثانیه و به همین ترتیب تا سقف شش دقیقه) ساخته می‌شود تا به <code>backoffLimit</code> (پیش‌فرض ۶) برسد. فیلد <code>activeDeadlineSeconds</code> بر همه‌ی این‌ها مقدم است.</span></figcaption></figure>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small> <span class="m-t">idempotency،‏ مهم‌ترین درس این بخش · چرا backoffLimit سراسری برای Indexed Job کافی نیست؟ · طراحی یک podFailurePolicy برای production</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: idempotency،‏ مهم‌ترین درس این بخش</b>
+<p>دو جمله‌ی کلیدی بالا: «همان برنامه ممکن است دو بار اجرا شود» و «Podها باید tolerant به concurrency باشند». نتیجه‌ی عملی: Job شما باید <b>idempotent</b> (اجرای چندباره‌اش همان نتیجه‌ی یک بار را دارد) باشد. مثال‌ها:</p>
+<ul>
+  <li>Job ارسال ایمیل صورتحساب: قبل از ارسال،‏ در database چک کند که <code>invoice_sent_at</code> خالی است و با یک تراکنش آن را علامت بزند؛‏ وگرنه اجرای دوباره = ایمیل تکراری به مشتری.</li>
+  <li>Job migration database: از ابزاری استفاده کنید که نسخه‌ی schema را در یک جدول نگه می‌دارد (مثل Flyway یا Liquibase،‏ خارج از مستندات رسمی) تا اجرای دوم کاری انجام ندهد،‏ و از lock database برای جلوگیری از اجرای همزمان استفاده کنید.</li>
+  <li>Job نوشتن فایل خروجی: در یک مسیر موقت بنویسد و در پایان با rename اتمیک آن را جابه‌جا کند،‏ تا خروجی نیمه‌کاره‌ی اجرای قطع‌شده با خروجی نهایی اشتباه گرفته نشود.</li>
+</ul>
+</div>
+  <div class="deep"><b>توضیح تکمیلی: چرا backoffLimit سراسری برای Indexed Job کافی نیست؟</b>
+<p>فرض کنید یک Job با ۱۰۰۰ index دارید که هر index یک فایل ورودی را پردازش می‌کند و ۳ فایل خراب هستند. با <code>backoffLimit: 6</code> سراسری،‏ ۳ فایل خراب هرکدام چند بار fail می‌شوند،‏ مجموع failها به ۶ می‌رسد و <b>کل Job</b> در حالی که شاید ۴۰۰ index هنوز شروع نشده‌اند متوقف می‌شود. با <code>backoffLimitPerIndex: 2</code>،‏ هر فایل خراب حداکثر ۳ بار امتحان می‌شود،‏ در <code>failedIndexes</code> ثبت می‌شود و بقیه‌ی ۹۹۷ فایل پردازش می‌شوند. در پایان می‌دانید دقیقاً کدام indexها را باید بررسی کنید. <code>maxFailedIndexes</code> هم ترمز اضطراری است: اگر ۵۰ index fail شدند،‏ احتمالاً مشکل سیستمی است (مثلاً storage خراب) و ادامه دادن فقط هزینه است.</p>
+<p>محاسبه‌ی خروجی بالا: indexهای زوج (0,2,4,6,8) هر کدام ۲ بار fail می‌شوند (اجرای اول + ۱ retry) = ۱۰ Pod failed؛‏ indexهای فرد هرکدام یک Pod موفق = ۵ succeeded. تعداد failed indexها (۵) از <code>maxFailedIndexes: 5</code> <b>بیشتر</b> نشده،‏ پس همه‌ی indexها اجرا شدند،‏ ولی Job در پایان به دلیل وجود failed index با <code>reason: FailedIndexes</code> fail شد.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی: طراحی یک podFailurePolicy برای production</b>
 <p>ایده: exit codeها را به دو دسته تقسیم کنید: <b>retriable</b> (خطای موقت: timeout شبکه،‏ DB در حال failover) و <b>non-retriable</b> (باگ یا config غلط: فایل ورودی نامعتبر،‏ credential اشتباه). برنامه باید این‌ها را با exit codeهای متمایز گزارش کند. نمونه:</p>
 <div class="code"><div class="lbl"><span>podFailurePolicy نمونه برای یک ETL</span><button type="button">کپی</button></div><pre class="yaml">spec:
   backoffLimit: 10                 # be generous for transient errors
@@ -3613,8 +3681,7 @@ spec:
 </pre></div>
 <p>ترتیب ruleهای مهم است: اولین rule match شده برنده است. rule آخر در این مثال عملاً رفتار پیش‌فرض است و فقط برای خوانایی آمده. دقت کنید: exit code 137 (SIGKILL،‏ مثلاً OOMKilled) را در FailJob نگذارید مگر مطمئن باشید OOM ناشی از باگ است؛‏ ممکن است فقط memory limit کم باشد.</p>
 </div>
-
-  <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 380" width="100%" style="max-width:760px;height:auto" role="img" aria-label="رسیدگی Job controller به شکست یک Pod با podFailurePolicy و backoffLimit"><defs><marker id="f7jf-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f7jf-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f7jf-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f7jf-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f7jf-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><text x="380" y="24" font-family="Vazirmatn, Tahoma, sans-serif" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">از شکست یک Pod تا تصمیم درباره‌ی Job</text><rect x="20" y="160" width="150" height="64" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.4"></rect><text x="95" y="186" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">شکست یک Pod</text><text x="95" y="208" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">phase: Failed</text><rect x="205" y="146" width="170" height="92" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="290" y="170" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">podFailurePolicy</text><text x="290" y="194" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">بررسی ruleها به ترتیب؛</text><text x="290" y="212" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">اولین rule منطبق</text><text x="290" y="230" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">نوع action را تعیین می‌کند</text><line x1="170" y1="192" x2="203" y2="192" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f7jf-a4a5672)"></line><rect x="420" y="44" width="150" height="56" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="495" y="66" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">FailJob</text><text x="495" y="87" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">شکست فوری کل Job</text><path d="M375,192 C398,192 398,72 418,72" fill="none" stroke="#b83227" stroke-width="1.6" marker-end="url(#f7jf-ab83227)"></path><rect x="583" y="44" width="167" height="56" rx="10" fill="#ffffff" stroke="#b83227" stroke-width="1.4"></rect><text x="666" y="66" font-family="'JetBrains Mono', Consolas, monospace" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">Job: Failed</text><text x="666" y="84" font-family="'JetBrains Mono', Consolas, monospace" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="ltr">reason: PodFailurePolicy</text><line x1="570" y1="72" x2="581" y2="72" stroke="#b83227" stroke-width="1.6" marker-end="url(#f7jf-ab83227)"></line><rect x="420" y="118" width="150" height="56" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="495" y="140" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="ltr">FailIndex</text><text x="495" y="161" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">فقط همین index</text><path d="M375,192 C398,192 398,146 418,146" fill="none" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f7jf-ab26b00)"></path><rect x="583" y="118" width="167" height="56" rx="10" fill="#ffffff" stroke="#b26b00" stroke-width="1.4"></rect><text x="666" y="140" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">ثبت index در failedIndexes</text><text x="666" y="158" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">(با backoffLimitPerIndex)</text><line x1="570" y1="146" x2="581" y2="146" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f7jf-ab26b00)"></line><rect x="420" y="192" width="150" height="56" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="495" y="214" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#12806f" text-anchor="middle" direction="ltr">Ignore</text><text x="495" y="235" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">شمارنده زیاد نمی‌شود</text><path d="M375,192 C398,192 398,220 418,220" fill="none" stroke="#12806f" stroke-width="1.6" marker-end="url(#f7jf-a12806f)"></path><rect x="583" y="192" width="167" height="56" rx="10" fill="#ffffff" stroke="#12806f" stroke-width="1.4"></rect><text x="666" y="214" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">ساخت Pod جایگزین؛</text><text x="666" y="232" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">بدون مصرف retry</text><line x1="570" y1="220" x2="581" y2="220" stroke="#12806f" stroke-width="1.6" marker-end="url(#f7jf-a12806f)"></line><rect x="420" y="266" width="150" height="56" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="495" y="288" font-family="'JetBrains Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">Count</text><text x="495" y="309" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">یا نبود rule منطبق</text><path d="M375,192 C398,192 398,294 418,294" fill="none" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f7jf-a326ce5)"></path><rect x="583" y="266" width="167" height="76" rx="10" fill="#ffffff" stroke="#326ce5" stroke-width="1.4"></rect><text x="666" y="288" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">مقایسه‌ی شمارنده با backoffLimit</text><text x="666" y="306" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">در صورت رسیدن: Job Failed</text><text x="666" y="324" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#16213a" text-anchor="middle" direction="rtl">وگرنه Pod جایگزین با back-off</text><line x1="570" y1="294" x2="581" y2="294" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f7jf-a326ce5)"></line><rect x="20" y="344" width="400" height="30" rx="8" fill="#eef2f9" stroke="#c9d3e6" stroke-width="1.4"></rect><text x="220" y="364" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">شرط استفاده از podFailurePolicy این است که restartPolicy برابر Never باشد</text></svg></div><figcaption><b>شکل ۴-۹.</b> <span style="flex:1 1 0;min-width:0">برای هر Pod شکست‌خورده،‏ ruleهای <code>podFailurePolicy</code> به ترتیب بررسی می‌شوند. اگر ruleی منطبق نشود یا policy تعریف نشده باشد،‏ رفتار پیش‌فرض <code>Count</code> است: شمارنده‌ی شکست زیاد می‌شود و Pod جایگزین با تأخیر نمایی (ده،‏ بیست،‏ چهل ثانیه و به همین ترتیب تا سقف شش دقیقه) ساخته می‌شود تا به <code>backoffLimit</code> (پیش‌فرض ۶) برسد. فیلد <code>activeDeadlineSeconds</code> بر همه‌ی این‌ها مقدم است.</span></figcaption></figure>
+  </details>
 <h3 id="ch4-b-job-success">سیاست موفقیت <small>(Success policy)</small></h3>
 <p>هنگام ساخت یک Indexed Job،‏ می‌توانید با استفاده از <code>.spec.successPolicy</code>،‏ بر اساس Podهای موفق،‏ تعریف کنید که Job چه زمانی می‌تواند succeeded اعلام شود.</p>
 <p>به‌طور پیش‌فرض،‏ یک Job وقتی موفق است که تعداد Podهای موفق برابر <code>.spec.completions</code> شود. این‌ها موقعیت‌هایی هستند که ممکن است کنترل بیشتری برای اعلام موفقیت Job بخواهید:</p>
@@ -3662,7 +3729,10 @@ spec:
 <p>در مثال بالا،‏ هر دوی <code>succeededIndexes</code> و <code>succeededCount</code> مشخص شده‌اند. بنابراین job controller وقتی هر یک از indexهای مشخص‌شده،‏ یعنی 0،‏ 2 یا 3،‏ موفق شود،‏ Job را succeeded علامت می‌زند و Podهای باقی‌مانده را terminate می‌کند. Jobی که success policy را برآورده کند condition <code>SuccessCriteriaMet</code> با reason <code>SuccessPolicy</code> می‌گیرد. پس از صادر شدن دستور حذف Podهای باقی‌مانده،‏ Job condition <code>Complete</code> را می‌گیرد.</p>
 <p>توجه کنید که <code>succeededIndexes</code> به شکل بازه‌هایی که با خط تیره جدا شده‌اند نمایش داده می‌شود. اعداد با اولین و آخرین عنصر سری،‏ که با یک خط تیره جدا شده‌اند،‏ نمایش داده می‌شوند.</p>
 <div class="note"><b>نکته</b><p>وقتی هم یک success policy و هم بعضی policyهای terminating مانند <code>.spec.backoffLimit</code> و <code>.spec.podFailurePolicy</code> را مشخص می‌کنید،‏ به محض این‌که Job هرکدام از policyها را برآورده کند،‏ job controller به policy terminating احترام می‌گذارد و success policy را نادیده می‌گیرد.</p></div>
-<div class="deep"><b>توضیح تکمیلی: الگوی leader-worker</b>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">الگوی leader-worker</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: الگوی leader-worker</b>
 <p>در یک Job از نوع MPI با ۱ launcher (index 0) و ۷ worker (index 1..7)،‏ وقتی launcher با موفقیت تمام شد کل محاسبه تمام شده است،‏ ولی workerها ممکن است منتظر دستور بمانند و هرگز خودشان خارج نشوند. بدون success policy،‏ Job تا ابد <code>Running</code> می‌ماند. با:</p>
 <div class="code"><div class="lbl"><span>successPolicy برای leader</span><button type="button">کپی</button></div><pre class="yaml">successPolicy:
   rules:
@@ -3670,6 +3740,7 @@ spec:
 </pre></div>
 <p>به محض موفقیت index 0،‏ Job condition <code>SuccessCriteriaMet</code> می‌گیرد،‏ workerها terminate می‌شوند و در نهایت <code>Complete</code> ثبت می‌شود.</p>
 </div>
+  </details>
 <h3 id="ch4-b-job-termination">پایان و پاک‌سازی Job <small>(Job termination and cleanup)</small></h3>
 <p>وقتی یک Job کامل می‌شود،‏ دیگر Podی ساخته نمی‌شود،‏ ولی Podها هم معمولاً حذف نمی‌شوند (به استثنای موردی که در Pod backoff failure policy توضیح داده شد). نگه‌داشتن آن‌ها این امکان را می‌دهد که همچنان logهای Podهای کامل‌شده را برای بررسی خطاها،‏ هشدارها یا سایر خروجی‌های تشخیصی ببینید. خود Job object هم پس از کامل شدن باقی می‌ماند تا بتوانید status آن را ببینید. تصمیم حذف Jobهای قدیمی،‏ پس از یادداشت کردن status‌شان،‏ با کاربر است. Job را با <code>kubectl</code> حذف کنید (مثلاً <code>kubectl delete jobs/pi</code> یا <code>kubectl delete -f ./job.yaml</code>). وقتی Job را با <code>kubectl</code> حذف می‌کنید،‏ همه‌ی Podهایی که ساخته هم حذف می‌شوند.</p>
 <p>به‌طور پیش‌فرض،‏ یک Job بدون وقفه اجرا می‌شود مگر یک Pod fail شود (<code>restartPolicy=Never</code>) یا یک Container با خطا خارج شود (<code>restartPolicy=OnFailure</code>)،‏ که در آن صورت Job به <code>.spec.backoffLimit</code> که پیش‌تر توضیح داده شد رجوع می‌کند. به محض این‌که <code>.spec.backoffLimit</code> رسید،‏ Job failed علامت می‌خورد و هر Pod در حال اجرا terminate می‌شود.</p>
@@ -3721,9 +3792,12 @@ spec:
 <p>می‌توانید از condition <code>FailureTarget</code> یا <code>SuccessCriteriaMet</code> برای ارزیابی این‌که آیا Job fail یا succeed شده است استفاده کنید،‏ بدون این‌که لازم باشد منتظر بمانید تا controller یک condition پایانی اضافه کند.</p>
 <p>برای مثال،‏ ممکن است بخواهید تصمیم بگیرید چه زمانی یک Job جایگزین برای یک Job failed بسازید. اگر Job failed را در لحظه‌ی ظاهر شدن condition <code>FailureTarget</code> جایگزین کنید،‏ Job جایگزین شما زودتر اجرا می‌شود،‏ ولی ممکن است منجر به این شود که Podهای Job failed و Job جایگزین هم‌زمان در حال اجرا باشند و منابع محاسباتی اضافه‌ای مصرف کنند.</p>
 <p>از طرف دیگر،‏ اگر cluster شما ظرفیت منابع محدودی دارد،‏ می‌توانید انتخاب کنید تا زمان ظاهر شدن condition <code>Failed</code> روی Job صبر کنید،‏ که Job جایگزین شما را به تأخیر می‌اندازد ولی تضمین می‌کند با صبر کردن تا حذف همه‌ی Podهای failed،‏ منابع را صرفه‌جویی می‌کنید.</p>
-<div class="deep"><b>توضیح تکمیلی: چرا این دو مرحله؟</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا این دو مرحله؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا این دو مرحله؟</b>
 <p>جدا کردن «تصمیم گرفتن» (<code>FailureTarget</code>/<code>SuccessCriteriaMet</code>) از «پایان یافتن فیزیکی» (<code>Failed</code>/<code>Complete</code>) باعث می‌شود automationهایی که به وضعیت Job واکنش نشان می‌دهند (مثلاً یک CI pipeline یا یک controller بیرونی که Job بعدی را می‌سازد) بتوانند بین دو استراتژی انتخاب کنند: «سرعت» (واکنش به <code>FailureTarget</code>،‏ شروع سریع‌تر جایگزین با ریسک مصرف منابع دوبل) یا «صرفه‌جویی منابع» (واکنش به <code>Failed</code> نهایی،‏ با تأخیر بیشتر اما بدون overlap). در یک cluster با bin packing فشرده،‏ معمولاً استراتژی دوم امن‌تر است چون از OOM/Evictionهای زنجیره‌ای روی Nodeها جلوگیری می‌کند.</p>
 </div>
+  </details>
 
 <h3 id="ch4-b-job-cleanup">پاک‌سازی خودکار Jobهای تمام‌شده <small>(Clean up finished jobs automatically)</small></h3>
 <p>Jobهای finished معمولاً دیگر در سیستم لازم نیستند. نگه‌داشتن آن‌ها در سیستم روی apiserver فشار می‌آورد. اگر Jobها مستقیماً توسط یک controller سطح بالاتر مثل CronJobها مدیریت شوند،‏ Jobها می‌توانند توسط CronJobها بر اساس policy پاکسازی مبتنی بر ظرفیت مشخص‌شده پاک شوند.</p>
@@ -3787,15 +3861,6 @@ kubectl get job pi          # NotFound: Job and its Pods were deleted in cascade
 <tr><td>Job with Pod-to-Pod Communication</td><td>W</td><td>W</td></tr>
 <tr><td>Job Template Expansion</td><td>1</td><td>باید ۱ باشد</td></tr>
 </tbody></table></div>
-<div class="deep"><b>توضیح تکمیلی: کدام الگو مناسب کدام کار است؟</b>
-<ul>
-  <li><b>Queue with Pod Per Work Item</b>: یک Job با <code>completions=W</code>؛‏ ساده‌ترین حالت برای شروع،‏ وقتی هر work item یک واحد کاری کامل است (مثلاً یک پیام در RabbitMQ که خودش شامل همه‌ی اطلاعات لازم است). برنامه معمولاً به تغییر کمی نیاز دارد: یک پیام می‌گیرد،‏ پردازش می‌کند،‏ ack می‌کند،‏ exit می‌کند.</li>
-  <li><b>Queue with Variable Pod Count</b>: وقتی نمی‌دانید از قبل چند work item وجود دارد (<code>completions</code> تنظیم نمی‌شود)؛‏ هر Pod تا خالی شدن صف کار می‌کند و خودش تصمیم می‌گیرد کی خارج شود. برای صف‌هایی با طول نامشخص یا در حال رشد مناسب است.</li>
-  <li><b>Indexed Job with Static Work Assignment</b>: وقتی از قبل می‌دانید چه کاری به کدام worker می‌رسد (مثلاً <code>JOB_COMPLETION_INDEX</code> برابر شماره‌ی shard database)؛‏ نیازی به queue service جداگانه نیست.</li>
-  <li><b>Job with Pod-to-Pod Communication</b>: کارهای MPI-style که workerها باید با هم هماهنگ شوند (مثلاً all-reduce در distributed training)؛‏ نیازمند headless Service.</li>
-  <li><b>Job Template Expansion</b>: وقتی هر work item پارامترهای خیلی متفاوتی دارد و از یک ابزار مثل <code>envsubst</code> یا <code>jq</code> برای ساخت چند manifest از یک template استفاده می‌کنید و آن‌ها را جدا apply می‌کنید (یک Job برای هر آیتم،‏ parallelism=1 هرکدام).</li>
-</ul>
-</div>
 <div class="lab"><b>آزمایش عملی: الگوی Queue with Pod Per Work Item با RabbitMQ</b>
 <p>یک نمونه‌ی کاربردی این الگو با RabbitMQ به‌عنوان message queue:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># 1) a RabbitMQ instance in the cluster (lab only, no persistence)
@@ -3835,6 +3900,19 @@ spec:
 <p>هر Pod یک پیام از صف <code>job1</code> برمی‌دارد،‏ پردازش می‌کند و با موفقیت exit می‌کند (کد ۰). چون <code>completions: 5</code> تنظیم شده،‏ Job وقتی کامل است که ۵ Pod با موفقیت terminate شده باشند،‏ مستقل از این‌که کدام Pod کدام پیام را برداشته. تفاوت این الگو با <b>Queue with Variable Pod Count</b> در همین است: این‌جا از پیش می‌دانیم دقیقاً ۵ work item وجود دارد،‏ پس <code>completions</code> را مشخص می‌کنیم؛‏ در حالت variable،‏ <code>completions</code> را unset می‌گذاریم و هر Pod با دیدن صف خالی خودش تصمیم می‌گیرد که کار کل Job تمام شده و دیگر Pod تازه‌ای لازم نیست.</p>
 </div>
 <p>برای الگوهای Queue with Variable Pod Count و Fine Parallel Processing (با Redis)،‏ و Indexed Job with Static Work Assignment،‏ رویکرد مشابه است؛‏ تفاوت اصلی در این است که Podها چگونه تشخیص می‌دهند «کارشان تمام شده» — در حالت اول با خالی دیدن صف،‏ و در Indexed Job با نگاشت مستقیم <code>JOB_COMPLETION_INDEX</code> به یک shard از کار از پیش تعیین‌شده (مثلاً یک offset در یک فایل،‏ یا یک شماره‌ی صفحه در یک database).</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام الگو مناسب کدام کار است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: کدام الگو مناسب کدام کار است؟</b>
+<ul>
+  <li><b>Queue with Pod Per Work Item</b>: یک Job با <code>completions=W</code>؛‏ ساده‌ترین حالت برای شروع،‏ وقتی هر work item یک واحد کاری کامل است (مثلاً یک پیام در RabbitMQ که خودش شامل همه‌ی اطلاعات لازم است). برنامه معمولاً به تغییر کمی نیاز دارد: یک پیام می‌گیرد،‏ پردازش می‌کند،‏ ack می‌کند،‏ exit می‌کند.</li>
+  <li><b>Queue with Variable Pod Count</b>: وقتی نمی‌دانید از قبل چند work item وجود دارد (<code>completions</code> تنظیم نمی‌شود)؛‏ هر Pod تا خالی شدن صف کار می‌کند و خودش تصمیم می‌گیرد کی خارج شود. برای صف‌هایی با طول نامشخص یا در حال رشد مناسب است.</li>
+  <li><b>Indexed Job with Static Work Assignment</b>: وقتی از قبل می‌دانید چه کاری به کدام worker می‌رسد (مثلاً <code>JOB_COMPLETION_INDEX</code> برابر شماره‌ی shard database)؛‏ نیازی به queue service جداگانه نیست.</li>
+  <li><b>Job with Pod-to-Pod Communication</b>: کارهای MPI-style که workerها باید با هم هماهنگ شوند (مثلاً all-reduce در distributed training)؛‏ نیازمند headless Service.</li>
+  <li><b>Job Template Expansion</b>: وقتی هر work item پارامترهای خیلی متفاوتی دارد و از یک ابزار مثل <code>envsubst</code> یا <code>jq</code> برای ساخت چند manifest از یک template استفاده می‌کنید و آن‌ها را جدا apply می‌کنید (یک Job برای هر آیتم،‏ parallelism=1 هرکدام).</li>
+</ul>
+</div>
+  </details>
 <h3 id="ch4-b-job-advanced">کاربرد پیشرفته <small>(Advanced usage)</small></h3>
 <h4>suspend کردن Job <small>(Suspending a Job)</small></h4>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.24 [stable]</span></p>
@@ -4011,9 +4089,13 @@ status:
 <h4>یک Job که Pod کنترل‌کننده می‌سازد <small>(Single Job starts controller Pod)</small></h4>
 <p>الگوی دیگر این است که یک Job واحد یک Pod بسازد که سپس Podهای دیگری می‌سازد و به‌نوعی نقش یک controller سفارشی برای آن Podها را ایفا می‌کند. این کار بیشترین انعطاف را فراهم می‌کند،‏ ولی ممکن است شروع کار با آن نسبتاً پیچیده باشد و یکپارچگی کمتری با کوبرنتیز ارائه دهد.</p>
 <p>یک مزیت این رویکرد این است که کل فرایند تضمین completion یک Job object را دارد،‏ ولی کنترل کامل روی این‌که چه Podهایی ساخته می‌شوند و کار چگونه به آن‌ها تخصیص می‌یابد را هم حفظ می‌کند.</p>
-<div class="deep"><b>توضیح تکمیلی: Job در برابر ReplicationController/Deployment — یک قاعده‌ی ساده</b>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Job در برابر ReplicationController/Deployment — یک قاعده‌ی ساده</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: Job در برابر ReplicationController/Deployment — یک قاعده‌ی ساده</b>
 <p>یک سؤال ساده برای تشخیص این‌که کدام workload API مناسب است: «آیا Pod باید همیشه در حال اجرا باشد؟» اگر بله (web server،‏ API،‏ proxy) از Deployment استفاده کنید. اگر Pod یک کار مشخص انجام می‌دهد و بعد باید تمام شود (migration،‏ batch processing،‏ backup،‏ cron task) از Job یا CronJob استفاده کنید. اگر Pod باید روی هر Node اجرا شود (agent مانیتورینگ،‏ log collector) از DaemonSet استفاده کنید. استفاده‌ی اشتباه رایج: اجرای یک batch script به‌صورت bare Pod با <code>restartPolicy: Always</code> — وقتی script با موفقیت تمام شود،‏ kubelet دوباره آن را اجرا می‌کند و یک حلقه‌ی بی‌پایان می‌سازد؛‏ همین‌جاست که Job با <code>restartPolicy: Never</code> یا <code>OnFailure</code> لازم می‌شود.</p>
 </div>
+  </details>
 <h3 id="ch4-b-cronjob">CronJob</h3>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.21 [stable]</span></p>
 <p>یک <b>CronJob</b> Jobهایی را بر اساس یک schedule تکرارشونده می‌سازد.</p>
@@ -4301,14 +4383,18 @@ echo $pods
 <p><b>Bare Pods.</b> برخلاف حالتی که کاربر مستقیماً podها را می‌سازد،‏ یک ReplicationController podهایی را که به هر دلیلی حذف یا terminate شده‌اند جایگزین می‌کند،‏ مثل حالت خرابی node یا maintenance مخرب node مثل یک kernel upgrade. به همین دلیل،‏ توصیه می‌کنیم از یک ReplicationController استفاده کنید حتی اگر برنامه‌ی شما فقط به یک pod نیاز دارد. آن را شبیه یک process supervisor در نظر بگیرید،‏ با این تفاوت که چند pod را در چند node نظارت می‌کند نه processهای مجزا روی یک node واحد. یک ReplicationController،‏ restartهای local container را به یک agent روی node،‏ مثل kubelet،‏ واگذار می‌کند.</p>
 <p><b>Job.</b> برای podهایی که انتظار می‌رود خودشان تمام شوند (یعنی batch jobها)،‏ به‌جای ReplicationController از <code>Job</code> استفاده کنید.</p>
 <p><b>DaemonSet.</b> برای podهایی که یک عملکرد سطح machine فراهم می‌کنند،‏ مثل مانیتورینگ machine یا logging machine،‏ به‌جای ReplicationController از <code>DaemonSet</code> استفاده کنید. این podها طول عمری دارند که وابسته به طول عمر یک machine است: pod باید پیش از شروع podهای دیگر روی machine در حال اجرا باشد،‏ و safe است وقتی machine قرار است reboot/shutdown شود terminate شود.</p>
-<div class="deep"><b>توضیح تکمیلی: چرا هنوز ReplicationController را یاد بگیریم؟</b>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا هنوز ReplicationController را یاد بگیریم؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا هنوز ReplicationController را یاد بگیریم؟</b>
 <p>در production امروزی تقریباً هیچ‌کس مستقیم ReplicationController نمی‌سازد؛‏ Deployment (که از ReplicaSet استفاده می‌کند) استاندارد است. اما دو دلیل برای شناخت آن مهم است: (۱) API قدیمی <code>apiVersion: v1, kind: ReplicationController</code> هنوز در clusterهای legacy دیده می‌شود و شما ممکن است با آن troubleshoot کنید؛‏ (۲) خواندن این صفحه،‏ مبنای مفهومی selector-based reconciliation را که ReplicaSet/Deployment هم از آن ارث می‌برند،‏ به روشن‌ترین شکل نشان می‌دهد — چون ReplicaSet تقریباً هیچ چیز جدیدی روی این مدل اضافه نمی‌کند،‏ فقط selector قدرتمندتری (set-based) دارد. اگر یک قطعه YAML قدیمی با <code>kind: ReplicationController</code> دیدید،‏ تبدیل آن به Deployment ساده است: <code>spec.template</code> و <code>spec.selector.matchLabels</code> (به‌جای selector تخت) را کپی کنید و یک <code>spec.strategy</code> اضافه کنید.</p>
 </div>
+  </details>
 <h3 id="ch4-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>هر بخش شاپیفای حالا controller مناسب خودش را دارد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>پایگاه داده‌ای که نام و نشانی ثابت لازم دارد</td><td>StatefulSet با headless Service؛‏ نام <code>postgres-0.postgres</code> با حذف Pod عوض نمی‌شود</td><td>گام‌های ۲ و ۵</td></tr><tr><td>rolloutی که بی‌صدا گیر می‌کند</td><td><code>progressDeadlineSeconds</code> و condition به نام Progressing؛‏ <code>kubectl rollout status</code> با کد خطا خارج می‌شود</td><td>گام ۳</td></tr><tr><td>migration که با هر replica یک بار اجرا می‌شد</td><td>Job یک‌باره پیش از انتشار،‏ با قفل پایگاه داده؛‏ خود migration هم idempotent است</td><td>گام‌های ۳ و ۴</td></tr><tr><td>گزارش فروش شبانه</td><td>CronJob با timeZone و concurrencyPolicy؛‏ آزمودن با <code>kubectl create job --from</code></td><td>گام ۶</td></tr><tr><td>agent مربوط به log روی هر Node</td><td>DaemonSet با hostPath فقط خواندنی</td><td>گام ۷</td></tr><tr><td>تاریخچه‌ی rollout ناخوانا</td><td>annotation به نام <code>kubernetes.io/change-cause</code> و <code>rollout history --revision</code></td><td>گام‌های ۰ و ۱</td></tr></tbody></table></div><p><b>فایل‌های شاپیفای تا این‌جا:</b> کد API نسخه‌ی 1.3 در چهار فایل <code>app.py</code> و <code>db.py</code> و <code>migrate.py</code> و <code>report.py</code>؛‏ فایل Dockerfile؛‏ و این فایل‌های YAML:</p><div class="tbl"><table><thead><tr><th>فایل</th><th>شیء</th><th>نکته‌ی کلیدی</th></tr></thead><tbody><tr><td><code>shop-api.yaml</code></td><td>Deployment و Service مربوط به API</td><td>image نسخه‌ی 1.3؛‏ annotation به نام change-cause؛‏ <code>progressDeadlineSeconds: 120</code>؛‏ بدون init container مربوط به migration</td></tr><tr><td><code>postgres.yaml</code></td><td>headless Service و StatefulSet</td><td><code>clusterIP: None</code> و <code>serviceName</code>؛‏ هنوز بدون volume</td></tr><tr><td><code>shop-migrate.yaml</code></td><td>Job</td><td><code>backoffLimit: 2</code> و <code>restartPolicy: Never</code> و TTL ده‌دقیقه‌ای</td></tr><tr><td><code>shop-report.yaml</code></td><td>CronJob</td><td>ساعت ۲ به وقت تهران؛‏ <code>concurrencyPolicy: Forbid</code></td></tr><tr><td><code>log-agent.yaml</code></td><td>DaemonSet</td><td>hostPath فقط خواندنی و نام Node از Downward API</td></tr><tr><td>(فعلاً بدون فایل)</td><td>Deployment به نام shop-web</td><td>nginx با ۲ replica؛‏ فایلش در فصل ۸</td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> داده‌ی PostgreSQL با هر حذف Pod از بین می‌رود (فصل ۷)؛‏ رمز پایگاه داده هم در <code>postgres.yaml</code> و هم داخل کد و image است (فصل ۶)؛‏ گزارش شبانه سقف مصرف CPU ندارد (فصل ۶)؛‏ و frontend و API فقط از داخل cluster در دسترس‌اند (فصل ۵).</p><p><b>هفته‌ی بعد:</b> مشتری‌ها باید فروشگاه را با نام <code>shopify.local</code> در مرورگر باز کنند.</p></div>
 
-  <div id="ch4-ex2" class="ex">
-  <div class="ex-h">تمرین‌های فصل ۴،‏ بخش دوم <small>۱۶ تمرین</small></div>
+  <details id="ch4-ex2" class="ex">
+  <summary class="ex-h">تمرین‌های فصل ۴،‏ بخش دوم <small>۱۶ تمرین</small></summary>
   <ol>
     <li><span class="lvl l1">مفهومی</span>چرا تعداد Podهای یک DaemonSet را با یک عدد مشخص نمی‌کنیم،‏ برخلاف Deployment که <code>replicas</code> دارد؟ اگر یک Node جدید با <code>nodeSelector</code> نامطابق با DaemonSet به cluster اضافه شود چه اتفاقی می‌افتد؟
       <details class="ans"><summary>پاسخ</summary><p>در DaemonSet،‏ desired state «یک Pod روی هر Node واجد شرایط» است،‏ نه یک عدد ثابت؛‏ تعداد Podها تابعی از تعداد Nodeهای cluster و nodeSelector/affinity/toleration مشخص‌شده در pod template است،‏ نه یک فیلد spec. وقتی Nodeی جدید اضافه می‌شود که با nodeSelector این DaemonSet مطابقت ندارد (یا taint دارد که این DaemonSet toleration متناظر ندارد)،‏ DaemonSet controller هیچ Podی روی آن Node نمی‌سازد؛‏ آن Node ساده از دید این DaemonSet «واجد شرایط» نیست.</p></details></li>
@@ -4514,10 +4600,10 @@ kubectl describe rc nginx-v2              # same old Pods, adopted (not recreate
       <details class="ans"><summary>پاسخ</summary><p>رفتار توصیف‌شده («ترافیک بین هر ۱۰ Pod توزیع می‌شود») دقیقاً همان چیزی است که مستندات پیش‌بینی می‌کنند: چون Service از یک selector عمومی‌تر (مثلاً <code>tier=frontend, environment=prod</code>) استفاده می‌کند و هر دو RC (stable و canary) Podهایی با آن label می‌سازند،‏ هر دو گروه پشت همان Service قرار می‌گیرند و kube-proxy بین همه‌ی ۱۰ Pod به‌شکل round-robin/random توزیع می‌کند — این طبق طراحی «Using ReplicationControllers with Services» است،‏ نه یک باگ.</p>
       <p>افزایش نرخ خطا احتمالاً به این معناست که خود image یا config نسخه‌ی canary مشکل دارد (نه مکانیزم توزیع ترافیک)؛‏ باید logs/metrics را <b>به تفکیک label <code>track</code></b> (stable در برابر canary) بررسی کرد،‏ مثلاً <code>kubectl logs -l track=canary</code> یا فیلتر کردن دashboard بر اساس pod name prefix. اگر واقعاً نرخ خطای Podهای canary بالاتر است،‏ باید RC canary را به صفر scale کرد (<code>kubectl scale rc frontend-canary --replicas=0</code>) تا ترافیک قطع شود،‏ بدون این‌که لازم باشد Service یا RC پایدار دست بخورد. برای جلوگیری از این سردرگمی در آینده،‏ توصیه می‌شود این الگو با Deployment + یک ابزار مثل Argo Rollouts یا حداقل با یک Service جدا برای canary انجام شود تا کنترل دقیق‌تری روی درصد ترافیک وجود داشته باشد.</p></details></li>
   </ol>
-</div>
+</details>
 
-  <div id="ch4-ex3" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۴ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch4-ex3" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۴ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>Deployment،‏ StatefulSet،‏ DaemonSet و Job را مقایسه کنید. برای هر کدام یک مثال بزنید.
         <details class="ans"><summary>پاسخ</summary>
@@ -4618,7 +4704,7 @@ kubectl rollout undo deployment/web --to-revision=2
         </details></li>
 
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch4-recap">
     <div class="recap-h">خلاصه‌ی فصل ۴ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

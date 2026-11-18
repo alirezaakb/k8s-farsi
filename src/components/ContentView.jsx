@@ -14,6 +14,19 @@ import widgets from '../widgets/index.js';
 // parts of a page the editor must not change: buttons, drawings, images, the label bar of code blocks
 const FIXED = '.code .lbl, button, svg, img, input, figure .plate, [data-widget]';
 
+// the collapsible parts of a chapter: supplementary notes, exercises, answers
+const FOLDS = 'details.more, details.ex, details.ans';
+const openAll = (root, on = true) => root.querySelectorAll(FOLDS).forEach((d) => { d.open = on; });
+
+/** Reading settings "supplementary notes" and "exercises": open or close those parts for the whole page. */
+function applyFolds(root) {
+  const attr = (k) => document.documentElement.getAttribute('data-' + k) === 'open';
+  root.querySelectorAll('details.more').forEach((d) => { d.open = attr('more'); });
+  root.querySelectorAll('details.ex').forEach((d) => { d.open = attr('exs'); });
+}
+
+const openAncestors = (el) => { for (let e = el; e; e = e.parentElement) if (e.tagName === 'DETAILS') e.open = true; };
+
 function setEditable(root, on) {
   if (on) {
     root.contentEditable = 'true';
@@ -78,6 +91,12 @@ export default function ContentView({ page, onLoaded }) {
 
     notes.current = initNotes();
     notes.current?.refresh();
+    applyFolds(root);
+    const onPrefs = () => { if (!editor.get().active) applyFolds(root); };
+    const beforePrint = () => openAll(root);
+    window.addEventListener('jozve:prefs', onPrefs);
+    window.addEventListener('beforeprint', beforePrint);
+    undo.push(() => { window.removeEventListener('jozve:prefs', onPrefs); window.removeEventListener('beforeprint', beforePrint); });
     onLoaded?.(root);
     return () => undo.forEach((f) => f());
   }, [html, page, onLoaded]);
@@ -88,7 +107,7 @@ export default function ContentView({ page, onLoaded }) {
     if (hl) { notes.current?.jump(decodeURIComponent(hl[1])); return undefined; }
     if (location.hash.length > 1) {
       const el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-      if (el) return settleTo(el);
+      if (el) { openAncestors(el); return settleTo(el); }
     }
     scrollTop();
     return undefined;
@@ -151,6 +170,7 @@ export default function ContentView({ page, onLoaded }) {
     import('../lib/editing.js').then((m) => {
       if (!alive) return;
       editing.current = m;
+      openAll(root);
       setEditable(root, true);
       document.execCommand('defaultParagraphSeparator', false, 'p');
     });

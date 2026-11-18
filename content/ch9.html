@@ -54,6 +54,8 @@ kubectl scale deployment shop-api --replicas=3
   <p>Pod disruption فرایندی است که طی آن Podهای روی Nodeها به‌صورت <b>voluntary</b> یا <b>involuntary</b> terminate می‌شوند.</p>
   <p>Voluntary disruptionها عمداً توسط صاحبان برنامه (application owners) یا مدیران cluster آغاز می‌شوند. Involuntary disruptionها ناخواسته‌اند و می‌توانند از مشکلات اجتناب‌ناپذیر مانند تمام شدن منابع Nodeها یا حذف تصادفی ناشی شوند. صفحات مرتبط با این گروه عبارت‌اند از Pod Priority and Preemption،‏ Node-pressure Eviction و API-initiated Eviction،‏ که همگی در بخش دوم همین فصل آمده‌اند.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">سه مفهوم،‏ سه مسئول متفاوت</span></summary>
   <div class="deep"><b>توضیح تکمیلی: سه مفهوم،‏ سه مسئول متفاوت</b>
     <p>این سه واژه اغلب با هم اشتباه گرفته می‌شوند،‏ در حالی که بازیگر اصلی هر کدام فرق می‌کند:</p>
     <div class="tbl"><table><thead><tr><th>مفهوم</th><th>چه کسی انجامش می‌دهد</th><th>چه زمانی</th><th>نتیجه</th></tr></thead><tbody>
@@ -63,6 +65,7 @@ kubectl scale deployment shop-api --replicas=3
     </tbody></table></div>
     <p>پس وقتی در یک incident می‌بینید Podی ناگهان ناپدید شده،‏ اولین سؤال این است: «چه کسی آن را برداشت؟». event با reason <code>Preempted</code> از scheduler می‌آید،‏ <code>Evicted</code> از kubelet،‏ و <code>TaintManagerEviction</code> از controller مربوط به taintها.</p>
   </div>
+  </details>
 
   <h3 id="ch9-a-kube-scheduler">Kubernetes Scheduler</h3>
   <p>در کوبرنتیز،‏ <i>scheduling</i> به این معناست که مطمئن شویم Podها با Nodeها match می‌شوند تا kubelet بتواند آن‌ها را اجرا کند.</p>
@@ -93,19 +96,6 @@ kubectl scale deployment shop-api --replicas=3
     <li><b>Scheduling Profiles</b> به شما اجازه می‌دهند Pluginهایی را پیکربندی کنید که مراحل مختلف scheduling را پیاده‌سازی می‌کنند،‏ از جمله: <code>QueueSort</code>،‏ <code>Filter</code>،‏ <code>Score</code>،‏ <code>Bind</code>،‏ <code>Reserve</code>،‏ <code>Permit</code> و موارد دیگر. همچنین می‌توانید kube-scheduler را طوری پیکربندی کنید که profileهای مختلفی را اجرا کند. (جزئیات کامل در بخش «Scheduler Configuration» همین فصل.)</li>
   </ol>
 
-  <div class="deep"><b>توضیح تکمیلی: مسیر کامل یک Pod از ساخته شدن تا اجرا</b>
-    <p>برای اینکه تصویر ذهنی دقیقی داشته باشید،‏ مسیر یک Pod را دنبال کنیم:</p>
-    <ol>
-      <li>کاربر (یا یک controller مثل ReplicaSet) Pod را با <code>spec.nodeName</code> خالی به API server می‌فرستد؛‏ admission controllerها (اجزایی در API server که درخواست را پیش از ذخیره بررسی یا اصلاح می‌کنند) آن را mutate/validate می‌کنند و در etcd ذخیره می‌شود. <code>status.phase</code> برابر <code>Pending</code> است.</li>
-      <li>kube-scheduler از طریق watch،‏ Pod بدون Node را می‌بیند و آن را در scheduling queue قرار می‌دهد (مرتب‌شده بر اساس Priority).</li>
-      <li><b>Filtering:‏</b> pluginهایی مثل <code>NodeResourcesFit</code> (همان PodFitsResources قدیمی)،‏ <code>NodeAffinity</code>،‏ <code>TaintToleration</code>،‏ <code>PodTopologySpread</code>،‏ <code>InterPodAffinity</code> و <code>VolumeBinding</code> هر Nodeی را که مناسب نیست حذف می‌کنند.</li>
-      <li><b>Scoring:‏</b> pluginهایی مثل <code>NodeResourcesBalancedAllocation</code>،‏ <code>ImageLocality</code> و ... به هر Node باقی‌مانده امتیاز می‌دهند؛‏ امتیازها با وزن pluginها جمع می‌شوند.</li>
-      <li><b>Binding:‏</b> scheduler یک object از نوع <code>Binding</code> به subresource <code>pods/binding</code> می‌فرستد و API server مقدار <code>spec.nodeName</code> را تنظیم می‌کند.</li>
-      <li>kubelet روی آن Node،‏ Pod را می‌بیند (چون nodeName برابر نام خودش است)،‏ sandbox و containerها را از طریق container runtime (نرم‌افزاری که containerها را روی Node اجرا می‌کند) می‌سازد.</li>
-    </ol>
-    <p>اگر در مرحله‌ی ۳ هیچ Nodeی باقی نماند،‏ Pod در <code>Pending</code> می‌ماند و scheduler یک event از نوع <code>FailedScheduling</code> ثبت می‌کند که دلیل رد شدن Nodeها را به‌صورت جمعی خلاصه می‌کند. خواندن این پیام مهم‌ترین مهارت troubleshooting در این فصل است.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: دیدن filtering در عمل با یک Pod غیرقابل‌schedule</b>
     <p>روی یک cluster آزمایشی (kind یا minikube) یک Pod با request بسیار بزرگ بسازید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run huge --image=registry.k8s.io/pause:3.9 \
@@ -124,6 +114,22 @@ Events:
 </pre></div>
     <p>ساختار پیام را یاد بگیرید: <code>0/3 nodes are available</code> یعنی از ۳ Node هیچ‌کدام feasible نبود؛‏ سپس برای هر دلیل تعداد Nodeهایی که به آن دلیل رد شدند می‌آید (یک Node به دلیل taint مربوط به control-plane،‏ دو Node به دلیل کمبود CPU). بخش <code>preemption:</code> نتیجه‌ی PostFilter است: scheduler بررسی کرده که آیا با حذف Podهای کم‌اهمیت‌تر جا باز می‌شود یا نه (بخش دوم فصل). متن دقیق پیام‌ها بین نسخه‌ها کمی تفاوت دارد (خارج از مستندات رسمی)،‏ اما ساختار «تعداد/دلیل» ثابت است. در پایان: <code>kubectl delete pod huge</code>.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مسیر کامل یک Pod از ساخته شدن تا اجرا</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: مسیر کامل یک Pod از ساخته شدن تا اجرا</b>
+    <p>برای اینکه تصویر ذهنی دقیقی داشته باشید،‏ مسیر یک Pod را دنبال کنیم:</p>
+    <ol>
+      <li>کاربر (یا یک controller مثل ReplicaSet) Pod را با <code>spec.nodeName</code> خالی به API server می‌فرستد؛‏ admission controllerها (اجزایی در API server که درخواست را پیش از ذخیره بررسی یا اصلاح می‌کنند) آن را mutate/validate می‌کنند و در etcd ذخیره می‌شود. <code>status.phase</code> برابر <code>Pending</code> است.</li>
+      <li>kube-scheduler از طریق watch،‏ Pod بدون Node را می‌بیند و آن را در scheduling queue قرار می‌دهد (مرتب‌شده بر اساس Priority).</li>
+      <li><b>Filtering:‏</b> pluginهایی مثل <code>NodeResourcesFit</code> (همان PodFitsResources قدیمی)،‏ <code>NodeAffinity</code>،‏ <code>TaintToleration</code>،‏ <code>PodTopologySpread</code>،‏ <code>InterPodAffinity</code> و <code>VolumeBinding</code> هر Nodeی را که مناسب نیست حذف می‌کنند.</li>
+      <li><b>Scoring:‏</b> pluginهایی مثل <code>NodeResourcesBalancedAllocation</code>،‏ <code>ImageLocality</code> و ... به هر Node باقی‌مانده امتیاز می‌دهند؛‏ امتیازها با وزن pluginها جمع می‌شوند.</li>
+      <li><b>Binding:‏</b> scheduler یک object از نوع <code>Binding</code> به subresource <code>pods/binding</code> می‌فرستد و API server مقدار <code>spec.nodeName</code> را تنظیم می‌کند.</li>
+      <li>kubelet روی آن Node،‏ Pod را می‌بیند (چون nodeName برابر نام خودش است)،‏ sandbox و containerها را از طریق container runtime (نرم‌افزاری که containerها را روی Node اجرا می‌کند) می‌سازد.</li>
+    </ol>
+    <p>اگر در مرحله‌ی ۳ هیچ Nodeی باقی نماند،‏ Pod در <code>Pending</code> می‌ماند و scheduler یک event از نوع <code>FailedScheduling</code> ثبت می‌کند که دلیل رد شدن Nodeها را به‌صورت جمعی خلاصه می‌کند. خواندن این پیام مهم‌ترین مهارت troubleshooting در این فصل است.</p>
+  </div>
+  </details>
 
   <h3 id="ch9-a-assign">Assigning Pods to Nodes</h3>
   <p>می‌توانید یک Pod را طوری محدود کنید که فقط روی Node(های) خاصی اجرا شود (<i>restricted</i>)،‏ یا <i>ترجیح</i> دهد روی Nodeهای خاصی اجرا شود (<i>prefer</i>). چند روش برای این کار وجود دارد و همه‌ی روش‌های توصیه‌شده از label selectorها (شرطی روی labelها برای انتخاب گروهی از اشیا) برای ساده‌سازی انتخاب استفاده می‌کنند. اغلب نیازی به تعیین هیچ محدودیتی از این نوع ندارید؛‏ scheduler به‌طور خودکار یک جای‌گذاری معقول انجام می‌دهد (برای نمونه،‏ Podهای شما را در میان Nodeها پخش می‌کند تا Podی روی Nodeی با منابع آزاد ناکافی قرار نگیرد). با این حال،‏ شرایطی وجود دارد که ممکن است بخواهید کنترل کنید Pod روی کدام Node اجرا شود؛‏ برای مثال،‏ اطمینان از اینکه Pod روی Nodeی قرار می‌گیرد که SSD به آن متصل است،‏ یا قرار دادن Podهای دو سرویس متفاوت که ارتباط زیادی با هم دارند در یک availability zone یکسان (co-locate).</p>
@@ -169,10 +175,6 @@ worker2   Ready     &lt;none&gt;   1d      v1.37.0        ...,kubernetes.io/host
     <li>مطمئن شوید از Node authorizer استفاده می‌کنید و admission plugin با نام <code>NodeRestriction</code> را <i>فعال</i> کرده‌اید.</li>
     <li>labelهایی با پیشوند <code>node-restriction.kubernetes.io/</code> به Nodeهای خود اضافه کنید و از آن labelها در node selectorهای خود استفاده کنید. برای مثال <code>example.com.node-restriction.kubernetes.io/fips=true</code> یا <code>example.com.node-restriction.kubernetes.io/pci-dss=true</code>.</li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: چرا این پیشوند اهمیت دارد؟</b>
-    <p>kubelet با credential خودش (identity به شکل <code>system:node:&lt;name&gt;</code>) اجازه دارد object Node خودش را update کند. اگر یک مهاجم روی Node دسترسی root بگیرد،‏ می‌تواند با همان credential روی Node خودش مثلاً label <code>pci-dss=true</code> بگذارد و منتظر بماند تا Podهای حساس پرداخت (که با nodeSelector روی <code>pci-dss=true</code> هدف گرفته شده‌اند) روی آن Node بیایند و Secretهایشان را بدزدد. <code>NodeRestriction</code> دقیقاً همین مسیر را می‌بندد: kubelet نمی‌تواند labelهای زیر <code>node-restriction.kubernetes.io/</code> را اضافه یا تغییر دهد؛‏ فقط یک admin با اختیارات کافی می‌تواند. پس labelی که «اعتماد» را نشان می‌دهد باید با همین پیشوند (prefix) ساخته شود. این سازوکار،‏ یعنی admission plugin با نام NodeRestriction در کنار Node authorizer،‏ در فصل ۱۴ (Security) بیشتر بررسی می‌شود.</p>
-  </div>
-
   <h4 id="ch9-a-nodeselector">nodeSelector</h4>
   <p><code>nodeSelector</code> ساده‌ترین شکل توصیه‌شده از محدودیت انتخاب Node است. می‌توانید field <code>nodeSelector</code> را به spec Pod اضافه کنید و node labelهایی را که می‌خواهید Node هدف داشته باشد مشخص کنید. Kubernetes فقط Pod را روی Nodeهایی schedule می‌کند که <b>همه‌ی</b> labelهای مشخص‌شده‌ی شما را داشته باشند.</p>
   <p>صفحه‌ی Assign Pods to Nodes این کار را با یک مثال کامل نشان می‌دهد:</p>
@@ -197,10 +199,6 @@ kubectl get pods --output=wide
 nginx    1/1       Running   0          13s    10.200.0.4   worker0
 </pre></div>
   <p>این Pod فقط روی Nodeی schedule شد که label <code>disktype=ssd</code> دارد (worker0 در مثال قبل). همان صفحه یک روش دیگر هم نشان می‌دهد: قرار دادن Pod روی یک Node مشخص با <code>nodeName</code> (فایل <code>pods/pod-nginx-specific-node.yaml</code>) که در بخش nodeName همین فصل توضیح داده شده است.</p>
-  <div class="deep"><b>توضیح تکمیلی: nodeSelector چه چیزی را نمی‌تواند بیان کند؟</b>
-    <p><code>nodeSelector</code> فقط «AND» از تساوی‌ها است: <code>disktype=ssd</code> <b>و</b> <code>zone=a</code>. نمی‌توانید بگویید «zone برابر a <b>یا</b> b»،‏ «Nodeهایی که label <code>gpu</code> <b>ندارند</b>»،‏ «Nodeهایی با تعداد core بیشتر از ۱۶»،‏ یا «ترجیحاً ssd ولی اگر نبود هم اشکالی ندارد». همه‌ی این‌ها با node affinity (قواعد انتخاب Node بر اساس labelهای آن،‏ به‌صورت اجباری یا ترجیحی) ممکن است. اگر nodeSelector با هیچ Nodeی match نشود،‏ Pod برای همیشه <code>Pending</code> می‌ماند و در event آن پیامی مثل <code>0/5 nodes are available: 5 node(s) didn't match Pod's node affinity/selector</code> می‌بینید (توجه کنید که scheduler هر دو را زیر یک عنوان گزارش می‌کند،‏ چون هر دو توسط plugin <code>NodeAffinity</code> پیاده‌سازی شده‌اند).</p>
-  </div>
-
   <h4 id="ch9-a-affinity">Affinity and anti-affinity</h4>
   <p><code>nodeSelector</code> ساده‌ترین راه برای محدود کردن Podها به Nodeهایی با labelهای خاص است. Affinity و anti-affinity انواع محدودیت‌هایی را که می‌توانید تعریف کنید گسترش می‌دهند. برخی از مزایای affinity و anti-affinity عبارت‌اند از:</p>
   <ul>
@@ -261,16 +259,6 @@ spec:
     <p>اگر هم <code>nodeSelector</code> و هم <code>nodeAffinity</code> را مشخص کنید،‏ <i>هر دو</i> باید برآورده شوند تا Pod روی یک Node schedule شود.</p>
     <p>اگر چند term در <code>nodeSelectorTerms</code> مربوط به انواع <code>nodeAffinity</code> مشخص کنید،‏ Pod روی Nodeی قابل schedule است که <b>یکی</b> از termهای مشخص‌شده برآورده شود (termها با هم OR می‌شوند).</p>
     <p>اگر چند expression در یک field <code>matchExpressions</code> مربوط به یک term در <code>nodeSelectorTerms</code> مشخص کنید،‏ Pod فقط روی Nodeی قابل schedule است که <b>همه‌ی</b> expressionها برآورده شوند (expressionها با هم AND می‌شوند).</p>
-  </div>
-  <div class="deep"><b>توضیح تکمیلی: منطق OR/AND به زبان تصویری</b>
-    <div class="code"><div class="lbl"><span>منطق nodeSelectorTerms</span><button type="button">کپی</button></div><pre class="yaml">nodeSelectorTerms:
-- matchExpressions:          # term 1  ─┐
-  - {key: zone, operator: In, values: [a]}      # AND
-  - {key: disktype, operator: In, values: [ssd]} #
-- matchExpressions:          # term 2  ─┤  term1 OR term2
-  - {key: zone, operator: In, values: [b]}
-</pre></div>
-    <p>این rule یعنی: (zone=a <b>و</b> disktype=ssd) <b>یا</b> (zone=b). یک اشتباه رایج این است که کسی می‌خواهد «zone=a و ssd» را بیان کند اما هر expression را در یک term جداگانه می‌گذارد؛‏ نتیجه «zone=a یا ssd» می‌شود و Pod روی یک Node با HDD در zone=a هم قرار می‌گیرد. قاعده‌ی حفظ کردنی: <b>لیست بیرونی OR،‏ لیست درونی AND</b>. نکته‌ی دیگر: برای «zone برابر a یا b» لازم نیست دو term بسازید؛‏ یک expression با <code>operator: In</code> و دو value کافی است.</p>
   </div>
   <div class="lab"><b>آزمایش عملی: required و preferred node affinity (از صفحه‌ی task مربوطه)</b>
     <p>بعد از اینکه label <code>disktype=ssd</code> را به یک Node دادید،‏ این manifest فقط روی Nodeی با این label schedule می‌شود:</p>
@@ -362,10 +350,6 @@ spec:
 </pre></div>
   <p>اگر دو Node ممکن وجود داشته باشد که با rule نوع <code>preferredDuringSchedulingIgnoredDuringExecution</code> match شوند،‏ یکی با label <code>label-1:key-1</code> و دیگری با label <code>label-2:key-2</code>،‏ scheduler مقدار <code>weight</code> هر Node را در نظر می‌گیرد و آن وزن را به سایر امتیازهای آن Node اضافه می‌کند،‏ و Pod را روی Nodeی با بالاترین امتیاز نهایی schedule می‌کند.</p>
   <div class="note"><b>نکته</b><p>اگر می‌خواهید Kubernetes Podهای این مثال را با موفقیت schedule کند،‏ باید Nodeهایی موجود داشته باشید که label <code>kubernetes.io/os=linux</code> دارند.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: وزن preferred «قطعی» نیست</b>
-    <p>مجموع وزن‌های preferred فقط یکی از ورودی‌های scoring است (توسط plugin <code>NodeAffinity</code> در نقطه‌ی <code>score</code>). امتیاز این plugin normalize می‌شود و در کنار امتیاز pluginهایی مثل <code>NodeResourcesFit</code> (LeastAllocated)،‏ <code>NodeResourcesBalancedAllocation</code>،‏ <code>ImageLocality</code>،‏ <code>TaintToleration</code> و <code>PodTopologySpread</code> جمع می‌شود. بنابراین ممکن است Node با <code>label-2:key-2</code> (وزن ۵۰) به دلیل پر بودن منابع،‏ در امتیاز کل از Node دیگر عقب بماند. اگر رفتاری «همیشه» لازم دارید،‏ باید از required استفاده کنید،‏ نه اینکه وزن preferred را ۱۰۰ بگذارید.</p>
-  </div>
-
   <h5>Node affinity per scheduling profile</h5>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.20 [beta]</span></p>
   <p>هنگام پیکربندی چند scheduling profile،‏ می‌توانید یک profile را با یک node affinity مرتبط کنید؛‏ این کار زمانی مفید است که یک profile فقط برای مجموعه‌ی مشخصی از Nodeها کاربرد دارد. برای این کار،‏ یک <code>addedAffinity</code> به field <code>args</code> از plugin <code>NodeAffinity</code> در scheduler configuration اضافه کنید. برای مثال:</p>
@@ -390,10 +374,6 @@ profiles:
   <p><code>addedAffinity</code> روی همه‌ی Podهایی اعمال می‌شود که <code>.spec.schedulerName</code> را برابر <code>foo-scheduler</code> تنظیم کرده‌اند،‏ <b>علاوه بر</b> NodeAffinity مشخص‌شده در PodSpec. یعنی برای اینکه یک Node با Pod match شود،‏ باید هم <code>addedAffinity</code> و هم <code>.spec.NodeAffinity</code> خود Pod را برآورده کند.</p>
   <p>از آنجا که <code>addedAffinity</code> برای کاربران نهایی قابل مشاهده نیست،‏ رفتار آن ممکن است برایشان غیرمنتظره باشد. از node labelهایی استفاده کنید که ارتباط روشنی با نام scheduler profile دارند.</p>
   <div class="note"><b>نکته</b><p>DaemonSet controller،‏ که Podها را برای DaemonSetها می‌سازد،‏ از scheduling profileها پشتیبانی نمی‌کند. وقتی DaemonSet controller،‏ Podها را می‌سازد،‏ scheduler پیش‌فرض کوبرنتیز آن Podها را جای‌گذاری می‌کند و هر rule از نوع <code>nodeAffinity</code> را در DaemonSet controller رعایت می‌کند.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: کاربرد واقعی addedAffinity</b>
-    <p>فرض کنید یک pool از Nodeهای spot/preemptible دارید با label <code>scheduler-profile=batch</code> و می‌خواهید تیم داده فقط با نوشتن <code>schedulerName: batch-scheduler</code> در Jobهایش،‏ خودکار به آن pool برود،‏ بدون اینکه هر تیم nodeAffinity بنویسد. <code>addedAffinity</code> دقیقاً این کار را انجام می‌دهد. نکته‌ی ظریف: چون این affinity در spec Pod دیده نمی‌شود،‏ کسی که <code>kubectl describe pod</code> می‌کند و Pod را Pending می‌بیند،‏ در event پیام <code>didn't match Pod's node affinity/selector</code> را می‌بیند ولی در spec هیچ affinityی پیدا نمی‌کند. به همین دلیل مستندات توصیه می‌کند نام label با نام profile هم‌خوانی داشته باشد تا troubleshooting ممکن باشد.</p>
-  </div>
-
   <h5>Inter-pod affinity and anti-affinity</h5>
   <p>Inter-pod affinity و anti-affinity به شما اجازه می‌دهند محدود کنید که Podهای شما روی کدام Nodeها می‌توانند schedule شوند،‏ بر اساس labelهای Podهایی که <b>در حال حاضر</b> روی آن Node در حال اجرا هستند،‏ به‌جای node labelها.</p>
 
@@ -617,9 +597,6 @@ spec:
   </tbody></table></div>
   <p>اثر کلی این است که هر instance از cache احتمالاً توسط یک client که روی همان node اجرا می‌شود دسترسی داده می‌شود. این رویکرد هدفش کمینه کردن هم skew (بار نامتوازن) و هم latency است. ممکن است دلایل دیگری برای استفاده از Pod anti-affinity داشته باشید. برای مثالی از یک StatefulSet که با anti-affinity برای high availability پیکربندی شده،‏ از همان تکنیکی که در این مثال استفاده شده،‏ به ZooKeeper tutorial مراجعه کنید.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چرا inter-pod affinity گران است؟</b>
-    <p>برخلاف node affinity که فقط باید label یک Node را با یک expression مقایسه کند (O(۱) به ازای هر Node)،‏ inter-pod affinity باید برای هر Node کاندید،‏ همه‌ی Podهای موجود در همان topology domain را بشمارد و labelشان را با selector مقایسه کند. در یک cluster با هزاران Pod و صدها Node،‏ این یعنی برای هر Pod جدید ممکن است لازم باشد ده‌ها هزار مقایسه انجام شود. به همین دلیل مستندات هشدار می‌دهد این قابلیت را در clusterهای بزرگ‌تر از چند صد Node به‌کار نبرید،‏ یا دست‌کم آن را محدود به namespaceهای مشخص و topologyKeyهای ساده (مثل <code>kubernetes.io/hostname</code>) کنید. Scheduler این هزینه را با caching نتایج match در طول یک scheduling cycle کاهش می‌دهد،‏ اما هزینه‌ی اصلی الگوریتمی باقی می‌ماند.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: co-location با Pod affinity روی kind</b>
     <p>یک namespace و دو Deployment (redis-cache و web-server) از مثال بالا را روی یک cluster kind با حداقل ۳ Node بسازید،‏ سپس جای‌گذاری را بررسی کنید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f redis-cache-deployment.yaml
@@ -711,6 +688,35 @@ spec:
   </tbody></table></div>
   <div class="note"><b>نکته</b><p>عملگرهای <code>Gt</code> و <code>Lt</code> با مقادیر غیر-integer کار نمی‌کنند. اگر مقدار داده‌شده به‌عنوان integer پارس نشود،‏ Pod schedule نخواهد شد. همچنین،‏ <code>Gt</code> و <code>Lt</code> برای <code>podAffinity</code> در دسترس نیستند.</p></div>
   <p class="next">ادامه: taints and tolerations ·‏ design docs برای node affinity و inter-pod affinity/anti-affinity ·‏ topology manager (فصل ۶) · <code>nodeSelector</code> و affinity/anti-affinity (task pageها).</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۶)</small> <span class="m-t">چرا این پیشوند اهمیت دارد؟ · nodeSelector چه چیزی را نمی‌تواند بیان کند؟ · منطق OR/AND به زبان تصویری · وزن preferred «قطعی» نیست · کاربرد واقعی addedAffinity · چرا inter-pod affinity گران است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا این پیشوند اهمیت دارد؟</b>
+    <p>kubelet با credential خودش (identity به شکل <code>system:node:&lt;name&gt;</code>) اجازه دارد object Node خودش را update کند. اگر یک مهاجم روی Node دسترسی root بگیرد،‏ می‌تواند با همان credential روی Node خودش مثلاً label <code>pci-dss=true</code> بگذارد و منتظر بماند تا Podهای حساس پرداخت (که با nodeSelector روی <code>pci-dss=true</code> هدف گرفته شده‌اند) روی آن Node بیایند و Secretهایشان را بدزدد. <code>NodeRestriction</code> دقیقاً همین مسیر را می‌بندد: kubelet نمی‌تواند labelهای زیر <code>node-restriction.kubernetes.io/</code> را اضافه یا تغییر دهد؛‏ فقط یک admin با اختیارات کافی می‌تواند. پس labelی که «اعتماد» را نشان می‌دهد باید با همین پیشوند (prefix) ساخته شود. این سازوکار،‏ یعنی admission plugin با نام NodeRestriction در کنار Node authorizer،‏ در فصل ۱۴ (Security) بیشتر بررسی می‌شود.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: nodeSelector چه چیزی را نمی‌تواند بیان کند؟</b>
+    <p><code>nodeSelector</code> فقط «AND» از تساوی‌ها است: <code>disktype=ssd</code> <b>و</b> <code>zone=a</code>. نمی‌توانید بگویید «zone برابر a <b>یا</b> b»،‏ «Nodeهایی که label <code>gpu</code> <b>ندارند</b>»،‏ «Nodeهایی با تعداد core بیشتر از ۱۶»،‏ یا «ترجیحاً ssd ولی اگر نبود هم اشکالی ندارد». همه‌ی این‌ها با node affinity (قواعد انتخاب Node بر اساس labelهای آن،‏ به‌صورت اجباری یا ترجیحی) ممکن است. اگر nodeSelector با هیچ Nodeی match نشود،‏ Pod برای همیشه <code>Pending</code> می‌ماند و در event آن پیامی مثل <code>0/5 nodes are available: 5 node(s) didn't match Pod's node affinity/selector</code> می‌بینید (توجه کنید که scheduler هر دو را زیر یک عنوان گزارش می‌کند،‏ چون هر دو توسط plugin <code>NodeAffinity</code> پیاده‌سازی شده‌اند).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: منطق OR/AND به زبان تصویری</b>
+    <div class="code"><div class="lbl"><span>منطق nodeSelectorTerms</span><button type="button">کپی</button></div><pre class="yaml">nodeSelectorTerms:
+- matchExpressions:          # term 1  ─┐
+  - {key: zone, operator: In, values: [a]}      # AND
+  - {key: disktype, operator: In, values: [ssd]} #
+- matchExpressions:          # term 2  ─┤  term1 OR term2
+  - {key: zone, operator: In, values: [b]}
+</pre></div>
+    <p>این rule یعنی: (zone=a <b>و</b> disktype=ssd) <b>یا</b> (zone=b). یک اشتباه رایج این است که کسی می‌خواهد «zone=a و ssd» را بیان کند اما هر expression را در یک term جداگانه می‌گذارد؛‏ نتیجه «zone=a یا ssd» می‌شود و Pod روی یک Node با HDD در zone=a هم قرار می‌گیرد. قاعده‌ی حفظ کردنی: <b>لیست بیرونی OR،‏ لیست درونی AND</b>. نکته‌ی دیگر: برای «zone برابر a یا b» لازم نیست دو term بسازید؛‏ یک expression با <code>operator: In</code> و دو value کافی است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: وزن preferred «قطعی» نیست</b>
+    <p>مجموع وزن‌های preferred فقط یکی از ورودی‌های scoring است (توسط plugin <code>NodeAffinity</code> در نقطه‌ی <code>score</code>). امتیاز این plugin normalize می‌شود و در کنار امتیاز pluginهایی مثل <code>NodeResourcesFit</code> (LeastAllocated)،‏ <code>NodeResourcesBalancedAllocation</code>،‏ <code>ImageLocality</code>،‏ <code>TaintToleration</code> و <code>PodTopologySpread</code> جمع می‌شود. بنابراین ممکن است Node با <code>label-2:key-2</code> (وزن ۵۰) به دلیل پر بودن منابع،‏ در امتیاز کل از Node دیگر عقب بماند. اگر رفتاری «همیشه» لازم دارید،‏ باید از required استفاده کنید،‏ نه اینکه وزن preferred را ۱۰۰ بگذارید.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: کاربرد واقعی addedAffinity</b>
+    <p>فرض کنید یک pool از Nodeهای spot/preemptible دارید با label <code>scheduler-profile=batch</code> و می‌خواهید تیم داده فقط با نوشتن <code>schedulerName: batch-scheduler</code> در Jobهایش،‏ خودکار به آن pool برود،‏ بدون اینکه هر تیم nodeAffinity بنویسد. <code>addedAffinity</code> دقیقاً این کار را انجام می‌دهد. نکته‌ی ظریف: چون این affinity در spec Pod دیده نمی‌شود،‏ کسی که <code>kubectl describe pod</code> می‌کند و Pod را Pending می‌بیند،‏ در event پیام <code>didn't match Pod's node affinity/selector</code> را می‌بیند ولی در spec هیچ affinityی پیدا نمی‌کند. به همین دلیل مستندات توصیه می‌کند نام label با نام profile هم‌خوانی داشته باشد تا troubleshooting ممکن باشد.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا inter-pod affinity گران است؟</b>
+    <p>برخلاف node affinity که فقط باید label یک Node را با یک expression مقایسه کند (O(۱) به ازای هر Node)،‏ inter-pod affinity باید برای هر Node کاندید،‏ همه‌ی Podهای موجود در همان topology domain را بشمارد و labelشان را با selector مقایسه کند. در یک cluster با هزاران Pod و صدها Node،‏ این یعنی برای هر Pod جدید ممکن است لازم باشد ده‌ها هزار مقایسه انجام شود. به همین دلیل مستندات هشدار می‌دهد این قابلیت را در clusterهای بزرگ‌تر از چند صد Node به‌کار نبرید،‏ یا دست‌کم آن را محدود به namespaceهای مشخص و topologyKeyهای ساده (مثل <code>kubernetes.io/hostname</code>) کنید. Scheduler این هزینه را با caching نتایج match در طول یک scheduling cycle کاهش می‌دهد،‏ اما هزینه‌ی اصلی الگوریتمی باقی می‌ماند.</p>
+  </div>
+  </details>
 
   <h3 id="ch9-a-taint">Taints and Tolerations</h3>
   <p>Node affinity ویژگی‌ای از Podها است که آن‌ها را به مجموعه‌ای از Nodeها <i>جذب</i> می‌کند (چه به‌عنوان preference و چه به‌عنوان یک نیازمندی سخت). <b>Taint</b>ها برعکس این هستند -- به یک Node اجازه می‌دهند مجموعه‌ای از Podها را دفع (repel) کند.</p>
@@ -924,17 +930,6 @@ spec:
   <p>به‌جای taint کردن کل Nodeها،‏ مدیران می‌توانند دستگاه‌های (device) جداگانه را نیز taint کنند،‏ وقتی cluster از dynamic resource allocation برای مدیریت سخت‌افزار خاص استفاده می‌کند. مزیت این است که taint کردن می‌تواند دقیقاً به سمت همان سخت‌افزاری هدف بگیرد که خراب است یا نیاز به نگه‌داری دارد. tolerationها هم پشتیبانی می‌شوند و می‌توانند هنگام درخواست device مشخص شوند. مانند taintها،‏ آن‌ها روی همه‌ی Podهایی که همان device اختصاص‌یافته را به اشتراک می‌گذارند اعمال می‌شوند.</p>
   <p class="next">ادامه: Node-pressure Eviction (بخش دوم) · Pod Priority and Preemption (بخش دوم) · Device taints and tolerations (در مستندات Dynamic Resource Allocation).</p>
 
-  <div class="deep"><b>توضیح تکمیلی: تفاوت NoSchedule و NoExecute در یک incident واقعی</b>
-    <p>فرض کنید Node یک cluster production به دلیل مشکل شبکه‌ای موقتاً از دید API server ناپدید می‌شود. دنباله‌ی اتفاقات این‌طور است:</p>
-    <ol>
-      <li>اگر kubelet در مدت <code>node-monitor-grace-period</code> (پیش‌فرض 50s) وضعیت خود را گزارش نکند،‏ node controller مقدار NodeCondition <code>Ready</code> را به <code>Unknown</code> تغییر می‌دهد.</li>
-      <li>taint <code>node.kubernetes.io/unreachable:NoSchedule</code> بلافاصله اضافه می‌شود،‏ تا هیچ Pod جدیدی روی این Node قرار نگیرد.</li>
-      <li>taint <code>node.kubernetes.io/unreachable:NoExecute</code> هم اضافه می‌شود. چون کوبرنتیز به‌طور پیش‌فرض یک toleration ۳۰۰ ثانیه‌ای برای این taint به همه‌ی Podها اضافه می‌کند،‏ Podهای «معمولی» روی این Node پنج دقیقه دیگر همچنان اجرا می‌مانند (هرچند کاربر نمی‌تواند به آن‌ها دسترسی داشته باشد چون Node واقعاً unreachable است).</li>
-      <li>اگر مشکل شبکه ظرف پنج دقیقه رفع شود،‏ taint حذف می‌شود و هیچ Podی evict نشده است — این دقیقاً سناریویی است که این طراحی می‌خواهد از آن جلوگیری کند: churn غیرضروری برای یک اختلال گذرا.</li>
-      <li>اگر مشکل ادامه یابد،‏ پس از ۳۰۰ ثانیه taint-eviction-controller (یا در نسخه‌های قدیمی‌تر node controller) شروع به evict کردن Podها از آن Node می‌کند و در جای دیگری (اگر توسط یک controller مدیریت شوند) دوباره schedule می‌شوند. چون kubelet در دسترس نیست،‏ این Podها در وضعیت <code>Terminating</code> می‌مانند؛‏ ReplicaSet بلافاصله جایگزین می‌سازد،‏ اما StatefulSet تا حذف واقعی Pod (مثلاً با taint از نوع <code>node.kubernetes.io/out-of-service</code> که در فصل ۱۲ آمده،‏ یا حذف شیء Node) Pod هم‌نام تازه‌ای نمی‌سازد.</li>
-    </ol>
-    <p>پس یک StatefulSet با state محلی حساس می‌تواند <code>tolerationSeconds</code> بزرگ‌تری (مثلاً ۶۰۰۰ ثانیه،‏ همان مثال مستندات) تنظیم کند تا در برابر partitionهای طولانی‌تر مقاوم‌تر باشد،‏ به قیمت اینکه در صورت خرابی واقعی Node،‏ بازیابی کندتر خواهد بود. این trade-off باید آگاهانه انتخاب شود.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: Dedicated Nodes با taint + label + توضیح خطا</b>
     <p>روی یک cluster kind سه‌Nodeی،‏ یکی از worker Nodeها را برای تیم «gpu-team» اختصاصی کنید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl taint nodes kind-worker2 dedicated=gpu-team:NoSchedule
@@ -957,6 +952,21 @@ spec:
 </pre></div>
     <p>این Pod ممکن است روی <b>هر</b> Nodeی schedule شود،‏ نه لزوماً روی Node اختصاصی،‏ چون toleration فقط اجازه‌ی عبور از taint را می‌دهد،‏ آن را اجباری نمی‌کند. برای اینکه Pod <b>فقط</b> روی Node اختصاصی برود،‏ باید علاوه بر toleration،‏ یک <code>nodeSelector: {dedicated: gpu-team}</code> یا node affinity هم اضافه شود — دقیقاً همان نکته‌ای که مستندات در use case «Dedicated Nodes» تأکید می‌کند.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">تفاوت NoSchedule و NoExecute در یک incident واقعی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: تفاوت NoSchedule و NoExecute در یک incident واقعی</b>
+    <p>فرض کنید Node یک cluster production به دلیل مشکل شبکه‌ای موقتاً از دید API server ناپدید می‌شود. دنباله‌ی اتفاقات این‌طور است:</p>
+    <ol>
+      <li>اگر kubelet در مدت <code>node-monitor-grace-period</code> (پیش‌فرض 50s) وضعیت خود را گزارش نکند،‏ node controller مقدار NodeCondition <code>Ready</code> را به <code>Unknown</code> تغییر می‌دهد.</li>
+      <li>taint <code>node.kubernetes.io/unreachable:NoSchedule</code> بلافاصله اضافه می‌شود،‏ تا هیچ Pod جدیدی روی این Node قرار نگیرد.</li>
+      <li>taint <code>node.kubernetes.io/unreachable:NoExecute</code> هم اضافه می‌شود. چون کوبرنتیز به‌طور پیش‌فرض یک toleration ۳۰۰ ثانیه‌ای برای این taint به همه‌ی Podها اضافه می‌کند،‏ Podهای «معمولی» روی این Node پنج دقیقه دیگر همچنان اجرا می‌مانند (هرچند کاربر نمی‌تواند به آن‌ها دسترسی داشته باشد چون Node واقعاً unreachable است).</li>
+      <li>اگر مشکل شبکه ظرف پنج دقیقه رفع شود،‏ taint حذف می‌شود و هیچ Podی evict نشده است — این دقیقاً سناریویی است که این طراحی می‌خواهد از آن جلوگیری کند: churn غیرضروری برای یک اختلال گذرا.</li>
+      <li>اگر مشکل ادامه یابد،‏ پس از ۳۰۰ ثانیه taint-eviction-controller (یا در نسخه‌های قدیمی‌تر node controller) شروع به evict کردن Podها از آن Node می‌کند و در جای دیگری (اگر توسط یک controller مدیریت شوند) دوباره schedule می‌شوند. چون kubelet در دسترس نیست،‏ این Podها در وضعیت <code>Terminating</code> می‌مانند؛‏ ReplicaSet بلافاصله جایگزین می‌سازد،‏ اما StatefulSet تا حذف واقعی Pod (مثلاً با taint از نوع <code>node.kubernetes.io/out-of-service</code> که در فصل ۱۲ آمده،‏ یا حذف شیء Node) Pod هم‌نام تازه‌ای نمی‌سازد.</li>
+    </ol>
+    <p>پس یک StatefulSet با state محلی حساس می‌تواند <code>tolerationSeconds</code> بزرگ‌تری (مثلاً ۶۰۰۰ ثانیه،‏ همان مثال مستندات) تنظیم کند تا در برابر partitionهای طولانی‌تر مقاوم‌تر باشد،‏ به قیمت اینکه در صورت خرابی واقعی Node،‏ بازیابی کندتر خواهد بود. این trade-off باید آگاهانه انتخاب شود.</p>
+  </div>
+  </details>
 
   <h3 id="ch9-a-topospread">Pod topology spread constraints</h3>
   <p>می‌توانید از <i>topology spread constraint</i>ها برای کنترل چگونگی پخش شدن Podها در سراسر cluster بین failure-domainهایی مانند regionها،‏ zoneها،‏ Nodeها و سایر topology domainهای تعریف‌شده توسط کاربر استفاده کنید. این می‌تواند به دستیابی به high availability و همچنین utilization کارآمد منابع کمک کند.</p>
@@ -1249,9 +1259,6 @@ profiles:
   </ul>
   <p class="next">ادامه: مقاله‌ی وبلاگ Introducing PodTopologySpread · بخش scheduling در API reference برای Pod.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: topology spread constraints در مقابل default constraint خودکار</b>
-    <p>یک نکته که اغلب باعث سردرگمی می‌شود این است که اگر Podهای شما هیچ <code>topologySpreadConstraints</code>ی تعریف نکرده باشند ولی به یک Deployment تعلق داشته باشند،‏ به‌طور خودکار قوانین built-in زیر روی آن‌ها اعمال می‌شود: <code>maxSkew: 3</code> روی <code>kubernetes.io/hostname</code> با <code>ScheduleAnyway</code>،‏ و <code>maxSkew: 5</code> روی <code>topology.kubernetes.io/zone</code> با <code>ScheduleAnyway</code>. این یعنی حتی بدون اینکه شما هیچ‌کاری بکنید،‏ scheduler سعی می‌کند Podهایتان را کمی پخش کند — اما چون <code>ScheduleAnyway</code> است،‏ هرگز Podی را به دلیل این constraintها Pending نمی‌کند،‏ فقط اولویت‌بندی می‌کند. برای بسیاری از تیم‌ها،‏ این پیش‌فرض به‌تنهایی کافی نیست،‏ چون <code>ScheduleAnyway</code> فقط یک امتیاز به scoring اضافه می‌کند و این امتیاز با scoreهای دیگر (مثل مصرف منابع) ترکیب می‌شود؛‏ پس هیچ تضمینی نیست که skew واقعی از ۳ بیشتر نشود. اگر واقعاً به توزیع تضمین‌شده نیاز دارید،‏ باید خودتان constraint با <code>whenUnsatisfiable: DoNotSchedule</code> و <code>maxSkew: 1</code> تعریف کنید.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: مشاهده‌ی skew در یک cluster kind با سه worker</b>
     <p>یک Deployment با ۶ replica و topology spread constraint روی <code>kubernetes.io/hostname</code> بسازید:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f - &lt;&lt;'EOF'
@@ -1283,6 +1290,13 @@ kubectl get pods -l app=spread-demo -o wide
     <p>خروجی مورد انتظار روی یک cluster با یک control-plane و سه worker: هر worker دقیقاً ۲ Pod می‌گیرد (۶ تقسیم بر ۳). اگر تعداد replica را به ۷ افزایش دهید،‏ یک Node ۳ Pod و دو Node دیگر ۲ Pod می‌گیرند (skew نهایی همچنان ۱)،‏ هرگز یکی ۴ و دیگری ۱ نمی‌شود چون <code>maxSkew: 1</code> اجازه‌ی آن را نمی‌دهد.</p>
     <p>چرا خط <code>nodeTaintsPolicy: Honor</code> لازم است؟ مقدار پیش‌فرض این فیلد <code>Ignore</code> است؛‏ یعنی Node مربوط به control-plane با وجود taint،‏ یک domain با صفر Pod شمرده می‌شود. بدون این خط،‏ وقتی روی هر worker یک Pod قرار گرفت،‏ Pod بعدی skew را به ۲ می‌رساند و بقیه‌ی replicaها در <code>Pending</code> می‌مانند.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">topology spread constraints در مقابل default constraint خودکار</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: topology spread constraints در مقابل default constraint خودکار</b>
+    <p>یک نکته که اغلب باعث سردرگمی می‌شود این است که اگر Podهای شما هیچ <code>topologySpreadConstraints</code>ی تعریف نکرده باشند ولی به یک Deployment تعلق داشته باشند،‏ به‌طور خودکار قوانین built-in زیر روی آن‌ها اعمال می‌شود: <code>maxSkew: 3</code> روی <code>kubernetes.io/hostname</code> با <code>ScheduleAnyway</code>،‏ و <code>maxSkew: 5</code> روی <code>topology.kubernetes.io/zone</code> با <code>ScheduleAnyway</code>. این یعنی حتی بدون اینکه شما هیچ‌کاری بکنید،‏ scheduler سعی می‌کند Podهایتان را کمی پخش کند — اما چون <code>ScheduleAnyway</code> است،‏ هرگز Podی را به دلیل این constraintها Pending نمی‌کند،‏ فقط اولویت‌بندی می‌کند. برای بسیاری از تیم‌ها،‏ این پیش‌فرض به‌تنهایی کافی نیست،‏ چون <code>ScheduleAnyway</code> فقط یک امتیاز به scoring اضافه می‌کند و این امتیاز با scoreهای دیگر (مثل مصرف منابع) ترکیب می‌شود؛‏ پس هیچ تضمینی نیست که skew واقعی از ۳ بیشتر نشود. اگر واقعاً به توزیع تضمین‌شده نیاز دارید،‏ باید خودتان constraint با <code>whenUnsatisfiable: DoNotSchedule</code> و <code>maxSkew: 1</code> تعریف کنید.</p>
+  </div>
+  </details>
 
   <h3 id="ch9-a-overhead">Pod Overhead</h3>
   <p><span class="fs">FEATURE STATE: stable since v1.24</span></p>
@@ -1386,9 +1400,12 @@ sudo crictl inspectp -o=json $POD_ID | grep cgroupsPath
   <p>برخی metricهای <code>kube_pod_overhead_*</code> در kube-state-metrics در دسترس هستند تا کمک کنند تشخیص دهید Pod overhead چه زمانی استفاده می‌شود و کمک کنند stability workloadهایی که با یک overhead تعریف‌شده در حال اجرا هستند مشاهده شود.</p>
   <p class="next">ادامه: RuntimeClass (فصل ۲) · PodOverhead Design enhancement proposal.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا Pod Overhead فقط برای runtimeهای مجازی‌سازی‌شده اهمیت دارد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا Pod Overhead فقط برای runtimeهای مجازی‌سازی‌شده اهمیت دارد؟</b>
     <p>برای runc معمولی (containerهای لینوکسی استاندارد بدون هیچ VM)،‏ Overhead هر Pod عملاً ناچیز است (چند کیلوبایت برای namespaceها و cgroupها)،‏ پس RuntimeClass پیش‌فرض معمولاً <code>overhead</code> تعریف نمی‌کند و مقدار آن صفر است. اما وقتی از runtimeی مانند Kata Containers یا gVisor استفاده می‌کنید که هر Pod را در یک microVM یا sandbox جداگانه اجرا می‌کند،‏ خود آن VM (kernel،‏ initramfs،‏ device driverها) صدها مگابایت RAM و بخشی از CPU مصرف می‌کند <b>قبل از</b> اینکه کوچک‌ترین container شما اجرا شود. اگر این overhead را در resource request محاسبه نکنید،‏ ممکن است ۲۰ Pod را روی Nodeای schedule کنید که واقعاً فقط جا برای ۱۵ تای آن‌ها (به‌همراه VM overheadشان) دارد،‏ و در نتیجه با OOM-kill یا throttling شدید مواجه شوید. این دقیقاً همان چیزی است که Pod Overhead حل می‌کند: آن هزینه‌ی «نامرئی» زیرساخت را به یک عدد صریح در resource accounting تبدیل می‌کند.</p>
   </div>
+  </details>
 
   <h3 id="ch9-a-readiness">Pod Scheduling Readiness</h3>
   <p><span class="fs">FEATURE STATE: stable since v1.30</span></p>
@@ -1459,9 +1476,6 @@ test-pod   1/1     Running   0          15s   10.0.0.4   node-2
   </ol>
   <p class="next">ادامه: PodSchedulingReadiness KEP.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چه زمانی از schedulingGates استفاده کنیم؟</b>
-    <p>کاربرد اصلی این قابلیت یک framework externalی است که می‌خواهد قبل از اینکه scheduler اصلاً سراغ یک Pod برود،‏ شرط دیگری برآورده شود — مثلاً یک custom controller batch-scheduling (مانند Kueue) که می‌خواهد مطمئن شود کل یک «gang» از Podها هم‌زمان resource quota گرفته‌اند،‏ یا یک admission webhook که منتظر یک PersistentVolumeClaim یا Secret خارجی است که هنوز آماده نشده. بدون schedulingGates،‏ این Podها بلافاصله وارد صف scheduling می‌شدند،‏ scheduler هر بار سعی می‌کرد آن‌ها را schedule کند،‏ شکست می‌خورد (چون مثلاً quota هنوز آزاد نشده)،‏ و رویداد <code>FailedScheduling</code> ثبت می‌کرد — این باعث فشار غیرضروری روی scheduler و Cluster Autoscaler می‌شد (Autoscaler ممکن بود فکر کند به Node بیشتری نیاز است در حالی که واقعاً منتظر یک شرط خارجی است). با schedulingGates،‏ این Podها اصلاً وارد صف فعال نمی‌شوند تا وقتی gate برداشته شود (خارج از مستندات رسمی: این دقیقاً همان مکانیزمی است که Kueue برای queueing سطح cluster از آن استفاده می‌کند).</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: شبیه‌سازی یک وابستگی خارجی با schedulingGates</b>
     <p>یک Pod با یک scheduling gate بسازید و ببینید چگونه در <code>Pending</code> می‌ماند بدون اینکه هیچ رویداد <code>FailedScheduling</code>ی ثبت شود (چون اصلاً وارد صف نشده):</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f - &lt;&lt;'EOF'
@@ -1485,6 +1499,13 @@ kubectl get pod gated-demo -w
 </pre></div>
     <p>Pod باید ظرف چند ثانیه از <code>SchedulingGated</code> به <code>Running</code> برود،‏ چون هیچ resource requestی ندارد.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چه زمانی از schedulingGates استفاده کنیم؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چه زمانی از schedulingGates استفاده کنیم؟</b>
+    <p>کاربرد اصلی این قابلیت یک framework externalی است که می‌خواهد قبل از اینکه scheduler اصلاً سراغ یک Pod برود،‏ شرط دیگری برآورده شود — مثلاً یک custom controller batch-scheduling (مانند Kueue) که می‌خواهد مطمئن شود کل یک «gang» از Podها هم‌زمان resource quota گرفته‌اند،‏ یا یک admission webhook که منتظر یک PersistentVolumeClaim یا Secret خارجی است که هنوز آماده نشده. بدون schedulingGates،‏ این Podها بلافاصله وارد صف scheduling می‌شدند،‏ scheduler هر بار سعی می‌کرد آن‌ها را schedule کند،‏ شکست می‌خورد (چون مثلاً quota هنوز آزاد نشده)،‏ و رویداد <code>FailedScheduling</code> ثبت می‌کرد — این باعث فشار غیرضروری روی scheduler و Cluster Autoscaler می‌شد (Autoscaler ممکن بود فکر کند به Node بیشتری نیاز است در حالی که واقعاً منتظر یک شرط خارجی است). با schedulingGates،‏ این Podها اصلاً وارد صف فعال نمی‌شوند تا وقتی gate برداشته شود (خارج از مستندات رسمی: این دقیقاً همان مکانیزمی است که Kueue برای queueing سطح cluster از آن استفاده می‌کند).</p>
+  </div>
+  </details>
 
   <h3 id="ch9-a-framework">Scheduling Framework</h3>
   <p><span class="fs">FEATURE STATE: stable since v1.19</span></p>
@@ -1607,15 +1628,19 @@ type PreFilterPlugin interface {
   <p>اگر از Kubernetes v1.18 یا بالاتر استفاده می‌کنید،‏ می‌توانید مجموعه‌ای از پلاگین‌ها را به‌عنوان یک scheduler profile پیکربندی کنید و سپس چند profile مختلف برای انواع مختلف workload تعریف کنید. درباره‌ی multiple profiles بیشتر بخوانید.</p>
   <p class="next">ادامه: kube-scheduler reference ·‏ scheduling (kube-scheduler) ·‏ kube-scheduler configuration (v1) reference.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: نقشه‌ی یک PreFilter تا Score در یک plugin واقعی</b>
-    <p>plugin <code>PodTopologySpread</code> که پیش‌تر دیدیم مثال خوبی از یک plugin چند-extension-pointی است: در <code>preFilter</code> اطلاعات لازم (مثل Podهای منطبق فعلی در هر domain) را پیش‌محاسبه و در <code>CycleState</code> ذخیره می‌کند؛‏ در <code>filter</code> Nodeهایی که <code>maxSkew</code> را با <code>whenUnsatisfiable: DoNotSchedule</code> نقض می‌کنند رد می‌کند؛‏ در <code>preScore</code> کار مشترک برای scoring را آماده می‌کند؛‏ و در <code>score</code> به Nodeهایی که skew کمتری ایجاد می‌کنند امتیاز بالاتر می‌دهد (برای constraintهای <code>ScheduleAnyway</code>). این چهار extension point دقیقاً همانی هستند که در مستندات این plugin با «preFilter, filter, preScore, score» فهرست شده‌اند. فهمیدن این نقشه کمک می‌کند وقتی یک custom scheduler plugin می‌نویسید بدانید کدام interface(ها) را باید پیاده‌سازی کنید.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: مشاهده‌ی extension pointها از طریق متریک‌های scheduler</b>
     <p>روی یک cluster kind،‏ متریک‌های kube-scheduler را بررسی کنید تا زمان صرف‌شده در هر extension point را ببینید (نیازمند دسترسی به متریک‌های scheduler،‏ معمولاً روی پورت ۱۰۲۵۹):</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get --raw /metrics | grep scheduler_framework_extension_point_duration_seconds | head -20
 </pre></div>
     <p>خروجی یک سری histogram است که به ازای هر extension point (<code>filter</code>،‏ <code>score</code>،‏ <code>bind</code> و غیره) و هر <code>profile</code> توزیع مدت زمان اجرا را نشان می‌دهد. در یک cluster شلوغ که Podهای زیادی با inter-pod affinity دارد،‏ معمولاً <code>filter</code> بیشترین زمان را می‌گیرد — دقیقاً همان چیزی که در بخش «توضیح تکمیلی» بالاتر درباره‌ی هزینه‌ی inter-pod affinity توضیح داده شد.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نقشه‌ی یک PreFilter تا Score در یک plugin واقعی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: نقشه‌ی یک PreFilter تا Score در یک plugin واقعی</b>
+    <p>plugin <code>PodTopologySpread</code> که پیش‌تر دیدیم مثال خوبی از یک plugin چند-extension-pointی است: در <code>preFilter</code> اطلاعات لازم (مثل Podهای منطبق فعلی در هر domain) را پیش‌محاسبه و در <code>CycleState</code> ذخیره می‌کند؛‏ در <code>filter</code> Nodeهایی که <code>maxSkew</code> را با <code>whenUnsatisfiable: DoNotSchedule</code> نقض می‌کنند رد می‌کند؛‏ در <code>preScore</code> کار مشترک برای scoring را آماده می‌کند؛‏ و در <code>score</code> به Nodeهایی که skew کمتری ایجاد می‌کنند امتیاز بالاتر می‌دهد (برای constraintهای <code>ScheduleAnyway</code>). این چهار extension point دقیقاً همانی هستند که در مستندات این plugin با «preFilter, filter, preScore, score» فهرست شده‌اند. فهمیدن این نقشه کمک می‌کند وقتی یک custom scheduler plugin می‌نویسید بدانید کدام interface(ها) را باید پیاده‌سازی کنید.</p>
+  </div>
+  </details>
 
   <h3 id="ch9-a-schedconfig">Scheduler Configuration <small>(reference/scheduling/config)</small></h3>
   <p><span class="fs">FEATURE STATE: stable since v1.25</span></p>
@@ -1863,12 +1888,16 @@ profiles:
   <p>در حالی که این یک مثال پیچیده است،‏ انعطاف‌پذیری پیکربندی <code>MultiPoint</code> و همچنین یکپارچگی روان آن با روش‌های موجود برای پیکربندی extension pointها را نشان می‌دهد.</p>
   <p class="next">ادامه: kube-scheduler reference ·‏ scheduling (kube-scheduler) ·‏ kube-scheduler configuration (v1) reference.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چرا چند profile؟ یک سناریوی واقعی</b>
-    <p>یک use case رایج (خارج از مستندات رسمی) در clusterهای production چند-tenant،‏ داشتن یک <code>default-scheduler</code> عادی برای workloadهای online و یک profile دوم به نام مثلاً <code>batch-scheduler</code> برای Jobهای دسته‌ای است که پلاگین‌های scoring سنگین (مثل <code>InterPodAffinity</code>) را غیرفعال کرده و فقط از <code>NodeResourcesFit</code> با استراتژی <code>MostAllocated</code> استفاده می‌کند تا Jobها را bin-pack کند و Nodeهای خالی برای autoscaler آزاد بماند. تیم داده فقط کافی است در <code>spec.schedulerName</code> Jobهایش بنویسد <code>batch-scheduler</code> و بدون نیاز به تغییر manifestهای دیگر،‏ این رفتار متفاوت را می‌گیرد. دقت کنید همه‌ی این profileها هنوز باید از یک plugin یکسان برای <code>queueSort</code> استفاده کنند چون فقط یک صف داخلی وجود دارد؛‏ این یک محدودیت معماری است،‏ نه یک انتخاب دلخواه.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: یک profile دوم بدون scoring</b>
     <p>یک KubeSchedulerConfiguration با دو profile مانند مثال بالا (<code>default-scheduler</code> و <code>no-scoring-scheduler</code>) بسازید و آن را به‌عنوان یک static Pod یا Deployment جدا برای kube-scheduler روی یک cluster kind اجرا کنید (یا با <code>--config</code> اگر دسترسی به control plane دارید). سپس یک Pod با <code>schedulerName: no-scoring-scheduler</code> بسازید و با <code>kubectl get events</code> ببینید <code>reportingController</code> برابر همان scheduler name است. چون scoring غیرفعال است،‏ این Pod روی اولین Node feasibleای که پیدا شود schedule می‌شود،‏ نه لزوماً بهترین Node — رفتاری که برای throughput بالا با هزینه‌ی کیفیت placement مناسب است.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا چند profile؟ یک سناریوی واقعی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا چند profile؟ یک سناریوی واقعی</b>
+    <p>یک use case رایج (خارج از مستندات رسمی) در clusterهای production چند-tenant،‏ داشتن یک <code>default-scheduler</code> عادی برای workloadهای online و یک profile دوم به نام مثلاً <code>batch-scheduler</code> برای Jobهای دسته‌ای است که پلاگین‌های scoring سنگین (مثل <code>InterPodAffinity</code>) را غیرفعال کرده و فقط از <code>NodeResourcesFit</code> با استراتژی <code>MostAllocated</code> استفاده می‌کند تا Jobها را bin-pack کند و Nodeهای خالی برای autoscaler آزاد بماند. تیم داده فقط کافی است در <code>spec.schedulerName</code> Jobهایش بنویسد <code>batch-scheduler</code> و بدون نیاز به تغییر manifestهای دیگر،‏ این رفتار متفاوت را می‌گیرد. دقت کنید همه‌ی این profileها هنوز باید از یک plugin یکسان برای <code>queueSort</code> استفاده کنند چون فقط یک صف داخلی وجود دارد؛‏ این یک محدودیت معماری است،‏ نه یک انتخاب دلخواه.</p>
+  </div>
+  </details>
 
   <h3 id="ch9-a-binpacking">Resource Bin Packing for Extended Resources</h3>
   <div class="note"><b>نکته</b><p>این مقاله در بستر resource bin packing (چیدن Podها روی کمترین تعداد Node با پر کردن Nodeهای نیمه‌پر) برای scheduling یک pod تنها کاربرد دارد. برای bin packing هنگام scheduling pod groupها،‏ به مقاله‌ی «Topology-aware Scheduling» مراجعه کنید.</p></div>
@@ -2041,9 +2070,12 @@ NodeScore   =  ((5 * 5) + (7 * 1) + (10 * 3)) / (5 + 1 + 3)
 </pre></div>
   <p class="next">ادامه: scheduling framework ·‏ scheduler configuration.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا Node 2 امتیاز بالاتری گرفت؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا Node 2 امتیاز بالاتری گرفت؟</b>
     <p>با اینکه هر دو Node مقدار مشابهی از <code>intel.com/foo</code> را (نسبی) استفاده می‌کنند،‏ Node 2 برای CPU امتیاز کامل (۱۰ از ۱۰) گرفت چون بعد از اضافه شدن Pod،‏ ۱۰۰٪ CPU آن اشغال می‌شود — دقیقاً هدف bin packing: هرچه یک Node «پرتر» شود،‏ امتیاز بالاتری می‌گیرد تا سایر Nodeها برای Podهای بعدی خالی بمانند (و بتوانند scale-down شوند). می‌بینید که وزن CPU (۳) نسبت به memory (۱) باعث شد سهم بزرگ‌تری در محاسبه‌ی نهایی Nodeها داشته باشد. اگر شما بیشتر نگران extended resource کمیاب (<code>intel.com/foo</code>) هستید تا CPU/memory معمولی،‏ وزن آن را (مثلاً ۵ در برابر ۳ و ۱) بالاتر می‌گذارید تا تصمیم scheduler بیشتر حول محور آن resource بچرخد.</p>
   </div>
+  </details>
 
   <h3 id="ch9-a-perftuning">Scheduler Performance Tuning</h3>
   <p><span class="fs">FEATURE STATE: beta since v1.14</span></p>
@@ -2241,12 +2273,15 @@ profiles:
   </ul>
   <p class="next">ادامه: Topology-aware scheduling API ·‏ pod group scheduling (بخش دوم) · pod group policies.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">NodeDeclaredFeatures و TAS چرا در همین بخش آمدند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: NodeDeclaredFeatures و TAS چرا در همین بخش آمدند؟</b>
     <p>هر دو ویژگی یک نگرانی مشترک دارند: جلوگیری از placementهای اشتباه در یک cluster ناهمگون. <code>NodeDeclaredFeatures</code> این کار را برای version skew حل می‌کند (چه ویژگی‌های node-level روی هر Node فعال است)،‏ در حالی که Topology-Aware Scheduling برای placement PodGroupها (چند Pod که باید با هم در یک topology domain جای بگیرند،‏ مثل یک training job چند-GPU) طراحی شده. ویژگی Topology-Aware Scheduling هنوز alpha است و NodeDeclaredFeatures با اینکه در v1.37 به stable رسیده،‏ در پس‌زمینه کار می‌کند؛‏ پس اکثر تیم‌ها روزمره با آن‌ها سروکار ندارند،‏ اما هرچه clusterها به سمت heterogeneous hardware (GPU pool،‏ ARM/x86 مخلوط) و rolling-upgrade مداوم می‌روند،‏ این دو مکانیزم اهمیت بیشتری پیدا می‌کنند — به‌ویژه برای تیم‌های ML/AI که PodGroup scheduling را برای gang scheduling استفاده می‌کنند (بخش دوم فصل،‏ PodGroup Scheduling و Gang Scheduling).</p>
   </div>
+  </details>
 
-  <div id="ch9-ex1" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۹،‏ بخش اول <small>۱۶ تمرین</small></div>
+  <details id="ch9-ex1" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۹،‏ بخش اول <small>۱۶ تمرین</small></summary>
     <ol>
       <li id="ch9-a-ex1"><span class="lvl l1">مفهومی</span>تفاوت مرحله‌ی <b>filtering</b> و مرحله‌ی <b>scoring</b> در kube-scheduler چیست؟ چرا این دو مرحله از هم جدا شده‌اند؟
         <details class="ans"><summary>پاسخ</summary><p>filtering مجموعه‌ی Nodeهای feasible (یعنی Nodeهایی که schedule کردن Pod روی آن‌ها اصلاً امکان‌پذیر است) را پیدا می‌کند؛‏ خروجی آن یک لیست boolean است (Node مناسب است یا نه).‏ scoring روی همان لیست باقی‌مانده اجرا می‌شود و به هر Node یک عدد می‌دهد تا <i>بهترین</i> گزینه از میان گزینه‌های ممکن انتخاب شود. جدا کردن این دو مرحله از نظر عملکردی مهم است: filtering معمولاً می‌تواند خیلی زود Nodeهای نامناسب زیادی را حذف کند (مثلاً به دلیل taint یا کمبود منابع) بدون اینکه هزینه‌ی محاسبه‌ی scoreهای پیچیده صرف آن‌ها شود. اگر این دو مرحله ادغام می‌شدند،‏ برای هر Node،‏ حتی Nodeهای غیرقابل‌استفاده،‏ باید همه‌ی محاسبات scoring انجام می‌شد که در clusterهای بزرگ بسیار پرهزینه است.</p></details></li>
@@ -2392,7 +2427,7 @@ kubectl get pod sla-pod -o wide
           <p>چون <code>950 &gt; 900</code>،‏ toleration match می‌شود و Pod روی <code>kind-worker</code> schedule می‌شود (به شرط فعال بودن feature gate <code>TaintTolerationComparisonOperators</code> در scheduler و apiserver؛‏ در غیر این صورت apiserver validation عملگر <code>Gt</code> را رد می‌کند). اگر مقدار toleration را به <code>value: "960"</code> تغییر دهید،‏ دیگر match نمی‌شود (چون <code>‎950‎</code> از <code>‎960‎</code> بزرگ‌تر نیست) و Pod در <code>Pending</code> می‌ماند.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 <!-- chapter 12 part b -->
 
   <h3 id="ch9-b-priority-preemption">Pod Priority and Preemption</h3>
@@ -2400,6 +2435,8 @@ kubectl get pod sla-pod -o wide
   <p>Podها می‌توانند <i>priority</i> داشته باشند. Priority نشان می‌دهد یک Pod نسبت به Podهای دیگر چقدر مهم است. اگر یک Pod قابل scheduling نباشد،‏ scheduler تلاش می‌کند Podهای با priority پایین‌تر را preempt (یعنی evict) کند تا scheduling آن Pod در حال انتظار (pending) ممکن شود.</p>
   <div class="warn"><b>هشدار</b><p>در clusterی که همه‌ی کاربرانش مورد اعتماد نیستند،‏ یک کاربر مخرب می‌تواند Podهایی با بالاترین priority ممکن بسازد و باعث شود Podهای دیگر evict شوند یا اصلاً schedule نشوند. یک administrator می‌تواند با ResourceQuota جلوی ساختن Podهای با priority بالا توسط کاربران را بگیرد. جزئیات را در <a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/#limit-priority-class-consumption-by-default">limit Priority Class consumption by default</a> ببینید (فصل ۶).</p></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">priority در کل مسیر یک Pod کجا اثر دارد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: priority در کل مسیر یک Pod کجا اثر دارد؟</b>
     <p>عدد priority یک Pod در سه جای کاملاً متفاوت خوانده می‌شود و خیلی از اشتباه‌های production از قاطی کردن این سه ناشی می‌شود:</p>
     <div class="tbl"><table><thead><tr><th>جا</th><th>چه کسی آن را می‌خواند</th><th>اثر</th></tr></thead><tbody>
@@ -2409,6 +2446,7 @@ kubectl get pod sla-pod -o wide
     </tbody></table></div>
     <p>پس یک PriorityClass بالا فقط «زودتر schedule شدن» نیست؛‏ یعنی قدرت بیرون کردن دیگران و مقاومت بیشتر در برابر eviction توسط kubelet. به همین دلیل باید مثل یک منبع کمیاب با ResourceQuota کنترل شود.</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-how-to-use-priority">How to use priority and preemption</h3>
   <p>برای استفاده از priority و preemption:</p>
@@ -2479,6 +2517,8 @@ globalDefault: false
 description: "This priority class will not cause other pods to be preempted."
 </pre></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مقایسه‌ی سه رفتار</span></summary>
   <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی سه رفتار</b>
     <div class="tbl"><table><thead><tr><th>تنظیم</th><th>جای Pod در queue</th><th>می‌تواند دیگران را preempt کند؟</th><th>خودش ممکن است preempt شود؟</th></tr></thead><tbody>
       <tr><td>priority پایین (مثلاً 0)</td><td>عقب</td><td>فقط Podهای با priority کمتر از خودش (مثلاً منفی)</td><td>بله</td></tr>
@@ -2487,6 +2527,7 @@ description: "This priority class will not cause other pods to be preempted."
     </tbody></table></div>
     <p>نکته‌ی ظریف: چون Pod non-preempting مشمول back-off است،‏ اگر cluster برای مدت طولانی پر باشد ممکن است Podهای کوچک‌تر با priority پایین‌تر که جا می‌شوند،‏ زودتر از آن اجرا شوند. «جلوتر در صف» به معنی «تضمین اجرای زودتر» نیست.</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-pod-priority">Pod priority</h3>
   <p>وقتی یک یا چند PriorityClass دارید،‏ می‌توانید Podهایی بسازید که یکی از نام‌های آن PriorityClassها را در spec خود مشخص کنند. admission controller مربوط به priority از فیلد <code>priorityClassName</code> استفاده می‌کند و مقدار عددی priority را پر می‌کند. اگر priority class پیدا نشود،‏ Pod رد (reject) می‌شود.</p>
@@ -2610,9 +2651,12 @@ LAST SEEN   TYPE     REASON      OBJECT                        MESSAGE
   <p>اگر Pod Q از Node خودش حذف می‌شد،‏ نقض anti-affinity از بین می‌رفت و P احتمالاً می‌توانست روی N schedule شود.</p>
   <p>ممکن است در نسخه‌های آینده،‏ اگر تقاضای کافی وجود داشته باشد و الگوریتمی با کارایی معقول پیدا شود،‏ cross node preemption اضافه شود.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">preemption از نگاه یک Node</span></summary>
   <div class="deep"><b>توضیح تکمیلی: preemption از نگاه یک Node</b>
     <p>preemption یک تصمیم «محلی به Node» است: scheduler برای هر Node کاندید می‌پرسد «آیا با حذف قربانی‌هایی فقط از همین Node،‏ P جا می‌شود؟». هر شرطی که به Podهای Nodeهای دیگر وابسته است (مثل anti-affinity در سطح Zone یا topology spread) با preemption محلی حل نمی‌شود. به همین دلیل Podهایی که anti-affinity در سطح zone دارند ممکن است با وجود ظرفیت زیاد cluster،‏ pending بمانند. در این حالت event مربوط به Pod P معمولاً پیامی از نوع <code>0/N nodes are available: ... preemption: ... No preemption victims found for incoming pod</code> نشان می‌دهد (متن دقیق پیام بسته به نسخه متفاوت است؛‏ خارج از مستندات رسمی).</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-resize-preemption">Preemption for in-place Pod resize</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.37 [alpha]</span> (feature gate <code>InPlacePodVerticalScalingSchedulerPreemption</code>،‏ به طور پیش‌فرض غیرفعال)</p>
@@ -2649,9 +2693,12 @@ spec:
     <li><b>Max items</b>: لیست حداکثر ۲۰ ورودی می‌تواند داشته باشد.</li>
     <li><b>Non-empty list</b>: اگر لیست حداقل یک ورودی داشته باشد،‏ policy رعایت می‌شود (preemption غیرفعال است). اگر لیست خالی باشد یا فیلد <code>podPreemptionPolicy</code> حذف شده باشد،‏ preemption برای in-place resize روی آن Node فعال است.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا ورودی‌ها نام دارند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا ورودی‌ها نام دارند؟</b>
     <p>ورودی‌ها مثل «امضای» هر سیستمی هستند که می‌خواهد preemption ناشی از resize خاموش بماند (مثلاً cluster-autoscaler و vpa-updater). چون قاعده فقط «غیر خالی بودن لیست» است،‏ این نام‌ها معنای عملیاتی جداگانه ندارند؛‏ اما وقتی چند component مستقل روی یک Node تصمیم می‌گیرند،‏ هر کدام فقط ورودی خودش را اضافه یا حذف می‌کند و preemption تنها وقتی دوباره فعال می‌شود که هیچ component دیگر آن را نخواهد.</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-priority-troubleshooting">Troubleshooting</h3>
   <p>Pod priority و preemption ممکن است اثرات جانبی ناخواسته داشته باشند. چند نمونه از مشکلات احتمالی و راه‌های برخورد با آن‌ها:</p>
@@ -2681,6 +2728,10 @@ spec:
   </ol>
   <p>برای جزئیات بیشتر <a href="#ch9-b-pod-selection">Pod selection for kubelet eviction</a> را ببینید.</p>
   <p>node-pressure eviction در kubelet Podهایی را که مصرفشان از requestشان بیشتر نیست evict نمی‌کند. اگر یک Pod با priority پایین‌تر از requestهایش فراتر نرفته باشد،‏ evict نمی‌شود. Pod دیگری با priority بالاتر که از requestهایش فراتر رفته ممکن است evict شود.</p>
+  <p class="next">ادامه: <a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/#limit-priority-class-consumption-by-default">limit Priority Class consumption by default</a> ·‏ <a href="https://kubernetes.io/docs/concepts/workloads/pods/disruptions/">Pod Disruption</a> ·‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/">API-initiated Eviction</a> ·‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/">Node-pressure Eviction</a></p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مثال عددی از تعامل priority و request</span></summary>
   <div class="deep"><b>توضیح تکمیلی: مثال عددی از تعامل priority و request</b>
     <p>روی یک Node زیر <code>MemoryPressure</code> سه Pod داریم:</p>
     <div class="tbl"><table><thead><tr><th>Pod</th><th>priority</th><th>memory request</th><th>مصرف</th><th>مصرف &gt; request؟</th></tr></thead><tbody>
@@ -2690,7 +2741,7 @@ spec:
     </tbody></table></div>
     <p>ترتیب eviction: ابتدا گروه «مصرف بیشتر از request» (payments-api و debug-shell) و در این گروه بر اساس priority از کم به زیاد؛‏ پس اول <b>debug-shell</b>،‏ سپس <b>payments-api</b> (با وجود priority بالا).‏ batch-report با priority پایین آخر از همه است،‏ چون زیر request خود مانده. درس عملی: برای سرویس‌های مهم،‏ request واقع‌بینانه تعیین کنید؛‏ priority بالا جای request درست را نمی‌گیرد.</p>
   </div>
-  <p class="next">ادامه: <a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/#limit-priority-class-consumption-by-default">limit Priority Class consumption by default</a> ·‏ <a href="https://kubernetes.io/docs/concepts/workloads/pods/disruptions/">Pod Disruption</a> ·‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/">API-initiated Eviction</a> ·‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/">Node-pressure Eviction</a></p>
+  </details>
 
   <h3 id="ch9-b-api-eviction">API-initiated Eviction</h3>
   <p>API-initiated eviction فرایندی است که در آن از <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#create-eviction-pod-v1-core">Eviction API</a> برای ساختن یک object از نوع <code>Eviction</code> استفاده می‌کنید که graceful pod termination را آغاز می‌کند.</p>
@@ -2749,10 +2800,6 @@ spec:
     <li>مقداری صبر کنید،‏ سپس به‌جای استفاده از Eviction API،‏ به‌طور مستقیم Pod را از control plane cluster خود حذف کنید.</li>
   </ul>
 
-  <div class="deep"><b>توضیح تکمیلی: تفاوت API-initiated eviction با حذف مستقیم Pod</b>
-    <p>حذف مستقیم یک Pod با <code>kubectl delete pod</code>،‏ فارغ از PodDisruptionBudget،‏ بلافاصله deletion timestamp را ست می‌کند و فرایند graceful termination را آغاز می‌کند؛‏ PDB اصلاً بررسی نمی‌شود. در مقابل،‏ API-initiated eviction (ساختن object از نوع <code>Eviction</code>) یک لایه‌ی admission اضافه دارد که PDB را چک می‌کند و ممکن است با <code>‎429‎</code> رد شود. ابزارهایی مثل <code>kubectl drain</code> و بسیاری از cluster autoscalerها عمداً از Eviction API استفاده می‌کنند تا این کنترل رعایت شود؛‏ حذف مستقیم Pod یک راه دور زدن (bypass) کامل PDB است.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: تفاوت رفتار Eviction API در حضور PDB</b>
     <p>یک Deployment با ۲ replica و یک PDB با <code>minAvailable: 2</code> بسازید (یعنی صفر disruption مجاز است) و سپس eviction را امتحان کنید.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment web --image=nginx --replicas=2
@@ -2772,6 +2819,13 @@ HTTP:429
     <p>در مقابل،‏ <code>kubectl delete pod $POD</code> همین Pod را بدون توجه به PDB بلافاصله حذف می‌کند؛‏ همین تفاوت رفتاری دلیل اصلی توصیه‌ی مستندات به استفاده از ابزارهایی است که از Eviction API استفاده می‌کنند.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">تفاوت API-initiated eviction با حذف مستقیم Pod</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: تفاوت API-initiated eviction با حذف مستقیم Pod</b>
+    <p>حذف مستقیم یک Pod با <code>kubectl delete pod</code>،‏ فارغ از PodDisruptionBudget،‏ بلافاصله deletion timestamp را ست می‌کند و فرایند graceful termination را آغاز می‌کند؛‏ PDB اصلاً بررسی نمی‌شود. در مقابل،‏ API-initiated eviction (ساختن object از نوع <code>Eviction</code>) یک لایه‌ی admission اضافه دارد که PDB را چک می‌کند و ممکن است با <code>‎429‎</code> رد شود. ابزارهایی مثل <code>kubectl drain</code> و بسیاری از cluster autoscalerها عمداً از Eviction API استفاده می‌کنند تا این کنترل رعایت شود؛‏ حذف مستقیم Pod یک راه دور زدن (bypass) کامل PDB است.</p>
+  </div>
+  </details>
+
   <h3 id="ch9-b-node-pressure">Node-pressure Eviction</h3>
   <p>Node-pressure eviction فرایندی است که در آن kubelet به‌طور فعالانه (proactively) podها را terminate می‌کند تا منابع را روی Nodeها بازپس‌گیری (reclaim) کند.</p>
   <p>kubelet منابعی مثل memory،‏ disk space و filesystem inode را روی Nodeهای cluster شما پایش می‌کند. وقتی یک یا چند مورد از این منابع به سطح مصرف مشخصی برسند،‏ kubelet می‌تواند به‌طور فعالانه یک یا چند pod روی آن Node را fail کند تا منابع بازپس‌گیری شوند و از starvation جلوگیری شود.</p>
@@ -2787,9 +2841,12 @@ HTTP:429
   <p>اگر یک <a href="https://kubernetes.io/docs/concepts/workloads/pods/#static-pods">static pod</a> (فصل ۳) را روی Nodeای اجرا می‌کنید که تحت فشار منابع است،‏ kubelet ممکن است آن static Pod را evict کند. سپس kubelet تلاش می‌کند یک جایگزین بسازد،‏ چون static Podها همیشه نمایانگر یک قصد (intent) برای اجرای یک Pod روی آن Node هستند.</p>
   <p>kubelet هنگام ساختن یک جایگزین،‏ <i>priority</i> static pod را در نظر می‌گیرد. اگر manifest static pod یک priority پایین مشخص کرده باشد،‏ و podهای با priority بالاتر در control plane cluster تعریف شده باشند،‏ و Node تحت فشار منابع باشد،‏ ممکن است kubelet نتواند برای آن static pod جا باز کند. kubelet حتی در صورت وجود فشار منابع روی یک Node،‏ به تلاش برای اجرای همه‌ی static podها ادامه می‌دهد.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا node-pressure eviction PDB را رعایت نمی‌کند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا node-pressure eviction PDB را رعایت نمی‌کند؟</b>
     <p>node-pressure eviction یک اقدام محافظتی محلی روی خود Node است،‏ نه یک تصمیم سطح cluster؛‏ هدف آن جلوگیری از crash کامل Node (مثلاً به دلیل OOM سیستم یا پر شدن کامل disk) است. اگر kubelet مجبور بود قبل از هر eviction منتظر بررسی PDB (از راه Eviction API و وضعیتی که disruption controller محاسبه می‌کند) بماند،‏ ممکن بود خود Node از کار بیفتد. به همین دلیل این نوع eviction به‌طور صریح involuntary disruption محسوب می‌شود (بخش Disruptions همین فصل) و PDB فقط disruptionهای voluntary را کنترل می‌کند.</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-eviction-signals-thresholds">Eviction signals and thresholds</h3>
   <p>kubelet از پارامترهای گوناگونی برای تصمیم‌گیری درباره‌ی eviction استفاده می‌کند،‏ مثل موارد زیر:</p>
@@ -2885,6 +2942,8 @@ HTTP:429
   </ul>
   <p>تنظیم مقادیر override سفارشی برای thresholdهای مرتبط با <code>containerfs</code> پشتیبانی نمی‌شود و اگر تلاشی برای این کار انجام شود،‏ یک هشدار صادر خواهد شد؛‏ هر مقدار سفارشی داده‌شده نادیده گرفته می‌شود.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">soft در برابر hard،‏ یک تصمیم عملیاتی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: soft در برابر hard،‏ یک تصمیم عملیاتی</b>
     <div class="tbl"><table><thead><tr><th></th><th>Soft threshold</th><th>Hard threshold</th></tr></thead><tbody>
       <tr><td>grace period</td><td>الزامی،‏ توسط administrator</td><td>ندارد (۰ ثانیه)</td></tr>
@@ -2893,6 +2952,7 @@ HTTP:429
     </tbody></table></div>
     <p>در عمل معمول است <code>eviction-soft</code> را با یک آستانه‌ی محافظه‌کارانه‌تر (مثلاً <code>memory.available&lt;500Mi</code>) و <code>eviction-hard</code> را با آستانه‌ی پیش‌فرض تندتر (مثلاً <code>memory.available&lt;100Mi</code>) تنظیم کرد؛‏ به این ترتیب اول یک شانس graceful به برنامه داده می‌شود و اگر کافی نبود،‏ hard threshold به‌عنوان خط دفاعی آخر عمل می‌کند (خارج از مستندات رسمی).</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-eviction-monitoring">Eviction monitoring interval</h3>
   <p>kubelet eviction thresholdها را بر اساس <code>housekeeping-interval</code> پیکربندی‌شده‌ی خود ارزیابی می‌کند،‏ که مقدار پیش‌فرض آن <code>10s</code> است.</p>
@@ -3027,6 +3087,8 @@ LAST SEEN   TYPE      REASON    OBJECT              MESSAGE
   <p>این یعنی containerهایی در podهای با QoS پایین که نسبت به requestهایشان memory زیادی مصرف می‌کنند،‏ اول کشته می‌شوند.</p>
   <p>برخلاف pod eviction،‏ اگر یک container توسط OOM کشته شود،‏ kubelet می‌تواند آن را بر اساس <code>restartPolicy</code>ش دوباره راه‌اندازی کند.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">eviction در برابر OOM kill،‏ دو مکانیزم متفاوت</span></summary>
   <div class="deep"><b>توضیح تکمیلی: eviction در برابر OOM kill،‏ دو مکانیزم متفاوت</b>
     <div class="tbl"><table><thead><tr><th></th><th>Node-pressure eviction</th><th>OOM kill (سطح kernel)</th></tr></thead><tbody>
       <tr><td>سطح تصمیم</td><td>kubelet،‏ پیش‌گیرانه،‏ بر اساس threshold</td><td>kernel Linux،‏ واکنشی،‏ وقتی واقعاً memory تمام شود</td></tr>
@@ -3036,6 +3098,7 @@ LAST SEEN   TYPE      REASON    OBJECT              MESSAGE
     </tbody></table></div>
     <p>یک تیم SRE می‌تواند از این جدول برای تفسیر لاگ استفاده کند: اگر Pod در status <code>Failed</code> با reason <code>Evicted</code> دیده شود،‏ تصمیم از سمت kubelet (eviction) بوده؛‏ اگر container restart شده اما Pod همچنان <code>Running</code> است و <code>dmesg</code> پیام <code>Out of memory: Killed process</code> نشان می‌دهد،‏ کار kernel OOM killer بوده است.</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-good-practices">Good practices</h3>
   <p>بخش‌های زیر شیوه‌های خوب برای پیکربندی eviction را توصیف می‌کنند.</p>
@@ -3071,6 +3134,10 @@ LAST SEEN   TYPE      REASON    OBJECT              MESSAGE
   <p>برای جزئیات بیشتر،‏ <a href="https://github.com/kubernetes/kubernetes/issues/43916">https://github.com/kubernetes/kubernetes/issues/43916</a> را ببینید.</p>
   <p>می‌توانید با تنظیم یکسان memory limit و memory request برای containerهایی که احتمالاً فعالیت I/O سنگینی دارند،‏ این رفتار را دور بزنید (work around کنید). باید یک مقدار memory limit بهینه برای آن container تخمین بزنید یا اندازه‌گیری کنید.</p>
 
+  <p class="next">ادامه: <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/">API-initiated Eviction</a> ·‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/">Pod Priority and Preemption</a> ·‏ <a href="https://kubernetes.io/docs/tasks/run-application/configure-pdb/">PodDisruptionBudgets</a> ·‏ <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/">Quality of Service</a> ·‏ <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#create-eviction-pod-v1-core">Eviction API</a></p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">یک checklist عملیاتی برای پیکربندی node-pressure eviction</span></summary>
   <div class="deep"><b>توضیح تکمیلی: یک checklist عملیاتی برای پیکربندی node-pressure eviction</b>
     <p>بر اساس محتوای این بخش،‏ یک checklist خلاصه (خارج از مستندات رسمی،‏ اما مبتنی بر همان محتوا) برای تنظیم اولیه‌ی eviction روی یک cluster production:</p>
     <ol>
@@ -3081,8 +3148,7 @@ LAST SEEN   TYPE      REASON    OBJECT              MESSAGE
       <li>برای containerهای IO-heavy،‏ request/limit memory یکسان بگذارید تا از مشکل <code>active_file</code> در امان بمانید.</li>
     </ol>
   </div>
-
-  <p class="next">ادامه: <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/api-eviction/">API-initiated Eviction</a> ·‏ <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/">Pod Priority and Preemption</a> ·‏ <a href="https://kubernetes.io/docs/tasks/run-application/configure-pdb/">PodDisruptionBudgets</a> ·‏ <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/">Quality of Service</a> ·‏ <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#create-eviction-pod-v1-core">Eviction API</a></p>
+  </details>
 
   <h3 id="ch9-b-disruptions">Pod Disruptions</h3>
   <p>این راهنما برای صاحبان برنامه‌هایی است که می‌خواهند برنامه‌های highly available بسازند و بنابراین باید بفهمند چه نوع disruptionهایی ممکن است برای Podها رخ دهد.</p>
@@ -3139,9 +3205,12 @@ LAST SEEN   TYPE      REASON    OBJECT              MESSAGE
   <p>توصیه می‌شود policy <code>AlwaysAllow</code> در <a href="#ch9-b-unhealthy-eviction-policy">Unhealthy Pod Eviction Policy</a> را برای PodDisruptionBudgetهای خود تنظیم کنید تا از eviction برنامه‌های بدرفتار (misbehaving) در طول node drain پشتیبانی شود. رفتار پیش‌فرض این است که منتظر بمانید podهای برنامه <a href="#ch9-b-pod-healthiness">healthy</a> شوند تا drain بتواند ادامه یابد.</p>
   <p>وقتی یک pod با استفاده از eviction API evict می‌شود،‏ به‌صورت graceful <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination">terminate</a> می‌شود و تنظیم <code>terminationGracePeriodSeconds</code> در <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#podspec-v1-core">PodSpec</a> آن رعایت می‌شود.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا PDB را روی درصد بنویسیم یا روی عدد مطلق؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا PDB را روی درصد بنویسیم یا روی عدد مطلق؟</b>
     <p>یک برنامه‌ی با تعداد replica ثابت (مثلاً یک StatefulSet سه‌عضوی برای etcd) بهتر است با <code>minAvailable: 2</code> کار کند،‏ چون این عدد مستقیماً معنای quorum دارد. یک Deployment با HPA که تعداد replica آن بین ۵ تا ۵۰ نوسان می‌کند،‏ بهتر است با درصد (مثلاً <code>minAvailable: 80%</code>) تعریف شود؛‏ چون با عدد مطلق،‏ وقتی HPA تعداد replica را کم می‌کند (مثلاً به ۵ در ساعت‌های کم‌ترافیک)،‏ همان مقدار مطلق قدیمی ممکن است عملاً غیرممکن (یا بیش از حد سخت‌گیرانه) شود.</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-pdb-example">PodDisruptionBudget example</h3>
   <p>یک cluster با ۳ node،‏ <code>node-1</code> تا <code>node-3</code> را در نظر بگیرید. این cluster چندین برنامه اجرا می‌کند. یکی از آن‌ها در ابتدا ۳ replica دارد به نام‌های <code>pod-a</code>،‏ <code>pod-b</code> و <code>pod-c</code>. یک pod دیگر بی‌ربط بدون PDB به نام <code>pod-x</code> هم نشان داده شده است. در ابتدا،‏ layout podها این‌طور است:</p>
@@ -3204,9 +3273,12 @@ LAST SEEN   TYPE      REASON    OBJECT              MESSAGE
   <p>همراه با پاک‌سازی podها،‏ Pod garbage collector (PodGC) اگر آن‌ها در یک phase غیرنهایی (non-terminal) باشند،‏ آن‌ها را به‌عنوان failed هم علامت‌گذاری می‌کند (به <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-garbage-collection">Pod garbage collection</a> هم مراجعه کنید؛‏ فصل ۳).</p>
   <p>هنگام استفاده از یک Job (یا CronJob)،‏ ممکن است بخواهید از این Pod disruption conditionها به‌عنوان بخشی از <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job#pod-failure-policy">Pod failure policy</a> آن Job استفاده کنید (فصل ۴).</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا reason اهمیت دارد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا reason اهمیت دارد؟</b>
     <p>از نگاه observability (فصل ۱۱)،‏ فیلد <code>reason</code> در condition <code>DisruptionTarget</code> دقیق‌ترین راه برای تشخیص خودکارِ «چرا این Pod رفت» است،‏ بدون این‌که لازم باشد لاگ eventهای متنی را parse کنید. برای مثال،‏ یک alert می‌تواند فقط روی <code>TerminationByKubelet</code> با علت <code>node pressure</code> trigger شود (یعنی یک مشکل ظرفیت واقعی روی Node)،‏ در حالی که <code>PreemptionByScheduler</code> نشان‌دهنده‌ی یک تصمیم عمدی priority است و نیازی به alert فوری ندارد.</p>
   </div>
+  </details>
 
   <h3 id="ch9-b-separate-roles">Separating Cluster Owner and Application Owner Roles</h3>
   <p>اغلب مفید است Cluster Manager و Application Owner را نقش‌های جدا با دانش محدودی نسبت به یکدیگر در نظر بگیریم. این تفکیک مسئولیت‌ها ممکن است در این سناریوها منطقی باشد:</p>
@@ -3475,10 +3547,6 @@ web-pdb   N/A             1                 1                     50s
   <p>اگر ترجیح می‌دهید از <a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands/#drain">kubectl drain</a> استفاده نکنید (مثلاً برای اجتناب از فراخوانی یک دستور خارجی،‏ یا برای کنترل دقیق‌تر روی فرایند pod eviction)،‏ می‌توانید به‌طور برنامه‌نویسی‌شده از eviction API هم استفاده کنید.</p>
   <p>برای اطلاعات بیشتر،‏ <a href="#ch9-b-api-eviction">API-initiated eviction</a> را ببینید.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چرا drain مستلزم <code>--ignore-daemonsets</code> است؟</b>
-    <p>DaemonSetها بنا به تعریف قرار است روی هر Node مناسب دقیقاً یک Pod اجرا کنند (فصل ۴). اگر <code>kubectl drain</code> بدون این flag اجرا شود و روی Node،‏ Podی از DaemonSet باشد،‏ drain با خطایی مثل <code>cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore)</code> متوقف می‌شود؛‏ evict کردن این Podها هم فایده‌ای ندارد،‏ چون DaemonSet controller بلافاصله جایگزینشان را روی همان Node می‌سازد. flag <code>--ignore-daemonsets</code> صرفاً به kubectl می‌گوید سعی نکند این podها را evict کند و منتظرشان هم نماند؛‏ این podها همان‌جا می‌مانند تا وقتی node واقعاً پایین بیاید. به همین دلیل agentهای حیاتی مثل CNI plugin یا log collector که با DaemonSet اجرا می‌شوند،‏ در طول drain همچنان روی node در حال خروج فعال باقی می‌مانند - که معمولاً درست همان چیزی است که می‌خواهید.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: drain کامل یک worker node در kind با رعایت PDB</b>
     <p>یک deployment سه‌replicایی با PDB سخت‌گیرانه بسازید و یک node را drain کنید تا مسدود شدن drain را ببینید.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment api --image=nginx --replicas=3
@@ -3498,6 +3566,13 @@ error: error when evicting pods/"api-7d9f9c6c9b-h2k7n" -n "default": global time
 </pre></div>
     <p>چون <code>minAvailable: 3</code> برای یک Deployment سه‌replicایی عملاً صفر voluntary eviction اجازه می‌دهد،‏ drain برای همیشه گیر می‌کند (همان‌طور که مستندات به‌صراحت هشدار می‌دهند). راه‌حل درست کاهش <code>minAvailable</code> به عددی مثل ۲،‏ یا اضافه کردن Node/replica بیشتر قبل از drain است. با <code>kubectl uncordon kind-worker</code> می‌توانید cordon را برگردانید.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا drain مستلزم --ignore-daemonsets است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا drain مستلزم <code>--ignore-daemonsets</code> است؟</b>
+    <p>DaemonSetها بنا به تعریف قرار است روی هر Node مناسب دقیقاً یک Pod اجرا کنند (فصل ۴). اگر <code>kubectl drain</code> بدون این flag اجرا شود و روی Node،‏ Podی از DaemonSet باشد،‏ drain با خطایی مثل <code>cannot delete DaemonSet-managed Pods (use --ignore-daemonsets to ignore)</code> متوقف می‌شود؛‏ evict کردن این Podها هم فایده‌ای ندارد،‏ چون DaemonSet controller بلافاصله جایگزینشان را روی همان Node می‌سازد. flag <code>--ignore-daemonsets</code> صرفاً به kubectl می‌گوید سعی نکند این podها را evict کند و منتظرشان هم نماند؛‏ این podها همان‌جا می‌مانند تا وقتی node واقعاً پایین بیاید. به همین دلیل agentهای حیاتی مثل CNI plugin یا log collector که با DaemonSet اجرا می‌شوند،‏ در طول drain همچنان روی node در حال خروج فعال باقی می‌مانند - که معمولاً درست همان چیزی است که می‌خواهید.</p>
+  </div>
+  </details>
 
   <h3 id="ch9-b-gang-scheduling">Gang scheduling</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.37 [beta]</span> (پیش‌فرض false،‏ feature gate <code>GenericWorkload</code>)</p>
@@ -3742,10 +3817,6 @@ error: error when evicting pods/"api-7d9f9c6c9b-h2k7n" -n "default": global time
   </ol>
   <p>علاوه بر workload-aware preemption،‏ <code>CompositePodGroup</code>ها می‌توانند به‌صورت پیش‌فرض توسط preemption پیش‌فرض Pod در طول چرخه‌ی Pod scheduling،‏ در کنار <code>PodGroup</code>ها و Podها،‏ به‌عنوان victim preemption انتخاب شوند. preemption پیش‌فرض Pod منطق سلسله‌مراتب اهمیت victim را با workload-aware preemption به اشتراک می‌گذارد و فیلد <code>disruptionMode</code> در <code>CompositePodGroup</code>ها را رعایت می‌کند.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چرا PodGroup/gang scheduling برای ML training لازم است؟</b>
-    <p>یک job توزیع‌شده‌ی PyTorch یا TensorFlow با N worker فقط وقتی مفید است که همه‌ی N worker هم‌زمان اجرا شوند؛‏ اگر فقط ۳ از ۸ worker جا شوند،‏ آن‌ها منتظر بقیه می‌مانند و منابع GPU گرانی مصرف می‌کنند بدون این‌که هیچ training واقعی انجام شود،‏ در حالی که همان GPUها می‌توانستند به یک job کوچک‌تر که کامل قابل‌اجراست داده شوند. این همان resource deadlock است که در ابتدای بخش PodGroup scheduling توضیح داده شد. gang scheduling با اصل all-or-nothing این مشکل را حل می‌کند: یا همه‌ی ۸ worker با هم جا می‌شوند،‏ یا هیچ‌کدام منابع را قفل نمی‌کنند و به سایر workloadها اجازه می‌دهند از آن ظرفیت استفاده کنند.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: مفهوم minCount در یک PodGroup (شبیه‌سازی مفهومی)</b>
     <p>چون <code>GenericWorkload</code> در بسیاری از distributionهای فعلی هنوز به‌طور پیش‌فرض غیرفعال است (feature gate beta با default=false)،‏ این آزمایش مفهومی است و نشان می‌دهد چگونه باید feature gate را روی یک cluster آزمایشی فعال کنید تا این API در دسترس باشد (خارج از مستندات رسمی،‏ بر اساس رفتار عمومی feature gateها):</p>
     <div class="code"><div class="lbl"><span>kubeadm ClusterConfiguration (بخش مرتبط)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: kubeadm.k8s.io/v1beta4
@@ -3766,8 +3837,15 @@ controllerManager:
     <p>پس از فعال شدن feature gate و API group <code>scheduling.k8s.io/v1beta1</code>،‏ می‌توانید با <code>kubectl get podgroups.scheduling.k8s.io</code> objectهای PodGroup را ببینید و در status هرکدام condition <code>PodGroupInitiallyScheduled</code> را بررسی کنید تا مشخص شود آیا حداقل <code>minCount</code> Pod آن گروه schedule شده‌اند یا نه.</p>
   </div>
 
-  <div id="ch9-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۹،‏ بخش دوم <small>۱۸ تمرین</small></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا PodGroup/gang scheduling برای ML training لازم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا PodGroup/gang scheduling برای ML training لازم است؟</b>
+    <p>یک job توزیع‌شده‌ی PyTorch یا TensorFlow با N worker فقط وقتی مفید است که همه‌ی N worker هم‌زمان اجرا شوند؛‏ اگر فقط ۳ از ۸ worker جا شوند،‏ آن‌ها منتظر بقیه می‌مانند و منابع GPU گرانی مصرف می‌کنند بدون این‌که هیچ training واقعی انجام شود،‏ در حالی که همان GPUها می‌توانستند به یک job کوچک‌تر که کامل قابل‌اجراست داده شوند. این همان resource deadlock است که در ابتدای بخش PodGroup scheduling توضیح داده شد. gang scheduling با اصل all-or-nothing این مشکل را حل می‌کند: یا همه‌ی ۸ worker با هم جا می‌شوند،‏ یا هیچ‌کدام منابع را قفل نمی‌کنند و به سایر workloadها اجازه می‌دهند از آن ظرفیت استفاده کنند.</p>
+  </div>
+  </details>
+
+  <details id="ch9-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۹،‏ بخش دوم <small>۱۸ تمرین</small></summary>
     <ol>
 
       <li><span class="lvl l1">مفهومی</span>تفاوت بین preemption،‏ API-initiated eviction و node-pressure eviction را در یک جدول مقایسه کنید: چه کسی آن را آغاز می‌کند،‏ آیا PDB رعایت می‌شود،‏ آیا graceful termination period کامل رعایت می‌شود؟
@@ -3825,14 +3903,14 @@ controllerManager:
         <details class="ans"><summary>پاسخ</summary><p><b>کوتاه‌مدت</b>: با هماهنگی هر دو تیم،‏ PDBهای <code>minAvailable: 100%</code> را موقتاً به مقداری واقعی (مثلاً <code>‎80%‎</code> یا <code>replicas-1</code>) کاهش دهید یا موقتاً حذف کنید تا migration انجام شود،‏ سپس آن‌ها را برگردانید؛‏ همان راه‌حلی که مستندات برای «Single-instance Stateful Application» پیشنهاد می‌کنند (حذف PDB موقت با هماهنگی صریح). می‌توانید همچنین با scale up موقت replicaها،‏ مقدار مطلق available را افزایش دهید تا حتی با همان PDB،‏ جایی برای یک pod در حال جابه‌جایی باشد.<br><b>بلندمدت</b>: یک policy (مثلاً از طریق admission controller یا Kyverno/OPA) بگذارید که PDBهایی با <code>minAvailable: 100%</code> یا <code>maxUnavailable: 0</code> را رد کند یا نیازمند تأیید صریح Platform team کند،‏ و در مستندات داخلی تیم‌ها توضیح دهید که این تنظیم عملاً یعنی «Node این Pod هرگز drain نخواهد شد» و باید فقط برای موارد کاملاً استثنائی (single-instance stateful) استفاده شود،‏ نه به‌طور پیش‌فرض برای هر Deployment.</p></details></li>
 
     </ol>
-  </div>
+  </details>
 
   
   <h3 id="ch9-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این فصل،‏ حالا</b><p>فروشگاه حالا روی دو Node اجرا می‌شود و جای هر Pod دیگر به شانس بستگی ندارد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>PostgreSQL باید روی Node دارای SSD بماند</td><td>label مثل <code>disktype=ssd</code> روی Node و nodeSelector یا node affinity از نوع required در StatefulSet پایگاه‌داده</td><td><a href="#ch9-a-nodeselector">nodeSelector</a> و <a href="#ch9-a-node-affinity">node affinity</a></td></tr><tr><td>هر سه Pod مربوط به API روی یک Node</td><td>topology spread constraint با <code>topologyKey: kubernetes.io/hostname</code> و <code>maxSkew: 1</code>؛‏ یا pod anti-affinity</td><td><a href="#ch9-a-topospread">topology spread</a></td></tr><tr><td>patch و reboot همه‌ی Nodeها بدون قطعی</td><td>هر بار یک Node:‏ cordon و drain،‏ و PodDisruptionBudget برای API تا drain بیش از حد مجاز Pod بیرون نکند؛‏ سپس uncordon</td><td><a href="#ch9-lab-node2">کارگاه،‏ گام ۴</a> و <a href="#ch9-b-disruptions">disruptionها</a></td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> تعداد replica و Node هنوز ثابت است و برای ترافیک اوج دستی بالا می‌رود (فصل ۱۰)؛‏ و فروشگاه هنوز HTTPS ندارد.</p><p><b>فصل بعد:</b> Black Friday نزدیک است و مقیاس باید خودکار شود.</p></div>
 
-  <div id="ch9-ex3" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۹ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch9-ex3" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۹ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>kube-scheduler چطور برای یک Pod تازه Node انتخاب می‌کند؟
         <details class="ans"><summary>پاسخ</summary>
@@ -3907,7 +3985,7 @@ controllerManager:
           <p><b>نکته‌ی امتیازآور:</b> workload-aware preemption هم PodGroup را یک واحد می‌بیند و آن را دیرتر از Pod مستقل با همان priority قربانی می‌کند.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch9-recap">
     <div class="recap-h">خلاصه‌ی فصل ۹ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

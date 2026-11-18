@@ -57,6 +57,8 @@
     <li>Cloud provider،‏ توزیع OS،‏ پیکربندی شبکه و نسخه‌ی container runtime</li>
     <li>مراحل بازتولید مشکل</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">یک bug report خوب چه چیزهایی دارد؟ (خارج از مستندات رسمی)</span></summary>
   <div class="deep"><b>توضیح تکمیلی: یک bug report خوب چه چیزهایی دارد؟ (خارج از مستندات رسمی)</b>
     <p>تجربه نشان می‌دهد بیشتر issueهایی که بی‌پاسخ می‌مانند،‏ اطلاعات کافی برای بازتولید ندارند. یک بسته‌ی حداقلی که معمولاً کافی است:</p>
     <div class="code"><div class="lbl"><span>جمع‌آوری اطلاعات برای bug report</span><button type="button">کپی</button></div><pre class="sh">kubectl version                        # client and server versions
@@ -67,6 +69,7 @@ journalctl -u kubelet --since "30 min ago" &gt; kubelet.log   # on the affected 
 </pre></div>
     <p>قبل از ارسال،‏ اطلاعات حساس (token،‏ IP عمومی،‏ نام مشتری) را از خروجی‌ها حذف کنید.</p>
   </div>
+  </details>
 
   <h3 id="ch11-a-observability">Observability</h3>
   <p>در کوبرنتیز،‏ observability فرایند جمع‌آوری و تحلیل metrics،‏ logs و traces است (که اغلب «سه ستون observability» یا three pillars of observability نامیده می‌شوند) تا درک بهتری از وضعیت داخلی،‏ performance و سلامت (health) Cluster به دست آید.</p>
@@ -125,16 +128,6 @@ Cluster components --&gt; Trace pipeline   --/
   <p>برای collectorها و backendهای tracing،‏ بخش <a href="#ch11-a-obs-tools">Common observability tools -‏ tracing tools</a> را ببینید.</p>
   <p class="next">همچنین ببینید: <a href="#ch11-a-system-traces">System traces for Kubernetes components</a> ·‏ <a href="https://opentelemetry.io/docs/collector/getting-started/">OpenTelemetry Collector getting started guide</a> ·‏ Monitoring and tracing tasks</p>
 
-  <div class="deep"><b>توضیح تکمیلی: سه ستون چطور با هم کار می‌کنند؟</b>
-    <p>هر ستون به یک سؤال متفاوت پاسخ می‌دهد و در troubleshooting معمولاً به همین ترتیب از آن‌ها استفاده می‌شود:</p>
-    <div class="tbl"><table><thead><tr><th>سیگنال</th><th>به چه سؤالی پاسخ می‌دهد</th><th>مثال در Kubernetes</th><th>هزینه / محدودیت</th></tr></thead><tbody>
-      <tr><td>metrics</td><td>«آیا چیزی غیرعادی است؟ از کی؟ چقدر؟»</td><td><code>apiserver_request_duration_seconds</code> از kube-apiserver،‏ <code>container_cpu_usage_seconds_total</code> از kubelet</td><td>ارزان برای ذخیره (عددی و تجمیع‌شده)،‏ ولی جزئیات یک درخواست خاص را ندارد. خطر cardinality explosion.</td></tr>
-      <tr><td>logs</td><td>«دقیقاً چه اتفاقی افتاد؟ پیام خطا چه بود؟»</td><td>log kubelet در journald،‏ <code>kubectl logs</code>،‏ audit log</td><td>حجیم؛‏ نیاز به rotation و retention. جستجو بدون structured logging سخت است.</td></tr>
-      <tr><td>traces</td><td>«زمان کجا صرف شد؟ کدام hop کند بود؟»</td><td>span از kube-apiserver تا etcd،‏ span از kubelet تا container runtime</td><td>نیاز به sampling؛‏ فقط برای درخواست‌هایی که sample شده‌اند جزئیات دارید.</td></tr>
-    </tbody></table></div>
-    <p>یک جریان معمول: alert روی metric (مثلاً p99 latency در kube-apiserver) ⟵ پیدا کردن بازه‌ی زمانی ⟵ نگاه به traceهای آن بازه برای یافتن hop کند (مثلاً etcd) ⟵ خواندن log همان component در همان بازه برای علت دقیق. audit log هم به سؤال «چه کسی چه کاری کرد؟» پاسخ می‌دهد که هیچ‌کدام از سه ستون دیگر پاسخ نمی‌دهند.</p>
-  </div>
-
   <h4 id="ch11-a-obs-tools-h">Common observability tools</h4>
   <div class="note"><b>نکته</b><p>این بخش به پروژه‌های third-party لینک می‌دهد که قابلیت‌های observability مورد نیاز کوبرنتیز را فراهم می‌کنند. نویسندگان پروژه‌ی کوبرنتیز مسئول این پروژه‌ها نیستند و آن‌ها به ترتیب حروف الفبا فهرست شده‌اند. برای افزودن پروژه‌ای به این فهرست،‏ پیش از ارسال تغییر،‏ <a href="https://kubernetes.io/docs/contribute/style/content-guide/">content guide</a> را بخوانید.</p></div>
   <p id="ch11-a-obs-tools"><b>Metrics tools</b></p>
@@ -160,6 +153,19 @@ Cluster components --&gt; Trace pipeline   --/
     <li><a href="https://zipkin.io/">Zipkin</a>: جمع‌آوری و visualization برای distributed tracing فراهم می‌کند.</li>
   </ul>
   <p class="next">ادامه‌ی مطالعه: جمع‌آوری resource usage metrics با metrics-server (<a href="#ch11-a-rum">پایین‌تر</a>) · logging tasks and tutorials ·‏ monitoring and tracing task guides ·‏ <a href="#ch11-a-system-metrics">system metrics guide</a></p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">سه ستون چطور با هم کار می‌کنند؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: سه ستون چطور با هم کار می‌کنند؟</b>
+    <p>هر ستون به یک سؤال متفاوت پاسخ می‌دهد و در troubleshooting معمولاً به همین ترتیب از آن‌ها استفاده می‌شود:</p>
+    <div class="tbl"><table><thead><tr><th>سیگنال</th><th>به چه سؤالی پاسخ می‌دهد</th><th>مثال در Kubernetes</th><th>هزینه / محدودیت</th></tr></thead><tbody>
+      <tr><td>metrics</td><td>«آیا چیزی غیرعادی است؟ از کی؟ چقدر؟»</td><td><code>apiserver_request_duration_seconds</code> از kube-apiserver،‏ <code>container_cpu_usage_seconds_total</code> از kubelet</td><td>ارزان برای ذخیره (عددی و تجمیع‌شده)،‏ ولی جزئیات یک درخواست خاص را ندارد. خطر cardinality explosion.</td></tr>
+      <tr><td>logs</td><td>«دقیقاً چه اتفاقی افتاد؟ پیام خطا چه بود؟»</td><td>log kubelet در journald،‏ <code>kubectl logs</code>،‏ audit log</td><td>حجیم؛‏ نیاز به rotation و retention. جستجو بدون structured logging سخت است.</td></tr>
+      <tr><td>traces</td><td>«زمان کجا صرف شد؟ کدام hop کند بود؟»</td><td>span از kube-apiserver تا etcd،‏ span از kubelet تا container runtime</td><td>نیاز به sampling؛‏ فقط برای درخواست‌هایی که sample شده‌اند جزئیات دارید.</td></tr>
+    </tbody></table></div>
+    <p>یک جریان معمول: alert روی metric (مثلاً p99 latency در kube-apiserver) ⟵ پیدا کردن بازه‌ی زمانی ⟵ نگاه به traceهای آن بازه برای یافتن hop کند (مثلاً etcd) ⟵ خواندن log همان component در همان بازه برای علت دقیق. audit log هم به سؤال «چه کسی چه کاری کرد؟» پاسخ می‌دهد که هیچ‌کدام از سه ستون دیگر پاسخ نمی‌دهند.</p>
+  </div>
+  </details>
 
   <h3 id="ch11-a-logging">Logging Architecture</h3>
   <p>Logهای برنامه (application logs) کمک می‌کنند بفهمید داخل برنامه‌ی شما چه اتفاقی می‌افتد. Logها به‌ویژه برای debugging مشکلات و monitoring فعالیت cluster مفیدند. بیشتر برنامه‌های مدرن نوعی مکانیزم logging دارند. به همین ترتیب،‏ container engineها هم برای پشتیبانی از logging طراحی شده‌اند. ساده‌ترین و رایج‌ترین روش logging برای برنامه‌های containerized،‏ نوشتن در streamهای standard output و standard error است.</p>
@@ -247,14 +253,6 @@ spec:
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get --raw "/api/v1/namespaces/default/pods/counter-err/log?stream=Stderr"
 </pre></div>
   <p>برای جزئیات بیشتر،‏ <a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#logs">مستندات <code>kubectl logs</code></a> را ببینید.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا جدا کردن stderr ارزشمند است؟</b>
-    <p>بدون این قابلیت،‏ خروجی <code>kubectl logs counter-err</code> خطوط <code>0: Mon ...</code> و <code>0: err</code> را درهم نشان می‌دهد و تنها راه تفکیک،‏ parse کردن محتواست. با <code>?stream=Stderr</code> فقط خطوط <code>N: err</code> برمی‌گردد. این جدایی از قبل در سطح فایل وجود دارد: در CRI logging format هر خط log با timestamp و نام stream (<code>stdout</code> یا <code>stderr</code>) ذخیره می‌شود؛‏ این feature فقط آن را از طریق API قابل انتخاب می‌کند. اگر feature gate فعال نباشد،‏ پارامتر <code>stream</code> پذیرفته نمی‌شود.</p>
-    <div class="code"><div class="lbl"><span>نمونه‌ی خطوط در /var/log/pods/... (CRI format)</span><button type="button">کپی</button></div><pre class="out">2026-09-21T16:40:11.123456789Z stdout F 0: Mon Sep 21 16:40:11 UTC 2026
-2026-09-21T16:40:11.124001234Z stderr F 0: err
-</pre></div>
-    <p>حرف <code>F</code> یعنی خط کامل (full) و <code>P</code> یعنی خط جزئی (partial) که در ادامه تکمیل می‌شود (خارج از مستندات رسمی؛‏ طبق CRI logging format).</p>
-  </div>
-
   <h4>How nodes handle container logs</h4>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/59b1aae2ad.png" alt="Node level logging"></div><figcaption><b>شکل ۱۱-۲.</b> Node level logging:‏ container runtime خروجی‌های stdout/stderr را به فایل log روی Node هدایت می‌کند. منبع: <span class="en">concepts/cluster-administration/logging</span></figcaption></figure>
   <p>یک container runtime هر خروجی تولیدشده در streamهای <code>stdout</code> و <code>stderr</code> یک برنامه‌ی containerized را مدیریت و هدایت (redirect) می‌کند. container runtimeهای مختلف این کار را به روش‌های متفاوت پیاده‌سازی می‌کنند؛‏ اما یکپارچگی با kubelet به‌صورت <i>CRI logging format</i> استاندارد شده است.</p>
@@ -287,6 +285,17 @@ ls -lh /var/log/pods/default_counter_*/count/
     <p>نکته‌ی مهم: <code>kubectl logs</code> فقط <code>0.log</code> (فایل جاری) را می‌خواند. فایل‌های rotate شده روی دیسک هستند و node-level agent (مثل Fluent Bit) باید قبل از حذف آن‌ها را خوانده باشد. بیشینه‌ی فضای log هر container تقریباً <code>containerLogMaxSize × containerLogMaxFiles</code> است (با پیش‌فرض‌ها حدود ۵۰Mi). نام‌گذاری و فشرده‌سازی فایل‌های rotate شده جزئیات پیاده‌سازی kubelet است (خارج از مستندات رسمی).</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا جدا کردن stderr ارزشمند است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا جدا کردن stderr ارزشمند است؟</b>
+    <p>بدون این قابلیت،‏ خروجی <code>kubectl logs counter-err</code> خطوط <code>0: Mon ...</code> و <code>0: err</code> را درهم نشان می‌دهد و تنها راه تفکیک،‏ parse کردن محتواست. با <code>?stream=Stderr</code> فقط خطوط <code>N: err</code> برمی‌گردد. این جدایی از قبل در سطح فایل وجود دارد: در CRI logging format هر خط log با timestamp و نام stream (<code>stdout</code> یا <code>stderr</code>) ذخیره می‌شود؛‏ این feature فقط آن را از طریق API قابل انتخاب می‌کند. اگر feature gate فعال نباشد،‏ پارامتر <code>stream</code> پذیرفته نمی‌شود.</p>
+    <div class="code"><div class="lbl"><span>نمونه‌ی خطوط در /var/log/pods/... (CRI format)</span><button type="button">کپی</button></div><pre class="out">2026-09-21T16:40:11.123456789Z stdout F 0: Mon Sep 21 16:40:11 UTC 2026
+2026-09-21T16:40:11.124001234Z stderr F 0: err
+</pre></div>
+    <p>حرف <code>F</code> یعنی خط کامل (full) و <code>P</code> یعنی خط جزئی (partial) که در ادامه تکمیل می‌شود (خارج از مستندات رسمی؛‏ طبق CRI logging format).</p>
+  </div>
+  </details>
+
   <h3 id="ch11-a-system-component-logs">System component logs</h3>
   <p>دو نوع system component وجود دارد: آن‌هایی که معمولاً در container اجرا می‌شوند،‏ و componentهایی که مستقیماً در اجرای containerها دخیل‌اند. برای مثال:</p>
   <ul>
@@ -305,6 +314,8 @@ ls -lh /var/log/pods/default_counter_*/count/
   <div class="warn"><b>هشدار</b><p>مهم است توجه کنید که مکان پیش‌فرض <code>/var/log/pods</code> مدت طولانی است که استفاده می‌شود و برخی processها ممکن است به‌طور ضمنی این مسیر را فرض کرده باشند. بنابراین تغییر این پارامتر باید با احتیاط و با مسئولیت خودتان انجام شود.</p><p>نکته‌ی دیگری که باید در نظر داشته باشید این است که kubelet از قرار داشتن این مکان روی همان دیسک <code>/var</code> پشتیبانی می‌کند. در غیر این صورت،‏ اگر logها روی filesystemی جدا از <code>/var</code> باشند،‏ kubelet مصرف آن filesystem را track نمی‌کند،‏ که در صورت پر شدن آن ممکن است منجر به مشکل شود.</p></div>
   <p>برای جزئیات درباره‌ی etcd و logهای آن،‏ <a href="https://etcd.io/docs/">مستندات etcd</a> را ببینید. باز هم می‌توانید از مکانیزم‌های storage در کوبرنتیز برای map کردن storage ماندگار به container اجراکننده‌ی component استفاده کنید.</p>
   <div class="note"><b>نکته</b><p>اگر componentهای Cluster (مثل scheduler) را طوری deploy می‌کنید که در یک volume به اشتراک گذاشته‌شده از Node والد log بنویسند،‏ باید در نظر بگیرید و مطمئن شوید که آن logها rotate می‌شوند. <b>کوبرنتیز آن log rotation را مدیریت نمی‌کند.</b></p><p>سیستم‌عامل شما ممکن است به‌طور خودکار نوعی log rotation پیاده کند؛‏ برای مثال،‏ اگر دایرکتوری <code>/var/log</code> را در یک static Pod برای یک component به اشتراک بگذارید،‏ log rotation در سطح Node با فایلی در آن دایرکتوری همان رفتاری را می‌کند که با فایل نوشته‌شده توسط هر component خارج از کوبرنتیز.</p><p>برخی ابزارهای deploy این log rotation را در نظر می‌گیرند و خودکارش می‌کنند؛‏ بقیه آن را به عهده‌ی شما می‌گذارند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">نقشه‌ی جای logها روی یک Node لینوکسی با kubeadm (خارج از مستندات رسمی،‏ رفتار رایج)</span></summary>
   <div class="deep"><b>توضیح تکمیلی: نقشه‌ی جای logها روی یک Node لینوکسی با kubeadm (خارج از مستندات رسمی،‏ رفتار رایج)</b>
     <div class="tbl"><table><thead><tr><th>Component</th><th>چطور اجرا می‌شود</th><th>log کجاست</th><th>چطور بخوانیم</th></tr></thead><tbody>
       <tr><td>kubelet</td><td>سرویس systemd</td><td>journald</td><td><code>journalctl -u kubelet -f</code></td></tr>
@@ -315,6 +326,7 @@ ls -lh /var/log/pods/default_counter_*/count/
     </tbody></table></div>
     <p>در kubeadm،‏ componentهای control plane در stdout می‌نویسند نه مستقیماً در <code>/var/log/*.log</code>؛‏ پس logهای آن‌ها هم تحت log rotation خود kubelet است. در clusterهای قدیمی‌تر (مثل kube-up) که componentها با redirect در <code>/var/log/kube-apiserver.log</code> می‌نوشتند،‏ هشدار Note بالا صادق است: rotation آن فایل با logrotate سیستم‌عامل است،‏ نه کوبرنتیز.</p>
   </div>
+  </details>
 
   <h3 id="ch11-a-cluster-logging">Cluster-level logging architectures</h3>
   <p>با اینکه کوبرنتیز یک راه‌حل native برای cluster-level logging ارائه نمی‌دهد،‏ چند رویکرد رایج هست که می‌توانید در نظر بگیرید. برخی گزینه‌ها:</p>
@@ -467,11 +479,6 @@ Fri Apr  1 11:42:31 UTC 2022 INFO 2
   <p>اگر یک node-level agent در cluster نصب کرده باشید،‏ آن agent این log streamها را بدون هیچ پیکربندی بیشتری به‌طور خودکار برمی‌دارد. اگر بخواهید،‏ می‌توانید agent را طوری پیکربندی کنید که خطوط log را بر اساس container منبع parse کند.</p>
   <p>حتی برای Podهایی که مصرف CPU و memory پایینی دارند (در حد چند millicore برای cpu و چند مگابایت برای memory)،‏ نوشتن logها در یک فایل و سپس stream کردن آن‌ها به <code>stdout</code> می‌تواند storage مورد نیاز روی Node را دو برابر کند. اگر برنامه‌ای دارید که در یک فایل واحد می‌نویسد،‏ توصیه می‌شود به‌جای پیاده‌سازی رویکرد streaming sidecar container،‏ مقصد را <code>/dev/stdout</code> قرار دهید.</p>
   <p>sidecar containerها همچنین می‌توانند برای rotate کردن فایل‌های logی استفاده شوند که خود برنامه نمی‌تواند rotateشان کند. یک نمونه از این رویکرد،‏ container کوچکی است که <code>logrotate</code> را به‌طور دوره‌ای اجرا می‌کند. با این حال،‏ ساده‌تر است که مستقیماً از <code>stdout</code> و <code>stderr</code> استفاده کنید و سیاست‌های rotation و retention را به kubelet بسپارید.</p>
-  <div class="deep"><b>توضیح تکمیلی: sidecar به‌عنوان native sidecar container</b>
-    <p>در مثال رسمی،‏ <code>count-log-1</code> و <code>count-log-2</code> containerهای معمولی هستند. در نسخه‌های جدید کوبرنتیز می‌توانید آن‌ها را به صورت native sidecar (init container با <code>restartPolicy: Always</code>،‏ فصل ۳) تعریف کنید تا پیش از container اصلی شروع شوند و بعد از آن متوقف شوند؛‏ به این ترتیب آخرین خطوط log قبل از خاتمه‌ی Pod از دست نمی‌روند. در Jobها این تفاوت حیاتی است،‏ چون sidecar معمولی مانع completion شدن Pod می‌شود.</p>
-    <p>یک مشکل رایج دیگر: <code>emptyDir</code> که log در آن نوشته می‌شود جزو ephemeral storage Pod حساب می‌شود؛‏ اگر فایل‌ها rotate نشوند و Pod <code>limits.ephemeral-storage</code> داشته باشد،‏ kubelet آن Pod را evict می‌کند (فصل ۷ و ۹).</p>
-  </div>
-
   <h4>Sidecar container with a logging agent</h4>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/d55c404912.png" alt="Sidecar container with a logging agent"></div><figcaption><b>شکل ۱۱-۵.</b> sidecar containerی که خودش یک logging agent اجرا می‌کند و logها را مستقیماً به logging backend می‌فرستد. منبع: <span class="en">concepts/cluster-administration/logging</span></figcaption></figure>
   <p>اگر node-level logging agent برای وضعیت شما به اندازه‌ی کافی انعطاف‌پذیر نیست،‏ می‌توانید یک sidecar container با یک logging agent جداگانه بسازید که به‌طور خاص برای اجرا با برنامه‌ی شما پیکربندی کرده‌اید.</p>
@@ -549,6 +556,14 @@ spec:
   <h4>Exposing logs directly from the application</h4>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/0b4444914e.png" alt="Exposing logs directly from the application"></div><figcaption><b>شکل ۱۱-۶.</b> برنامه خودش logها را مستقیماً به logging backend می‌فرستد. منبع: <span class="en">concepts/cluster-administration/logging</span></figcaption></figure>
   <p>Cluster-logging که logها را مستقیماً از هر برنامه expose یا push می‌کند،‏ خارج از محدوده‌ی (scope) Kubernetes است.</p>
+  <p class="next">ادامه‌ی مطالعه: <a href="#ch11-a-system-logs">Kubernetes system logs</a> ·‏ <a href="#ch11-a-system-traces">Traces For Kubernetes System Components</a> ·‏ customise the termination message (نیمه‌ی دوم همین فصل،‏ determine-reason-pod-failure)</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">sidecar به‌عنوان native sidecar container · مقایسه‌ی چهار معماری</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: sidecar به‌عنوان native sidecar container</b>
+    <p>در مثال رسمی،‏ <code>count-log-1</code> و <code>count-log-2</code> containerهای معمولی هستند. در نسخه‌های جدید کوبرنتیز می‌توانید آن‌ها را به صورت native sidecar (init container با <code>restartPolicy: Always</code>،‏ فصل ۳) تعریف کنید تا پیش از container اصلی شروع شوند و بعد از آن متوقف شوند؛‏ به این ترتیب آخرین خطوط log قبل از خاتمه‌ی Pod از دست نمی‌روند. در Jobها این تفاوت حیاتی است،‏ چون sidecar معمولی مانع completion شدن Pod می‌شود.</p>
+    <p>یک مشکل رایج دیگر: <code>emptyDir</code> که log در آن نوشته می‌شود جزو ephemeral storage Pod حساب می‌شود؛‏ اگر فایل‌ها rotate نشوند و Pod <code>limits.ephemeral-storage</code> داشته باشد،‏ kubelet آن Pod را evict می‌کند (فصل ۷ و ۹).</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی چهار معماری</b>
     <div class="tbl"><table><thead><tr><th>معماری</th><th>تغییر در برنامه</th><th>مصرف منابع</th><th><code>kubectl logs</code> کار می‌کند؟</th><th>مناسب برای</th></tr></thead><tbody>
       <tr><td>node-level agent (DaemonSet)</td><td>ندارد (فقط stdout/stderr)</td><td>یک agent برای هر Node</td><td>بله</td><td>پیش‌فرض برای بیشتر clusterها</td></tr>
@@ -557,7 +572,7 @@ spec:
       <tr><td>push مستقیم از برنامه</td><td>بله (کتابخانه‌ی logging)</td><td>درون برنامه</td><td>فقط اگر در stdout هم بنویسد</td><td>خارج از scope Kubernetes</td></tr>
     </tbody></table></div>
   </div>
-  <p class="next">ادامه‌ی مطالعه: <a href="#ch11-a-system-logs">Kubernetes system logs</a> ·‏ <a href="#ch11-a-system-traces">Traces For Kubernetes System Components</a> ·‏ customise the termination message (نیمه‌ی دوم همین فصل،‏ determine-reason-pod-failure)</p>
+  </details>
 
   <h3 id="ch11-a-system-logs">System logs <small>(reference)</small></h3>
   <p>System component logها رویدادهای رخ‌داده در cluster را ثبت می‌کنند که برای debugging بسیار مفید هستند. می‌توانید log verbosity را برای دیدن جزئیات بیشتر یا کمتر پیکربندی کنید. logها می‌توانند به‌اندازه‌ی نشان‌دادن errorها داخل یک component خشن (coarse-grained) باشند،‏ یا به‌اندازه‌ی نشان‌دادن traceهای گام‌به‌گام رویدادها (مثل HTTP access logs،‏ تغییرات state یک pod،‏ اقدامات controller،‏ یا تصمیم‌های scheduler) ریز (fine-grained).</p>
@@ -708,15 +723,6 @@ kubectl get --raw "/api/v1/nodes/node-1.example/proxy/logs/?query=kubelet"
 kubectl get --raw "/api/v1/nodes/node-1.example/proxy/logs/?query=kubelet&amp;pattern=error"
 </pre></div>
 
-  <div class="deep"><b>توضیح تکمیلی: چه زمانی از هر ابزار logging استفاده کنیم؟</b>
-    <div class="tbl"><table><thead><tr><th>نیاز</th><th>ابزار مناسب</th><th>چرا</th></tr></thead><tbody>
-      <tr><td>خواندن سریع log یک Pod کاربر</td><td><code>kubectl logs</code></td><td>مستقیماً از kubelet و بدون نیاز به دسترسی SSH به Node</td></tr>
-      <tr><td>Node در حالت NotReady یا API server در دسترس نیست</td><td><code>journalctl -u kubelet</code> با SSH</td><td>kubelet خودش هم ممکن است پاسخگو نباشد،‏ پس باید مستقیماً روی Node بروید</td></tr>
-      <tr><td>بررسی log یک system service خاص بدون SSH،‏ برای یک ادمین با دسترسی RBAC محدود</td><td>Log Query (<code>kubectl get --raw .../proxy/logs/?query=...</code>)</td><td>نیازی به SSH ندارد؛‏ اما به RBAC روی <code>nodes/proxy</code> نیاز دارد که خودش ریسک امنیتی دارد</td></tr>
-      <tr><td>parse برنامه‌ای (automated) پیام‌های log برای alerting</td><td>structured/JSON logging + node-level agent</td><td>کلید-مقدار قابل query است؛‏ پیام متنی آزاد نیست</td></tr>
-      <tr><td>پیگیری این‌که کدام درخواست باعث یک تغییر شد</td><td>audit log kube-apiserver</td><td>هیچ‌کدام از logهای دیگر شامل identity کاربر و verb API نیست</td></tr>
-    </tbody></table></div>
-  </div>
   <div class="lab"><b>آزمایش عملی: مقایسه‌ی native format و JSON logging در یک component</b>
     <p>روی یک Node که kube-apiserver را به‌صورت static Pod اجرا می‌کند،‏ می‌توانید فرمت log را تغییر دهید و تفاوت را ببینید (نیاز به دسترسی به manifest static Pod دارد؛‏ خارج از مستندات رسمی،‏ رفتار رایج در kubeadm):</p>
     <div class="code"><div class="lbl"><span>/etc/kubernetes/manifests/kube-apiserver.yaml (بخشی)</span><button type="button">کپی</button></div><pre class="yaml">spec:
@@ -737,6 +743,19 @@ kubectl -n kube-system logs kube-apiserver-cp1 --tail=5
     <p>در محیط production،‏ انتخاب JSON معمولاً وقتی ارزشمند است که یک node-level agent (مثل Fluent Bit) بخواهد فیلدهای log را بدون regex پیچیده parse کند و به یک backend مثل Elasticsearch یا Loki با label ساختاریافته بفرستد.</p>
   </div>
   <p class="next">ادامه‌ی مطالعه: <a href="#ch11-a-logging">Kubernetes Logging Architecture</a> ·‏ Structured Logging KEP ·‏ Contextual Logging KEP ·‏ deprecation of klog flags ·‏ Conventions for logging severity ·‏ Log Query KEP</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چه زمانی از هر ابزار logging استفاده کنیم؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چه زمانی از هر ابزار logging استفاده کنیم؟</b>
+    <div class="tbl"><table><thead><tr><th>نیاز</th><th>ابزار مناسب</th><th>چرا</th></tr></thead><tbody>
+      <tr><td>خواندن سریع log یک Pod کاربر</td><td><code>kubectl logs</code></td><td>مستقیماً از kubelet و بدون نیاز به دسترسی SSH به Node</td></tr>
+      <tr><td>Node در حالت NotReady یا API server در دسترس نیست</td><td><code>journalctl -u kubelet</code> با SSH</td><td>kubelet خودش هم ممکن است پاسخگو نباشد،‏ پس باید مستقیماً روی Node بروید</td></tr>
+      <tr><td>بررسی log یک system service خاص بدون SSH،‏ برای یک ادمین با دسترسی RBAC محدود</td><td>Log Query (<code>kubectl get --raw .../proxy/logs/?query=...</code>)</td><td>نیازی به SSH ندارد؛‏ اما به RBAC روی <code>nodes/proxy</code> نیاز دارد که خودش ریسک امنیتی دارد</td></tr>
+      <tr><td>parse برنامه‌ای (automated) پیام‌های log برای alerting</td><td>structured/JSON logging + node-level agent</td><td>کلید-مقدار قابل query است؛‏ پیام متنی آزاد نیست</td></tr>
+      <tr><td>پیگیری این‌که کدام درخواست باعث یک تغییر شد</td><td>audit log kube-apiserver</td><td>هیچ‌کدام از logهای دیگر شامل identity کاربر و verb API نیست</td></tr>
+    </tbody></table></div>
+  </div>
+  </details>
 
   <h3 id="ch11-a-system-metrics">System metrics for Kubernetes components</h3>
   <p>System component metricها می‌توانند دید بهتری به آن‌چه داخل آن‌ها اتفاق می‌افتد بدهند. metricها به‌ویژه برای ساخت dashboard و alert مفیدند.</p>
@@ -936,11 +955,15 @@ full avg10=0.00 avg60=0.00 avg300=0.00 total=0
 </pre></div>
   <p>علاوه بر این،‏ meta-metric با نام <code>cardinality_enforcement_unexpected_categorizations_total</code> تعداد categorizationهای غیرمنتظره در حین اجرای cardinality enforcement را ثبت می‌کند،‏ یعنی هر بار که مقدار labelی مواجه شود که با محدودیت‌های allow-list مجاز نیست.</p>
 
+  <p class="next">ادامه‌ی مطالعه: Prometheus text format · فهرست stable Kubernetes metrics ·‏ Kubernetes deprecation policy</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Metric lifecycle چرا مهم است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: Metric lifecycle چرا مهم است؟</b>
     <p>metric lifecycle در کوبرنتیز دقیقاً مثل <a href="#ch8-a-groups-versioning">API deprecation policy</a> (فصل ۸) رفتار می‌کند: یک متریک stable پس از deprecated شدن حداقل ۳ release یا ۹ ماه (هر کدام طولانی‌تر) منتشر می‌شود و فقط بعد از آن hidden می‌شود،‏ دقیقاً به این خاطر که dashboardها و alertهای Prometheus شما بی‌مقدمه نشکنند. اگر یک alerting rule روی یک متریک stable مثل <code>apiserver_request_total</code> نوشته‌اید و در changelog می‌بینید این متریک <code>Deprecated since 1.4X.0</code> شده،‏ فوری اقدام لازم نیست؛‏ اما باید یک کار برای مهاجرت به متریک جایگزین باز کنید قبل از این‌که hidden شود.</p>
     <p>مثال کاربردی cardinality enforcement: اگر یک برنامه ناخواسته namespaceهای پویا (مثلاً یک namespace به ازای هر PR در CI) بسازد و یک متریک را با label <code>namespace</code> emit کند،‏ تعداد سری‌های زمانی (time series) بدون محدودیت رشد می‌کند و می‌تواند حافظه‌ی Prometheus یا خود kube-apiserver را مصرف کند («cardinality explosion»،‏ جدول توضیح تکمیلی بخش Observability را ببینید). <code>--allow-metric-labels</code> این را در سطح component محدود می‌کند؛‏ در سطح Prometheus هم <code>metric_relabel_configs</code> برای drop کردن labelهای پرکاردینالیتی رایج است (خارج از مستندات رسمی).</p>
   </div>
-  <p class="next">ادامه‌ی مطالعه: Prometheus text format · فهرست stable Kubernetes metrics ·‏ Kubernetes deprecation policy</p>
+  </details>
 
   <h3 id="ch11-a-system-traces">Traces For Kubernetes System Components</h3>
   <p><span class="fs">FEATURE STATE: beta since v1.27</span> <b>یادداشت نویسنده:</b> این وضعیت در صفحه‌ی مستندات دستی نوشته شده است. طبق فایل‌های مرجع feature gate،‏ هر دو gate با نام‌های APIServerTracing و KubeletTracing از v1.34 در مرحله‌ی stable هستند و KubeletTracing قفل‌شده (locked) است؛‏ پس در v1.37 لازم نیست gateی را فعال کنید.</p>
@@ -1002,11 +1025,15 @@ tracing:
   <h4>Stability</h4>
   <p>instrumentation tracing هنوز در حال توسعه‌ی فعال است و ممکن است به روش‌های مختلفی تغییر کند. این شامل نام spanها،‏ attributeهای متصل،‏ endpointهای instrument‌شده و غیره می‌شود. تا وقتی این قابلیت به stable ارتقا یابد،‏ هیچ تضمینی برای سازگاری به‌عقب (backwards compatibility) برای instrumentation tracing وجود ندارد. <b>یادداشت نویسنده:</b> این بند از زمان beta در مستندات مانده است؛‏ gateهای tracing از v1.34 stable هستند،‏ ولی نام spanها و attributeها همچنان می‌توانند تغییر کنند.</p>
 
+  <p class="next">ادامه‌ی مطالعه: <a href="https://opentelemetry.io/docs/collector/getting-started/">Getting Started with the OpenTelemetry Collector</a> ·‏ <a href="https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/">OTLP Exporter Configuration</a></p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چطور traceها به troubleshooting کمک می‌کنند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چطور traceها به troubleshooting کمک می‌کنند؟</b>
     <p>فرض کنید یک درخواست <code>kubectl create pod</code> کند است. بدون tracing،‏ فقط metric کلی <code>apiserver_request_duration_seconds</code> افزایش را نشان می‌دهد ولی نمی‌گوید کجای مسیر کند بوده. با trace فعال روی kube-apiserver،‏ یک span واحد نشان می‌دهد که مثلاً ۸۰٪ زمان در validating admission webhook صرف شده،‏ نه در نوشتن روی etcd. این trace با propagate شدن context به webhook (اگر آن هم instrumented باشد) می‌تواند حتی داخل webhook هم ادامه یابد. مشابه آن در سمت Node: یک span از kubelet تا container runtime (از طریق CRI) می‌تواند نشان دهد کندی در pull image است یا در ساخت sandbox.</p>
     <p>نکته‌ی مهم درباره‌ی <code>samplingRatePerMillion</code>: با مقدار ۱۰۰ در مثال‌های بالا (یعنی ۱ در ۱۰٬۰۰۰؛‏ اگر این فیلد تنظیم نشود،‏ spanهای بدون والد اصلاً sample نمی‌شوند)،‏ تنها بخش کوچکی از درخواست‌ها trace می‌شوند تا overhead پایین بماند؛‏ برای debug یک incident خاص در محیط production،‏ می‌توان موقتاً این مقدار را بالا برد (یا حتی ۱۰۰۰۰۰۰ برای trace همه‌چیز)،‏ ولی باید بعد از پایان debug به مقدار قبلی برگردانید تا overhead شبکه/CPU روی apiserver اضافه نماند.</p>
   </div>
-  <p class="next">ادامه‌ی مطالعه: <a href="https://opentelemetry.io/docs/collector/getting-started/">Getting Started with the OpenTelemetry Collector</a> ·‏ <a href="https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/">OTLP Exporter Configuration</a></p>
+  </details>
 
   <h3 id="ch11-a-ksm">kube-state-metrics</h3>
   <p>state اشیای کوبرنتیز در Kubernetes API را می‌توان به‌صورت metric expose کرد. یک add-on agent با نام <a href="https://github.com/kubernetes/kube-state-metrics">kube-state-metrics</a> می‌تواند به Kubernetes API server وصل شود و یک endpoint HTTP با metricهای تولید‌شده از state اشیای منفرد در Cluster expose کند. این agent اطلاعات مختلفی درباره‌ی state اشیا مثل labelها و annotationها،‏ زمان‌های startup و termination،‏ status یا فازی که یک شیء در حال حاضر در آن است expose می‌کند. برای مثال،‏ containerهای در حال اجرا در Podها یک metric با نام <code>kube_pod_container_info</code> ایجاد می‌کنند. این متریک شامل نام container،‏ نام Podی که بخشی از آن است،‏ namespaceی که Pod در آن اجرا می‌شود،‏ نام image container،‏ ID آن image (بسته‌ی فقط‌خواندنی شامل برنامه و وابستگی‌هایش که container از آن ساخته می‌شود)،‏ نام image از spec container،‏ ID container در حال اجرا و ID Pod به‌عنوان label است.</p>
@@ -1032,6 +1059,8 @@ tracing:
     annotations:
       summary: Pod {{$labels.namespace}}/{{$labels.pod}} blocked in Terminating state.
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">kube-state-metrics در برابر metrics-server</span></summary>
   <div class="deep"><b>توضیح تکمیلی: kube-state-metrics در برابر metrics-server</b>
     <p>یک سؤال رایج: چه تفاوتی بین kube-state-metrics و metrics-server هست؟ این دو مکمل هم‌اند نه جایگزین هم:</p>
     <div class="tbl"><table><thead><tr><th></th><th>metrics-server</th><th>kube-state-metrics</th></tr></thead><tbody>
@@ -1043,6 +1072,7 @@ tracing:
     </tbody></table></div>
     <p>در یک alert واقعی production،‏ مثلاً «چرا Deployment من به تعداد replica مطلوب نرسید؟» را با <code>kube_deployment_status_replicas</code> در برابر <code>kube_deployment_spec_replicas</code> از kube-state-metrics پاسخ می‌دهید،‏ نه با metrics-server که فقط مصرف منابع را می‌داند.</p>
   </div>
+  </details>
 
   <h3 id="ch11-a-rmp">Resource metrics pipeline <small>(resource-metrics-pipeline)</small></h3>
   <p>برای کوبرنتیز،‏ <i>Metrics API</i> مجموعه‌ای پایه از metricها را برای پشتیبانی از autoscaling خودکار و use caseهای مشابه فراهم می‌کند. این API اطلاعاتی درباره‌ی resource usage برای node و pod،‏ شامل metricهای CPU و memory،‏ در دسترس قرار می‌دهد. اگر Metrics API را در cluster خود deploy کنید،‏ clientهای Kubernetes API می‌توانند این اطلاعات را query کنند و می‌توانید از مکانیزم‌های access control کوبرنتیز برای مدیریت permission انجام این کار استفاده کنید.</p>
@@ -1164,6 +1194,10 @@ API server --&gt; kubectl top
   <p>یکپارچه‌سازی یک full metrics pipeline در پیاده‌سازی کوبرنتیز شما به دلیل دامنه‌ی بسیار وسیع راه‌حل‌های ممکن خارج از محدوده‌ی مستندات کوبرنتیز است.</p>
   <p>انتخاب پلتفرم monitoring به‌شدت به نیازها،‏ بودجه و منابع فنی شما بستگی دارد. کوبرنتیز هیچ metrics pipeline خاصی را توصیه نمی‌کند؛‏ <a href="https://landscape.cncf.io/?group=projects-and-products&amp;view-mode=card#observability-and-analysis--monitoring">گزینه‌های زیادی</a> در دسترس‌اند. سیستم monitoring شما باید بتواند استاندارد انتقال متریک <a href="https://openmetrics.io/">OpenMetrics</a> را مدیریت کند و باید طوری انتخاب شود که بهترین تناسب را با طراحی و deployment کلی پلتفرم infrastructure شما داشته باشد.</p>
 
+  <p class="next">ادامه‌ی مطالعه: <a href="#ch11-a-pod-logs">Logging</a> ·‏ Getting into containers via <code>exec</code> (نیمه‌ی دوم همین فصل) · Connecting to containers via proxies ·‏ Connecting to containers via port forwarding ·‏ Inspect Kubernetes node with crictl (نیمه‌ی دوم همین فصل)</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">انتخاب بین resource metrics pipeline و full metrics pipeline در production</span></summary>
   <div class="deep"><b>توضیح تکمیلی: انتخاب بین resource metrics pipeline و full metrics pipeline در production</b>
     <p>یک قاعده‌ی ساده: اگر تنها نیاز شما HPA/VPA بر اساس CPU و memory و <code>kubectl top</code> است،‏ metrics-server به‌تنهایی کافی است و overhead بسیار کمی دارد. به‌محض این‌که به موارد زیر نیاز پیدا کنید،‏ باید به سراغ full metrics pipeline (معمولاً Prometheus + adapter مثل <code>prometheus-adapter</code>) بروید:</p>
     <ul>
@@ -1173,7 +1207,7 @@ API server --&gt; kubectl top
     </ul>
     <p>در این حالت،‏ HPA با <code>type: External</code> یا <code>type: Pods</code> به جای <code>type: Resource</code> پیکربندی می‌شود و از API <code>custom.metrics.k8s.io</code>/<code>external.metrics.k8s.io</code> که adapter فراهم می‌کند استفاده می‌کند؛‏ جزئیات کامل در فصل ۱۰ (Autoscaling) پوشش داده شده است.</p>
   </div>
-  <p class="next">ادامه‌ی مطالعه: <a href="#ch11-a-pod-logs">Logging</a> ·‏ Getting into containers via <code>exec</code> (نیمه‌ی دوم همین فصل) · Connecting to containers via proxies ·‏ Connecting to containers via port forwarding ·‏ Inspect Kubernetes node with crictl (نیمه‌ی دوم همین فصل)</p>
+  </details>
 
   <h3 id="ch11-a-audit">Auditing <small>(debug-cluster/audit)</small></h3>
   <p><i>Auditing</i> کوبرنتیز مجموعه‌ای زمانی (chronological) و مرتبط با امنیت از رکوردهایی را فراهم می‌کند که توالی اقدامات در یک cluster را مستند می‌کند. Cluster فعالیت‌های تولیدشده توسط کاربران،‏ توسط برنامه‌هایی که از Kubernetes API استفاده می‌کنند،‏ و توسط خود control plane را audit می‌کند.</p>
@@ -1415,16 +1449,6 @@ volumes:
   </ul>
   <p>به‌طور پیش‌فرض truncate هم در <code>webhook</code> و هم در <code>log</code> غیرفعال است؛‏ یک ادمین cluster باید <code>audit-log-truncate-enabled</code> یا <code>audit-webhook-truncate-enabled</code> را برای فعال‌کردن این قابلیت تنظیم کند.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: طراحی یک audit policy برای یک Cluster production</b>
-    <p>Audit policy یک trade-off بین «دیده‌بانی کامل» و «هزینه‌ی storage و memory» است. چند اصل رایج:</p>
-    <ul>
-      <li>secretها و configmapها معمولاً در سطح <code>Metadata</code> log می‌شوند (نه <code>Request</code>)،‏ چون سطح <code>Request</code> محتوای secret را هم در audit log می‌نویسد که خودش یک ریسک امنیتی جدید ایجاد می‌کند.</li>
-      <li>تغییرات (mutating requests،‏ یعنی <code>create</code>/<code>update</code>/<code>patch</code>/<code>delete</code>) روی resourceهای حساس (RBAC،‏ Pod در namespaceهای production،‏ NetworkPolicy) باید حداقل <code>Request</code> باشند تا بتوان فهمید دقیقاً چه چیزی تغییر کرد.</li>
-      <li>درخواست‌های <code>watch</code> و <code>list</code> از componentهای شناخته‌شده‌ی سیستم (مثل <code>system:kube-proxy</code>) معمولاً از audit حذف می‌شوند (<code>level: None</code>) چون حجم بالایی دارند و سیگنال امنیتی کمی می‌دهند؛‏ دقیقاً مثل مثال رسمی بالا.</li>
-      <li>مرحله‌ی <code>RequestReceived</code> معمولاً با <code>omitStages</code> حذف می‌شود چون هیچ اطلاعات جدیدی نسبت به <code>ResponseComplete</code> اضافه نمی‌کند و فقط حجم را دو برابر می‌کند.</li>
-    </ul>
-    <p>یک incident واقعی که audit log آن را حل می‌کند: یک Secret به‌طور غیرمنتظره حذف شده. بدون audit log فقط می‌دانید چه زمانی حذف شد (از <code>metadata.deletionTimestamp</code> اگر هنوز موجود باشد،‏ یا از یک رویداد Kubernetes Event که TTL کوتاهی دارد). با audit log با سطح <code>Metadata</code> یا بالاتر،‏ می‌توانید دقیقاً <code>user.username</code>،‏ <code>sourceIPs</code> و <code>requestReceivedTimestamp</code> آن درخواست <code>delete</code> را پیدا کنید.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: فعال‌کردن audit logging روی یک control-plane Node با kubeadm</b>
     <p>روی یک Cluster kubeadm،‏ می‌توانید audit logging را با ویرایش manifest static Pod kube-apiserver فعال کنید (خارج از مستندات رسمی،‏ روش رایج):</p>
     <div class="code"><div class="lbl"><span>/etc/kubernetes/audit-policy.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: audit.k8s.io/v1
@@ -1489,8 +1513,22 @@ sudo tail -f /var/log/kubernetes/audit/audit.log | jq 'select(.objectRef.resourc
   </div>
   <p class="next">ادامه‌ی مطالعه: Mutating webhook auditing annotations ·‏ Event configuration reference ·‏ Policy configuration reference</p>
 
-  <div id="ch11-ex1" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۱،‏ بخش اول <small>۱۶ تمرین</small></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">طراحی یک audit policy برای یک Cluster production</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: طراحی یک audit policy برای یک Cluster production</b>
+    <p>Audit policy یک trade-off بین «دیده‌بانی کامل» و «هزینه‌ی storage و memory» است. چند اصل رایج:</p>
+    <ul>
+      <li>secretها و configmapها معمولاً در سطح <code>Metadata</code> log می‌شوند (نه <code>Request</code>)،‏ چون سطح <code>Request</code> محتوای secret را هم در audit log می‌نویسد که خودش یک ریسک امنیتی جدید ایجاد می‌کند.</li>
+      <li>تغییرات (mutating requests،‏ یعنی <code>create</code>/<code>update</code>/<code>patch</code>/<code>delete</code>) روی resourceهای حساس (RBAC،‏ Pod در namespaceهای production،‏ NetworkPolicy) باید حداقل <code>Request</code> باشند تا بتوان فهمید دقیقاً چه چیزی تغییر کرد.</li>
+      <li>درخواست‌های <code>watch</code> و <code>list</code> از componentهای شناخته‌شده‌ی سیستم (مثل <code>system:kube-proxy</code>) معمولاً از audit حذف می‌شوند (<code>level: None</code>) چون حجم بالایی دارند و سیگنال امنیتی کمی می‌دهند؛‏ دقیقاً مثل مثال رسمی بالا.</li>
+      <li>مرحله‌ی <code>RequestReceived</code> معمولاً با <code>omitStages</code> حذف می‌شود چون هیچ اطلاعات جدیدی نسبت به <code>ResponseComplete</code> اضافه نمی‌کند و فقط حجم را دو برابر می‌کند.</li>
+    </ul>
+    <p>یک incident واقعی که audit log آن را حل می‌کند: یک Secret به‌طور غیرمنتظره حذف شده. بدون audit log فقط می‌دانید چه زمانی حذف شد (از <code>metadata.deletionTimestamp</code> اگر هنوز موجود باشد،‏ یا از یک رویداد Kubernetes Event که TTL کوتاهی دارد). با audit log با سطح <code>Metadata</code> یا بالاتر،‏ می‌توانید دقیقاً <code>user.username</code>،‏ <code>sourceIPs</code> و <code>requestReceivedTimestamp</code> آن درخواست <code>delete</code> را پیدا کنید.</p>
+  </div>
+  </details>
+
+  <details id="ch11-ex1" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۱،‏ بخش اول <small>۱۶ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>سه ستون (three pillars) observability یعنی metrics،‏ logs و traces،‏ هرکدام به چه سؤالی پاسخ می‌دهند؟ یک جریان troubleshooting واقعی توصیف کنید که هر سه را به ترتیب استفاده می‌کند.
         <details class="ans"><summary>پاسخ</summary><p>metrics به «آیا چیزی غیرعادی است،‏ از کی،‏ چقدر؟» پاسخ می‌دهد؛‏ logs به «دقیقاً چه اتفاقی افتاد و پیام خطا چه بود؟»؛‏ traces به «زمان کجا صرف شد و کدام hop کند بود؟». جریان معمول: یک alert روی metric (مثلاً افزایش p99 latency در kube-apiserver) ⟵ محدود کردن بازه‌ی زمانی ⟵ نگاه به traceهای همان بازه برای یافتن hop کند (مثلاً درخواست به etcd یا یک webhook) ⟵ خواندن log همان component در همان بازه برای علت دقیق خطا. audit log هم جدا از این سه،‏ به «چه کسی چه کاری کرد؟» پاسخ می‌دهد.</p></details></li>
@@ -1573,7 +1611,7 @@ kubectl get --raw "/api/v1/namespaces/default/pods/counter-err/log?stream=Stdout
 kubectl get --raw "/api/v1/namespaces/default/pods/counter-err/log?stream=Stderr" | tail -3</pre></div>
         <p>بدون این feature gate،‏ پارامتر <code>stream</code> پذیرفته نمی‌شود و <code>kubectl logs counter-err</code> هر دو stream را درهم نشان می‌دهد؛‏ تفکیک آن‌ها بدون این قابلیت فقط با parse کردن محتوا ممکن است.</p></details></li>
     </ol>
-  </div>
+  </details>
 <!-- chapter 14 part b -->
   <h3 id="ch11-b-debug-app-intro">بخش دوم: Troubleshooting و Debugging</h3>
   <p>در بخش اول این فصل با Observability (logging،‏ metrics،‏ tracing و audit) آشنا شدیم؛‏ یعنی چگونه کوبرنتیز اطلاعات درباره‌ی وضعیت خودش را در اختیارمان می‌گذارد. در این بخش سراغ کاربرد عملی آن اطلاعات می‌رویم: وقتی یک برنامه یا یک cluster درست کار نمی‌کند،‏ چگونه با ابزارهای رسمی کوبرنتیز مشکل را پیدا و رفع کنیم. مستندات رسمی این حوزه را به دو دسته تقسیم می‌کند: <b>debug-application</b> (troubleshooting یک برنامه‌ی خاص که روی Kubernetes deploy شده) و <b>debug-cluster</b> (troubleshooting خود cluster،‏ شامل Nodeها،‏ kubectl و اجزای control plane). این بخش هر دو دسته را کامل پوشش می‌دهد.</p>
@@ -1585,10 +1623,13 @@ kubectl get --raw "/api/v1/namespaces/default/pods/counter-err/log?stream=Stderr
     <li>Debugging Replication Controllers</li>
     <li>Debugging Services</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی</b><p>این ترتیب تصادفی نیست: در بیشتر incidentهای production،‏ مشکل از پایین به بالا جریان دارد. اگر Pod اصلاً درست اجرا نشود،‏ هیچ Service یا Ingressای نمی‌تواند آن را برطرف کند. به همین دلیل همیشه با <code>kubectl describe pods</code> شروع کنید،‏ بعد به سراغ controller (Deployment/ReplicaSet/StatefulSet) بروید،‏ و در آخر Service و شبکه را بررسی کنید. اکثر خطاهای رایج (CrashLoopBackOff،‏ ImagePullBackOff،‏ Pending) در همان لایه‌ی اول Pod قابل کشف هستند.</p></div>
-
   
   <figure><div class="plate"><svg viewBox="0 0 760 406" width="760" height="406" role="img" aria-label="نقشه‌ی وضعیت Pod و اولین دستور debugging" style="max-width:100%;height:auto;display:block"><rect x="20" y="10" width="190" height="56" rx="8" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"></rect><text x="115" y="43" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">Pending</text><rect x="222" y="10" width="518" height="56" rx="8" fill="#ffffff" stroke="#c9d3e6" stroke-width="1.5"></rect><text x="728" y="33" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">هنوز Nodeای برای Pod پیدا نشده یا image در حال pull است</text><text x="236" y="55" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">kubectl describe pod NAME   # reason: FailedScheduling</text><rect x="20" y="76" width="190" height="56" rx="8" fill="#fbe5e3" stroke="#b83227" stroke-width="1.5"></rect><text x="115" y="109" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">ImagePullBackOff</text><rect x="222" y="76" width="518" height="56" rx="8" fill="#ffffff" stroke="#c9d3e6" stroke-width="1.5"></rect><text x="728" y="99" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">نام یا tag اشتباه است،‏ registry در دسترس نیست یا credential ندارید</text><text x="236" y="121" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">kubectl describe pod NAME   # Failed to pull image ...</text><rect x="20" y="142" width="190" height="56" rx="8" fill="#fbe5e3" stroke="#b83227" stroke-width="1.5"></rect><text x="115" y="175" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">CrashLoopBackOff</text><rect x="222" y="142" width="518" height="56" rx="8" fill="#ffffff" stroke="#c9d3e6" stroke-width="1.5"></rect><text x="728" y="165" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">برنامه اجرا و با خطا خارج می‌شود و kubelet با backoff دوباره اجرایش می‌کند</text><text x="236" y="187" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">kubectl logs NAME --previous   # + Last State, Exit Code</text><rect x="20" y="208" width="190" height="56" rx="8" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"></rect><text x="115" y="241" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">Running  0/1</text><rect x="222" y="208" width="518" height="56" rx="8" fill="#ffffff" stroke="#c9d3e6" stroke-width="1.5"></rect><text x="728" y="231" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">هنوز آماده نیست: readiness probe شکست می‌خورد و ترافیک Service نمی‌رسد</text><text x="236" y="253" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">kubectl describe pod NAME   # reason: Unhealthy</text><rect x="20" y="274" width="190" height="56" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="115" y="307" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">Running  1/1</text><rect x="222" y="274" width="518" height="56" rx="8" fill="#ffffff" stroke="#c9d3e6" stroke-width="1.5"></rect><text x="728" y="297" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">ولی Service پاسخ نمی‌دهد؛‏ selector و targetPort و kube-proxy را بسنجید</text><text x="236" y="319" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">kubectl get endpointslices -l kubernetes.io/service-name=SVC</text><rect x="20" y="340" width="190" height="56" rx="8" fill="#f2f4f8" stroke="#8a94ab" stroke-width="1.5"></rect><text x="115" y="373" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="700" fill="#16213a" direction="ltr" text-anchor="middle">Terminating</text><rect x="222" y="340" width="518" height="56" rx="8" fill="#ffffff" stroke="#c9d3e6" stroke-width="1.5"></rect><text x="728" y="363" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">حذف کامل نمی‌شود: finalizer یا webhook مانع است،‏ یا Node در دسترس نیست</text><text x="236" y="385" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">kubectl get pod NAME -o jsonpath='{.metadata.finalizers}'</text></svg></div><figcaption><b>شکل ۱۱-۸.</b> <span style="flex:1 1 0;min-width:0">نقشه‌ی شروع debugging بر اساس STATUS در <code>kubectl get pods</code>: معنای هر وضعیت و اولین دستوری که علت را نشان می‌دهد.</span></figcaption></figure>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>این ترتیب تصادفی نیست: در بیشتر incidentهای production،‏ مشکل از پایین به بالا جریان دارد. اگر Pod اصلاً درست اجرا نشود،‏ هیچ Service یا Ingressای نمی‌تواند آن را برطرف کند. به همین دلیل همیشه با <code>kubectl describe pods</code> شروع کنید،‏ بعد به سراغ controller (Deployment/ReplicaSet/StatefulSet) بروید،‏ و در آخر Service و شبکه را بررسی کنید. اکثر خطاهای رایج (CrashLoopBackOff،‏ ImagePullBackOff،‏ Pending) در همان لایه‌ی اول Pod قابل کشف هستند.</p></div>
+  </details>
 
   <h3 id="ch11-b-debugging-pods">Debugging Pods</h3>
   <p>اولین قدم برای debug کردن یک Pod،‏ نگاه‌کردن به آن است. با دستور زیر current state Pod و رویدادهای اخیر آن را بررسی کنید:</p>
@@ -1661,7 +1702,10 @@ pods/mypod</pre></div>
   <h3 id="ch11-b-debugging-rc">Debugging Replication Controllers</h3>
   <p>Replication Controllerها نسبتاً ساده هستند. یا می‌توانند Pod بسازند یا نمی‌توانند. اگر نمی‌توانند Pod بسازند،‏ لطفاً به دستورالعمل‌های بالا برای debug کردن Podهای خود مراجعه کنید.</p>
   <p>همچنین می‌توانید از <code>kubectl describe rc ${CONTROLLER_NAME}</code> برای بررسی رویدادهای مرتبط با replication controller استفاده کنید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b><p>در کوبرنتیز امروزی،‏ عملاً به‌جای ReplicationController از Deployment و ReplicaSet استفاده می‌شود (فصل ۴). همین منطق debugging کاملاً روی آن‌ها هم صدق می‌کند: <code>kubectl describe deployment &lt;name&gt;</code> و <code>kubectl describe rs &lt;name&gt;</code> رویدادهایی مثل <code>FailedCreate</code> (مثلاً هنگام رسیدن به quota یا یک ValidatingWebhook که Pod را رد می‌کند) را نشان می‌دهند.</p></div>
+  </details>
 
   <h3 id="ch11-b-debugging-svc-intro">Debugging Services</h3>
   <p>Serviceها load balancing را روی مجموعه‌ای از Podها فراهم می‌کنند. چندین مشکل رایج وجود دارد که می‌تواند مانع کار درست Serviceها شود. دستورالعمل‌های زیر به شما کمک می‌کنند مشکلات Service را debug کنید.</p>
@@ -1684,8 +1728,11 @@ spec:
   <h4>Network traffic is not forwarded</h4>
   <p>لطفاً برای اطلاعات بیشتر بخش <a href="#ch11-b-debug-service">Debugging Services</a> را در همین بخش ببینید.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا ترتیب Pod → Endpoints → Service درست است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا ترتیب Pod → Endpoints → Service درست است؟</b>
   <p>سند رسمی <code>debug-pods.md</code> بحث Service را با EndpointSlice شروع می‌کند چون این لایه دقیقاً نقطه‌ی اتصال بین «Pod شما درست کار می‌کند یا نه» و «Service آن را درست expose می‌کند یا نه» است. اگر EndpointSlice خالی باشد (<code>ENDPOINTS: &lt;none&gt;</code>)،‏ مشکل تقریباً همیشه یکی از این دو مورد است: (۱) <code>spec.selector</code> در Service با <code>metadata.labels</code> Podها مطابقت ندارد (رایج‌ترین اشتباه،‏ typo در label)،‏ یا (۲) هیچ Podی با آن labelها وجود ندارد که IP گرفته باشد. Podهای <code>NotReady</code> از EndpointSlice حذف نمی‌شوند؛‏ با condition به نام <code>ready</code> برابر false در آن می‌مانند و kube-proxy به آن‌ها ترافیک نمی‌فرستد (با <code>-o yaml</code> ببینید). بخش کامل <a href="#ch11-b-debug-service">Debugging Services</a> در همین فصل این جریان را قدم‌به‌قدم با یک مثال کامل نشان می‌دهد.</p></div>
+  </details>
 
   <h3 id="ch11-b-debug-init">Debugging Init Containers</h3>
   <p>این بخش نشان می‌دهد چگونه مشکلات مربوط به اجرای Init Containerها را بررسی کنیم (فصل ۳). در مثال‌های زیر،‏ Pod را <code>&lt;pod-name&gt;</code> و Init Containerها را <code>&lt;init-container-1&gt;</code> و <code>&lt;init-container-2&gt;</code> می‌نامیم.</p>
@@ -1786,7 +1833,10 @@ init-crash-demo   0/1     Init:CrashLoopBackOff   1          20s</pre></div>
   <p>برای لیست‌کردن تمام Podهایی که به یک StatefulSet تعلق دارند و روی آن‌ها label <code>app.kubernetes.io/name=MyApp</code> تنظیم شده،‏ می‌توانید از دستور زیر استفاده کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l app.kubernetes.io/name=MyApp</pre></div>
   <p>اگر متوجه شدید هر یک از Podهای لیست‌شده برای مدت طولانی در وضعیت <code>Unknown</code> یا <code>Terminating</code> هستند،‏ به سند Deleting StatefulSet Pods برای دستورالعمل‌های برخورد با آن‌ها مراجعه کنید. می‌توانید Podهای منفرد در یک StatefulSet را با راهنمای <a href="#ch11-b-debugging-pods">Debugging Pods</a> بالا debug کنید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b><p>StatefulSetها به‌دلیل identity پایدار (نام و PersistentVolumeClaim ثابت برای هر replica) و ترتیب rolling update (جایگزینی تدریجی Podهای قدیمی با Podهای جدید بدون قطعی)،‏ یک ویژگی خاص در debugging دارند: اگر یک Pod در StatefulSet به‌دلایلی (مثل یک Node که از بین رفته و دیگر قابل تماس نیست) در <code>Terminating</code> گیر کند،‏ به‌طور پیش‌فرض StatefulSet controller،‏ Pod جایگزین برای همان ordinal را نمی‌سازد چون تضمین <b>at-most-one semantics</b> را رعایت می‌کند — یعنی هرگز دو instance از یک ordinal (مثلاً <code>web-0</code>) را هم‌زمان اجرا نمی‌کند مگر مطمئن شود instance قبلی واقعاً متوقف شده. در چنین حالتی معمولاً باید مطابق سند Deleting StatefulSet Pods،‏ Pod گیرکرده را با <code>kubectl delete pod &lt;name&gt; --force --grace-period=0</code> پاک کنید تا StatefulSet بتواند replacement بسازد؛‏ اما فقط پس از اطمینان کامل از این‌که container واقعاً دیگر در حال اجرا نیست (مثلاً چون Node آن از بین رفته)،‏ چون در غیر این‌صورت خطر اجرای هم‌زمان دو instance با یک PersistentVolume وجود دارد.</p></div>
+  </details>
 
   <h3 id="ch11-b-reason-fail">Determine the Reason for Pod Failure</h3>
   <p>این صفحه نشان می‌دهد چگونه یک Container termination message بنویسیم و بخوانیم. termination messageها راهی برای containerها فراهم می‌کنند تا اطلاعات درباره‌ی رویدادهای مرگبار (fatal) را در جایی بنویسند که به‌راحتی توسط ابزارهایی مانند dashboardها و نرم‌افزارهای monitoring قابل بازیابی و نمایش باشد. در بیشتر موارد،‏ اطلاعاتی که در یک termination message قرار می‌دهید باید در logهای عمومی کوبرنتیز هم نوشته شوند.</p>
@@ -2226,8 +2276,11 @@ Ephemeral Containers:
 ...</pre></div>
   <p>وقتی کارتان تمام شد از <code>kubectl delete</code> برای حذف Pod استفاده کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete pod ephemeral-demo</pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">تفاوت Ephemeral Container با init/regular container</span></summary>
   <div class="deep"><b>توضیح تکمیلی: تفاوت Ephemeral Container با init/regular container</b>
   <p>یک ephemeral container سه تفاوت اساسی با containerهای عادی دارد که هرکدام دلیل طراحی خاصی دارند: (۱) هیچ‌وقت به‌صورت خودکار restart نمی‌شود،‏ حتی اگر <code>restartPolicy</code> Pod برابر <code>Always</code> باشد — چون هدفش یک ابزار debugging یک‌باره است نه یک workload دائمی؛‏ (۲) نمی‌توان port،‏ probe یا resource limits برایش تعریف کرد؛‏ (۳) نمی‌توان آن را با <code>kubectl edit</code> یا هر روش دیگری حذف کرد — تنها راه حذف،‏ حذف کل Pod است. به همین دلیل ephemeral containerها فقط برای debugging تعاملی و کوتاه‌مدت طراحی شده‌اند،‏ نه برای اجرای دائمی یک sidecar (برای آن از native sidecar containers فصل ۳ استفاده کنید).</p></div>
+  </details>
 
   <h3 id="ch11-b-copy-pod">Debugging using a copy of the Pod</h3>
   <p>گاهی گزینه‌های پیکربندی Pod،‏ troubleshooting در شرایط خاص را دشوار می‌کنند. مثلاً نمی‌توانید <code>kubectl exec</code> را برای troubleshoot کردن container خود اجرا کنید اگر image container شما شامل shell نباشد یا اگر برنامه‌ی شما هنگام startup crash کند. در این شرایط می‌توانید از <code>kubectl debug</code> برای ساخت یک کپی از Pod با مقادیر پیکربندی تغییریافته برای کمک به debugging استفاده کنید.</p>
@@ -2399,6 +2452,9 @@ securityContext:
   <p>وقتی کارتان تمام شد،‏ Pod را پاک کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete pod myapp</pre></div>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام روش را کِی انتخاب کنیم؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کدام روش را کِی انتخاب کنیم؟</b>
   <div class="tbl"><table><thead><tr><th>روش</th><th>وقتی مناسب است</th><th>محدودیت</th></tr></thead><tbody>
   <tr><td><code>kubectl exec</code></td><td>image شامل shell/ابزار debugging است و container در حال اجراست</td><td>در containerهای distroless/crashشده کار نمی‌کند</td></tr>
@@ -2406,6 +2462,7 @@ securityContext:
   <tr><td>کپی Pod (<code>kubectl debug --copy-to</code>)</td><td>container اصلاً اجرا نمی‌شود یا نیاز به تغییر image/command دارید</td><td>یک Pod کاملاً جدید می‌سازد؛‏ ممکن است رفتار (مثلاً IP) با اصلی فرق کند</td></tr>
   <tr><td>Node shell (<code>kubectl debug node/</code>)</td><td>مشکل به سطح Node مربوط است (شبکه،‏ دیسک،‏ kubelet)</td><td>نیاز به RBAC برای ساخت Pod روی هر Node دارد؛‏ اگر Node واقعاً down باشد کار نمی‌کند</td></tr>
   </tbody></table></div></div>
+  </details>
   <h3 id="ch11-b-get-shell">Get a Shell to a Running Container</h3>
   <p>این صفحه نشان می‌دهد چگونه از <code>kubectl exec</code> برای گرفتن یک shell به یک container در حال اجرا استفاده کنیم.</p>
 
@@ -2810,20 +2867,6 @@ TCP  10.0.1.175:80 rr
   <h3 id="ch11-b-service-seek-help">Seek help</h3>
   <p>اگر به اینجا رسیدید،‏ چیز عجیبی در حال رخ‌دادن است. Service شما در حال اجراست،‏ EndpointSlice دارد،‏ و Podهای شما واقعاً در حال سرویس‌دهی هستند. DNS کار می‌کند،‏ و <code>kube-proxy</code> به‌نظر نمی‌رسد رفتار نادرست داشته باشد. و باز هم Service شما کار نمی‌کند. لطفاً به ما بگویید چه اتفاقی در حال رخ‌دادن است،‏ تا بتوانیم کمک کنیم بررسی کنیم! با ما در Slack،‏ Forum یا GitHub تماس بگیرید.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چک‌لیست ترتیبی debug کردن یک Service</b>
-  <p>مستندات این جریان را به‌صورت پیوسته توضیح می‌دهد،‏ اما در عمل بهتر است به‌صورت یک چک‌لیست از بالا به پایین استفاده شود:</p>
-  <div class="tbl"><table><thead><tr><th>#</th><th>سؤال</th><th>دستور بررسی</th></tr></thead><tbody>
-  <tr><td>۱</td><td>Service اصلاً وجود دارد؟</td><td><code>kubectl get svc &lt;name&gt;</code></td></tr>
-  <tr><td>۲</td><td>NetworkPolicy مانع ترافیک ingress به Podها نیست؟</td><td><code>kubectl get networkpolicy -A</code></td></tr>
-  <tr><td>۳</td><td>DNS نام Service را resolve می‌کند؟</td><td><code>nslookup &lt;svc&gt;.&lt;ns&gt;.svc.cluster.local</code></td></tr>
-  <tr><td>۴</td><td>Service با IP مستقیم جواب می‌دهد؟</td><td><code>wget -qO- &lt;cluster-ip&gt;:&lt;port&gt;</code></td></tr>
-  <tr><td>۵</td><td>spec (port/targetPort/protocol) درست است؟</td><td><code>kubectl get svc &lt;name&gt; -o json</code></td></tr>
-  <tr><td>۶</td><td>EndpointSlice خالی نیست؟</td><td><code>kubectl get endpointslices -l kubernetes.io/service-name=&lt;svc&gt;</code></td></tr>
-  <tr><td>۷</td><td>خودِ Podها مستقیماً (بدون Service) جواب می‌دهند؟</td><td><code>wget -qO- &lt;pod-ip&gt;:&lt;targetPort&gt;</code></td></tr>
-  <tr><td>۸</td><td>kube-proxy در حال اجراست و iptables/ipvs rule دارد؟</td><td><code>ps auxw \| grep kube-proxy</code> و <code>iptables-save \| grep &lt;svc&gt;</code></td></tr>
-  </tbody></table></div>
-  <p>دو علت پرتکرار در عمل،‏ قدم ۲ (یک NetworkPolicy تازه که ناخواسته traffic را block می‌کند) و قدم ۶ (selector اشتباه یا Podهایی که Ready نیستند) است.</p></div>
-
   <div class="lab"><b>آزمایش عملی: Service با هیچ Endpoint (سناریوی رایج production)</b>
   <p>یک اشتباه بسیار رایج: Deployment با یک label و Service با selector دیگر.</p>
   <div class="code"><div class="lbl"><span>broken-svc.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
@@ -2875,6 +2918,23 @@ api-7f9d8b6c5d-9z8rd   1/1     Running   0          1m    app=api,tier=backend</
 kubectl get endpointslices -l kubernetes.io/service-name=api-svc</pre></div>
   <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">NAME            ADDRESSTYPE   PORTS   ENDPOINTS
 api-svc-x7f2k   IPv4          80      10.244.1.12,10.244.2.9,10.244.3.14</pre></div></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چک‌لیست ترتیبی debug کردن یک Service</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چک‌لیست ترتیبی debug کردن یک Service</b>
+  <p>مستندات این جریان را به‌صورت پیوسته توضیح می‌دهد،‏ اما در عمل بهتر است به‌صورت یک چک‌لیست از بالا به پایین استفاده شود:</p>
+  <div class="tbl"><table><thead><tr><th>#</th><th>سؤال</th><th>دستور بررسی</th></tr></thead><tbody>
+  <tr><td>۱</td><td>Service اصلاً وجود دارد؟</td><td><code>kubectl get svc &lt;name&gt;</code></td></tr>
+  <tr><td>۲</td><td>NetworkPolicy مانع ترافیک ingress به Podها نیست؟</td><td><code>kubectl get networkpolicy -A</code></td></tr>
+  <tr><td>۳</td><td>DNS نام Service را resolve می‌کند؟</td><td><code>nslookup &lt;svc&gt;.&lt;ns&gt;.svc.cluster.local</code></td></tr>
+  <tr><td>۴</td><td>Service با IP مستقیم جواب می‌دهد؟</td><td><code>wget -qO- &lt;cluster-ip&gt;:&lt;port&gt;</code></td></tr>
+  <tr><td>۵</td><td>spec (port/targetPort/protocol) درست است؟</td><td><code>kubectl get svc &lt;name&gt; -o json</code></td></tr>
+  <tr><td>۶</td><td>EndpointSlice خالی نیست؟</td><td><code>kubectl get endpointslices -l kubernetes.io/service-name=&lt;svc&gt;</code></td></tr>
+  <tr><td>۷</td><td>خودِ Podها مستقیماً (بدون Service) جواب می‌دهند؟</td><td><code>wget -qO- &lt;pod-ip&gt;:&lt;targetPort&gt;</code></td></tr>
+  <tr><td>۸</td><td>kube-proxy در حال اجراست و iptables/ipvs rule دارد؟</td><td><code>ps auxw \| grep kube-proxy</code> و <code>iptables-save \| grep &lt;svc&gt;</code></td></tr>
+  </tbody></table></div>
+  <p>دو علت پرتکرار در عمل،‏ قدم ۲ (یک NetworkPolicy تازه که ناخواسته traffic را block می‌کند) و قدم ۶ (selector اشتباه یا Podهایی که Ready نیستند) است.</p></div>
+  </details>
   <h3 id="ch11-b-cluster-intro">Troubleshooting Clusters</h3>
   <p>این بخش درباره‌ی troubleshooting سطح cluster است؛‏ فرض می‌کنیم قبلاً برنامه‌ی خودتان را به‌عنوان علت اصلی مشکلی که تجربه می‌کنید کنار گذاشته‌اید (بخش قبلی همین فصل،‏ debug-application). برای troubleshoot کردن kubectl،‏ به بخش <a href="#ch11-b-troubleshoot-kubectl">Troubleshooting kubectl</a> در همین بخش مراجعه کنید.</p>
 
@@ -3048,8 +3108,11 @@ status:
   
   <figure><div class="plate"><svg viewBox="0 0 760 236" width="760" height="236" role="img" aria-label="زمان‌بندی از کار افتادن یک Node تا ساخت Pod جایگزین" style="max-width:100%;height:auto;display:block"><defs><marker id="c11f3-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker></defs><line x1="748" y1="70" x2="14" y2="70" stroke="#4a5672" stroke-width="1.6" marker-end="url(#c11f3-k)"></line><text x="748" y="56" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="700" fill="#4a5672" direction="rtl" text-anchor="start">زمان</text><circle cx="655" cy="70" r="8" fill="#326ce5"></circle><circle cx="467" cy="70" r="8" fill="#b26b00"></circle><circle cx="279" cy="70" r="8" fill="#b83227"></circle><circle cx="100" cy="70" r="8" fill="#12806f"></circle><text x="561" y="56" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b26b00" direction="rtl" text-anchor="middle">حدود 50 ثانیه</text><text x="373" y="56" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#b83227" direction="rtl" text-anchor="middle">300 ثانیه</text><rect x="563" y="96" width="184" height="98" rx="8" fill="#ffffff" stroke="#326ce5" stroke-width="1.5"></rect><text x="655" y="120" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">از کار افتادن kubelet</text><text x="655" y="144" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">دیگر Lease را renew نمی‌کند</text><text x="655" y="168" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#326ce5" direction="ltr" text-anchor="middle">t = 0</text><rect x="375" y="96" width="184" height="122" rx="8" fill="#ffffff" stroke="#b26b00" stroke-width="1.5"></rect><text x="467" y="120" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">node lifecycle controller</text><text x="467" y="144" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">وضعیت Ready را Unknown می‌کند</text><text x="467" y="168" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">و taint با effect NoExecute می‌گذارد</text><text x="467" y="192" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#b26b00" direction="ltr" text-anchor="middle">unreachable:NoExecute</text><rect x="187" y="96" width="184" height="98" rx="8" fill="#ffffff" stroke="#b83227" stroke-width="1.5"></rect><text x="279" y="120" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">مهلت toleration تمام می‌شود</text><text x="279" y="144" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="400" fill="#b83227" direction="ltr" text-anchor="middle">tolerationSeconds: 300</text><text x="279" y="168" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">Podهای آن Node حذف می‌شوند</text><rect x="8" y="96" width="184" height="122" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="100" y="120" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#16213a" direction="rtl" text-anchor="middle">ساخت Pod جایگزین</text><text x="100" y="144" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">روی یک Node سالم</text><text x="100" y="168" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">توسط controller مربوط</text><text x="100" y="192" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="middle">در StatefulSet محتاطانه‌تر</text></svg></div><figcaption><b>شکل ۱۱-۹.</b> <span style="flex:1 1 0;min-width:0">از کار افتادن kubelet روی یک Node تا ساخت Pod جایگزین: حدود ۵۰ ثانیه تا Unknown شدن Node و گذاشتن taint،‏ و ۳۰۰ ثانیه مهلت toleration پیش‌فرض تا حذف Podها.</span></figcaption></figure>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا Podها بعد از ۵ دقیقه evict می‌شوند؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا Podها بعد از ۵ دقیقه evict می‌شوند؟</b>
   <p>این عدد از toleration پیش‌فرضی می‌آید که کوبرنتیز به هر Pod اضافه می‌کند: <code>node.kubernetes.io/not-ready:NoExecute</code> و <code>node.kubernetes.io/unreachable:NoExecute</code>،‏ هر دو با <code>tolerationSeconds: 300</code> (دقیقاً همان چیزی که در خروجی <code>kubectl describe pod</code> بخش قبل،‏ زیر <code>Tolerations</code> دیدیم). وقتی یک Node به‌مدت طولانی NotReady یا unreachable شود،‏ node lifecycle controller این taintها را روی آن اعمال می‌کند؛‏ چون toleration فقط ۳۰۰ ثانیه اعتبار دارد،‏ بعد از آن مهلت،‏ Podهای روی آن Node به‌صورت graceful برای eviction علامت‌گذاری می‌شوند (حتی اگر واقعاً هنوز در حال اجرا باشند،‏ چون control plane دیگر نمی‌تواند وضعیت واقعی را تأیید کند). این رفتار قابل تنظیم است: با افزودن یک toleration سفارشی با <code>tolerationSeconds</code> بزرگ‌تر به یک Pod حساس،‏ می‌توان این eviction خودکار را به تأخیر انداخت — اما این یک trade-off بین جایگزینی سریع Podها و تحمل قطعی‌های کوتاه شبکه است (taint-based eviction،‏ فصل ۹).</p></div>
+  </details>
 
   <h3 id="ch11-b-cluster-logs">Looking at logs</h3>
   <p>در حال حاضر،‏ کندوکاو عمیق‌تر در cluster نیازمند login کردن به ماشین‌های مربوطه است. اینجا مکان‌های فایل‌های log مرتبط را می‌بینید. روی سیستم‌های مبتنی بر systemd،‏ ممکن است به‌جای بررسی فایل‌های log نیاز به استفاده از <code>journalctl</code> داشته باشید.</p>
@@ -3281,7 +3344,11 @@ Connected to context default (https://&lt;cluster public IP&gt;)</pre></div>
   <h4>How does Telepresence work?</h4>
   <p>Telepresence یک traffic-agent sidecar در کنار container برنامه‌ی موجود شما که در cluster دورافتاده اجرا می‌شود نصب می‌کند. سپس تمام درخواست‌های ترافیکی که به Pod می‌روند را capture می‌کند،‏ و به‌جای فوروارد کردن آن به برنامه در cluster دورافتاده،‏ تمام ترافیک را (وقتی یک global intercept می‌سازید) یا زیرمجموعه‌ای از ترافیک را (وقتی یک personal intercept می‌سازید) به محیط توسعه‌ی محلی شما route می‌کند.</p>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b><p>این روش برای debug کردن یک microservice خاص در یک معماری بزرگ‌تر بسیار مفید است،‏ وقتی نمی‌خواهید کل زنجیره‌ی CI/CD را برای هر تغییر کوچک اجرا کنید. اما نکته‌ی مهم امنیتی: یک personal/global intercept به معنای این است که ترافیک production واقعی (یا حداقل بخشی از آن) به لپ‌تاپ شما route می‌شود؛‏ در clusterهای production حساس (مثل payment processing)،‏ معمولاً این کار فقط در یک namespace staging مجاز است،‏ نه production واقعی،‏ مگر با کنترل‌های دقیق (خارج از مستندات رسمی).</p></div>
+  </details>
   <h3 id="ch11-b-node-debug">Debugging Kubernetes nodes with kubectl debug</h3>
   <p>این صفحه نشان می‌دهد چگونه یک Node در حال اجرا روی cluster کوبرنتیز را با دستور <code>kubectl debug</code> debug کنید.</p>
 
@@ -3443,9 +3510,6 @@ sha256:cd5239a0906a6ccf0562354852fae04bc5b52d72a2aff9a871ddb6bd57553569</pre></d
   <p>خروجی مشابه این است:</p>
   <div class="code"><div class="lbl"><span>none</span><button type="button">کپی</button></div><pre class="out">10.240.0.96 - - [06/Jun/2018:02:45:51 +0000] "GET / HTTP/1.1" 200 612 "-" "curl/7.47.0" "-"</pre></div>
 
-  <div class="deep"><b>توضیح تکمیلی: crictl در برابر kubectl و docker</b>
-  <p><code>crictl</code> برای debugging در سطح container runtime طراحی شده،‏ نه به‌عنوان جایگزین <code>kubectl</code>. تفاوت کلیدی: <code>kubectl</code> با apiserver (سطح کوبرنتیز،‏ یعنی Pod) ارتباط برقرار می‌کند،‏ اما <code>crictl</code> مستقیماً با CRI socket روی همان Node (سطح runtime،‏ یعنی container و pod sandbox خام) ارتباط برقرار می‌کند و اصلاً به apiserver نیاز ندارد. این یعنی حتی اگر kubelet یا apiserver از کار افتاده باشد،‏ تا زمانی که containerd/CRI-O روی Node زنده است،‏ <code>crictl</code> هنوز کار می‌کند — دقیقاً چیزی که برای troubleshoot کردن یک Node مشکل‌دار لازم است. همچنین برخلاف <code>docker ps</code>،‏ که فقط containerهای Docker Engine را نشان می‌دهد و روی Nodeهایی با containerd یا CRI-O اصلاً containerهای کوبرنتیز را نمی‌بیند،‏ <code>crictl ps</code> همان containerهایی را نشان می‌دهد که kubelet از طریق CRI مدیریت می‌کند،‏ بنابراین برای تطبیق «این container در سطح runtime دقیقاً همان container در سطح Pod است یا نه» ابزار قابل‌اعتمادتری است.</p></div>
-
   <div class="lab"><b>آزمایش عملی: پاک‌کردن imageهای بلااستفاده روی یک Node پر</b>
   <p>ادامه‌ی سناریوی «دیسک پر» بخش قبل،‏ حالا با <code>crictl</code> imageهای بلااستفاده را پاک می‌کنیم:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># on the node itself (via SSH or kubectl debug node)
@@ -3456,6 +3520,12 @@ Deleted: registry.example.com/web/checkout:v1.41.2
 Deleted: registry.example.com/web/checkout:v1.41.3
 ...</pre></div>
   <p>flag <code>--prune</code> فقط imageهایی که توسط هیچ Pod در حال اجرا استفاده نمی‌شوند را حذف می‌کند (خارج از مستندات رسمی؛‏ رفتار دقیق به نسخه‌ی cri-tools بستگی دارد). این معمولاً راه‌حل سریع برای فضای پرشده به‌دلیل تجمع imageهای قدیمی از deploymentهای متعدد است؛‏ راه‌حل بلندمدت‌تر تنظیم <code>imageGCHighThresholdPercent</code>/<code>imageGCLowThresholdPercent</code> در پیکربندی kubelet است تا garbage collection خودکار زودتر فعال شود.</p></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">crictl در برابر kubectl و docker</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: crictl در برابر kubectl و docker</b>
+  <p><code>crictl</code> برای debugging در سطح container runtime طراحی شده،‏ نه به‌عنوان جایگزین <code>kubectl</code>. تفاوت کلیدی: <code>kubectl</code> با apiserver (سطح کوبرنتیز،‏ یعنی Pod) ارتباط برقرار می‌کند،‏ اما <code>crictl</code> مستقیماً با CRI socket روی همان Node (سطح runtime،‏ یعنی container و pod sandbox خام) ارتباط برقرار می‌کند و اصلاً به apiserver نیاز ندارد. این یعنی حتی اگر kubelet یا apiserver از کار افتاده باشد،‏ تا زمانی که containerd/CRI-O روی Node زنده است،‏ <code>crictl</code> هنوز کار می‌کند — دقیقاً چیزی که برای troubleshoot کردن یک Node مشکل‌دار لازم است. همچنین برخلاف <code>docker ps</code>،‏ که فقط containerهای Docker Engine را نشان می‌دهد و روی Nodeهایی با containerd یا CRI-O اصلاً containerهای کوبرنتیز را نمی‌بیند،‏ <code>crictl ps</code> همان containerهایی را نشان می‌دهد که kubelet از طریق CRI مدیریت می‌کند،‏ بنابراین برای تطبیق «این container در سطح runtime دقیقاً همان container در سطح Pod است یا نه» ابزار قابل‌اعتمادتری است.</p></div>
+  </details>
 
   <h3 id="ch11-b-node-health">Monitor Node Health</h3>
   <p><i>Node Problem Detector</i> یک daemon برای مانیتور کردن و گزارش‌دهی درباره‌ی سلامت یک Node است. می‌توانید Node Problem Detector را به‌عنوان یک <code>DaemonSet</code> یا به‌عنوان یک daemon مستقل اجرا کنید. Node Problem Detector اطلاعات درباره‌ی مشکلات Node را از daemonهای مختلف جمع‌آوری می‌کند و این شرایط را به API server به‌عنوان Node Conditionها یا به‌عنوان Eventها گزارش می‌دهد.</p>
@@ -3769,11 +3839,15 @@ spec:
   <p>kubelet یک سرویس gRPC <code>PodResourceLister</code> فراهم می‌کند تا کشف منابع و metadata مرتبط را فعال کند. با استفاده از endpoint gRPC List آن،‏ اطلاعات درباره‌ی memory رزرو‌شده برای هر container قابل‌بازیابی است،‏ که در پیام protobuf <code>ContainerMemory</code> قرار دارد.</p>
   <p>این اطلاعات فقط می‌تواند برای Podهای QoS class Guaranteed بازیابی شود.</p>
 
-  <div class="deep"><b>توضیح تکمیلی</b><p>Topology Manager (فصل ۶) عمدتاً برای workloadهای حساس به latency مانند برنامه‌های telecom/NFV یا inference موتورهای machine learning کاربرد دارد که نیاز دارند CPU،‏ دستگاه‌های شتاب‌دهنده (GPU) و memory همه روی یک NUMA node فیزیکی باشند تا از هزینه‌ی cross-NUMA memory access جلوگیری شود. <code>TopologyAffinityError</code> معمولاً نشانه‌ی این است که cluster شما به‌اندازه‌ی کافی Node با یک NUMA node دارای همه‌ی منابع لازم (هم CPU هم device) ندارد؛‏ راه‌حل رایج (خارج از مستندات رسمی) افزودن Nodeهایی با بیشترین منابع در یک NUMA domain واحد،‏ یا کاهش درخواست‌های Pod به‌گونه‌ای که در یک NUMA node واحد جا شوند.</p></div>
   <p class="next">مطالب مرتبط: مستندات <code>cri-tools</code> · مستندات پروژه‌ی Node Problem Detector ·‏ Telepresence website ·‏ Share Process Namespace between Containers in a Pod ·‏ Deleting StatefulSet Pods ·‏ Network Policies (فصل ۵) · Compute Resources (فصل ۶) · Node-pressure Eviction (فصل ۹) و Topology Manager (فصل ۶).</p>
 
-  <div id="ch11-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۱،‏ بخش دوم <small>۲۲ تمرین</small></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>Topology Manager (فصل ۶) عمدتاً برای workloadهای حساس به latency مانند برنامه‌های telecom/NFV یا inference موتورهای machine learning کاربرد دارد که نیاز دارند CPU،‏ دستگاه‌های شتاب‌دهنده (GPU) و memory همه روی یک NUMA node فیزیکی باشند تا از هزینه‌ی cross-NUMA memory access جلوگیری شود. <code>TopologyAffinityError</code> معمولاً نشانه‌ی این است که cluster شما به‌اندازه‌ی کافی Node با یک NUMA node دارای همه‌ی منابع لازم (هم CPU هم device) ندارد؛‏ راه‌حل رایج (خارج از مستندات رسمی) افزودن Nodeهایی با بیشترین منابع در یک NUMA domain واحد،‏ یا کاهش درخواست‌های Pod به‌گونه‌ای که در یک NUMA node واحد جا شوند.</p></div>
+  </details>
+
+  <details id="ch11-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۱،‏ بخش دوم <small>۲۲ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>مستندات debugging را از Pod شروع می‌کند،‏ بعد به controller (Deployment یا ReplicaSet) و در آخر به Service می‌رسد. چرا این ترتیب منطقی است؟ چه اتفاقی می‌افتد اگر این ترتیب را برعکس کنیم؟
         <details class="ans"><summary>پاسخ</summary><p>چون هر لایه به لایه‌ی زیرین خودش وابسته است: یک Service فقط می‌تواند ترافیک را به Podهایی که واقعاً <code>Running</code> و <code>Ready</code> هستند هدایت کند (از طریق EndpointSlice)؛‏ اگر Podها اصلاً اجرا نشوند (مثلاً <code>ImagePullBackOff</code>)،‏ هیچ debuggingی روی Service چیزی پیدا نمی‌کند چون اصلاً هیچ Podای برای انتخاب‌شدن وجود ندارد. اگر ترتیب را برعکس کنیم و اول Service را بررسی کنیم،‏ ممکن است زمان زیادی صرف بررسی iptables/kube-proxy شود درحالی‌که مشکل واقعی یک <code>CrashLoopBackOff</code> ساده در Pod بوده که با یک <code>kubectl describe pod</code> در چند ثانیه قابل‌کشف بود.</p></details></li>
@@ -3881,14 +3955,14 @@ timeout 10 tcpdump -i eth0 -n -c 50</pre></div>
 kubectl delete pod node-debugger-worker-1-xxxxx --now</pre></div>
         <p>مستندات یادآوری می‌کند debugging Pod را پاک کنید. دلیل امنیتی‌اش این است که Pod با profile از نوع sysadmin،‏ privileged است و به namespaceهای host دسترسی دارد؛‏ باقی ماندن آن روی Node یک ریسک امنیتی است که به چشم نمی‌آید.</p></details></li>
     </ol>
-  </div>
+  </details>
 
   
   <h3 id="ch11-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این فصل،‏ حالا</b><p>حالا وقتی پرداخت کند می‌شود،‏ رد آن می‌ماند:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>log مربوط به Pod پس از restart از بین رفت</td><td><code>kubectl logs --previous</code> برای اجرای قبلی container؛‏ و log مرکزی با agent روی هر Node (DaemonSet) که log را بیرون از cluster نگه می‌دارد؛‏ همان کار ناتمام فصل ۳</td><td><a href="#ch11-a-pod-logs">log مربوط به Pod</a> و <a href="#ch11-a-cluster-logging">logging در سطح cluster</a></td></tr><tr><td>metricی از دیشب نیست</td><td>Prometheus برای metricهای اجزا و برنامه،‏ kube-state-metrics برای وضعیت objectها؛‏ metrics-server فقط مقدار لحظه‌ای می‌دهد</td><td><a href="#ch11-a-system-metrics">system metrics</a> و <a href="#ch11-a-ksm">kube-state-metrics</a></td></tr><tr><td>معلوم نیست چه کسی چه چیزی را عوض کرد</td><td>audit policy در API server: چه کسی،‏ چه زمانی،‏ روی کدام object</td><td><a href="#ch11-a-audit">auditing</a></td></tr><tr><td>علت restart چه بود؟</td><td>در خروجی <code>kubectl describe pod</code>،‏ بخش Last State و Reason (مثلاً OOMKilled) و eventها</td><td><a href="#ch11-b-debugging-pods">عیب‌یابی Podها</a></td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> اگر خود control plane از کار بیفتد،‏ همین ابزارها هم به آن دسترسی ندارند (فصل ۱۲).</p><p><b>فصل بعد:</b> بخش سوم جزوه: فروشگاه به production واقعی می‌رود و خود cluster یک شب جواب نمی‌دهد.</p></div>
 
-  <div id="ch11-ex3" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۱ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch11-ex3" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۱ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>وقتی <code>kubectl logs</code> اجرا می‌کنید،‏ log از کجا می‌آید و <code>--previous</code> چه زمانی لازم است؟
         <details class="ans"><summary>پاسخ</summary>
@@ -3962,7 +4036,7 @@ kubectl delete pod node-debugger-worker-1-xxxxx --now</pre></div>
           <p><b>نکته‌ی امتیازآور:</b> sidecar streaming فضای لازم روی Node را تقریباً دو برابر می‌کند (فایل برنامه به‌علاوه‌ی log stdout) و برنامه باید فایل خودش را rotate کند؛‏ در الگوی sidecar agent دیگر <code>kubectl logs</code> این logها را نشان نمی‌دهد. sidecarها را می‌توان به شکل native sidecar تعریف کرد تا پیش از container اصلی شروع و بعد از آن متوقف شوند.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch11-recap">
     <div class="recap-h">خلاصه‌ی فصل ۱۱ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

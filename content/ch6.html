@@ -346,7 +346,7 @@ requests.memory  512Mi  1Gi
 LAST SEEN   TYPE      REASON         OBJECT                     MESSAGE
 2s          Warning   FailedCreate   replicaset/load-5b9d7c8f6   Error creating: pods "load-5b9d7c8f6-t4wzr" is forbidden: exceeded quota: dev-quota, requested: limits.cpu=250m, used: limits.cpu=2, limited: limits.cpu=2
 </pre></div><p><b>چه اتفاقی افتاد؟</b> دستور create بدون خطا تمام شد،‏ ولی فقط ۷ Pod از ۱۲ Pod ساخته شد. هر Pod با limit پیش‌فرض ۲۵۰ میلی‌core می‌آید؛‏ Pod به نام web و ۷ Pod از load روی هم به سقف ۲ هسته‌ی <code>limits.cpu</code> رسیدند،‏ پیش از آن‌که تعداد Pod به ۱۰ برسد. خطا را ReplicaSet گرفت و در eventهای خودش ثبت کرد؛‏ همان warn درس. هر Pod آزمایشی در این namespace حداکثر ۵۱۲ مگابایت و کل namespace حداکثر ۲ گیگابایت memory می‌گیرد؛‏ دیگر یک آزمایش نمی‌تواند memory مربوط به Node را پر کند.</p><div class="code"><div class="lbl"><span>پاک‌سازی (خود namespace برای آزمایش‌های بعدی می‌ماند)</span><button type="button">کپی</button></div><pre class="sh">kubectl -n shopify-dev delete deployment load; kubectl -n shopify-dev delete pod web
-</pre></div><div id="ch6-ex1" class="ex"><div class="ex-h">امتحان کنید <small>3 تمرین</small></div><ol><li><span class="lvl l1">عملی</span>مقدار STARTUP_DELAY را در فایل <code>shop-api-config.yaml</code> به <code>‎"10"‎</code> تغییر دهید و apply کنید. آیا Podهای API مقدار جدید را می‌بینند؟ برای اعمالش چه باید کرد و اثرش را کجا می‌بینید؟<details class="ans"><summary>پاسخ</summary><p>نه. API تنظیمات را با envFrom می‌گیرد و environment variableها فقط هنگام شروع container خوانده می‌شوند؛‏ <code>kubectl exec deploy/shop-api -c web -- printenv STARTUP_DELAY</code> هنوز ۳ را نشان می‌دهد. برای اعمال،‏ Podها را از نو بسازید: <code>kubectl rollout restart deployment/shop-api</code>. در log هر Pod تازه سطر <code>shop-api 1.4: warming up for 10s</code> را می‌بینید و هر Pod حدود ده ثانیه دیرتر Ready می‌شود؛‏ startupProbe فصل ۳ تا ۶۰ ثانیه صبر می‌کند،‏ پس Pod کشته نمی‌شود. اگر ConfigMap به شکل فایل mount شده بود،‏ با کمی تأخیر خودش به‌روز می‌شد (گام ۴). در پایان مقدار را به <code>‎"3"‎</code> برگردانید.</p></details></li><li><span class="lvl l1">عملی</span>در یک Pod آزمایشی به Secretی ارجاع دهید که وجود ندارد (مثلاً <code>shop-dbx</code>). وضعیت Pod چه می‌شود و پیام خطا را کجا می‌بینید؟ اگر در همان ارجاع <code>optional: true</code> بگذارید چه؟<details class="ans"><summary>پاسخ</summary><p>Pod روی Node قرار می‌گیرد ولی container ساخته نمی‌شود و وضعیت <code>CreateContainerConfigError</code> را نشان می‌دهد. در <code>kubectl describe pod</code> پیام <code>secret "shop-dbx" not found</code> را می‌بینید. kubelet مدام دوباره تلاش می‌کند؛‏ به‌محض این‌که Secret ساخته شود،‏ container شروع می‌شود. با <code>optional: true</code> نبودن Secret خطا نیست و container بدون آن متغیر شروع می‌شود؛‏ برای رمز پایگاه داده این یعنی خطای دیرتر در خود برنامه،‏ پس برای مقدارهای ضروری optional نگذارید.</p></details></li><li><span class="lvl l2">مفهومی</span>QoS class هر کدام از این Podها چیست: (الف) Pod به نام mem-hog در گام ۶؛‏ (ب) Pod مربوط به API پس از گام ۵؛‏ (ج) Pod مربوط به PostgreSQL پس از گام ۷؛‏ (د) Pod به نام web در گام ۸. اول حدس بزنید و بعد با <code>kubectl get pod NAME -o jsonpath='{.status.qosClass}'</code> بسنجید.<details class="ans"><summary>پاسخ</summary><p>(الف) Burstable: فقط memory limit دارد و request آن هم برابر limit می‌شود،‏ ولی برای CPU هیچ مقداری ندارد؛‏ Guaranteed هر دو منبع را می‌خواهد. (ب) Burstable:‏ request و limit نابرابرند. (ج) Guaranteed: تنها container آن برای هر دو منبع request برابر limit دارد. (د) Burstable:‏ LimitRange به آن request و limit نابرابر داده است. اگر در LimitRange مقدار default با defaultRequest برابر بود،‏ Pod از نوع Guaranteed می‌شد.</p></details></li></ol></div><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>رمز پایگاه داده نه در image است،‏ نه در فایل‌های Git؛‏ فقط در Secret به نام shop-db.</li><li>می‌دانید تغییر ConfigMap از راه env و volume و subPath کی به container می‌رسد.</li><li>می‌دانید base64 رمزنگاری نیست و چه کسانی می‌توانند Secret را بخوانند.</li><li>اثر CPU limit (throttling) و memory limit (OOMKilled) را در عمل دیده‌اید.</li><li>QoS class هر Pod را از روی requests و limits پیش‌بینی می‌کنید.</li><li>رد شدن Pod به‌خاطر LimitRange و ResourceQuota را دیده‌اید و خطای quota را در eventهای ReplicaSet پیدا می‌کنید.</li></ul></div>
+</pre></div><details id="ch6-ex1" class="ex"><summary class="ex-h">امتحان کنید <small>3 تمرین</small></summary><ol><li><span class="lvl l1">عملی</span>مقدار STARTUP_DELAY را در فایل <code>shop-api-config.yaml</code> به <code>‎"10"‎</code> تغییر دهید و apply کنید. آیا Podهای API مقدار جدید را می‌بینند؟ برای اعمالش چه باید کرد و اثرش را کجا می‌بینید؟<details class="ans"><summary>پاسخ</summary><p>نه. API تنظیمات را با envFrom می‌گیرد و environment variableها فقط هنگام شروع container خوانده می‌شوند؛‏ <code>kubectl exec deploy/shop-api -c web -- printenv STARTUP_DELAY</code> هنوز ۳ را نشان می‌دهد. برای اعمال،‏ Podها را از نو بسازید: <code>kubectl rollout restart deployment/shop-api</code>. در log هر Pod تازه سطر <code>shop-api 1.4: warming up for 10s</code> را می‌بینید و هر Pod حدود ده ثانیه دیرتر Ready می‌شود؛‏ startupProbe فصل ۳ تا ۶۰ ثانیه صبر می‌کند،‏ پس Pod کشته نمی‌شود. اگر ConfigMap به شکل فایل mount شده بود،‏ با کمی تأخیر خودش به‌روز می‌شد (گام ۴). در پایان مقدار را به <code>‎"3"‎</code> برگردانید.</p></details></li><li><span class="lvl l1">عملی</span>در یک Pod آزمایشی به Secretی ارجاع دهید که وجود ندارد (مثلاً <code>shop-dbx</code>). وضعیت Pod چه می‌شود و پیام خطا را کجا می‌بینید؟ اگر در همان ارجاع <code>optional: true</code> بگذارید چه؟<details class="ans"><summary>پاسخ</summary><p>Pod روی Node قرار می‌گیرد ولی container ساخته نمی‌شود و وضعیت <code>CreateContainerConfigError</code> را نشان می‌دهد. در <code>kubectl describe pod</code> پیام <code>secret "shop-dbx" not found</code> را می‌بینید. kubelet مدام دوباره تلاش می‌کند؛‏ به‌محض این‌که Secret ساخته شود،‏ container شروع می‌شود. با <code>optional: true</code> نبودن Secret خطا نیست و container بدون آن متغیر شروع می‌شود؛‏ برای رمز پایگاه داده این یعنی خطای دیرتر در خود برنامه،‏ پس برای مقدارهای ضروری optional نگذارید.</p></details></li><li><span class="lvl l2">مفهومی</span>QoS class هر کدام از این Podها چیست: (الف) Pod به نام mem-hog در گام ۶؛‏ (ب) Pod مربوط به API پس از گام ۵؛‏ (ج) Pod مربوط به PostgreSQL پس از گام ۷؛‏ (د) Pod به نام web در گام ۸. اول حدس بزنید و بعد با <code>kubectl get pod NAME -o jsonpath='{.status.qosClass}'</code> بسنجید.<details class="ans"><summary>پاسخ</summary><p>(الف) Burstable: فقط memory limit دارد و request آن هم برابر limit می‌شود،‏ ولی برای CPU هیچ مقداری ندارد؛‏ Guaranteed هر دو منبع را می‌خواهد. (ب) Burstable:‏ request و limit نابرابرند. (ج) Guaranteed: تنها container آن برای هر دو منبع request برابر limit دارد. (د) Burstable:‏ LimitRange به آن request و limit نابرابر داده است. اگر در LimitRange مقدار default با defaultRequest برابر بود،‏ Pod از نوع Guaranteed می‌شد.</p></details></li></ol></details><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>رمز پایگاه داده نه در image است،‏ نه در فایل‌های Git؛‏ فقط در Secret به نام shop-db.</li><li>می‌دانید تغییر ConfigMap از راه env و volume و subPath کی به container می‌رسد.</li><li>می‌دانید base64 رمزنگاری نیست و چه کسانی می‌توانند Secret را بخوانند.</li><li>اثر CPU limit (throttling) و memory limit (OOMKilled) را در عمل دیده‌اید.</li><li>QoS class هر Pod را از روی requests و limits پیش‌بینی می‌کنید.</li><li>رد شدن Pod به‌خاطر LimitRange و ResourceQuota را دیده‌اید و خطای quota را در eventهای ReplicaSet پیدا می‌کنید.</li></ul></div>
   </div>
 
   <div class="deep"><b>از این‌جا به بعد: مرجع عمیق‌تر</b><p>بخش‌های بعدی متن کامل مستندات است. لازم نیست پشت‌سرهم بخوانید؛‏ هر وقت سؤالی پیش آمد،‏ به بخش مربوط برگردید:</p><div class="tbl"><table><thead><tr><th>اگر می‌خواهید بدانید…</th><th>به این بخش بروید</th></tr></thead><tbody><tr><td>همه‌ی راه‌های ساختن و مصرف ConfigMap (گام‌های ۲ و ۴)</td><td><a href="#ch6-a-configmap">ConfigMap</a> و <a href="#ch6-a-configure-pod-configmap">پیکربندی Pod با ConfigMap</a></td></tr><tr><td>انواع Secret و محافظت‌هایش (گام‌های ۱ و ۳)</td><td><a href="#ch6-a-secret">Secret</a> و <a href="#ch6-a-distribute-creds">رساندن امن credentialها</a></td></tr><tr><td>ساختن و ویرایش Secret با kubectl و فایل و Kustomize</td><td><a href="#ch6-a-manage-kubectl">با kubectl</a> و <a href="#ch6-a-manage-config-file">با فایل</a> و <a href="#ch6-a-manage-kustomize">با Kustomize</a></td></tr><tr><td>جزئیات requests و limits و واحدها (گام‌های ۵ و ۶)</td><td><a href="#ch6-b-requests-limits">requests و limits</a> و <a href="#ch6-b-units">واحدها</a> و <a href="#ch6-b-applied">نحوه‌ی اعمال</a></td></tr><tr><td>عیب‌یابی Pending و OOMKilled</td><td><a href="#ch6-b-troubleshooting">Troubleshooting</a></td></tr><tr><td>LimitRange و ResourceQuota (گام ۸)</td><td><a href="#ch6-b-limitrange">Limit Ranges</a> و <a href="#ch6-b-quotas">Resource Quotas</a> و راهنماهای عملی پایان فصل</td></tr><tr><td>سقف تعداد process و مدیریت منابع در سطح Node</td><td><a href="#ch6-b-pid">PID limiting</a> و <a href="#ch6-b-resmanagers">Node Resource Managers</a></td></tr></tbody></table></div><p>متن مرجع برای cluster عمومی نوشته شده است. روی k3s این تفاوت‌ها را در نظر بگیرید:</p><div class="tbl"><table><thead><tr><th>در متن مرجع</th><th>معادل در k3s</th></tr></thead><tbody><tr><td>ذخیره‌ی Secretها در etcd</td><td>در k3s تک‌Node،‏ پایگاه داده‌ی SQLite در <code>/var/lib/rancher/k3s/server/db/state.db</code></td></tr><tr><td>فعال کردن encryption at rest با پرچم <code>--encryption-provider-config</code> مربوط به kube-apiserver</td><td>گزینه‌ی <code>secrets-encryption: true</code> در <code>/etc/rancher/k3s/config.yaml</code>؛‏ وضعیت با <code>sudo k3s secrets-encrypt status</code></td></tr><tr><td>تنظیم kubelet (مثل system-reserved و آستانه‌های eviction و سیاست CPU manager)</td><td>گزینه‌ی <code>kubelet-arg</code> در همان فایل config.yaml و سپس restart سرویس k3s</td></tr><tr><td>نصب metrics-server برای <code>kubectl top</code></td><td>از قبل همراه k3s نصب است</td></tr></tbody></table></div></div>
@@ -383,9 +383,12 @@ LAST SEEN   TYPE      REASON         OBJECT                     MESSAGE
   <h4 id="ch6-a-cluster-config">Cluster configuration</h4>
   <p>این بخش از مستندات درباره‌ی configuration است. اما اگر دارید platform-level یا cluster-level configuration انجام می‌دهید،‏ صفحه‌های cluster administration و لیست تسک‌های cluster administration را بخوانید.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا ConfigMap و Secret را در یک فصل با Resource Management و Policy کنار هم گذاشته‌ایم؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا ConfigMap و Secret را در یک فصل با Resource Management و Policy کنار هم گذاشته‌ایم؟</b>
     <p>در نگاه اول ConfigMap/Secret (تزریق داده به Pod) و LimitRange/ResourceQuota (کنترل مصرف منابع) دو موضوع کاملا متفاوت به نظر می‌رسند. اما هر دو مصداق یک ایده‌ی واحد هستند که عنوان همین بخش از مستندات هم به آن اشاره دارد: <i>«Ways to provide both long-term and temporary storage to Pods in your cluster»</i> — نه،‏ آن جمله برای Storage بود (فصل ۷)؛‏ ایده‌ی درست‌تر برای این فصل این است: «راه‌هایی برای separate کردن چیزی که Pod باید بداند یا رعایت کند،‏ از خود Pod manifest». ConfigMap و Secret می‌گویند Pod با چه دیتایی کار کند؛‏ LimitRange و ResourceQuota می‌گویند Pod چقدر منبع مصرف کند و در چه بازه‌ای — هر دو،‏ policyهایی هستند که مستقل از Pod تعریف و اعمال می‌شوند،‏ بدون این‌که نویسنده‌ی manifest مجبور باشد هر بار همه چیز را از صفر بنویسد. این چیدمان دقیقا با نقشه‌ی فصل‌های مستندات رسمی کوبرنتیز هم مطابقت دارد؛‏ صفحه‌ی «Policies» هم صراحتا configuration را «another form of configuration» می‌نامد.</p>
   </div>
+  </details>
 
   <h3 id="ch6-a-configmap">ConfigMap</h3>
   <p>یک ConfigMap An API object است که برای ذخیره‌ی داده‌ی non-confidential به‌صورت key-value pair استفاده می‌شود. Podها می‌توانند ConfigMapها را به‌صورت environment variable،‏ command-line argument،‏ یا به‌صورت فایل‌های configuration در یک volume مصرف کنند.</p>
@@ -593,9 +596,12 @@ immutable: true
 </pre></div>
   <p>وقتی یک ConfigMap به‌عنوان immutable علامت‌گذاری شد،‏ دیگر ممکن نیست این تغییر را برگرداند و نه محتوای فیلد <code>data</code> یا <code>binaryData</code> را جهش دهد (mutate). فقط می‌توانید ConfigMap را حذف و دوباره بسازید. چون Podهای موجود یک mount point به ConfigMap حذف‌شده نگه می‌دارند،‏ توصیه می‌شود این podها را دوباره بسازید.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا immutable ConfigMap/Secret برای مقیاس بزرگ اهمیت دارد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا immutable ConfigMap/Secret برای مقیاس بزرگ اهمیت دارد؟</b>
     <p>هر ConfigMap یا Secret mutable که در یک volume mount شده،‏ یک <code>watch</code> فعال روی kube-apiserver باز نگه می‌دارد تا kubelet هر node مطلع شود که آیا محتوا تغییر کرده است یا نه. در یک cluster با هزاران Pod که هرکدام چند ConfigMap/Secret را mount می‌کنند،‏ این یعنی ده‌ها هزار watch باز،‏ که فشار زیادی روی kube-apiserver و etcd (watch cache) می‌گذارد؛‏ این دقیقا همان چیزی است که مستندات با عبارت «significantly reducing load on kube-apiserver» به آن اشاره می‌کنند. علاوه بر بهبود کارایی،‏ immutability یک guarantee طراحی هم می‌دهد: چون محتوا هرگز تغییر نمی‌کند،‏ دیگر لازم نیست نگران skew (ناهم‌زمانی) بین Podهای مختلفی باشید که با تاخیرهای متفاوت همان ConfigMap را می‌بینند — یا همه‌ی Podهای جدید نسخه‌ی جدید را از ابتدا می‌بینند (چون اسم عوض شده)،‏ یا هیچ‌کدام تغییری نمی‌بینند. الگوی رایج در production این است که به‌جای <code>immutable: true</code> ساده روی یک نام ثابت،‏ از یک <b>content-hash suffix</b> در نام (دقیقا مثل چیزی که Kustomize ConfigMap generator خودکار انجام می‌دهد،‏ پایین‌تر در همین فصل می‌بینید) استفاده کنید تا هر تغییر محتوا،‏ یک ConfigMap/Secret <i>جدید</i> با نام جدید بسازد و rollout جدید Deployment را trigger کند؛‏ این ترکیب،‏ هم immutability و هم به‌روزرسانی کنترل‌شده (به‌جای در انتظار propagation) را با هم می‌دهد.</p>
   </div>
+  </details>
 
   <h3 id="ch6-a-secret">Secret</h3>
   <p>یک Secret یک object است که مقدار کمی داده‌ی حساس (sensitive data) مثل یک password،‏ یک token یا یک key را در خود نگه می‌دارد. چنین اطلاعاتی در غیر این صورت ممکن بود داخل مشخصات یک Pod (pod specification) یا داخل یک container image قرار بگیرد. استفاده از Secret یعنی لازم نیست داده‌ی محرمانه را داخل کد اپلیکیشن‌تان بگذارید.</p>
@@ -613,16 +619,6 @@ immutable: true
     <p>برای راهنمایی‌های بیشتر درباره‌ی مدیریت و بهبود امنیت Secretها،‏ صفحه‌ی Good practices for Kubernetes Secrets را ببینید (فصل ۱۴).</p>
   </div>
   <p>برای جزئیات بیشتر،‏ بخش Information security for Secrets را در ادامه ببینید.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: base64 رمزنگاری نیست</b>
-    <p>مقدارهای فیلد <code>data</code> در یک Secret با base64 <i>encode</i> می‌شوند،‏ نه <i>encrypt</i>. base64 فقط یک نمایش متنی برای داده‌ی دودویی است و هر کسی بدون هیچ کلیدی آن را برمی‌گرداند:</p>
-    <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">echo -n 'S!B\*d$zDsb=' | base64
-# UyFCXCpkJHpEc2I9
-echo 'UyFCXCpkJHpEc2I9' | base64 -d
-# S!B\*d$zDsb=
-</pre></div>
-    <p>پس تفاوت واقعی Secret با ConfigMap در <b>شکل ذخیره‌سازی</b> نیست،‏ بلکه در این است که کوبرنتیز روی Secretها محافظت‌های اضافه اعمال می‌کند (ارسال فقط به nodeهایی که Pod نیازمند دارند،‏ نگه‌داری در <code>tmpfs</code>،‏ امکان encryption at rest جداگانه،‏ و امکان نوشتن RBAC جدا برای resource <code>secrets</code>). اگر این محافظت‌ها را فعال نکنید (مثلا به همه <code>get/list</code> روی <code>secrets</code> بدهید و etcd رمزنگاری نشده باشد)،‏ Secret عملا چیزی بیشتر از یک ConfigMap نیست.</p>
-  </div>
 
   <h4 id="ch6-a-secret-uses">Uses for Secrets</h4>
   <p>می‌توانید از Secretها برای مقاصدی مثل موارد زیر استفاده کنید:</p>
@@ -683,34 +679,6 @@ kubectl run dot-check --rm -it --restart=Never --image=registry.k8s.io/busybox \
   <p>برنامه‌ای را در نظر بگیرید که باید HTTP requestها را handle کند،‏ business logic پیچیده‌ای انجام دهد و سپس پیام‌هایی را با یک HMAC امضا کند. چون application logic پیچیده‌ای دارد،‏ ممکن است یک آسیب‌پذیری remote file reading که از چشم پنهان مانده در سرور وجود داشته باشد و private key را در اختیار یک مهاجم قرار دهد.</p>
   <p>این برنامه را می‌توان به دو process در دو container تقسیم کرد: یک container به نام frontend که تعامل با کاربر و business logic را انجام می‌دهد اما نمی‌تواند private key را ببیند؛‏ و یک container به نام signer که private key را می‌بیند و به requestهای ساده‌ی امضا از frontend پاسخ می‌دهد (برای مثال از طریق شبکه‌ی localhost).</p>
   <p>با این رویکرد تفکیک‌شده،‏ مهاجم اکنون باید سرور اپلیکیشن را فریب دهد تا کاری نسبتا دلخواه انجام دهد،‏ که ممکن است از واداشتن آن به خواندن یک فایل سخت‌تر باشد.</p>
-  <div class="deep"><b>توضیح تکمیلی: پیاده‌سازی این الگو</b>
-    <p>کلید این الگو این است که Secret volume فقط در <code>volumeMounts</code> container به نام signer آمده است. volume در سطح Pod تعریف می‌شود،‏ اما تا وقتی یک container آن را mount نکند،‏ در filesystem آن container وجود ندارد:</p>
-    <div class="code"><div class="lbl"><span>hmac-signer-pod.yaml (مثال تکمیلی)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
-kind: Pod
-metadata:
-  name: payments-api
-spec:
-  volumes:
-  - name: hmac-key
-    secret:
-      secretName: hmac-signing-key
-      defaultMode: 0400
-  containers:
-  - name: frontend            # هیچ volumeMount ای برای hmac-key ندارد
-    image: example.com/payments-frontend:1.4.2
-    ports:
-    - containerPort: 8080
-  - name: signer              # تنها container که کلید را می‌بیند
-    image: example.com/hmac-signer:0.9.0
-    args: ["--listen=127.0.0.1:9000", "--key=/keys/hmac.key"]
-    volumeMounts:
-    - name: hmac-key
-      mountPath: /keys
-      readOnly: true
-</pre></div>
-    <p>یک نکته: env varهای یک container برای containerهای دیگر Pod دیده نمی‌شوند،‏ اما اگر <code>shareProcessNamespace: true</code> باشد،‏ processهای containerهای دیگر (و در برخی شرایط <code>/proc/&lt;pid&gt;/environ</code> و <code>/proc/&lt;pid&gt;/root</code> آن‌ها) قابل مشاهده می‌شوند؛‏ پس برای این الگو process namespace را share نکنید (خارج از مستندات رسمی این صفحه).</p>
-  </div>
-
   <h4 id="ch6-a-secret-alternatives">Alternatives to Secrets</h4>
   <p>به‌جای استفاده از یک Secret برای محافظت از داده‌ی محرمانه،‏ می‌توانید از جایگزین‌ها انتخاب کنید. برخی گزینه‌ها:</p>
   <ul>
@@ -721,10 +689,6 @@ spec:
   </ul>
   <p>می‌توانید دو یا چند مورد از این گزینه‌ها را با هم ترکیب کنید،‏ از جمله گزینه‌ی استفاده از خود Secret objectها.</p>
   <p>برای مثال: یک operator پیاده‌سازی (یا deploy) کنید که session tokenهای کوتاه‌عمر (short-lived) را از یک سرویس خارجی می‌گیرد و سپس بر اساس آن session tokenهای کوتاه‌عمر،‏ Secret می‌سازد. Podهایی که در cluster شما اجرا می‌شوند می‌توانند از session tokenها استفاده کنند و operator تضمین می‌کند که معتبر هستند. این تفکیک یعنی می‌توانید Podهایی اجرا کنید که از مکانیزم دقیق صدور و تازه‌سازی (refresh) آن session tokenها بی‌خبرند.</p>
-  <div class="deep"><b>توضیح تکمیلی: نمونه‌های واقعی این الگو (خارج از مستندات رسمی)</b>
-    <p>الگوی «operator که از یک store خارجی می‌خواند و Secret می‌سازد» در عمل با پروژه‌هایی مثل External Secrets Operator پیاده می‌شود (Secret را از Vault،‏ AWS Secrets Manager،‏ GCP Secret Manager و مانند آن sync می‌کند). الگوی «Pod مستقیما از store خارجی بخواند» با Secrets Store CSI Driver پیاده می‌شود که محتوا را به‌صورت یک CSI volume mount می‌کند (و به‌صورت اختیاری Secret هم می‌سازد). مزیت مشترک هر دو این است که منبع حقیقت (source of truth) دیگر Git یا manifest نیست و rotation در یک جا اتفاق می‌افتد.</p>
-  </div>
-
   <h4 id="ch6-a-secret-types">Types of Secret</h4>
   <p>هنگام ساخت یک Secret،‏ می‌توانید نوع آن را با فیلد <code>type</code> در resource Secret،‏ یا با برخی flagهای معادل در خط فرمان <code>kubectl</code> (اگر موجود باشند) مشخص کنید. نوع Secret برای تسهیل پردازش برنامه‌نویسی‌شده (programmatic handling) داده‌ی Secret استفاده می‌شود.</p>
   <p>کوبرنتیز چند نوع built-in برای برخی سناریوهای رایج فراهم می‌کند. این نوع‌ها از نظر validationهایی که انجام می‌شود و محدودیت‌هایی که کوبرنتیز بر آن‌ها اعمال می‌کند با هم فرق دارند.</p>
@@ -833,10 +797,6 @@ data:
     <p>مقدار <code>auth</code> در آن‌جا base64 encode شده است؛‏ مبهم شده (obscured) اما محرمانه نیست. هر کسی که بتواند آن Secret را بخواند،‏ می‌تواند registry access bearer token را بفهمد.</p>
     <p>پیشنهاد می‌شود از credential providerها برای فراهم کردن پویا و امن pull secretها به‌صورت on-demand استفاده کنید.</p>
   </div>
-  <div class="deep"><b>توضیح تکمیلی</b>
-    <p>مقدار <code>auth</code> چیزی جز <code>base64("username:password")</code> نیست: <code>echo dGlnZXI6cGFzczEyMzQ= | base64 -d</code> خروجی <code>tiger:pass1234</code> می‌دهد. به همین دلیل در production بهتر است برای pull از registry از credentialهای read-only با حداقل دسترسی (مثلا فقط pull روی یک repository) استفاده کنید،‏ نه حساب شخصی یک مهندس. kubelet credential provider (فصل ۲) این مشکل را از ریشه حل می‌کند: kubelet هنگام pull یک plugin (جزء قابل‌اتصالی که رفتار سیستم را گسترش می‌دهد) اجرا می‌کند که token کوتاه‌عمر registry را (مثلا از ECR یا GCR/Artifact Registry) برمی‌گرداند و دیگر هیچ Secret بلندمدتی در API ذخیره نمی‌شود.</p>
-  </div>
-
   <h4 id="ch6-a-secret-basic-auth">Basic authentication Secret</h4>
   <p>نوع <code>kubernetes.io/basic-auth</code> برای ذخیره‌ی credentialهای لازم برای basic authentication فراهم شده است. هنگام استفاده از این Secret type،‏ فیلد <code>data</code> در Secret باید یکی از دو key زیر را داشته باشد:</p>
   <ul>
@@ -872,10 +832,6 @@ data:
 </pre></div>
   <p>نوع SSH authentication Secret فقط برای راحتی فراهم شده است. می‌توانید برای credentialهای SSH authentication یک نوع <code>Opaque</code> بسازید. اما استفاده از Secret type تعریف‌شده و عمومی (<code>kubernetes.io/ssh-auth</code>) به دیگران کمک می‌کند هدف Secret شما را بفهمند و یک قرارداد برای نام keyهای مورد انتظار تعیین می‌کند. Kubernetes API بررسی می‌کند که keyهای الزامی برای Secret از این نوع set شده باشند.</p>
   <div class="warn"><b>هشدار</b><p>SSH private keyها به‌تنهایی ارتباط مورد اعتماد (trusted communication) بین یک SSH client و host server برقرار نمی‌کنند. یک روش ثانویه برای برقراری اعتماد لازم است تا حملات «man in the middle» کاهش یابد،‏ مثل یک فایل <code>known_hosts</code> که به یک ConfigMap اضافه شده است.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: مثال git-sync</b>
-    <p>یک سناریوی رایج،‏ sidecarای است که یک repository خصوصی Git را clone می‌کند. private key در Secret از نوع <code>kubernetes.io/ssh-auth</code> و <code>known_hosts</code> (که محرمانه نیست) در یک ConfigMap قرار می‌گیرد؛‏ هر دو در یک projected volume یا دو volume جدا mount می‌شوند و SSH client با <code>StrictHostKeyChecking=yes</code> اجرا می‌شود. اگر <code>known_hosts</code> را فراموش کنید،‏ ابزارهایی که <code>StrictHostKeyChecking=no</code> می‌گذارند عملا کلید host را بدون بررسی می‌پذیرند و هدف Caution بالا از بین می‌رود.</p>
-  </div>
-
   <h4 id="ch6-a-secret-tls">TLS Secrets</h4>
   <p>Secret type <code>kubernetes.io/tls</code> برای ذخیره‌ی یک certificate و key مرتبط با آن است که معمولا برای TLS استفاده می‌شوند.</p>
   <p>یکی از کاربردهای رایج TLS Secretها،‏ پیکربندی encryption in transit برای یک Ingress است (فصل ۵)،‏ اما می‌توانید از آن با resourceهای دیگر یا مستقیما در workload خود هم استفاده کنید. هنگام استفاده از این نوع Secret،‏ keyهای <code>tls.key</code> و <code>tls.crt</code> باید در فیلد <code>data</code> (یا <code>stringData</code>) در پیکربندی Secret فراهم شوند،‏ هرچند API server در واقع مقادیر هر key را validate نمی‌کند.</p>
@@ -960,10 +916,6 @@ stringData:
   usage-bootstrap-signing: "true"
 </pre></div>
   <div class="note"><b>نکته</b><p>فیلد <code>stringData</code> در یک Secret با server-side apply به‌خوبی کار نمی‌کند.</p></div>
-  <div class="deep"><b>توضیح تکمیلی</b>
-    <p>token کامل که یک node جدید هنگام <code>kubeadm join</code> استفاده می‌کند به شکل <code>&lt;token-id&gt;.&lt;token-secret&gt;</code> است،‏ یعنی در این مثال <code>5emitj.kq4gihvszzgn1p0r</code>. بخش token-id عمومی است (در نام Secret هم آمده) و فقط token-secret محرمانه است. دستور <code>kubeadm token create</code> دقیقا یک Secret با همین ساختار در <code>kube-system</code> می‌سازد و <code>kubeadm token list</code> همین Secretها را فهرست می‌کند. کاربرد <code>usage-bootstrap-signing</code> امضای ConfigMap <code>cluster-info</code> در namespace <code>kube-public</code> است،‏ تا node جدید بتواند قبل از اعتماد به CA،‏ صحت اطلاعات cluster را بررسی کند (فصل ۱۳).</p>
-  </div>
-
   <h4 id="ch6-a-secret-working">Working with Secrets</h4>
   <h5>Creating a Secret</h5>
   <p>چند گزینه برای ساختن یک Secret وجود دارد:</p>
@@ -1041,15 +993,6 @@ need-secret   0/1     ContainerCreating   0          40s
     <tr><td><code>Cache</code></td><td>cache با TTL تعریف‌شده</td><td>TTL پیکربندی‌شده</td></tr>
     <tr><td><code>Get</code></td><td>poll مستقیم از API server در هر sync</td><td>صفر (اما بار بیشتر روی API server)</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی: سه مسیر مصرف و رفتار به‌روزرسانی</b>
-    <div class="tbl"><table><thead><tr><th>روش مصرف</th><th>تغییر Secret/ConfigMap به container می‌رسد؟</th><th>چه باید کرد</th></tr></thead><tbody>
-      <tr><td>volume کامل (بدون subPath)</td><td>بله،‏ eventually (حداکثر sync period که پیش‌فرض آن یک دقیقه است + cache delay)</td><td>اپلیکیشن باید فایل را دوباره بخواند (inotify یا reload دوره‌ای)</td></tr>
-      <tr><td>volume با <code>subPath</code></td><td>خیر</td><td>restart Pod،‏ یا به‌جای subPath کل دایرکتوری را mount کنید</td></tr>
-      <tr><td>environment variable</td><td>خیر؛‏ فقط هنگام ساخت container خوانده می‌شود</td><td>rollout جدید (مثلا <code>kubectl rollout restart</code>)</td></tr>
-    </tbody></table></div>
-    <p>نکته‌ی مهم: رسیدن فایل جدید به disk با «اعمال شدن» آن یکی نیست. بسیاری از برنامه‌ها (مثل nginx یا یک connection pool پایگاه‌داده) فایل را فقط هنگام startup می‌خوانند؛‏ برای آن‌ها بدون reload یا restart،‏ به‌روزرسانی volume هیچ اثری ندارد.</p>
-  </div>
-
   <h4 id="ch6-a-secret-env">Using Secrets as environment variables</h4>
   <p>برای استفاده از یک Secret در یک environment variable در یک Pod:</p>
   <ol>
@@ -1058,10 +1001,6 @@ need-secret   0/1     ContainerCreating   0          40s
   </ol>
   <p>برای دستورالعمل،‏ بخش Define container environment variables using Secret data را در ادامه ببینید.</p>
   <p>مهم است توجه کنید که محدوده‌ی کاراکترهای مجاز برای نام environment variableها در Podها محدود (restricted) است. اگر هر keyای این قوانین را رعایت نکند،‏ آن keyها در اختیار container قرار نمی‌گیرند،‏ هرچند Pod اجازه‌ی شروع دارد.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا env var برای Secret ریسک بیشتری دارد؟ (خارج از مستندات رسمی)</b>
-    <p>environment variableها معمولا در جاهای بیشتری نشت می‌کنند تا فایل‌ها: صفحه‌های debug فریم‌ورک‌ها (مثلا dump کامل environment هنگام exception)،‏ crash reportها و ابزارهای APM که environment را ضمیمه می‌کنند،‏ <code>/proc/&lt;pid&gt;/environ</code> برای هر کسی که به namespace process دسترسی دارد،‏ و دستور <code>printenv</code> در <code>kubectl exec</code>. همچنین به‌روزرسانی آن‌ها بدون restart ممکن نیست. برای همین در بسیاری از سازمان‌ها سیاست این است که Secretها به‌صورت فایل (با <code>defaultMode</code> محدود) mount شوند.</p>
-  </div>
-
   <h4 id="ch6-a-secret-imagepull">Container image pull Secrets</h4>
   <p>اگر می‌خواهید container imageها را از یک private repository بگیرید،‏ به راهی نیاز دارید که kubelet روی هر node در برابر آن repository authenticate شود. می‌توانید <i>image pull Secret</i>ها را برای ممکن کردن این کار پیکربندی کنید. این Secretها در سطح Pod پیکربندی می‌شوند.</p>
   <p><b>Using imagePullSecrets:</b> فیلد <code>imagePullSecrets</code> یک فهرست از ارجاع‌ها به Secretهایی در <b>همان namespace</b> است. می‌توانید از <code>imagePullSecrets</code> برای رساندن یک Secret که password یک image registry از نوع Docker (یا دیگر) را دارد به kubelet استفاده کنید. kubelet از این اطلاعات برای pull کردن یک image خصوصی از طرف Pod شما استفاده می‌کند. برای اطلاعات بیشتر درباره‌ی فیلد <code>imagePullSecrets</code>،‏ PodSpec API را ببینید.</p>
@@ -1083,8 +1022,6 @@ kubectl get pod t -o jsonpath='{.spec.imagePullSecrets}'
 
   <h4 id="ch6-a-secret-static">Using Secrets with static Pods</h4>
   <p>نمی‌توانید از ConfigMapها یا Secretها با static Podها استفاده کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>static Podها را kubelet مستقیما از یک فایل روی disk node می‌سازد و API server فقط یک mirror Pod از آن‌ها می‌بیند (فصل ۳). چون static Pod نباید به در دسترس بودن API server وابسته باشد (مثلا خود kube-apiserver در kubeadm یک static Pod است)،‏ نمی‌تواند به objectهای API مثل Secret و ConfigMap ارجاع دهد. برای همین componentهای Control Plane در kubeadm certificateها و تنظیمات خود را از <code>hostPath</code>هایی مثل <code>/etc/kubernetes/pki</code> می‌خوانند.</p></div>
-
   <h4 id="ch6-a-secret-immutable">Immutable Secrets</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.21 [stable]</span></p>
   <p>کوبرنتیز به شما اجازه می‌دهد Secretهای (و ConfigMapهای) مشخصی را <i>immutable</i> علامت بزنید. جلوگیری از تغییر داده‌ی یک Secret موجود این مزایا را دارد:</p>
@@ -1124,6 +1061,68 @@ The Secret "db-v1" is invalid: data: Forbidden: field is immutable when `immutab
   <h5>Configure least-privilege access to Secrets</h5>
   <p>برای تقویت تدابیر امنیتی پیرامون Secretها،‏ از namespaceهای جداگانه برای جداسازی دسترسی به Secretهای mount شده استفاده کنید.</p>
   <div class="warn"><b>هشدار</b><p>هر containerی که با <code>privileged: true</code> روی یک node اجرا شود،‏ می‌تواند به همه‌ی Secretهایی که روی آن node استفاده می‌شوند دسترسی داشته باشد.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱۰)</small> <span class="m-t">base64 رمزنگاری نیست · پیاده‌سازی این الگو · نمونه‌های واقعی این الگو (خارج از مستندات رسمی) · مثال git-sync · سه مسیر مصرف و رفتار به‌روزرسانی · چرا env var برای Secret ریسک بیشتری دارد؟ (خارج از مستندات رسمی) · نمونه‌ی Role با کمترین دسترسی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: base64 رمزنگاری نیست</b>
+    <p>مقدارهای فیلد <code>data</code> در یک Secret با base64 <i>encode</i> می‌شوند،‏ نه <i>encrypt</i>. base64 فقط یک نمایش متنی برای داده‌ی دودویی است و هر کسی بدون هیچ کلیدی آن را برمی‌گرداند:</p>
+    <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">echo -n 'S!B\*d$zDsb=' | base64
+# UyFCXCpkJHpEc2I9
+echo 'UyFCXCpkJHpEc2I9' | base64 -d
+# S!B\*d$zDsb=
+</pre></div>
+    <p>پس تفاوت واقعی Secret با ConfigMap در <b>شکل ذخیره‌سازی</b> نیست،‏ بلکه در این است که کوبرنتیز روی Secretها محافظت‌های اضافه اعمال می‌کند (ارسال فقط به nodeهایی که Pod نیازمند دارند،‏ نگه‌داری در <code>tmpfs</code>،‏ امکان encryption at rest جداگانه،‏ و امکان نوشتن RBAC جدا برای resource <code>secrets</code>). اگر این محافظت‌ها را فعال نکنید (مثلا به همه <code>get/list</code> روی <code>secrets</code> بدهید و etcd رمزنگاری نشده باشد)،‏ Secret عملا چیزی بیشتر از یک ConfigMap نیست.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: پیاده‌سازی این الگو</b>
+    <p>کلید این الگو این است که Secret volume فقط در <code>volumeMounts</code> container به نام signer آمده است. volume در سطح Pod تعریف می‌شود،‏ اما تا وقتی یک container آن را mount نکند،‏ در filesystem آن container وجود ندارد:</p>
+    <div class="code"><div class="lbl"><span>hmac-signer-pod.yaml (مثال تکمیلی)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: Pod
+metadata:
+  name: payments-api
+spec:
+  volumes:
+  - name: hmac-key
+    secret:
+      secretName: hmac-signing-key
+      defaultMode: 0400
+  containers:
+  - name: frontend            # هیچ volumeMount ای برای hmac-key ندارد
+    image: example.com/payments-frontend:1.4.2
+    ports:
+    - containerPort: 8080
+  - name: signer              # تنها container که کلید را می‌بیند
+    image: example.com/hmac-signer:0.9.0
+    args: ["--listen=127.0.0.1:9000", "--key=/keys/hmac.key"]
+    volumeMounts:
+    - name: hmac-key
+      mountPath: /keys
+      readOnly: true
+</pre></div>
+    <p>یک نکته: env varهای یک container برای containerهای دیگر Pod دیده نمی‌شوند،‏ اما اگر <code>shareProcessNamespace: true</code> باشد،‏ processهای containerهای دیگر (و در برخی شرایط <code>/proc/&lt;pid&gt;/environ</code> و <code>/proc/&lt;pid&gt;/root</code> آن‌ها) قابل مشاهده می‌شوند؛‏ پس برای این الگو process namespace را share نکنید (خارج از مستندات رسمی این صفحه).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: نمونه‌های واقعی این الگو (خارج از مستندات رسمی)</b>
+    <p>الگوی «operator که از یک store خارجی می‌خواند و Secret می‌سازد» در عمل با پروژه‌هایی مثل External Secrets Operator پیاده می‌شود (Secret را از Vault،‏ AWS Secrets Manager،‏ GCP Secret Manager و مانند آن sync می‌کند). الگوی «Pod مستقیما از store خارجی بخواند» با Secrets Store CSI Driver پیاده می‌شود که محتوا را به‌صورت یک CSI volume mount می‌کند (و به‌صورت اختیاری Secret هم می‌سازد). مزیت مشترک هر دو این است که منبع حقیقت (source of truth) دیگر Git یا manifest نیست و rotation در یک جا اتفاق می‌افتد.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+    <p>مقدار <code>auth</code> چیزی جز <code>base64("username:password")</code> نیست: <code>echo dGlnZXI6cGFzczEyMzQ= | base64 -d</code> خروجی <code>tiger:pass1234</code> می‌دهد. به همین دلیل در production بهتر است برای pull از registry از credentialهای read-only با حداقل دسترسی (مثلا فقط pull روی یک repository) استفاده کنید،‏ نه حساب شخصی یک مهندس. kubelet credential provider (فصل ۲) این مشکل را از ریشه حل می‌کند: kubelet هنگام pull یک plugin (جزء قابل‌اتصالی که رفتار سیستم را گسترش می‌دهد) اجرا می‌کند که token کوتاه‌عمر registry را (مثلا از ECR یا GCR/Artifact Registry) برمی‌گرداند و دیگر هیچ Secret بلندمدتی در API ذخیره نمی‌شود.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: مثال git-sync</b>
+    <p>یک سناریوی رایج،‏ sidecarای است که یک repository خصوصی Git را clone می‌کند. private key در Secret از نوع <code>kubernetes.io/ssh-auth</code> و <code>known_hosts</code> (که محرمانه نیست) در یک ConfigMap قرار می‌گیرد؛‏ هر دو در یک projected volume یا دو volume جدا mount می‌شوند و SSH client با <code>StrictHostKeyChecking=yes</code> اجرا می‌شود. اگر <code>known_hosts</code> را فراموش کنید،‏ ابزارهایی که <code>StrictHostKeyChecking=no</code> می‌گذارند عملا کلید host را بدون بررسی می‌پذیرند و هدف Caution بالا از بین می‌رود.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+    <p>token کامل که یک node جدید هنگام <code>kubeadm join</code> استفاده می‌کند به شکل <code>&lt;token-id&gt;.&lt;token-secret&gt;</code> است،‏ یعنی در این مثال <code>5emitj.kq4gihvszzgn1p0r</code>. بخش token-id عمومی است (در نام Secret هم آمده) و فقط token-secret محرمانه است. دستور <code>kubeadm token create</code> دقیقا یک Secret با همین ساختار در <code>kube-system</code> می‌سازد و <code>kubeadm token list</code> همین Secretها را فهرست می‌کند. کاربرد <code>usage-bootstrap-signing</code> امضای ConfigMap <code>cluster-info</code> در namespace <code>kube-public</code> است،‏ تا node جدید بتواند قبل از اعتماد به CA،‏ صحت اطلاعات cluster را بررسی کند (فصل ۱۳).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: سه مسیر مصرف و رفتار به‌روزرسانی</b>
+    <div class="tbl"><table><thead><tr><th>روش مصرف</th><th>تغییر Secret/ConfigMap به container می‌رسد؟</th><th>چه باید کرد</th></tr></thead><tbody>
+      <tr><td>volume کامل (بدون subPath)</td><td>بله،‏ eventually (حداکثر sync period که پیش‌فرض آن یک دقیقه است + cache delay)</td><td>اپلیکیشن باید فایل را دوباره بخواند (inotify یا reload دوره‌ای)</td></tr>
+      <tr><td>volume با <code>subPath</code></td><td>خیر</td><td>restart Pod،‏ یا به‌جای subPath کل دایرکتوری را mount کنید</td></tr>
+      <tr><td>environment variable</td><td>خیر؛‏ فقط هنگام ساخت container خوانده می‌شود</td><td>rollout جدید (مثلا <code>kubectl rollout restart</code>)</td></tr>
+    </tbody></table></div>
+    <p>نکته‌ی مهم: رسیدن فایل جدید به disk با «اعمال شدن» آن یکی نیست. بسیاری از برنامه‌ها (مثل nginx یا یک connection pool پایگاه‌داده) فایل را فقط هنگام startup می‌خوانند؛‏ برای آن‌ها بدون reload یا restart،‏ به‌روزرسانی volume هیچ اثری ندارد.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا env var برای Secret ریسک بیشتری دارد؟ (خارج از مستندات رسمی)</b>
+    <p>environment variableها معمولا در جاهای بیشتری نشت می‌کنند تا فایل‌ها: صفحه‌های debug فریم‌ورک‌ها (مثلا dump کامل environment هنگام exception)،‏ crash reportها و ابزارهای APM که environment را ضمیمه می‌کنند،‏ <code>/proc/&lt;pid&gt;/environ</code> برای هر کسی که به namespace process دسترسی دارد،‏ و دستور <code>printenv</code> در <code>kubectl exec</code>. همچنین به‌روزرسانی آن‌ها بدون restart ممکن نیست. برای همین در بسیاری از سازمان‌ها سیاست این است که Secretها به‌صورت فایل (با <code>defaultMode</code> محدود) mount شوند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>static Podها را kubelet مستقیما از یک فایل روی disk node می‌سازد و API server فقط یک mirror Pod از آن‌ها می‌بیند (فصل ۳). چون static Pod نباید به در دسترس بودن API server وابسته باشد (مثلا خود kube-apiserver در kubeadm یک static Pod است)،‏ نمی‌تواند به objectهای API مثل Secret و ConfigMap ارجاع دهد. برای همین componentهای Control Plane در kubeadm certificateها و تنظیمات خود را از <code>hostPath</code>هایی مثل <code>/etc/kubernetes/pki</code> می‌خوانند.</p></div>
   <div class="deep"><b>توضیح تکمیلی: نمونه‌ی Role با کمترین دسترسی</b>
     <p>اگر یک ابزار فقط باید یک Secret مشخص را بخواند،‏ از <code>resourceNames</code> و فقط verb <code>get</code> استفاده کنید. <code>list</code> و <code>watch</code> را نمی‌توان با <code>resourceNames</code> به‌طور معنادار محدود کرد و محتوای همه‌ی Secretها را برمی‌گردانند:</p>
     <div class="code"><div class="lbl"><span>role-read-one-secret.yaml (مثال تکمیلی)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: rbac.authorization.k8s.io/v1
@@ -1139,6 +1138,7 @@ rules:
 </pre></div>
     <p>برای بررسی: <code>kubectl auth can-i list secrets -n payments --as=system:serviceaccount:payments:reporter</code> باید <code>no</code> برگرداند. همچنین به یاد داشته باشید که طبق Caution ابتدای این بخش،‏ هر کس بتواند در این namespace Pod (یا Deployment) بسازد،‏ می‌تواند هر Secretی را mount کند و بخواند؛‏ پس «create pods» خودش یک مجوز خواندن Secret است.</p>
   </div>
+  </details>
 
   <h3 id="ch6-a-configure-pod-configmap">Configure a Pod to Use a ConfigMap</h3>
   <p>بسیاری از اپلیکیشن‌ها به configurationای متکی هستند که یا هنگام initialization اپلیکیشن یا در runtime استفاده می‌شود. در بیشتر مواقع لازم است مقادیر نسبت‌داده‌شده به پارامترهای configuration تنظیم شوند. ConfigMapها مکانیزمی در کوبرنتیز هستند که به شما اجازه می‌دهند داده‌ی configuration را به Podهای اپلیکیشن inject کنید.</p>
@@ -1350,10 +1350,6 @@ data:
   lives: "3"
   textmode: "true"
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: <code>--from-file</code> در برابر <code>--from-env-file</code></b>
-    <p>تفاوت اساسی در <b>شکل داده</b> است: <code>--from-file</code> کل فایل را به‌صورت یک value زیر یک key (نام فایل) می‌گذارد،‏ که برای mount کردن به‌صورت فایل مناسب است (مثلا <code>nginx.conf</code>). <code>--from-env-file</code> فایل را خط‌به‌خط parse می‌کند و هر خط را یک key جدا می‌کند،‏ که برای <code>envFrom</code> مناسب است. به مقدار <code>allowed: '"true"'</code> دقت کنید: quotation markها جزو مقدار شده‌اند،‏ پس اپلیکیشنی که انتظار <code>true</code> دارد،‏ رشته‌ی <code>"true"</code> (با کوتیشن) را می‌بیند؛‏ این یک منبع رایج باگ هنگام کپی کردن فایل‌های <code>.env</code> از docker-compose است.</p>
-  </div>
-
   <p><b>Define the key to use when creating a ConfigMap from a file:</b> هنگام استفاده از آرگومان <code>--from-file</code> می‌توانید keyای غیر از نام فایل را برای استفاده در بخش <code>data</code> از ConfigMap تعریف کنید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl create configmap game-config-3 --from-file=&lt;my-key-name&gt;=&lt;path-to-file&gt;
 </pre></div>
@@ -1482,10 +1478,6 @@ configMapGenerator:
 </pre></div>
   <div class="code"><div class="lbl"><span>output</span></div><pre class="out">configmap/special-config-2-c92b5mmcf2 created
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا hash suffix مهم است؟</b>
-    <p>وقتی یک Deployment در Pod template خود به <code>game-config-4</code> ارجاع می‌دهد،‏ Kustomize هنگام build،‏ آن ارجاع را به‌طور خودکار به نام کامل با hash (<code>game-config-4-m9dm2f92bt</code>) بازنویسی می‌کند. اگر محتوای <code>game.properties</code> عوض شود،‏ hash و در نتیجه نام ConfigMap عوض می‌شود،‏ پس Pod template تغییر می‌کند و Deployment controller یک rolling update جدید شروع می‌کند. نتیجه: هیچ Podی نیمه‌به‌روز نمی‌ماند،‏ و rollback با <code>kubectl rollout undo</code> هم به ConfigMap قبلی (که هنوز وجود دارد) برمی‌گردد. هزینه‌ی این روش،‏ ConfigMapهای قدیمی باقی‌مانده است که باید به‌طور دوره‌ای پاک شوند (مثلا با <code>kubectl apply --prune</code> یا ابزار GitOps) (خارج از مستندات رسمی).</p>
-  </div>
-
   <h4 id="ch6-a-cm-cleanup1">Interim cleanup</h4>
   <p>قبل از ادامه،‏ برخی از ConfigMapهایی را که ساختید پاک کنید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl delete configmap special-config
@@ -1526,8 +1518,6 @@ spec:
 </pre></div>
       <p>حالا خروجی Pod شامل environment variable <code>SPECIAL_LEVEL_KEY=very</code> است.</p></li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی</b><p>به تفاوت نام key و نام متغیر دقت کنید: key در ConfigMap <code>special.how</code> است (نقطه دارد و برای بعضی shellها نام متغیر معتبری نیست)،‏ اما با <code>configMapKeyRef</code> آن را با نام دلخواه <code>SPECIAL_LEVEL_KEY</code> در اختیار container می‌گذارید. این مزیت <code>env</code> نسبت به <code>envFrom</code> است که نام key را عینا به‌عنوان نام متغیر استفاده می‌کند. برای دیدن خروجی: <code>kubectl logs dapi-test-pod | grep SPECIAL</code>.</p></div>
-
   <h5>Define container environment variables with data from multiple ConfigMaps</h5>
   <p>مثل مثال قبل،‏ اول ConfigMapها را بسازید. manifestای که استفاده می‌کنید این است:</p>
   <div class="code"><div class="lbl"><span>configmap/configmaps.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -1622,10 +1612,6 @@ spec:
       <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl delete pod dapi-test-pod --now
 </pre></div></li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: ترتیب اولویت و <code>prefix</code></b>
-    <p>اگر یک نام هم از <code>envFrom</code> و هم از <code>env</code> تعریف شود،‏ مقدار <code>env</code> برنده است؛‏ و اگر چند منبع <code>envFrom</code> key مشترک داشته باشند،‏ آخرین منبع در فهرست برنده است. برای جلوگیری از برخورد نام‌ها،‏ می‌توانید برای هر منبع <code>envFrom</code> یک <code>prefix</code> تعریف کنید (مثلا <code>prefix: GAME_</code>) تا همه‌ی keyها با آن پیشوند وارد شوند (خارج از مستندات رسمی این صفحه؛‏ رفتار API در PodSpec).</p>
-  </div>
-
   <h4 id="ch6-a-cm-command">Use ConfigMap-defined environment variables in Pod commands</h4>
   <p>می‌توانید از environment variableهایی که با ConfigMap تعریف شده‌اند در <code>command</code> و <code>args</code> یک container با syntax جایگزینی کوبرنتیز یعنی <code>$(VAR_NAME)</code> استفاده کنید. برای مثال،‏ manifest زیر برای Pod:</p>
   <div class="code"><div class="lbl"><span>pods/pod-configmap-env-var-valueFrom.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -1661,10 +1647,6 @@ spec:
   <p>وقتی آماده‌ی ادامه بودید،‏ آن Pod را حذف کنید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl delete pod dapi-test-pod --now
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: <code>$(VAR)</code> در برابر <code>$VAR</code></b>
-    <p>در این مثال،‏ <code>/bin/echo</code> مستقیما اجرا می‌شود و هیچ shellی وجود ندارد؛‏ جایگزینی <code>$(SPECIAL_LEVEL_KEY)</code> را خود kubelet قبل از اجرای process انجام می‌دهد. اگر متغیر تعریف نشده باشد،‏ رشته دست‌نخورده باقی می‌ماند (یعنی دقیقا <code>$(SPECIAL_LEVEL_KEY)</code> چاپ می‌شود)،‏ و برای نوشتن لفظی آن باید <code>$$(VAR)</code> بنویسید. در مقابل <code>$VAR</code> فقط وقتی کار می‌کند که command یک shell باشد (<code>sh -c</code>) (خارج از مستندات رسمی این صفحه؛‏ مستند در Define Dependent Environment Variables).</p>
-  </div>
-
   <h4 id="ch6-a-cm-volume">Add ConfigMap data to a Volume</h4>
   <p>همان‌طور که در Create ConfigMaps from files توضیح داده شد،‏ وقتی یک ConfigMap را با <code>--from-file</code> می‌سازید،‏ نام فایل به یک key تبدیل می‌شود که در بخش <code>data</code> از ConfigMap ذخیره می‌شود. محتوای فایل به value آن key تبدیل می‌شود.</p>
   <p>مثال‌های این بخش به یک ConfigMap به نام <code>special-config</code> ارجاع می‌دهند:</p>
@@ -1749,10 +1731,6 @@ spec:
   <p>آن Pod را حذف کنید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl delete pod dapi-test-pod --now
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: وقتی <code>items</code> می‌دهید،‏ فقط همان‌ها project می‌شوند</b>
-    <p>در این مثال <code>SPECIAL_TYPE</code> در volume وجود ندارد؛‏ با مشخص کردن <code>items</code>،‏ فقط keyهای فهرست‌شده project می‌شوند. اگر می‌خواهید یک فایل را در یک directory موجود از image (مثلا <code>/etc/nginx/conf.d/</code>) اضافه کنید بدون این‌که فایل‌های دیگر آن directory پنهان شوند،‏ تنها راه mount کردن با <code>subPath</code> است،‏ که طبق Note بخش بعد،‏ به‌روزرسانی خودکار را از دست می‌دهد. جایگزین بهتر معمولا این است که اپلیکیشن را طوری پیکربندی کنید که از یک directory جدا (مثلا <code>/etc/app/conf.d/</code>) include کند.</p>
-  </div>
-
   <h5>Project keys to specific paths and file permissions</h5>
   <p>می‌توانید keyها را به مسیرهای مشخص project کنید. برای syntax،‏ بخش متناظر در راهنمای Secrets (Project Secret keys to specific file paths،‏ در ادامه) را ببینید. همچنین می‌توانید POSIX permissionها را برای keyها set کنید. برای syntax،‏ بخش متناظر در راهنمای Secrets (Set POSIX permissions for Secret keys،‏ در ادامه) را ببینید.</p>
 
@@ -1868,8 +1846,6 @@ spec:
         optional: true # mark the source ConfigMap as optional
   restartPolicy: Never
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: optional یک شمشیر دولبه است</b><p>optional برای تنظیماتی مناسب است که واقعا اختیاری‌اند (مثلا feature flagهای override که فقط در بعضی محیط‌ها وجود دارند). برای تنظیمات حیاتی (آدرس پایگاه‌داده،‏ credential) optional خطرناک است: یک اشتباه تایپی در نام ConfigMap به‌جای این‌که Pod را در <code>CreateContainerConfigError</code> نگه دارد و rollout را متوقف کند،‏ Pod را با مقدار خالی بالا می‌آورد و خطا دیرتر و مبهم‌تر (مثلا در runtime اپلیکیشن) ظاهر می‌شود.</p></div>
-
   <h4 id="ch6-a-cm-restrictions">Restrictions</h4>
   <ul>
     <li>باید object <code>ConfigMap</code> را قبل از ارجاع دادن به آن در مشخصات یک Pod بسازید. به‌عنوان جایگزین،‏ ارجاع به ConfigMap را در Pod spec به‌صورت <code>optional</code> علامت بزنید (Optional ConfigMaps را ببینید). اگر به ConfigMapای ارجاع دهید که وجود ندارد و ارجاع را <code>optional</code> علامت نزنید،‏ Pod شروع نمی‌شود. به همین ترتیب،‏ ارجاع به keyهایی که در ConfigMap وجود ندارند هم مانع شروع Pod می‌شود،‏ مگر این‌که ارجاع‌های key را <code>optional</code> علامت بزنید.</li>
@@ -1902,6 +1878,27 @@ kubectl delete configmap -l 'game-config in (config-4,config-5)'
 </pre></div>
   <p class="next">ادامه‌ی مطالعه در مستندات: Configuring Redis using a ConfigMap ·‏ Updating configuration via a ConfigMap</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۷)</small> <span class="m-t">--from-file در برابر --from-env-file · چرا hash suffix مهم است؟ · ترتیب اولویت و prefix · $(VAR) در برابر $VAR · وقتی items می‌دهید،‏ فقط همان‌ها project می‌شوند · optional یک شمشیر دولبه است</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: <code>--from-file</code> در برابر <code>--from-env-file</code></b>
+    <p>تفاوت اساسی در <b>شکل داده</b> است: <code>--from-file</code> کل فایل را به‌صورت یک value زیر یک key (نام فایل) می‌گذارد،‏ که برای mount کردن به‌صورت فایل مناسب است (مثلا <code>nginx.conf</code>). <code>--from-env-file</code> فایل را خط‌به‌خط parse می‌کند و هر خط را یک key جدا می‌کند،‏ که برای <code>envFrom</code> مناسب است. به مقدار <code>allowed: '"true"'</code> دقت کنید: quotation markها جزو مقدار شده‌اند،‏ پس اپلیکیشنی که انتظار <code>true</code> دارد،‏ رشته‌ی <code>"true"</code> (با کوتیشن) را می‌بیند؛‏ این یک منبع رایج باگ هنگام کپی کردن فایل‌های <code>.env</code> از docker-compose است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا hash suffix مهم است؟</b>
+    <p>وقتی یک Deployment در Pod template خود به <code>game-config-4</code> ارجاع می‌دهد،‏ Kustomize هنگام build،‏ آن ارجاع را به‌طور خودکار به نام کامل با hash (<code>game-config-4-m9dm2f92bt</code>) بازنویسی می‌کند. اگر محتوای <code>game.properties</code> عوض شود،‏ hash و در نتیجه نام ConfigMap عوض می‌شود،‏ پس Pod template تغییر می‌کند و Deployment controller یک rolling update جدید شروع می‌کند. نتیجه: هیچ Podی نیمه‌به‌روز نمی‌ماند،‏ و rollback با <code>kubectl rollout undo</code> هم به ConfigMap قبلی (که هنوز وجود دارد) برمی‌گردد. هزینه‌ی این روش،‏ ConfigMapهای قدیمی باقی‌مانده است که باید به‌طور دوره‌ای پاک شوند (مثلا با <code>kubectl apply --prune</code> یا ابزار GitOps) (خارج از مستندات رسمی).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b><p>به تفاوت نام key و نام متغیر دقت کنید: key در ConfigMap <code>special.how</code> است (نقطه دارد و برای بعضی shellها نام متغیر معتبری نیست)،‏ اما با <code>configMapKeyRef</code> آن را با نام دلخواه <code>SPECIAL_LEVEL_KEY</code> در اختیار container می‌گذارید. این مزیت <code>env</code> نسبت به <code>envFrom</code> است که نام key را عینا به‌عنوان نام متغیر استفاده می‌کند. برای دیدن خروجی: <code>kubectl logs dapi-test-pod | grep SPECIAL</code>.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: ترتیب اولویت و <code>prefix</code></b>
+    <p>اگر یک نام هم از <code>envFrom</code> و هم از <code>env</code> تعریف شود،‏ مقدار <code>env</code> برنده است؛‏ و اگر چند منبع <code>envFrom</code> key مشترک داشته باشند،‏ آخرین منبع در فهرست برنده است. برای جلوگیری از برخورد نام‌ها،‏ می‌توانید برای هر منبع <code>envFrom</code> یک <code>prefix</code> تعریف کنید (مثلا <code>prefix: GAME_</code>) تا همه‌ی keyها با آن پیشوند وارد شوند (خارج از مستندات رسمی این صفحه؛‏ رفتار API در PodSpec).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: <code>$(VAR)</code> در برابر <code>$VAR</code></b>
+    <p>در این مثال،‏ <code>/bin/echo</code> مستقیما اجرا می‌شود و هیچ shellی وجود ندارد؛‏ جایگزینی <code>$(SPECIAL_LEVEL_KEY)</code> را خود kubelet قبل از اجرای process انجام می‌دهد. اگر متغیر تعریف نشده باشد،‏ رشته دست‌نخورده باقی می‌ماند (یعنی دقیقا <code>$(SPECIAL_LEVEL_KEY)</code> چاپ می‌شود)،‏ و برای نوشتن لفظی آن باید <code>$$(VAR)</code> بنویسید. در مقابل <code>$VAR</code> فقط وقتی کار می‌کند که command یک shell باشد (<code>sh -c</code>) (خارج از مستندات رسمی این صفحه؛‏ مستند در Define Dependent Environment Variables).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: وقتی <code>items</code> می‌دهید،‏ فقط همان‌ها project می‌شوند</b>
+    <p>در این مثال <code>SPECIAL_TYPE</code> در volume وجود ندارد؛‏ با مشخص کردن <code>items</code>،‏ فقط keyهای فهرست‌شده project می‌شوند. اگر می‌خواهید یک فایل را در یک directory موجود از image (مثلا <code>/etc/nginx/conf.d/</code>) اضافه کنید بدون این‌که فایل‌های دیگر آن directory پنهان شوند،‏ تنها راه mount کردن با <code>subPath</code> است،‏ که طبق Note بخش بعد،‏ به‌روزرسانی خودکار را از دست می‌دهد. جایگزین بهتر معمولا این است که اپلیکیشن را طوری پیکربندی کنید که از یک directory جدا (مثلا <code>/etc/app/conf.d/</code>) include کند.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: optional یک شمشیر دولبه است</b><p>optional برای تنظیماتی مناسب است که واقعا اختیاری‌اند (مثلا feature flagهای override که فقط در بعضی محیط‌ها وجود دارند). برای تنظیمات حیاتی (آدرس پایگاه‌داده،‏ credential) optional خطرناک است: یک اشتباه تایپی در نام ConfigMap به‌جای این‌که Pod را در <code>CreateContainerConfigError</code> نگه دارد و rollout را متوقف کند،‏ Pod را با مقدار خالی بالا می‌آورد و خطا دیرتر و مبهم‌تر (مثلا در runtime اپلیکیشن) ظاهر می‌شود.</p></div>
+  </details>
+
   <h3 id="ch6-a-distribute-creds">Distribute Credentials Securely Using Secrets</h3>
   <p>این صفحه نشان می‌دهد چطور داده‌ی حساس،‏ مثل passwordها و کلیدهای رمزنگاری،‏ را به‌صورت امن به Podها inject کنید.</p>
 
@@ -1913,8 +1910,6 @@ echo -n '39528$vdg7Jb' | base64
 </pre></div>
   <p>خروجی نشان می‌دهد که نمایش base64 از username شما <code>bXktYXBw</code> است و نمایش base64 از password شما <code>Mzk1MjgkdmRnN0pi</code>.</p>
   <div class="warn"><b>هشدار</b><p>از یک ابزار محلی که سیستم‌عامل شما به آن اعتماد دارد استفاده کنید تا ریسک‌های امنیتی ابزارهای خارجی کاهش یابد.</p></div>
-  <div class="deep"><b>توضیح تکمیلی</b><p>منظور از «ابزار خارجی» مثلا سایت‌های آنلاین base64 encoder است: هر چیزی که در آن‌ها paste می‌کنید از دست شما خارج شده است. همچنین به <code>-n</code> در <code>echo</code> دقت کنید: بدون آن،‏ یک newline به انتهای رشته اضافه و encode می‌شود (<code>echo 'my-app' | base64</code> خروجی <code>bXktYXBwCg==</code> می‌دهد) و password اپلیکیشن شما عملا <code>my-app\n</code> خواهد بود — یکی از رایج‌ترین دلایل خطای «authentication failed» بعد از ساخت Secret.</p></div>
-
   <h4 id="ch6-a-dc-create">Create a Secret</h4>
   <p>در این‌جا یک configuration file آمده که می‌توانید برای ساختن یک Secret که username و password شما را نگه می‌دارد استفاده کنید:</p>
   <div class="code"><div class="lbl"><span>pods/inject/secret.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -2080,23 +2075,6 @@ spec:
 </pre></div>
   <p>Secret روی <code>/etc/foo</code> mount می‌شود؛‏ همه‌ی فایل‌هایی که secret volume mount می‌سازد permission <code>‎0400‎</code> دارند.</p>
   <div class="note"><b>نکته</b><p>اگر یک Pod یا Pod template را با JSON تعریف می‌کنید،‏ مراقب باشید که مشخصات JSON از literalهای octal برای عددها پشتیبانی نمی‌کند،‏ چون JSON مقدار <code>‎0400‎</code> را مقدار <i>decimal</i> یعنی <code>‎400‎</code> در نظر می‌گیرد. در JSON به‌جای آن از مقادیر decimal برای <code>defaultMode</code> استفاده کنید. اگر YAML می‌نویسید،‏ می‌توانید <code>defaultMode</code> را به‌صورت octal بنویسید.</p></div>
-  <div class="deep"><b>توضیح تکمیلی: مقادیر decimal و override برای هر key</b>
-    <p>معادل decimal رایج‌ترین modeها: <code>‎0400‎</code> = <code>‎256‎</code>،‏ <code>‎0440‎</code> = <code>‎288‎</code>،‏ <code>‎0644‎</code> = <code>‎420‎</code>،‏ <code>‎0600‎</code> = <code>‎384‎</code>. به همین دلیل وقتی <code>kubectl get pod -o yaml</code> می‌گیرید،‏ <code>defaultMode: 420</code> می‌بینید. override برای یک key با فیلد <code>mode</code> در هر item انجام می‌شود:</p>
-    <div class="code"><div class="lbl"><span>yaml (مثال تکمیلی)</span><button type="button">کپی</button></div><pre class="yaml">  volumes:
-  - name: foo
-    secret:
-      secretName: mysecret
-      defaultMode: 0440
-      items:
-      - key: tls.key
-        path: tls.key
-        mode: 0400     # فقط این فایل سخت‌گیرانه‌تر
-      - key: tls.crt
-        path: tls.crt
-</pre></div>
-    <p>توجه کنید که mode روی symlink نیست بلکه روی فایل واقعی در <code>..data</code> اعمال می‌شود،‏ و اگر container با کاربر غیر root اجرا شود،‏ به <code>fsGroup</code> در <code>securityContext</code> هم نیاز دارید تا group مالک فایل با کاربر شما هم‌خوان باشد (فصل ۱۴).</p>
-  </div>
-
   <h4 id="ch6-a-dc-env">Define container environment variables using Secret data</h4>
   <p>می‌توانید داده‌ی Secretها را به‌صورت environment variable در containerهای خود مصرف کنید.</p>
   <p>اگر یک container از قبل یک Secret را در یک environment variable مصرف می‌کند،‏ container به‌روزرسانی Secret را نمی‌بیند مگر این‌که restart شود. راه‌حل‌های third party برای trigger کردن restart هنگام تغییر Secretها وجود دارد.</p>
@@ -2200,10 +2178,6 @@ spec:
 password: 39528$vdg7Jb
 </pre></div></li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: env var و restart خودکار</b>
-    <p>«راه‌حل‌های third party» که متن به آن اشاره می‌کند معمولا controllerهایی مثل Reloader هستند که Secret/ConfigMap را watch می‌کنند و با تغییر آن،‏ یک annotation (داده‌ی توصیفی کلید-مقدار که برای انتخاب اشیا به کار نمی‌رود) در Pod template مربوط به Deployment را عوض می‌کنند تا rolling update انجام شود. همین کار را دستی می‌توان با <code>kubectl rollout restart deployment/&lt;name&gt;</code> انجام داد،‏ که دقیقا یک annotation <code>kubectl.kubernetes.io/restartedAt</code> در Pod template می‌گذارد. الگوی دیگر (بدون ابزار اضافه) قرار دادن hash محتوای Secret در یک annotation از Pod template در زمان deploy است (مثلا <code>checksum/secret</code> در Helm chartها) (خارج از مستندات رسمی).</p>
-  </div>
-
   <h4 id="ch6-a-dc-prod-test">Example: Provide prod/test credentials to Pods using Secrets</h4>
   <p>این مثال یک Pod را نشان می‌دهد که یک Secret حاوی credentialهای production را مصرف می‌کند و یک Pod دیگر که یک Secret با credentialهای محیط تست را مصرف می‌کند.</p>
   <ol>
@@ -2296,10 +2270,34 @@ spec:
   - name: db-client-container
     image: myClientImage
 </pre></div>
+  <p class="next">References: Secret · Volume · Pod (API reference)</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">مقادیر decimal و override برای هر key · env var و restart خودکار · در production،‏ prod و test را در یک namespace نگذارید</span></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>منظور از «ابزار خارجی» مثلا سایت‌های آنلاین base64 encoder است: هر چیزی که در آن‌ها paste می‌کنید از دست شما خارج شده است. همچنین به <code>-n</code> در <code>echo</code> دقت کنید: بدون آن،‏ یک newline به انتهای رشته اضافه و encode می‌شود (<code>echo 'my-app' | base64</code> خروجی <code>bXktYXBwCg==</code> می‌دهد) و password اپلیکیشن شما عملا <code>my-app\n</code> خواهد بود — یکی از رایج‌ترین دلایل خطای «authentication failed» بعد از ساخت Secret.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: مقادیر decimal و override برای هر key</b>
+    <p>معادل decimal رایج‌ترین modeها: <code>‎0400‎</code> = <code>‎256‎</code>،‏ <code>‎0440‎</code> = <code>‎288‎</code>،‏ <code>‎0644‎</code> = <code>‎420‎</code>،‏ <code>‎0600‎</code> = <code>‎384‎</code>. به همین دلیل وقتی <code>kubectl get pod -o yaml</code> می‌گیرید،‏ <code>defaultMode: 420</code> می‌بینید. override برای یک key با فیلد <code>mode</code> در هر item انجام می‌شود:</p>
+    <div class="code"><div class="lbl"><span>yaml (مثال تکمیلی)</span><button type="button">کپی</button></div><pre class="yaml">  volumes:
+  - name: foo
+    secret:
+      secretName: mysecret
+      defaultMode: 0440
+      items:
+      - key: tls.key
+        path: tls.key
+        mode: 0400     # فقط این فایل سخت‌گیرانه‌تر
+      - key: tls.crt
+        path: tls.crt
+</pre></div>
+    <p>توجه کنید که mode روی symlink نیست بلکه روی فایل واقعی در <code>..data</code> اعمال می‌شود،‏ و اگر container با کاربر غیر root اجرا شود،‏ به <code>fsGroup</code> در <code>securityContext</code> هم نیاز دارید تا group مالک فایل با کاربر شما هم‌خوان باشد (فصل ۱۴).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: env var و restart خودکار</b>
+    <p>«راه‌حل‌های third party» که متن به آن اشاره می‌کند معمولا controllerهایی مثل Reloader هستند که Secret/ConfigMap را watch می‌کنند و با تغییر آن،‏ یک annotation (داده‌ی توصیفی کلید-مقدار که برای انتخاب اشیا به کار نمی‌رود) در Pod template مربوط به Deployment را عوض می‌کنند تا rolling update انجام شود. همین کار را دستی می‌توان با <code>kubectl rollout restart deployment/&lt;name&gt;</code> انجام داد،‏ که دقیقا یک annotation <code>kubectl.kubernetes.io/restartedAt</code> در Pod template می‌گذارد. الگوی دیگر (بدون ابزار اضافه) قرار دادن hash محتوای Secret در یک annotation از Pod template در زمان deploy است (مثلا <code>checksum/secret</code> در Helm chartها) (خارج از مستندات رسمی).</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: در production،‏ prod و test را در یک namespace نگذارید</b>
     <p>این مثال برای سادگی هر دو Secret را در یک namespace می‌سازد. در یک cluster واقعی،‏ همان‌طور که بخش Configure least-privilege access to Secrets گفت،‏ باید محیط‌ها را در namespaceهای جدا (یا حتی clusterهای جدا) قرار دهید؛‏ چون هر کسی که بتواند در namespace Pod بسازد،‏ می‌تواند <code>prod-db-secret</code> را هم mount کند. با namespaceهای جدا،‏ manifest Pod در هر دو محیط می‌تواند <b>یکسان</b> باشد (مثلا هر دو به <code>db-secret</code> ارجاع دهند) و فقط محتوای Secret در هر namespace فرق کند،‏ که همان هدف «separate configuration from code» ابتدای فصل است.</p>
   </div>
-  <p class="next">References: Secret · Volume · Pod (API reference)</p>
+  </details>
 
   <h3 id="ch6-a-manage-kubectl">Managing Secrets using kubectl</h3>
   <p>این صفحه نشان می‌دهد چطور Secretهای کوبرنتیز را با ابزار خط فرمان <code>kubectl</code> بسازید،‏ ویرایش کنید،‏ مدیریت کنید و حذف کنید.</p>
@@ -2378,8 +2376,6 @@ username:    5 bytes
       <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl get secret db-user-pass -o jsonpath='{.data.password}' | base64 --decode
 </pre></div></li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: «12 bytes» به شما چه می‌گوید؟</b><p><code>kubectl describe</code> محتوا را نشان نمی‌دهد اما طول را نشان می‌دهد،‏ که برای debugging بسیار مفید است. password <code>S!B\*d$zDsb=</code> دقیقا ۱۲ کاراکتر است؛‏ اگر describe عدد 13 نشان دهد،‏ تقریبا مطمئن باشید که یک newline انتهایی (<code>echo</code> بدون <code>-n</code> یا ویرایشگری که خودکار newline اضافه می‌کند) وارد Secret شده است. این بررسی را بدون نمایش خود password روی صفحه انجام دادید. اما توجه کنید که <code>describe</code> به همان مجوز <code>get</code> روی Secret نیاز دارد و همان مجوز امکان خواندن کامل را هم می‌دهد؛‏ «پنهان کردن» در describe یک محافظت در برابر نشت تصادفی روی صفحه است،‏ نه یک مرز امنیتی.</p></div>
-
   <h4 id="ch6-a-mk-edit">Edit a Secret</h4>
   <p>می‌توانید یک object <code>Secret</code> موجود را ویرایش کنید،‏ مگر این‌که immutable باشد. برای ویرایش یک Secret،‏ دستور زیر را اجرا کنید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl edit secrets &lt;secret-name&gt;
@@ -2406,6 +2402,11 @@ type: Opaque
   <p>برای حذف یک Secret،‏ دستور زیر را اجرا کنید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl delete secret db-user-pass
 </pre></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«12 bytes» به شما چه می‌گوید؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: «12 bytes» به شما چه می‌گوید؟</b><p><code>kubectl describe</code> محتوا را نشان نمی‌دهد اما طول را نشان می‌دهد،‏ که برای debugging بسیار مفید است. password <code>S!B\*d$zDsb=</code> دقیقا ۱۲ کاراکتر است؛‏ اگر describe عدد 13 نشان دهد،‏ تقریبا مطمئن باشید که یک newline انتهایی (<code>echo</code> بدون <code>-n</code> یا ویرایشگری که خودکار newline اضافه می‌کند) وارد Secret شده است. این بررسی را بدون نمایش خود password روی صفحه انجام دادید. اما توجه کنید که <code>describe</code> به همان مجوز <code>get</code> روی Secret نیاز دارد و همان مجوز امکان خواندن کامل را هم می‌دهد؛‏ «پنهان کردن» در describe یک محافظت در برابر نشت تصادفی روی صفحه است،‏ نه یک مرز امنیتی.</p></div>
+  </details>
 
   <h3 id="ch6-a-manage-config-file">Managing Secrets using Configuration File</h3>
   <h4 id="ch6-a-mf-create">Create the Secret</h4>
@@ -2440,8 +2441,6 @@ data:
 </pre></div></li>
   </ol>
   <p>برای بررسی ساخته شدن Secret و decode کردن داده‌ی آن،‏ بخش Verify the Secret در Managing Secrets using kubectl را ببینید.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا <code>-w 0</code>؟</b><p>GNU base64 به‌طور پیش‌فرض خروجی را هر ۷۶ کاراکتر می‌شکند. برای یک password کوتاه مشکلی نیست،‏ اما برای یک certificate یا یک فایل پیکربندی،‏ خروجی چندخطی می‌شود و اگر آن را در فیلد <code>data</code> paste کنید،‏ YAML نامعتبر یا مقدار خراب می‌شود. <code>base64 -w 0 &lt; tls.crt</code> خروجی را در یک خط تولید می‌کند.</p></div>
-
   <h5>Specify unencoded data when creating a Secret</h5>
   <p>برای برخی سناریوها،‏ ممکن است بخواهید به‌جای آن از فیلد <code>stringData</code> استفاده کنید. این فیلد به شما اجازه می‌دهد یک رشته‌ی غیر base64 encode شده را مستقیما در Secret قرار دهید،‏ و رشته هنگام ساخته شدن یا به‌روزرسانی Secret برای شما encode می‌شود.</p>
   <p>یک مثال کاربردی از این حالت ممکن است جایی باشد که اپلیکیشنی را deploy می‌کنید که از یک Secret برای ذخیره‌ی یک configuration file استفاده می‌کند،‏ و می‌خواهید بخش‌هایی از آن configuration file را در حین فرایند deployment پر کنید.</p>
@@ -2480,8 +2479,6 @@ metadata:
   uid: c280ad2e-e916-11e8-98f2-025000000001
 type: Opaque
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: <code>stringData</code> فقط یک فیلد write-only است</b><p>API server هنگام ذخیره،‏ محتوای <code>stringData</code> را در <code>data</code> ادغام می‌کند و خود <code>stringData</code> را ذخیره نمی‌کند؛‏ به همین دلیل در خروجی <code>get</code> دیده نمی‌شود. همین رفتار دلیل Noteهای مکرر درباره‌ی server-side apply است: SSA مالکیت فیلدها (field ownership) را بر اساس فیلدهایی که شما فرستاده‌اید ردیابی می‌کند،‏ اما فیلد <code>stringData</code> هرگز در object ذخیره‌شده ظاهر نمی‌شود،‏ پس مقایسه و ادغام فیلدها به‌درستی کار نمی‌کند. اگر با SSA یا ابزار GitOps مبتنی بر SSA کار می‌کنید،‏ از <code>data</code> استفاده کنید.</p></div>
-
   <h5>Specify both <code>data</code> and <code>stringData</code></h5>
   <p>اگر یک فیلد را هم در <code>data</code> و هم در <code>stringData</code> مشخص کنید،‏ مقدار <code>stringData</code> استفاده می‌شود.</p>
   <p>برای مثال،‏ اگر Secret زیر را تعریف کنید:</p>
@@ -2545,6 +2542,12 @@ data:
   <p>برای حذف Secretی که ساختید:</p>
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl delete secret mysecret
 </pre></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">چرا -w 0؟ · stringData فقط یک فیلد write-only است</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا <code>-w 0</code>؟</b><p>GNU base64 به‌طور پیش‌فرض خروجی را هر ۷۶ کاراکتر می‌شکند. برای یک password کوتاه مشکلی نیست،‏ اما برای یک certificate یا یک فایل پیکربندی،‏ خروجی چندخطی می‌شود و اگر آن را در فیلد <code>data</code> paste کنید،‏ YAML نامعتبر یا مقدار خراب می‌شود. <code>base64 -w 0 &lt; tls.crt</code> خروجی را در یک خط تولید می‌کند.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: <code>stringData</code> فقط یک فیلد write-only است</b><p>API server هنگام ذخیره،‏ محتوای <code>stringData</code> را در <code>data</code> ادغام می‌کند و خود <code>stringData</code> را ذخیره نمی‌کند؛‏ به همین دلیل در خروجی <code>get</code> دیده نمی‌شود. همین رفتار دلیل Noteهای مکرر درباره‌ی server-side apply است: SSA مالکیت فیلدها (field ownership) را بر اساس فیلدهایی که شما فرستاده‌اید ردیابی می‌کند،‏ اما فیلد <code>stringData</code> هرگز در object ذخیره‌شده ظاهر نمی‌شود،‏ پس مقایسه و ادغام فیلدها به‌درستی کار نمی‌کند. اگر با SSA یا ابزار GitOps مبتنی بر SSA کار می‌کنید،‏ از <code>data</code> استفاده کنید.</p></div>
+  </details>
 
   <h3 id="ch6-a-manage-kustomize">Managing Secrets using Kustomize</h3>
   <p><code>kubectl</code> از ابزار مدیریت object به نام Kustomize برای مدیریت Secretها و ConfigMapها پشتیبانی می‌کند. با Kustomize یک <i>resource generator</i> می‌سازید که یک Secret تولید می‌کند که می‌توانید آن را با <code>kubectl</code> روی API server اعمال کنید.</p>
@@ -2636,6 +2639,8 @@ kubectl rollout status deployment/&lt;name&gt;
   <div class="code"><div class="lbl"><span>bash</span><button type="button">کپی</button></div><pre class="sh">kubectl delete secret db-user-pass
 </pre></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مقایسه‌ی ConfigMap و Secret در یک نگاه</span></summary>
   <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی ConfigMap و Secret در یک نگاه</b>
     <div class="tbl"><table><thead><tr><th>ویژگی</th><th>ConfigMap</th><th>Secret</th></tr></thead><tbody>
       <tr><td>هدف</td><td>داده‌ی غیرمحرمانه</td><td>داده‌ی محرمانه (password،‏ token،‏ key)</td></tr>
@@ -2651,9 +2656,10 @@ kubectl rollout status deployment/&lt;name&gt;
       <tr><td>namespace</td><td colspan="2">namespaced؛‏ فقط از Podهای همان namespace قابل ارجاع</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
-  <div id="ch6-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۶،‏ بخش اول <small>۱۶ تمرین</small></div>
+  <details id="ch6-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۶،‏ بخش اول <small>۱۶ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>یک هم‌تیمی می‌گوید: «Secretهای ما امن هستند چون مقدارشان base64 است و در <code>kubectl describe</code> هم دیده نمی‌شوند.» این جمله را بر اساس مستندات نقد کنید. دقیقا چه چیزهایی Secret را از ConfigMap امن‌تر می‌کند و چه چیزهایی نه؟
         <details class="ans"><summary>پاسخ</summary>
@@ -2937,7 +2943,7 @@ kubectl rollout restart deployment/api-gateway
           <p><b>پیشگیری:</b> ساخت Secretها را با <code>--from-file</code> و <code>echo -n</code>/<code>printf</code> یا با <code>stringData</code>/<code>--from-literal</code> (که encoding را خود کوبرنتیز انجام می‌دهد) استاندارد کنید؛‏ از <code>kubectl edit</code> برای Secretها استفاده نکنید (مقدار base64 دستی،‏ خطای انسانی و ماندن در shell history؛‏ Caution صفحه‌ی kubectl). یک گام اعتبارسنجی در runbook بگذارید که طول بایت در <code>describe</code> را با طول مورد انتظار مقایسه کند. همچنین readiness probeای که اتصال به Redis را بررسی کند،‏ باعث می‌شد rollout پیش از خراب کردن همه‌ی Podها متوقف شود.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 <!-- chapter 10 part b -->
   <h3 id="ch6-b-managing">Managing Resources for Containers</h3>
   <p>وقتی یک Pod را مشخص می‌کنید،‏ می‌توانید به‌صورت اختیاری مقدار هر resource موردنیاز هر container را هم مشخص کنید. رایج‌ترین resourceهایی که مشخص می‌شوند CPU و memory (RAM) هستند؛‏ resourceهای دیگری هم وجود دارند.</p>
@@ -2952,6 +2958,8 @@ kubectl rollout restart deployment/api-gateway
   <div class="note"><b>نکته</b><p>یک feature به نام <code>MemoryQoS</code> وجود دارد که memory throttling و یک tiered memory reservation اختیاری را روی Linux nodeها با استفاده از cgroup v2 اضافه می‌کند. برای جزئیات،‏ به Memory QoS with cgroup v2 در صفحه‌ی Pod Quality of Service Classes (فصل ۳) مراجعه کنید.</p></div>
   <div class="note"><b>نکته</b><p>اگر یک limit برای یک resource مشخص کنید،‏ اما هیچ requestای مشخص نکنید،‏ و هیچ admission-time mechanismای یک default request برای آن resource اعمال نکرده باشد،‏ آنگاه کوبرنتیز همان limitی که مشخص کرده‌اید را کپی و به‌عنوان مقدار request آن resource استفاده می‌کند.</p></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">request در برابر limit،‏ خلاصه‌ی تفاوت‌ها</span></summary>
   <div class="deep"><b>توضیح تکمیلی: request در برابر limit،‏ خلاصه‌ی تفاوت‌ها</b>
     <div class="tbl"><table><thead><tr><th>ویژگی</th><th>request</th><th>limit</th></tr></thead><tbody>
       <tr><td>استفاده‌ی اصلی</td><td>ورودی scheduler برای انتخاب node</td><td>سقفی که kubelet/kernel enforce می‌کند</td></tr>
@@ -2961,6 +2969,7 @@ kubectl rollout restart deployment/api-gateway
       <tr><td>اگر تعیین نشود</td><td>اگر limit تعیین شده باشد،‏ برابر limit فرض می‌شود</td><td>می‌تواند تا کل ظرفیت node مصرف کند (بدون LimitRange)</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch6-b-resource-types">Resource types</h3>
   <p>یک <i>resource type</i> یک base unit دارد و می‌تواند requested،‏ limited،‏ یا هر دو باشد. Kubernetes این built-in resource typeها را دارد:</p>
@@ -3092,6 +3101,8 @@ kubectl exec -n pod-resources-example pod-resources-demo -c pod-resources-demo-c
   <h3 id="ch6-b-scheduled">How Pods with resource requests are scheduled</h3>
   <p>وقتی یک Pod می‌سازید،‏ Kubernetes scheduler یک node برای اجرای آن Pod انتخاب می‌کند. هر node برای هر resource type یک ظرفیت (capacity) حداکثری دارد: مقدار CPU و memory که می‌تواند در اختیار Podها بگذارد. scheduler تضمین می‌کند که برای هر resource type،‏ مجموع resource requestهای containerهای schedule‌شده کمتر از ظرفیت node باشد.</p>
   <p>توجه کنید که حتی اگر مصرف واقعی memory یا CPU روی nodeها خیلی پایین باشد،‏ اگر بررسی ظرفیت شکست بخورد،‏ scheduler باز هم از قرار دادن Pod روی آن node خودداری می‌کند. این کار از کمبود resource روی node در زمانی که مصرف بعدا بالا می‌رود محافظت می‌کند،‏ مثلا در ساعت اوج روزانه‌ی تعداد درخواست‌ها.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">scheduler «مصرف» را نمی‌بیند،‏ «request» را می‌بیند</span></summary>
   <div class="deep"><b>توضیح تکمیلی: scheduler «مصرف» را نمی‌بیند،‏ «request» را می‌بیند</b>
     <p>scheduler برای تصمیم‌گیری از <code>.status.allocatable</code> هر node و مجموع requestهای Podهای موجود روی آن استفاده می‌کند،‏ نه از مصرف لحظه‌ای که metrics-server گزارش می‌دهد. مثال: node با allocatable برابر <code>cpu: 4</code>،‏ سه Pod دارد که هر کدام <code>cpu: 1200m</code> request کرده‌اند (مجموع 3600m) ولی در عمل هر کدام فقط 50m مصرف می‌کنند. یک Pod جدید با request برابر <code>500m</code> روی این node جا نمی‌شود (3600m + 500m &gt; 4000m)،‏ هرچند node عملا ۹۵٪ بیکار است. نتیجه‌ی عملی دو طرف دارد:</p>
     <ul>
@@ -3100,6 +3111,7 @@ kubectl exec -n pod-resources-example pod-resources-demo -c pod-resources-demo-c
     </ul>
     <p>برای همین request باید نزدیک به مصرف واقعی معمول (مثلا صدک ۹۰ تا ۹۵ مصرف) باشد و limit برای حالت اوج؛‏ ابزارهایی مثل Vertical Pod Autoscaler (فصل ۱۰) برای پیشنهاد همین مقدار ساخته شده‌اند.</p>
   </div>
+  </details>
 
   <h3 id="ch6-b-applied">How Kubernetes applies resource requests and limits</h3>
   <p>وقتی kubelet یک container را به‌عنوان بخشی از یک Pod اجرا می‌کند،‏ requests و limits مربوط به memory و CPU آن container را به container runtime (نرم‌افزاری که containerها را روی Node اجرا می‌کند) می‌دهد.</p>
@@ -3115,16 +3127,6 @@ kubectl exec -n pod-resources-example pod-resources-demo -c pod-resources-demo-c
   <p>یک container ممکن است برای مدت طولانی اجازه‌ی عبور از CPU limit خود را داشته باشد یا نداشته باشد. اما container runtimeها Podها یا containerها را به خاطر مصرف زیاد CPU terminate نمی‌کنند.</p>
   <p>برای این‌که مشخص کنید یک container به خاطر resource limitها قابل schedule نیست یا kill می‌شود،‏ بخش Troubleshooting را در ادامه ببینید.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: نگاشت request و limit به فایل‌های cgroup v2 (خارج از مستندات رسمی)</b>
-    <p>برای درک عمیق throttling و OOM،‏ دانستن این نگاشت (در runtimeهای رایج مثل containerd و CRI-O با cgroup v2) مفید است:</p>
-    <div class="tbl"><table><thead><tr><th>فیلد در Pod spec</th><th>فایل cgroup v2</th><th>مثال</th></tr></thead><tbody>
-      <tr><td><code>limits.cpu: 500m</code></td><td><code>cpu.max</code> (quota و period)</td><td><code>‎50000 100000‎</code> یعنی 50ms در هر 100ms</td></tr>
-      <tr><td><code>requests.cpu: 250m</code></td><td><code>cpu.weight</code></td><td>وزن نسبی متناسب با shares قدیمی (250m معادل 256 share)</td></tr>
-      <tr><td><code>limits.memory: 128Mi</code></td><td><code>memory.max</code></td><td><code>‎134217728‎</code></td></tr>
-      <tr><td>بدون limit</td><td><code>cpu.max</code> / <code>memory.max</code></td><td><code>max</code></td></tr>
-    </tbody></table></div>
-    <p>نکته‌ی مهم CPU limit:‏ quota در هر period (معمولا 100ms) حساب می‌شود. یک برنامه‌ی multi-thread با ۸ thread فعال و <code>limits.cpu: 1</code> می‌تواند کل 100ms سهمیه را در حدود 12.5ms واقعی مصرف کند و سپس ۸۷.۵ms باقیمانده‌ی آن period را throttle شود؛‏ این همان دلیل افزایش latency صدک‌های بالا (p99) در سرویس‌های حساس به تاخیر است،‏ حتی وقتی میانگین مصرف CPU خیلی کمتر از limit است. شاخص‌های <code>nr_throttled</code> و <code>throttled_usec</code> در فایل <code>cpu.stat</code> (یا metric <code>container_cpu_cfs_throttled_periods_total</code> در cAdvisor) این را نشان می‌دهند.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: دیدن OOMKilled و CPU throttling</b>
     <p>روی cluster k3s یک Pod با memory limit کوچک بسازید که بیشتر از آن حافظه مصرف می‌کند (تصویر <code>polinux/stress</code> در مستندات task «Assign Memory Resources» هم استفاده شده است):</p>
     <div class="code"><div class="lbl"><span>oom-demo.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -3216,6 +3218,18 @@ kubectl get --raw "/apis/metrics.k8s.io/v1beta1/namespaces/my-namespace/pods" | 
   </ul>
   <p>اگر مدیر یک cluster یا namespace هستید،‏ می‌توانید یک ResourceQuota هم تنظیم کنید که مصرف memory را محدود کند؛‏ همچنین ممکن است بخواهید یک LimitRange برای enforcement بیشتر تعریف کنید (هر دو در ادامه‌ی همین بخش). اگر برای هر Pod مقدار <code>spec.containers[].resources.limits.memory</code> را مشخص کنید،‏ آنگاه حداکثر اندازه‌ی یک volume از نوع <code>emptyDir</code> برابر memory limit همان Pod خواهد بود.</p>
   <p>به‌عنوان جایگزین،‏ یک cluster administrator می‌تواند با یک مکانیزم policy مثل ValidatingAdmissionPolicy،‏ برای volumeهای <code>emptyDir</code> در Podهای جدید size limit اجباری کند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">نگاشت request و limit به فایل‌های cgroup v2 (خارج از مستندات رسمی) · یک emptyDir امن در حافظه</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: نگاشت request و limit به فایل‌های cgroup v2 (خارج از مستندات رسمی)</b>
+    <p>برای درک عمیق throttling و OOM،‏ دانستن این نگاشت (در runtimeهای رایج مثل containerd و CRI-O با cgroup v2) مفید است:</p>
+    <div class="tbl"><table><thead><tr><th>فیلد در Pod spec</th><th>فایل cgroup v2</th><th>مثال</th></tr></thead><tbody>
+      <tr><td><code>limits.cpu: 500m</code></td><td><code>cpu.max</code> (quota و period)</td><td><code>‎50000 100000‎</code> یعنی 50ms در هر 100ms</td></tr>
+      <tr><td><code>requests.cpu: 250m</code></td><td><code>cpu.weight</code></td><td>وزن نسبی متناسب با shares قدیمی (250m معادل 256 share)</td></tr>
+      <tr><td><code>limits.memory: 128Mi</code></td><td><code>memory.max</code></td><td><code>‎134217728‎</code></td></tr>
+      <tr><td>بدون limit</td><td><code>cpu.max</code> / <code>memory.max</code></td><td><code>max</code></td></tr>
+    </tbody></table></div>
+    <p>نکته‌ی مهم CPU limit:‏ quota در هر period (معمولا 100ms) حساب می‌شود. یک برنامه‌ی multi-thread با ۸ thread فعال و <code>limits.cpu: 1</code> می‌تواند کل 100ms سهمیه را در حدود 12.5ms واقعی مصرف کند و سپس ۸۷.۵ms باقیمانده‌ی آن period را throttle شود؛‏ این همان دلیل افزایش latency صدک‌های بالا (p99) در سرویس‌های حساس به تاخیر است،‏ حتی وقتی میانگین مصرف CPU خیلی کمتر از limit است. شاخص‌های <code>nr_throttled</code> و <code>throttled_usec</code> در فایل <code>cpu.stat</code> (یا metric <code>container_cpu_cfs_throttled_periods_total</code> در cAdvisor) این را نشان می‌دهند.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: یک emptyDir امن در حافظه</b>
     <p>الگوی توصیه‌شده این است که هم <code>sizeLimit</code> و هم memory limit تعیین شود،‏ و به یاد داشته باشید که هر بایت نوشته‌شده در این volume از memory limit container کم می‌کند:</p>
     <div class="code"><div class="lbl"><span>tmpfs-cache.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -3243,6 +3257,7 @@ spec:
 </pre></div>
     <p>اگر برنامه ۴۰۰Mi heap مصرف کند و ۱۲۸Mi فایل در <code>/cache</code> بنویسد،‏ مجموع (۵۲۸Mi) از limit عبور می‌کند و container با <code>OOMKilled</code> متوقف می‌شود،‏ هرچند «خود برنامه» از ۵۱۲Mi کمتر مصرف کرده است. همچنین اگر فایل‌ها از <code>sizeLimit</code> فراتر روند،‏ kubelet Pod را evict می‌کند (رفتار sizeLimit در فصل ۷).</p>
   </div>
+  </details>
 
   <h3 id="ch6-b-ephemeral">Local ephemeral storage</h3>
   <p>برای مفاهیم کلی درباره‌ی local ephemeral storage و راهنمایی درباره‌ی پیکربندی requests و/یا limits مربوط به ephemeral storage برای یک container،‏ صفحه‌ی local ephemeral storage را ببینید (فصل ۷).</p>
@@ -3255,6 +3270,8 @@ spec:
     <li>logهای خود Pod (معمولا در مسیر <code>/var/log/pods</code> ذخیره می‌شوند).</li>
     <li>فایل‌های سیستمی تحت مدیریت کوبرنتیز که به داخل Pod map می‌شوند،‏ مثل <code>/etc/hosts</code>.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">requests/limits برای ephemeral-storage و رفتار eviction</span></summary>
   <div class="deep"><b>توضیح تکمیلی: requests/limits برای ephemeral-storage و رفتار eviction</b>
     <p>طبق صفحه‌ی ephemeral storage (فصل ۷)،‏ هر container می‌تواند <code>requests.ephemeral-storage</code> و <code>limits.ephemeral-storage</code> داشته باشد. scheduler مجموع requestها را با ظرفیت allocatable ephemeral storage روی node مقایسه می‌کند. اگر مصرف یک container از limit خودش،‏ یا مجموع مصرف Pod از مجموع limitها بیشتر شود،‏ یا یک <code>emptyDir</code> از <code>sizeLimit</code> خود عبور کند،‏ kubelet آن Pod را برای eviction علامت می‌زند. برخلاف memory،‏ این enforcement با OOM نیست؛‏ kubelet به‌صورت دوره‌ای مصرف را اندازه می‌گیرد،‏ پس بین عبور از limit و eviction یک تاخیر وجود دارد.</p>
     <div class="code"><div class="lbl"><span>ephemeral-demo.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -3282,6 +3299,7 @@ Message:          Pod ephemeral local storage usage exceeds the total limit of c
 </pre></div>
     <p>(متن دقیق پیام ممکن است بین نسخه‌ها کمی فرق کند؛‏ خارج از مستندات رسمی.)</p>
   </div>
+  </details>
 
   <h3 id="ch6-b-extended">Extended resources</h3>
   <p>Extended resourceها نام‌های fully-qualified برای resourceهایی خارج از دامنه‌ی <code>kubernetes.io</code> هستند. آن‌ها به cluster operatorها اجازه می‌دهند resourceهایی را که built-in در کوبرنتیز نیستند advertise کنند و به کاربران اجازه می‌دهند آن‌ها را مصرف کنند.</p>
@@ -3364,9 +3382,12 @@ spec:
       limits:
         example.com/foo: 1
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">GPU به‌عنوان رایج‌ترین extended resource</span></summary>
   <div class="deep"><b>توضیح تکمیلی: GPU به‌عنوان رایج‌ترین extended resource</b>
     <p>در production،‏ رایج‌ترین extended resource همان <code>nvidia.com/gpu</code> است که device plugin انویدیا advertise می‌کند (خارج از مستندات رسمی). همه‌ی قواعد بالا دقیقا روی آن صدق می‌کند: مقدار باید عدد صحیح باشد (نمی‌توانید <code>‎0.5‎</code> GPU بخواهید)،‏ overcommit ممکن نیست،‏ و اگر فقط <code>limits</code> را بنویسید request به‌طور خودکار برابر آن می‌شود. اگر تمام GPUهای cluster در اختیار Podهای دیگر باشند،‏ Pod جدید با پیغامی شبیه <code>0/12 nodes are available: 12 Insufficient nvidia.com/gpu</code> در حالت Pending می‌ماند.</p>
   </div>
+  </details>
 
   <h3 id="ch6-b-pid-short">PID limiting</h3>
   <p>محدودیت‌های Process ID (PID) اجازه می‌دهند kubelet طوری پیکربندی شود که تعداد PIDهایی که یک Pod مشخص می‌تواند مصرف کند محدود شود. برای اطلاعات،‏ بخش PID Limiting را در ادامه‌ی همین فصل ببینید.</p>
@@ -3422,10 +3443,6 @@ Allocated resources:
   <p>فیلد <code>.status.allocatable</code> مقدار resourceهایی را که روی آن node برای Podها در دسترس است توصیف می‌کند (برای مثال: ۱۵ virtual CPU و 7538 MiB memory). برای اطلاعات بیشتر درباره‌ی node allocatable resources در کوبرنتیز،‏ task «Reserve Compute Resources for System Daemons» را ببینید.</p>
   <p>می‌توانید resource quota پیکربندی کنید تا مقدار کل resourceهایی که یک namespace می‌تواند مصرف کند محدود شود. Kubernetes quotaها را برای objectهای یک namespace مشخص وقتی enforce می‌کند که یک ResourceQuota در آن namespace وجود داشته باشد. برای مثال،‏ اگر namespaceهای مشخصی را به تیم‌های مختلف اختصاص دهید،‏ می‌توانید ResourceQuotaهایی به آن namespaceها اضافه کنید. تنظیم resource quota کمک می‌کند که یک تیم آن‌قدر از یک resource استفاده نکند که این استفاده‌ی بیش از حد روی تیم‌های دیگر اثر بگذارد.</p>
   <p>همچنین باید در نظر بگیرید که چه دسترسی‌ای به آن namespace می‌دهید: دسترسی نوشتن <b>کامل</b> (full write access) به یک namespace به دارنده‌ی آن اجازه می‌دهد هر resourceای را حذف کند،‏ از جمله یک ResourceQuota پیکربندی‌شده.</p>
-  <div class="deep"><b>توضیح تکمیلی: محاسبه‌ی عدد ۱.۱۲۰ CPU و ۶.۲۳Gi</b>
-    <p>allocatable CPU برابر 1800m است و مجموع CPU Requests برابر 680m،‏ پس 1800m − 680m = 1120m = ۱.۱۲۰ CPU باقی می‌ماند. برای memory: 7474992Ki ≈ 7300Mi،‏ منهای 920Mi ≈ 6380Mi ≈ ۶.۲۳Gi. دقت کنید که این محاسبه فقط با <b>Requests</b> انجام می‌شود؛‏ ستون Limits (که می‌تواند بیش از ۱۰۰٪ باشد) در تصمیم scheduler نقشی ندارد. همچنین درصدها نسبت به allocatable حساب می‌شوند نه capacity.</p>
-  </div>
-
   <h4>My container is terminated</h4>
   <p>ممکن است container شما به دلیل کمبود resource (resource-starved) terminate شود. برای بررسی این‌که آیا یک container به دلیل رسیدن به resource limit در حال kill شدن است،‏ <code>kubectl describe pod</code> را روی Pod موردنظر اجرا کنید:</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl describe pod simmemleak-hra99
@@ -3469,6 +3486,11 @@ Events:
 </pre></div>
   <p>در مثال بالا،‏ <code>Restart Count:  5</code> نشان می‌دهد که container <code>simmemleak</code> در این Pod تاکنون پنج بار terminate و restart شده است. reason <code>OOMKilled</code> نشان می‌دهد که container سعی کرده بیش از limit خود memory مصرف کند.</p>
   <p>گام بعدی شما ممکن است بررسی کد برنامه برای memory leak باشد. اگر متوجه شدید که برنامه همان‌طور که انتظار دارید رفتار می‌کند،‏ در نظر بگیرید که memory limit (و احتمالا request) بالاتری برای آن container تعیین کنید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">محاسبه‌ی عدد ۱.۱۲۰ CPU و ۶.۲۳Gi · Exit Code 137 و تفاوت OOMKilled با Evicted</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: محاسبه‌ی عدد ۱.۱۲۰ CPU و ۶.۲۳Gi</b>
+    <p>allocatable CPU برابر 1800m است و مجموع CPU Requests برابر 680m،‏ پس 1800m − 680m = 1120m = ۱.۱۲۰ CPU باقی می‌ماند. برای memory: 7474992Ki ≈ 7300Mi،‏ منهای 920Mi ≈ 6380Mi ≈ ۶.۲۳Gi. دقت کنید که این محاسبه فقط با <b>Requests</b> انجام می‌شود؛‏ ستون Limits (که می‌تواند بیش از ۱۰۰٪ باشد) در تصمیم scheduler نقشی ندارد. همچنین درصدها نسبت به allocatable حساب می‌شوند نه capacity.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: Exit Code 137 و تفاوت OOMKilled با Evicted</b>
     <p>Exit Code 137 یعنی 128 + 9،‏ یعنی process با سیگنال <code>SIGKILL</code> متوقف شده است. اما همه‌ی 137ها OOMKilled نیستند؛‏ فقط وقتی <code>Reason: OOMKilled</code> دیده شود kernel OOM killer مسئول بوده است. دو حالت را از هم جدا کنید:</p>
     <div class="tbl"><table><thead><tr><th>ویژگی</th><th>OOMKilled</th><th>Evicted (node-pressure)</th></tr></thead><tbody>
@@ -3478,6 +3500,7 @@ Events:
       <tr><td>راه‌حل معمول</td><td>بالا بردن limit یا رفع leak</td><td>request دقیق‌تر،‏ ظرفیت بیشتر،‏ کاهش overcommit</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch6-b-windows">Resource Management for Windows nodes</h3>
   <p>این صفحه تفاوت‌های مدیریت resource بین Linux و Windows را شرح می‌دهد.</p>
@@ -3496,6 +3519,8 @@ Events:
     <p>schedule کردن Podها بدون limit ممکن است Windows nodeها را over-provision کند و در موارد حاد باعث unhealthy شدن nodeها شود.</p></div>
   <p>روی Windows،‏ یک good practice این است که حداقل 2GiB memory رزرو کنید.</p>
   <p>برای تعیین این‌که چه مقدار CPU رزرو شود،‏ حداکثر تراکم Pod (maximum pod density) را برای هر node مشخص کنید و مصرف CPU سرویس‌های سیستمی در حال اجرا روی آن را monitor کنید،‏ سپس مقداری انتخاب کنید که نیازهای workload شما را برآورده کند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مقایسه‌ی رفتار Linux و Windows</span></summary>
   <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی رفتار Linux و Windows</b>
     <div class="tbl"><table><thead><tr><th>موضوع</th><th>Linux node</th><th>Windows node</th></tr></thead><tbody>
       <tr><td>مرز resource</td><td>cgroup (سطح Pod و container)</td><td>job object برای هر container + namespace filter</td></tr>
@@ -3507,6 +3532,7 @@ Events:
     </tbody></table></div>
     <p>نتیجه‌ی عملی: روی Windows،‏ memory limit کم به‌جای یک crash سریع (که در Linux دیده می‌شود) معمولا به یک برنامه‌ی کند و node پرفشار منجر می‌شود؛‏ پس ساختن alert بر اساس latency و paging روی Windows nodeهای مهم‌تر است (خارج از مستندات رسمی).</p>
   </div>
+  </details>
 
   <h3 id="ch6-b-policies">Policies</h3>
   <p>policyهای کوبرنتیز پیکربندی‌هایی هستند که پیکربندی‌های دیگر یا رفتارهای runtime را مدیریت می‌کنند. Kubernetes انواع مختلفی از policy ارائه می‌دهد که در ادامه توضیح داده شده‌اند:</p>
@@ -3574,6 +3600,8 @@ spec:
     <li>Process ID limits and reservations برای محدود کردن و رزرو کردن PIDهای allocatable استفاده می‌شوند (بخش PID Limiting در ادامه).</li>
     <li>Node Resource Managers می‌توانند resourceهای compute،‏ memory و device را برای workloadهای latency-critical و high-throughput مدیریت کنند (بخش Resource Managers در ادامه).</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کدام ابزار policy برای کدام مسئله؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کدام ابزار policy برای کدام مسئله؟</b>
     <div class="tbl"><table><thead><tr><th>مسئله</th><th>ابزار مناسب</th><th>زمان اعمال</th></tr></thead><tbody>
       <tr><td>سقف مجموع CPU/memory یک تیم</td><td>ResourceQuota</td><td>admission (هنگام ساخت/به‌روزرسانی)</td></tr>
@@ -3584,6 +3612,7 @@ spec:
       <tr><td>CPU اختصاصی برای workload حساس به latency</td><td>CPU/Topology/Memory manager در kubelet</td><td>هنگام admission روی node</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch6-b-limitrange">Limit Ranges</h3>
   <p>به‌طور پیش‌فرض،‏ containerها روی یک cluster کوبرنتیز با compute resourceهای نامحدود اجرا می‌شوند. با استفاده از resource quotaهای کوبرنتیز،‏ administratorها (که به آن‌ها <i>cluster operator</i> هم گفته می‌شود) می‌توانند مصرف و ساخت resourceهای cluster (مانند CPU time،‏ memory و persistent storage) را درون یک namespace مشخص محدود کنند. درون یک namespace،‏ یک Pod می‌تواند به اندازه‌ای CPU و memory مصرف کند که ResourceQuotaهای اعمال‌شده به آن namespace اجازه می‌دهند. به‌عنوان cluster operator یا namespace-level administrator،‏ ممکن است نگران این هم باشید که یک object به‌تنهایی همه‌ی resourceهای در دسترس در یک namespace را در انحصار خود نگیرد.</p>
@@ -3659,9 +3688,6 @@ spec:
       limits:
         cpu: 700m
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا این تداخل رخ می‌دهد؟</b>
-    <p>ترتیب کار admission این است: (۱) LimitRange چون container فیلد <code>limits.cpu</code> ندارد،‏ <code>default.cpu: 500m</code> را به‌عنوان limit inject می‌کند؛‏ request موجود (700m) دست نمی‌خورد،‏ چون فقط مقادیر غایب پر می‌شوند. (۲) validation معمولی Pod بررسی می‌کند که request &lt;= limit باشد؛‏ 700m &gt; 500m است،‏ پس درخواست invalid اعلام می‌شود. توجه کنید که پیام خطا از validation خود Pod می‌آید،‏ نه از بررسی max/min مربوط به LimitRange،‏ و به همین دلیل در نگاه اول گیج‌کننده است: کاربر اصلا limit ننوشته اما خطای «must be less than or equal to cpu limit» می‌گیرد. درس production: مقدار <code>default</code> (limit پیش‌فرض) را طوری انتخاب کنید که از مقادیر request رایج تیم‌ها کمتر نباشد،‏ یا تیم‌ها را ملزم کنید limit را صریح بنویسند.</p>
-  </div>
   <h4>Example resource constraints</h4>
   <p>نمونه‌هایی از policyهایی که می‌توان با <code>LimitRange</code> ساخت:</p>
   <ul>
@@ -3714,6 +3740,13 @@ PersistentVolumeClaim  storage   1Gi  50Gi   -                -              -
     <p>همچنین ساختن یک PVC با <code>storage: 100Gi</code> در این namespace با خطای <code>403 Forbidden</code> و پیامی درباره‌ی <code>maximum storage usage per PersistentVolumeClaim is 50Gi</code> رد می‌شود.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا این تداخل رخ می‌دهد؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا این تداخل رخ می‌دهد؟</b>
+    <p>ترتیب کار admission این است: (۱) LimitRange چون container فیلد <code>limits.cpu</code> ندارد،‏ <code>default.cpu: 500m</code> را به‌عنوان limit inject می‌کند؛‏ request موجود (700m) دست نمی‌خورد،‏ چون فقط مقادیر غایب پر می‌شوند. (۲) validation معمولی Pod بررسی می‌کند که request &lt;= limit باشد؛‏ 700m &gt; 500m است،‏ پس درخواست invalid اعلام می‌شود. توجه کنید که پیام خطا از validation خود Pod می‌آید،‏ نه از بررسی max/min مربوط به LimitRange،‏ و به همین دلیل در نگاه اول گیج‌کننده است: کاربر اصلا limit ننوشته اما خطای «must be less than or equal to cpu limit» می‌گیرد. درس production: مقدار <code>default</code> (limit پیش‌فرض) را طوری انتخاب کنید که از مقادیر request رایج تیم‌ها کمتر نباشد،‏ یا تیم‌ها را ملزم کنید limit را صریح بنویسند.</p>
+  </div>
+  </details>
+
   <h3 id="ch6-b-quotas">Resource Quotas</h3>
   <p>وقتی چند کاربر یا تیم یک cluster با تعداد ثابتی node را به اشتراک می‌گذارند،‏ این نگرانی وجود دارد که یک تیم بیش از سهم منصفانه‌ی خود از resourceها استفاده کند.</p>
   <p><i>Resource quota</i>ها ابزاری برای administratorها هستند تا به این نگرانی پاسخ دهند.</p>
@@ -3746,17 +3779,6 @@ PersistentVolumeClaim  storage   1Gi  50Gi   -                -              -
     <li>namespace "testing" را به استفاده از ۱ core و 1GiB RAM محدود کنید. اجازه دهید namespace "production" هر مقداری استفاده کند.</li>
   </ul>
   <p>در حالتی که ظرفیت کل cluster کمتر از مجموع quotaهای namespaceها باشد،‏ ممکن است بر سر resourceها contention ایجاد شود. این وضعیت به شکل first-come-first-served (هر که زودتر آمد) مدیریت می‌شود.</p>
-  <div class="deep"><b>توضیح تکمیلی: quota و rollout یک Deployment</b>
-    <p>چون quota در admission هر <b>Pod</b> بررسی می‌شود (نه Deployment)،‏ خطای quota در خود Deployment دیده نمی‌شود بلکه در eventهای ReplicaSet ظاهر می‌شود. این نکته هنگام rolling update حیاتی است: با <code>maxSurge: 25%</code> و ۱۲ replica،‏ در حین rollout تا ۱۵ Pod به‌طور هم‌زمان وجود دارند و همه‌ی آن‌ها از quota سهم می‌گیرند. اگر quota دقیقا برای ۱۲ Pod تنظیم شده باشد،‏ ReplicaSet جدید نمی‌تواند Pod اضافی بسازد و rollout گیر می‌کند:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl describe rs -n shop -l app=api | grep -A3 Events
-kubectl get deploy api -n shop -o jsonpath='{.status.conditions[?(@.type=="ReplicaFailure")].message}{"\n"}'
-</pre></div>
-    <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">  Warning  FailedCreate  12s (x15 over 2m)  replicaset-controller  Error creating: pods "api-7d9c6b-x2k4p" is forbidden: exceeded quota: compute, requested: requests.cpu=500m, used: requests.cpu=6, limited: requests.cpu=6
-pods "api-7d9c6b-x2k4p" is forbidden: exceeded quota: compute, requested: requests.cpu=500m, used: requests.cpu=6, limited: requests.cpu=6
-</pre></div>
-    <p>راه‌حل‌ها: یا quota را با در نظر گرفتن surge تنظیم کنید (<code>replicas × (1 + maxSurge)</code>)،‏ یا برای این Deployment <code>maxSurge: 0</code> و <code>maxUnavailable: 1</code> بگذارید تا rollout بدون Pod اضافی انجام شود (فصل ۴). پیام خطا با قالب <code>exceeded quota: NAME, requested: ..., used: ..., limited: ...</code> دقیقا نشان می‌دهد کدام resource و کدام quota مانع شده است.</p>
-  </div>
-
   <h4>Enabling Resource Quota</h4>
   <p>پشتیبانی از ResourceQuota در بسیاری از توزیع‌های کوبرنتیز به‌طور پیش‌فرض فعال است. وقتی فعال است که flag <code>--enable-admission-plugins=</code> در API server مقدار <code>ResourceQuota</code> را به‌عنوان یکی از آرگومان‌هایش داشته باشد.</p>
   <p>یک resource quota در یک namespace مشخص وقتی enforce می‌شود که یک ResourceQuota در آن namespace وجود داشته باشد.</p>
@@ -3939,10 +3961,6 @@ count/pods                    2     3
 count/replicasets.apps        1     4
 count/secrets                 1     4
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا secrets از ابتدا Used=1 است؟</b>
-    <p>در خروجی‌های بالا،‏ مقدار <code>secrets</code> در namespace تازه‌ساخته <code>‎1‎</code> است. دلیل آن در نسخه‌های قدیمی‌تر،‏ Secret خودکار service account token بود؛‏ در نسخه‌های جدید که آن Secret دیگر به‌طور خودکار ساخته نمی‌شود،‏ ممکن است این عدد صفر باشد (خارج از مستندات رسمی). نکته‌ی کلی‌تر: هر چیزی که controllerها به‌طور خودکار در namespace می‌سازند (مثل ConfigMap <code>kube-root-ca.crt</code> که در هر namespace ساخته می‌شود) هم از quota سهم می‌گیرد؛‏ پس quotaهای object count را خیلی تنگ تنظیم نکنید. برای به‌روزرسانی یک quota هم کافی است manifest را ویرایش و <code>kubectl apply</code> کنید،‏ یا از <code>kubectl edit quota NAME</code> استفاده کنید.</p>
-  </div>
-
   <h4>Quota and Cluster Capacity</h4>
   <p>ResourceQuotaها مستقل از ظرفیت cluster هستند. آن‌ها با واحدهای مطلق بیان می‌شوند. پس اگر nodeهای بیشتری به cluster اضافه کنید،‏ این کار به‌طور خودکار به هر namespace توانایی مصرف resource بیشتر را <i>نمی‌دهد</i>.</p>
   <p>گاهی ممکن است policyهای پیچیده‌تری مطلوب باشد،‏ مانند:</p>
@@ -3953,10 +3971,6 @@ count/secrets                 1     4
   </ul>
   <p>چنین policyهایی را می‌توان با استفاده از <code>ResourceQuotas</code> به‌عنوان بلوک‌های سازنده پیاده‌سازی کرد،‏ با نوشتن یک «controller» که مصرف quota را watch می‌کند و hard limitهای quota هر namespace را بر اساس سیگنال‌های دیگر تنظیم می‌کند.</p>
   <p>توجه کنید که resource quota کل resourceهای تجمعی cluster را تقسیم می‌کند،‏ اما هیچ محدودیتی حول nodeها ایجاد نمی‌کند: Podهایی از چند namespace ممکن است روی یک node اجرا شوند.</p>
-  <div class="deep"><b>توضیح تکمیلی: quota نویزی‌بودن همسایه را حل نمی‌کند</b>
-    <p>جمله‌ی آخر مستندات در production مهم است: quota تضمین می‌کند مجموع <b>requestها</b>ی یک تیم از عددی بیشتر نشود،‏ اما Podهای تیم‌های مختلف روی همان nodeها کنار هم اجرا می‌شوند. اگر تیم B برای Podهایش request کم و limit زیاد (یا بدون limit) بگذارد،‏ این Podها می‌توانند در زمان اوج بیش از سهم خود CPU و memory مصرف کنند (مشکل noisy neighbour). برای جداسازی در سطح node باید از ابزارهای دیگری مثل taint/toleration و node affinity برای nodeهای اختصاصی (فصل ۹)،‏ quota روی <code>limits.*</code>،‏ و LimitRange با <code>maxLimitRequestRatio</code> استفاده کنید.</p>
-  </div>
-
   <h4>Quota scopes</h4>
   <p>هر quota می‌تواند مجموعه‌ای از <code>scopes</code> مرتبط داشته باشد. یک quota فقط وقتی مصرف یک resource را اندازه می‌گیرد که آن resource با اشتراک (intersection) scopeهای فهرست‌شده match شود.</p>
   <p>وقتی یک scope به quota اضافه می‌شود،‏ تعداد resourceهایی که پشتیبانی می‌کند را به resourceهای مرتبط با آن scope محدود می‌کند. resourceهایی که در quota خارج از مجموعه‌ی مجاز مشخص شوند باعث validation error می‌شوند.</p>
@@ -4035,10 +4049,6 @@ kubectl run be --image=nginx -n team-a   # بدون resources؛ اگر LimitRang
   <p>یک Pod وقتی <i>terminating</i> در نظر گرفته می‌شود که فیلد <code>.spec.activeDeadlineSeconds</code> آن روی هر عددی تنظیم شده باشد.</p>
   <p>می‌توانید از یک ResourceQuota با این scope برای مدیریت resourceهای زیر استفاده کنید:</p>
   <ul><li><code>count.pods</code></li><li><code>pods</code></li><li><code>cpu</code></li><li><code>memory</code></li><li><code>requests.cpu</code></li><li><code>requests.memory</code></li><li><code>limits.cpu</code></li><li><code>limits.memory</code></li></ul>
-  <div class="deep"><b>توضیح تکمیلی: «terminating» در اینجا به معنای در حال حذف نیست</b>
-    <p>در این scope،‏ «Terminating» به Podهایی اشاره دارد که یک deadline دارند (<code>activeDeadlineSeconds</code>)،‏ یعنی عمر محدود دارند،‏ مثل Podهای Job که deadline برایشان تنظیم شده است؛‏ ربطی به Podی که با <code>kubectl delete</code> در حالت Terminating است ندارد. کاربرد عملی: می‌توانید یک بودجه‌ی جدا برای batchهای کوتاه‌عمر (Terminating) و بودجه‌ی جدا برای سرویس‌های long-running (NotTerminating) تعریف کنید تا یک Job سنگین بودجه‌ی سرویس‌های آنلاین را نخورد. توجه کنید <code>activeDeadlineSeconds</code> در spec خود Job از طریق Pod template به Podها منتقل نمی‌شود؛‏ باید آن را در <code>spec.template.spec.activeDeadlineSeconds</code> تنظیم کنید تا Podها در این scope قرار گیرند (خارج از مستندات رسمی).</p>
-  </div>
-
   <h4>Cross-namespace pod affinity scope</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.24 [stable]</span></p>
   <p>می‌توانید از quota scope <code>CrossNamespacePodAffinity</code> استفاده کنید تا محدود کنید کدام namespaceها اجازه دارند Podهایی با affinity termهای cross-namespace داشته باشند. به‌طور مشخص،‏ این scope کنترل می‌کند کدام Podها اجازه دارند فیلدهای <code>namespaces</code> یا <code>namespaceSelector</code> را در pod (anti)affinity termها تنظیم کنند.</p>
@@ -4266,10 +4276,6 @@ spec:
     <li><code>priorityClassName</code> مربوط به Pod روی <code>cluster-services</code> تنظیم شده باشد،‏ قرار باشد در namespace <code>kube-system</code> ساخته شود،‏ و از بررسی resource quota عبور کرده باشد.</li>
   </ol>
   <p>درخواست ساخت یک Pod رد می‌شود اگر <code>priorityClassName</code> آن روی <code>cluster-services</code> تنظیم شده باشد و قرار باشد در namespaceی غیر از <code>kube-system</code> ساخته شود.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا این مکانیزم در cluster چندمستاجره لازم است؟</b>
-    <p>PriorityClassها cluster-scoped هستند و هر کسی که بتواند Pod بسازد می‌تواند نام هر PriorityClassی را در <code>priorityClassName</code> بنویسد. بدون این محدودیت،‏ یک تیم می‌تواند Podهای خود را با priority بالا (مثلا همان priority که برای DNS یا ingress controller در نظر گرفته شده) بسازد و در زمان کمبود resource باعث preemption سرویس‌های حیاتی شود (فصل ۹). «limitedResources» این رابطه را برعکس می‌کند: استفاده از آن PriorityClass به‌طور پیش‌فرض ممنوع است،‏ مگر در namespaceهایی که صراحتا quota منطبق دارند. توجه کنید quota در مثال بالا هیچ <code>hard</code>ی ندارد؛‏ وجود خود آن کافی است تا namespace مجاز شود.</p>
-  </div>
-
   <h4>VolumeAttributesClass scope</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.36 [stable]</span> (پیش‌فرض فعال،‏ feature gate <code>VolumeAttributesClass</code>)</p>
   <p>این scope فقط quota مصرف‌شده توسط PersistentVolumeClaimها را دنبال می‌کند.</p>
@@ -4299,6 +4305,32 @@ spec:
       operator: In
       values: ["gold"]
 </pre></div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۵)</small> <span class="m-t">quota و rollout یک Deployment · چرا secrets از ابتدا Used=1 است؟ · quota نویزی‌بودن همسایه را حل نمی‌کند · «terminating» در اینجا به معنای در حال حذف نیست · چرا این مکانیزم در cluster چندمستاجره لازم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: quota و rollout یک Deployment</b>
+    <p>چون quota در admission هر <b>Pod</b> بررسی می‌شود (نه Deployment)،‏ خطای quota در خود Deployment دیده نمی‌شود بلکه در eventهای ReplicaSet ظاهر می‌شود. این نکته هنگام rolling update حیاتی است: با <code>maxSurge: 25%</code> و ۱۲ replica،‏ در حین rollout تا ۱۵ Pod به‌طور هم‌زمان وجود دارند و همه‌ی آن‌ها از quota سهم می‌گیرند. اگر quota دقیقا برای ۱۲ Pod تنظیم شده باشد،‏ ReplicaSet جدید نمی‌تواند Pod اضافی بسازد و rollout گیر می‌کند:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl describe rs -n shop -l app=api | grep -A3 Events
+kubectl get deploy api -n shop -o jsonpath='{.status.conditions[?(@.type=="ReplicaFailure")].message}{"\n"}'
+</pre></div>
+    <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">  Warning  FailedCreate  12s (x15 over 2m)  replicaset-controller  Error creating: pods "api-7d9c6b-x2k4p" is forbidden: exceeded quota: compute, requested: requests.cpu=500m, used: requests.cpu=6, limited: requests.cpu=6
+pods "api-7d9c6b-x2k4p" is forbidden: exceeded quota: compute, requested: requests.cpu=500m, used: requests.cpu=6, limited: requests.cpu=6
+</pre></div>
+    <p>راه‌حل‌ها: یا quota را با در نظر گرفتن surge تنظیم کنید (<code>replicas × (1 + maxSurge)</code>)،‏ یا برای این Deployment <code>maxSurge: 0</code> و <code>maxUnavailable: 1</code> بگذارید تا rollout بدون Pod اضافی انجام شود (فصل ۴). پیام خطا با قالب <code>exceeded quota: NAME, requested: ..., used: ..., limited: ...</code> دقیقا نشان می‌دهد کدام resource و کدام quota مانع شده است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا secrets از ابتدا Used=1 است؟</b>
+    <p>در خروجی‌های بالا،‏ مقدار <code>secrets</code> در namespace تازه‌ساخته <code>‎1‎</code> است. دلیل آن در نسخه‌های قدیمی‌تر،‏ Secret خودکار service account token بود؛‏ در نسخه‌های جدید که آن Secret دیگر به‌طور خودکار ساخته نمی‌شود،‏ ممکن است این عدد صفر باشد (خارج از مستندات رسمی). نکته‌ی کلی‌تر: هر چیزی که controllerها به‌طور خودکار در namespace می‌سازند (مثل ConfigMap <code>kube-root-ca.crt</code> که در هر namespace ساخته می‌شود) هم از quota سهم می‌گیرد؛‏ پس quotaهای object count را خیلی تنگ تنظیم نکنید. برای به‌روزرسانی یک quota هم کافی است manifest را ویرایش و <code>kubectl apply</code> کنید،‏ یا از <code>kubectl edit quota NAME</code> استفاده کنید.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: quota نویزی‌بودن همسایه را حل نمی‌کند</b>
+    <p>جمله‌ی آخر مستندات در production مهم است: quota تضمین می‌کند مجموع <b>requestها</b>ی یک تیم از عددی بیشتر نشود،‏ اما Podهای تیم‌های مختلف روی همان nodeها کنار هم اجرا می‌شوند. اگر تیم B برای Podهایش request کم و limit زیاد (یا بدون limit) بگذارد،‏ این Podها می‌توانند در زمان اوج بیش از سهم خود CPU و memory مصرف کنند (مشکل noisy neighbour). برای جداسازی در سطح node باید از ابزارهای دیگری مثل taint/toleration و node affinity برای nodeهای اختصاصی (فصل ۹)،‏ quota روی <code>limits.*</code>،‏ و LimitRange با <code>maxLimitRequestRatio</code> استفاده کنید.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: «terminating» در اینجا به معنای در حال حذف نیست</b>
+    <p>در این scope،‏ «Terminating» به Podهایی اشاره دارد که یک deadline دارند (<code>activeDeadlineSeconds</code>)،‏ یعنی عمر محدود دارند،‏ مثل Podهای Job که deadline برایشان تنظیم شده است؛‏ ربطی به Podی که با <code>kubectl delete</code> در حالت Terminating است ندارد. کاربرد عملی: می‌توانید یک بودجه‌ی جدا برای batchهای کوتاه‌عمر (Terminating) و بودجه‌ی جدا برای سرویس‌های long-running (NotTerminating) تعریف کنید تا یک Job سنگین بودجه‌ی سرویس‌های آنلاین را نخورد. توجه کنید <code>activeDeadlineSeconds</code> در spec خود Job از طریق Pod template به Podها منتقل نمی‌شود؛‏ باید آن را در <code>spec.template.spec.activeDeadlineSeconds</code> تنظیم کنید تا Podها در این scope قرار گیرند (خارج از مستندات رسمی).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا این مکانیزم در cluster چندمستاجره لازم است؟</b>
+    <p>PriorityClassها cluster-scoped هستند و هر کسی که بتواند Pod بسازد می‌تواند نام هر PriorityClassی را در <code>priorityClassName</code> بنویسد. بدون این محدودیت،‏ یک تیم می‌تواند Podهای خود را با priority بالا (مثلا همان priority که برای DNS یا ingress controller در نظر گرفته شده) بسازد و در زمان کمبود resource باعث preemption سرویس‌های حیاتی شود (فصل ۹). «limitedResources» این رابطه را برعکس می‌کند: استفاده از آن PriorityClass به‌طور پیش‌فرض ممنوع است،‏ مگر در namespaceهایی که صراحتا quota منطبق دارند. توجه کنید quota در مثال بالا هیچ <code>hard</code>ی ندارد؛‏ وجود خود آن کافی است تا namespace مجاز شود.</p>
+  </div>
+  </details>
 
   <h3 id="ch6-b-pid">Process ID Limits And Reservations</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.20 [stable]</span></p>
@@ -4350,10 +4382,6 @@ sh: can't fork: Resource temporarily unavailable
   <p><span class="fs">FEATURE STATE: Kubernetes v1.27 [stable]</span> (feature gate <code>TopologyManager</code> پس از v1.28 حذف شده و این قابلیت همیشه فعال است)</p>
   <p><i>Topology Manager</i> یک component از kubelet است که هدفش هماهنگ کردن مجموعه‌ی componentهایی است که مسئول این بهینه‌سازی‌ها هستند. برای اطلاعات بیشتر،‏ task «Control Topology Management Policies on a Node» را بخوانید.</p>
   <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/7820f936a2.png" alt="Topology Manager flow: hint providers send NUMA hints, Topology Manager merges them and admits or rejects the pod"></div><figcaption><b>شکل ۶-۳.</b> جریان کار Topology Manager: هنگام admission یک Pod،‏ hint providerها (CPU Manager،‏ Device Manager،‏ Memory Manager) برای هر container فهرستی از NUMA affinityهای ممکن می‌دهند؛‏ Topology Manager آن‌ها را ادغام می‌کند و طبق policy خود (مثلا <code>single-numa-node</code>) Pod را admit یا reject می‌کند. منبع: <span class="en">tasks/administer-cluster/topology-manager</span></figcaption></figure>
-  <div class="deep"><b>توضیح تکمیلی: NUMA و چرا alignment مهم است</b>
-    <p>در سرورهای چندسوکتی،‏ هر سوکت CPU حافظه‌ی محلی خودش (یک NUMA node) و گاهی PCIe deviceهای محلی (مثل NIC یا GPU) دارد. دسترسی یک هسته به حافظه یا device متصل به NUMA node دیگر از مسیر interconnect انجام می‌شود و کندتر است. اگر kubelet به یک container،‏ CPU از NUMA 0،‏ memory از NUMA 1 و یک NIC از NUMA 1 بدهد،‏ کارایی برنامه‌های حساس (مثل DPDK،‏ معاملات مالی کم‌تاخیر،‏ inference روی GPU) افت محسوسی می‌کند. Topology Manager تضمین می‌کند این تخصیص‌ها «هم‌تراز» باشند. policyهای آن (<code>none</code>،‏ <code>best-effort</code>،‏ <code>restricted</code>،‏ <code>single-numa-node</code>) و scopeهای آن (<code>container</code> و <code>pod</code>) در task مربوط شرح داده شده‌اند؛‏ تنظیم آن‌ها در KubeletConfiguration با فیلدهای <code>topologyManagerPolicy</code> و <code>topologyManagerScope</code> است.</p>
-  </div>
-
   <h4>CPU manager</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.26 [stable]</span> (پیش‌فرض فعال،‏ feature gate <code>CPUManager</code>)</p>
   <p><i>CPU Manager</i> یک component از kubelet است که تخصیص انحصاری (exclusive) resource را برای CPU فراهم می‌کند. برای تصمیم‌گیری درباره‌ی تخصیص resource با Topology Manager مشورت می‌کند. برای اطلاعات بیشتر،‏ task «Control CPU Management Policies on the Node» را بخوانید.</p>
@@ -4507,6 +4535,13 @@ sudo cat /var/lib/kubelet/cpu_manager_state
   <p><span class="fs">FEATURE STATE: Kubernetes v1.37 [beta]</span> (پیش‌فرض غیرفعال،‏ feature gate <code>PodLevelResourceManagers</code>)</p>
   <p>پشتیبانی از pod-level resource برای resource managerهای <code>kubelet</code> (Topology،‏ CPU و Memory) به resource managerها اجازه می‌دهد برای تصمیم‌های NUMA alignment و تخصیص انحصاری مستقیما از <code>.spec.resources</code> استفاده کنند.</p>
   <p>برای اطلاعات بیشتر،‏ صفحه‌ی مفهومی اختصاصی Pod-level resource managers (بخش بعد) را ببینید،‏ یا task «Assign Pod-level CPU and memory resources» را بخوانید.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">NUMA و چرا alignment مهم است</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: NUMA و چرا alignment مهم است</b>
+    <p>در سرورهای چندسوکتی،‏ هر سوکت CPU حافظه‌ی محلی خودش (یک NUMA node) و گاهی PCIe deviceهای محلی (مثل NIC یا GPU) دارد. دسترسی یک هسته به حافظه یا device متصل به NUMA node دیگر از مسیر interconnect انجام می‌شود و کندتر است. اگر kubelet به یک container،‏ CPU از NUMA 0،‏ memory از NUMA 1 و یک NIC از NUMA 1 بدهد،‏ کارایی برنامه‌های حساس (مثل DPDK،‏ معاملات مالی کم‌تاخیر،‏ inference روی GPU) افت محسوسی می‌کند. Topology Manager تضمین می‌کند این تخصیص‌ها «هم‌تراز» باشند. policyهای آن (<code>none</code>،‏ <code>best-effort</code>،‏ <code>restricted</code>،‏ <code>single-numa-node</code>) و scopeهای آن (<code>container</code> و <code>pod</code>) در task مربوط شرح داده شده‌اند؛‏ تنظیم آن‌ها در KubeletConfiguration با فیلدهای <code>topologyManagerPolicy</code> و <code>topologyManagerScope</code> است.</p>
+  </div>
+  </details>
 
   <h3 id="ch6-b-podlevel-rm">Pod-level resource managers</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.37 [beta]</span> (پیش‌فرض غیرفعال،‏ feature gate <code>PodLevelResourceManagers</code>)</p>
@@ -4698,15 +4733,6 @@ spec:
     # Note: This is a placeholder image for demonstration purposes.
     image: registry.k8s.io/pause:3.9
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی دو scope با همان بودجه‌ی ۴ CPU</b>
-    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>scope <code>pod</code></th><th>scope <code>container</code></th></tr></thead><tbody>
-      <tr><td>NUMA alignment</td><td>یک بار برای کل bubble مربوط به Pod</td><td>جداگانه برای هر container انحصاری</td></tr>
-      <tr><td>containerهای بدون request</td><td>در pod shared pool (ایزوله از بقیه‌ی node)</td><td>در shared pool عمومی node</td></tr>
-      <tr><td>منبع slice انحصاری</td><td>از درون بودجه‌ی Pod</td><td>مستقیما از allocatable node</td></tr>
-      <tr><td>ریسک</td><td>resource هدررفته،‏ رد شدن در صورت shared pool خالی</td><td>sidecarها ممکن است با noisy neighbourهای node رقابت کنند</td></tr>
-      <tr><td>کاربرد</td><td>برنامه‌ی اصلی + sidecarها همه روی یک NUMA</td><td>sidecar زیرساختی نیازمند device روی NUMA خاص</td></tr>
-    </tbody></table></div>
-  </div>
   <h4>CPU quota (CFS)</h4>
   <p>هنگام اجرای workloadهای ترکیبی درون یک Pod،‏ <code>kubelet</code> ایزوله‌سازی را بسته به نوع تخصیص به شکل متفاوتی اعمال می‌کند:</p>
   <ul>
@@ -4733,6 +4759,19 @@ spec:
     <li>این قابلیت فقط برای CPU Manager policy <code>static</code> و Memory Manager policy <code>Static</code> پیاده‌سازی شده است. توجه کنید که policy <code>BestEffort</code> برای Memory Manager پشتیبانی نمی‌شود.</li>
     <li>این feature فقط روی Linux nodeها پشتیبانی می‌شود. روی Windows nodeها،‏ resource managerها برای تخصیص‌های pod-level به‌صورت no-op عمل می‌کنند.</li>
   </ul>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مقایسه‌ی دو scope با همان بودجه‌ی ۴ CPU</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی دو scope با همان بودجه‌ی ۴ CPU</b>
+    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>scope <code>pod</code></th><th>scope <code>container</code></th></tr></thead><tbody>
+      <tr><td>NUMA alignment</td><td>یک بار برای کل bubble مربوط به Pod</td><td>جداگانه برای هر container انحصاری</td></tr>
+      <tr><td>containerهای بدون request</td><td>در pod shared pool (ایزوله از بقیه‌ی node)</td><td>در shared pool عمومی node</td></tr>
+      <tr><td>منبع slice انحصاری</td><td>از درون بودجه‌ی Pod</td><td>مستقیما از allocatable node</td></tr>
+      <tr><td>ریسک</td><td>resource هدررفته،‏ رد شدن در صورت shared pool خالی</td><td>sidecarها ممکن است با noisy neighbourهای node رقابت کنند</td></tr>
+      <tr><td>کاربرد</td><td>برنامه‌ی اصلی + sidecarها همه روی یک NUMA</td><td>sidecar زیرساختی نیازمند device روی NUMA خاص</td></tr>
+    </tbody></table></div>
+  </div>
+  </details>
 
   <h3 id="ch6-b-task-cpu-minmax">Configure Minimum and Maximum CPU Constraints for a Namespace</h3>
   <p>(از بخش tasks: <span class="en">tasks/administer-cluster/manage-resources/cpu-constraint-namespace</span>) این صفحه نشان می‌دهد چطور برای resourceهای CPU مورد استفاده‌ی containerها و Podها در یک namespace،‏ مقادیر حداقل و حداکثر تعیین کنید. مقادیر حداقل و حداکثر CPU را در یک LimitRange object مشخص می‌کنید. اگر یک Pod محدودیت‌های تحمیل‌شده توسط LimitRange را رعایت نکند،‏ نمی‌توان آن را در namespace ساخت.</p>
@@ -4892,9 +4931,12 @@ kubectl get pod constraints-cpu-demo-4 --namespace=constraints-cpu-example --out
   <h4>Clean up</h4>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete namespace constraints-cpu-example
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا default برابر max شد؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا default برابر max شد؟</b>
     <p>در LimitRange بالا فقط <code>min</code> و <code>max</code> نوشته شده بود،‏ ولی سرور <code>default</code> و <code>defaultRequest</code> را برابر 800m (یعنی همان <code>max</code>) قرار داد. قاعده این است: اگر <code>default</code> تعیین نشود و <code>max</code> تعیین شده باشد،‏ <code>default</code> برابر <code>max</code> می‌شود؛‏ و اگر <code>defaultRequest</code> تعیین نشود،‏ برابر <code>default</code> قرار می‌گیرد. نتیجه‌ی عملی در production این است که یک LimitRange «فقط max» باعث می‌شود هر container بدون resource،‏ بیشترین request ممکن را بگیرد و ظرفیت cluster و quota را سریع مصرف کند. پس همیشه <code>defaultRequest</code> را صریحا و کوچک‌تر بنویسید.</p>
   </div>
+  </details>
 
   <h3 id="ch6-b-task-cpu-default">Configure Default CPU Requests and Limits for a Namespace</h3>
   <p>(از بخش tasks: <span class="en">tasks/administer-cluster/manage-resources/cpu-default-namespace</span>) این صفحه نشان می‌دهد چطور CPU request و limit پیش‌فرض را برای یک namespace پیکربندی کنید.</p>
@@ -5006,6 +5048,8 @@ kubectl get pod default-cpu-demo-3 --output=yaml --namespace=default-cpu-example
   <h4>Clean up</h4>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete namespace default-cpu-example
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جدول تصمیم LimitRange برای مقادیر پیش‌فرض</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جدول تصمیم LimitRange برای مقادیر پیش‌فرض</b>
     <div class="tbl"><table><thead><tr><th>آنچه container مشخص کرده</th><th>request نهایی</th><th>limit نهایی</th></tr></thead><tbody>
       <tr><td>هیچ‌کدام</td><td><code>defaultRequest</code> (0.5)</td><td><code>default</code> (1)</td></tr>
@@ -5014,6 +5058,7 @@ kubectl get pod default-cpu-demo-3 --output=yaml --namespace=default-cpu-example
       <tr><td>فقط request (1.5) بزرگ‌تر از default</td><td>1.5</td><td><code>default</code> (1) و در نتیجه Pod invalid می‌شود (همان مشکل «LimitRange and admission checks for Pods»)</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch6-b-task-mem-minmax">Configure Minimum and Maximum Memory Constraints for a Namespace</h3>
   <p>(از بخش tasks: <span class="en">tasks/administer-cluster/manage-resources/memory-constraint-namespace</span>) این صفحه نشان می‌دهد چطور برای memory مصرفی containerهای در حال اجرا در یک namespace،‏ مقادیر حداقل و حداکثر تعیین کنید. مقادیر حداقل و حداکثر memory را در یک LimitRange object مشخص می‌کنید. اگر یک Pod محدودیت‌های تحمیل‌شده توسط LimitRange را رعایت نکند،‏ نمی‌توان آن را در namespace ساخت.</p>
@@ -5459,16 +5504,19 @@ lastUpdateTime: 2021-04-02T20:57:05Z
   <h4>Clean up</h4>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete namespace quota-pod-example
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">ترکیب LimitRange و ResourceQuota در یک namespace تیمی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: ترکیب LimitRange و ResourceQuota در یک namespace تیمی</b>
     <p>الگوی رایج production برای هر namespace تیمی سه لایه است: (۱) یک LimitRange با <code>defaultRequest</code>/<code>default</code> معقول تا Podهای بدون resources رد نشوند و min/max تا یک container کل بودجه را نگیرد؛‏ (۲) یک ResourceQuota برای <code>requests.*</code> و <code>limits.memory</code> و <code>pods</code>؛‏ (۳) quotaهای object count مثل <code>count/jobs.batch</code> و <code>services.loadbalancers</code>. ترتیب admission مهم است: ابتدا LimitRanger (mutating) مقادیر پیش‌فرض را پر می‌کند و سپس ResourceQuota (validating) مجموع را بررسی می‌کند؛‏ پس quota همیشه مقادیر پس از پر شدن پیش‌فرض‌ها را می‌بیند.</p>
     <p class="next">ادامه‌ی مطالعه: Assign Memory Resources to Containers and Pods ·‏ Assign CPU Resources to Containers and Pods ·‏ Assign Pod-level CPU and memory resources ·‏ Configure Quality of Service for Pods ·‏ Configure Quotas for API Objects ·‏ Limit Storage Consumption ·‏ Resize CPU and Memory Resources assigned to Containers ·‏ Control CPU/Memory/Topology Management Policies on a Node ·‏ Node-pressure Eviction</p>
   </div>
+  </details>
 
   <h3 id="ch6-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>رمز از image و Git بیرون آمد،‏ image برای همه‌ی محیط‌ها یکی شد و هیچ Podی دیگر بی‌سقف نیست:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>رمز در کد و image و فایل‌های Git</td><td>Secret به نام shop-db که مستقیم در cluster ساخته شد؛‏ image نسخه‌ی 1.4 بدون مقدار پیش‌فرض؛‏ ارجاع با <code>secretKeyRef</code> در API و Job و CronJob و PostgreSQL</td><td>گام‌های ۰ و ۱ و ۳ و ۷</td></tr><tr><td>تنظیمات پخش‌شده و image جدا برای هر محیط</td><td>ConfigMap به نام shop-api-config و envFrom؛‏ برای هر محیط فقط ConfigMap و Secret دیگری لازم است</td><td>گام‌های ۲ تا ۴</td></tr><tr><td>گزارش شبانه که همه‌ی CPU را می‌گیرد</td><td>CPU limit برای CronJob؛‏ requests و limits برای API و QoS از نوع Guaranteed برای PostgreSQL</td><td>گام‌های ۵ تا ۷</td></tr><tr><td>Pod آزمایشی بی‌سقف</td><td>namespace به نام shopify-dev با LimitRange برای مقدار پیش‌فرض و حداکثر،‏ و ResourceQuota برای سقف کل</td><td>گام ۸</td></tr></tbody></table></div><p><b>فایل‌های تازه یا تغییرکرده:</b></p><div class="tbl"><table><thead><tr><th>فایل</th><th>تغییر</th></tr></thead><tbody><tr><td><code>db.py</code> و image نسخه‌ی 1.4</td><td>رمز بدون مقدار پیش‌فرض؛‏ نبودن DB_PASSWORD یعنی توقف فوری</td></tr><tr><td><code>shop-api-config.yaml</code></td><td>ConfigMap با DB_HOST و DB_NAME و DB_USER و STARTUP_DELAY</td></tr><tr><td><code>shop-api.yaml</code></td><td>image نسخه‌ی 1.4؛‏ envFrom و secretKeyRef؛‏ requests و limits برای هر دو container</td></tr><tr><td><code>shop-migrate.yaml</code> و <code>shop-report.yaml</code></td><td>image نسخه‌ی 1.4 و همان env؛‏ CPU limit برای گزارش</td></tr><tr><td><code>postgres.yaml</code></td><td>رمز از Secret؛‏ request برابر limit</td></tr><tr><td><code>shopify-dev.yaml</code></td><td>LimitRange و ResourceQuota برای namespace آزمایشی</td></tr></tbody></table></div><p>Secret به نام shop-db فایلی در پروژه ندارد و عمداً در Git نیست.</p><p><b>هنوز حل نشده:</b> داده‌ی PostgreSQL با هر ساخته شدن دوباره‌ی Pod از بین می‌رود،‏ همان‌طور که در گام ۷ دیدید (فصل ۷)؛‏ هر کسی با اجازه‌ی ساختن Pod یا exec در namespace به نام shopify می‌تواند رمز را بخواند (فصل ۱۴)؛‏ فروشگاه هنوز HTTPS ندارد.</p><p><b>هفته‌ی بعد:</b> داده‌ی پایگاه داده از چرخه‌ی عمر Pod جدا می‌شود.</p></div>
 
-  <div id="ch6-ex3" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۶،‏ بخش دوم <small>۱۷ تمرین</small></div>
+  <details id="ch6-ex3" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۶،‏ بخش دوم <small>۱۷ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>یک node با allocatable برابر <code>cpu: 4</code> و <code>memory: 16Gi</code> دارید. طبق <code>kubectl top node</code> مصرف واقعی ۱۰٪ CPU و ۲۰٪ memory است،‏ اما یک Pod جدید با <code>requests.cpu: 1</code> روی آن schedule نمی‌شود و event <code>Insufficient cpu</code> می‌بینید. چرا scheduler «مصرف پایین» را نادیده می‌گیرد؟ این طراحی از چه چیزی محافظت می‌کند و هزینه‌اش چیست؟
         <details class="ans"><summary>پاسخ</summary>
@@ -5866,10 +5914,10 @@ Warning  FailedCreate  replicaset-controller  Error creating: Pod "trainer-5d8c-
           <p>و برنامه باید سیاست eviction برای cache داشته باشد (مثلا LRU با سقف حجم). <b>پیشگیری در سطح cluster:</b> طبق مستندات،‏ ResourceQuota روی memory و LimitRange برای enforcement،‏ و یک ValidatingAdmissionPolicy (مثل نمونه‌ی بخش Policies در همین فصل) که emptyDir حافظه‌ای بدون <code>sizeLimit</code> را رد کند. اگر feature gate آلفای <code>InPlacePodVerticalScalingMemoryBackedVolumes</code> را فعال کنید،‏ می‌توانید <code>sizeLimit</code> را روی Pod در حال اجرا بدون ساختن دوباره‌ی آن تغییر دهید.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
-  <div id="ch6-ex4" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۶ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch6-ex4" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۶ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>ConfigMap و Secret چه فرقی دارند؟ آیا Secret امن است؟
         <details class="ans"><summary>پاسخ</summary>
@@ -5931,7 +5979,7 @@ Warning  FailedCreate  replicaset-controller  Error creating: Pod "trainer-5d8c-
           <ul><li><b>rollout restart:</b> دستور <code>kubectl rollout restart</code> یک annotation زمان در Pod template می‌گذارد و rolling update عادی را شروع می‌کند.</li><li><b>نام وابسته به محتوا:</b> configMapGenerator در Kustomize به نام ConfigMap یک hash اضافه می‌کند؛‏ تغییر محتوا یعنی نام تازه،‏ تغییر template و rollout؛‏ با rollout undo هم ConfigMap قبلی برمی‌گردد.</li><li><b>annotation با checksum:</b> در Helm مقدار hash محتوای ConfigMap در annotation مربوط به Pod template نوشته می‌شود تا با هر تغییر،‏ template هم عوض شود.</li></ul><p><b>نکته‌ی امتیازآور:</b> دو راه آخر تغییر پیکربندی را مثل تغییر کد نسخه‌دار و برگشت‌پذیر می‌کنند؛‏ همراه آن‌ها ConfigMap را immutable کنید تا بار watch روی API server هم کم شود.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch6-recap">
     <div class="recap-h">خلاصه‌ی فصل ۶ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

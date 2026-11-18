@@ -195,7 +195,7 @@ ingress.networking.k8s.io/shopify   traefik   shopify.local   192.168.64.5   80 
 
 NAME                                                    POD-SELECTOR   AGE
 networkpolicy.networking.k8s.io/postgres-clients-only   app=postgres   6m
-</pre></div><p>هر سه Service از نوع داخلی‌اند؛‏ تنها درِ ورود به فروشگاه Ingress است و تنها راه رسیدن به پایگاه داده label به نام db-access. این همان چیزی است که در production می‌خواهیم: کمترین سطح در معرض دید.</p><div id="ch5-ex1" class="ex"><div class="ex-h">امتحان کنید <small>3 تمرین</small></div><ol><li><span class="lvl l1">عملی</span>از یک Pod موقت،‏ به‌جای <code>shop-api</code> نام کامل <code>shop-api.shopify.svc.cluster.local</code> را صدا بزنید. کار می‌کند؟ هر بخش نام یعنی چه؟<details class="ans"><summary>پاسخ</summary><p>بله. <code>shop-api</code> نام Service است؛‏ <code>shopify</code> نام namespace؛‏ <code>svc</code> یعنی Service؛‏ و <code>cluster.local</code> دامنه‌ی cluster است. نام کوتاه فقط از داخل همان namespace کار می‌کند؛‏ از namespace دیگر دست‌کم <code>shop-api.shopify</code> لازم است.</p></details></li><li><span class="lvl l1">مفهومی</span>اگر label یک Pod از API را عوض کنید (<code>kubectl label pod NAME app=test --overwrite</code>)،‏ چه اتفاقی می‌افتد؟<details class="ans"><summary>پاسخ</summary><p>دو اتفاق: Service آن Pod را از فهرست مقصدهایش خارج می‌کند و ReplicaSet چون یک Pod منطبق کم دارد،‏ یک Pod جدید می‌سازد. خود Pod قدیمی زنده می‌ماند ولی دیگر عضو هیچ‌کدام نیست. عضویت در کوبرنتیز فقط با label تعیین می‌شود. این ترفند برای بیرون کشیدن یک Pod خراب از چرخه و بررسی آن بدون قطع سرویس هم به کار می‌رود.</p></details></li><li><span class="lvl l1">عملی</span>با Ingress گام ۵،‏ درخواست‌هایی به مسیر <code>/apix</code> و <code>/API/products</code> به کدام Service می‌رسند؟ اول حدس بزنید،‏ بعد با curl امتحان کنید.<details class="ans"><summary>پاسخ</summary><p>هر دو به <code>shop-web</code> می‌رسند و nginx کد ۴۰۴ برمی‌گرداند. مقایسه‌ی Prefix بخش‌به‌بخش (با جداکننده‌ی <code>‎/‎</code>) و حساس به بزرگی و کوچکی حروف است: بخش <code>apix</code> با <code>api</code> یکی نیست و <code>API</code> هم با <code>api</code> فرق دارد؛‏ پس فقط قاعده‌ی <code>‎/‎</code> مطابقت دارد. وقتی چند مسیر Prefix مطابقت داشته باشند،‏ طولانی‌ترین مسیر برنده است؛‏ برای همین ترتیب نوشتن قاعده‌ها مهم نیست.</p></details></li></ol></div><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>تفاوت ClusterIP و NodePort و LoadBalancer را در عمل دیده‌اید.</li><li>مسیر یک نام را از DNS تا ClusterIP و EndpointSlice و Pod دنبال می‌کنید.</li><li>نقش Ingress controller و خود Ingress را از هم تشخیص می‌دهید و با هدر Host آزمایش می‌کنید.</li><li>اثر یک NetworkPolicy را با آزمایش واقعی می‌سنجید،‏ نه با دیدن شیء.</li></ul></div>
+</pre></div><p>هر سه Service از نوع داخلی‌اند؛‏ تنها درِ ورود به فروشگاه Ingress است و تنها راه رسیدن به پایگاه داده label به نام db-access. این همان چیزی است که در production می‌خواهیم: کمترین سطح در معرض دید.</p><details id="ch5-ex1" class="ex"><summary class="ex-h">امتحان کنید <small>3 تمرین</small></summary><ol><li><span class="lvl l1">عملی</span>از یک Pod موقت،‏ به‌جای <code>shop-api</code> نام کامل <code>shop-api.shopify.svc.cluster.local</code> را صدا بزنید. کار می‌کند؟ هر بخش نام یعنی چه؟<details class="ans"><summary>پاسخ</summary><p>بله. <code>shop-api</code> نام Service است؛‏ <code>shopify</code> نام namespace؛‏ <code>svc</code> یعنی Service؛‏ و <code>cluster.local</code> دامنه‌ی cluster است. نام کوتاه فقط از داخل همان namespace کار می‌کند؛‏ از namespace دیگر دست‌کم <code>shop-api.shopify</code> لازم است.</p></details></li><li><span class="lvl l1">مفهومی</span>اگر label یک Pod از API را عوض کنید (<code>kubectl label pod NAME app=test --overwrite</code>)،‏ چه اتفاقی می‌افتد؟<details class="ans"><summary>پاسخ</summary><p>دو اتفاق: Service آن Pod را از فهرست مقصدهایش خارج می‌کند و ReplicaSet چون یک Pod منطبق کم دارد،‏ یک Pod جدید می‌سازد. خود Pod قدیمی زنده می‌ماند ولی دیگر عضو هیچ‌کدام نیست. عضویت در کوبرنتیز فقط با label تعیین می‌شود. این ترفند برای بیرون کشیدن یک Pod خراب از چرخه و بررسی آن بدون قطع سرویس هم به کار می‌رود.</p></details></li><li><span class="lvl l1">عملی</span>با Ingress گام ۵،‏ درخواست‌هایی به مسیر <code>/apix</code> و <code>/API/products</code> به کدام Service می‌رسند؟ اول حدس بزنید،‏ بعد با curl امتحان کنید.<details class="ans"><summary>پاسخ</summary><p>هر دو به <code>shop-web</code> می‌رسند و nginx کد ۴۰۴ برمی‌گرداند. مقایسه‌ی Prefix بخش‌به‌بخش (با جداکننده‌ی <code>‎/‎</code>) و حساس به بزرگی و کوچکی حروف است: بخش <code>apix</code> با <code>api</code> یکی نیست و <code>API</code> هم با <code>api</code> فرق دارد؛‏ پس فقط قاعده‌ی <code>‎/‎</code> مطابقت دارد. وقتی چند مسیر Prefix مطابقت داشته باشند،‏ طولانی‌ترین مسیر برنده است؛‏ برای همین ترتیب نوشتن قاعده‌ها مهم نیست.</p></details></li></ol></details><div class="lab"><b>چک‌لیست پایان آزمایش</b><ul><li>تفاوت ClusterIP و NodePort و LoadBalancer را در عمل دیده‌اید.</li><li>مسیر یک نام را از DNS تا ClusterIP و EndpointSlice و Pod دنبال می‌کنید.</li><li>نقش Ingress controller و خود Ingress را از هم تشخیص می‌دهید و با هدر Host آزمایش می‌کنید.</li><li>اثر یک NetworkPolicy را با آزمایش واقعی می‌سنجید،‏ نه با دیدن شیء.</li></ul></div>
   </div>
 
   <div class="deep"><b>از این‌جا به بعد: مرجع عمیق‌تر</b><p>بخش‌های بعدی متن کامل مستندات شبکه است. لازم نیست پشت‌سرهم بخوانید؛‏ هر وقت سؤالی پیش آمد،‏ به بخش مربوط برگردید:</p><div class="tbl"><table><thead><tr><th>اگر می‌خواهید بدانید…</th><th>به این بخش بروید</th></tr></thead><tbody><tr><td>مدل شبکه و CNI (گام ۰)</td><td><a href="#ch5-a-network-model">مدل شبکه‌ی کوبرنتیز</a> و <a href="#ch5-a-cluster-networking">شبکه‌ی cluster</a></td></tr><tr><td>همه‌ی جزئیات Service (گام‌های ۱ و ۴)</td><td><a href="#ch5-a-service">Service</a> و <a href="#ch5-a-service-type">انواع Service</a></td></tr><tr><td>headless و DNS (گام ۲)</td><td><a href="#ch5-a-headless">Headless Services</a> و <a href="#ch5-a-dns-pod-service">DNS برای Serviceها و Podها</a></td></tr><tr><td>kube-proxy و ClusterIP (گام ۳)</td><td><a href="#ch5-a-virtual-ips">Virtual IPs و Service Proxies</a> و <a href="#ch5-a-endpointslices">EndpointSlices</a></td></tr><tr><td>حفظ IP مشتری و ترافیک محلی</td><td><a href="#ch5-a-traffic-policies-full">Traffic policies</a></td></tr><tr><td>Ingress و TLS و IngressClass (گام ۵)</td><td><a href="#ch5-b-ingress">Ingress</a> و <a href="#ch5-b-ingress-controllers">Ingress Controllers</a></td></tr><tr><td>جانشین Ingress</td><td><a href="#ch5-b-gateway-api">Gateway API</a></td></tr><tr><td>NetworkPolicy و default deny (گام ۶)</td><td><a href="#ch5-b-network-policies">Network Policies</a> و <a href="#ch5-b-declare-np">راهنمای عملی</a></td></tr></tbody></table></div><p><b>آزمایش‌های مرجع روی همان cluster k3s:</b> همه‌ی آزمایش‌های عملی و تمرین‌های بخش مرجع برای همان cluster k3s تک‌Node نوشته شده‌اند. برای این‌که با شاپیفای قاطی نشوند،‏ آن‌ها را در namespace به نام default اجرا کنید و پس از پایان به shopify برگردید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl config set-context --current --namespace=default
@@ -231,17 +231,6 @@ kubectl config set-context --current --namespace=shopify
     <li>NetworkPolicy هم معمولاً توسط pod network implementation پیاده‌سازی می‌شود. (برخی pod network implementationهای ساده‌تر NetworkPolicy را پیاده‌سازی نمی‌کنند،‏ یا ممکن است administrator تصمیم بگیرد pod network را بدون پشتیبانی NetworkPolicy پیکربندی کند. در این حالت‌ها API همچنان وجود دارد اما هیچ اثری ندارد.)</li>
     <li>پیاده‌سازی‌های زیادی از Gateway API وجود دارد؛‏ برخی مخصوص محیط‌های cloud خاص‌اند،‏ برخی بیشتر روی محیط‌های «bare metal» تمرکز دارند و برخی عمومی‌ترند.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: چه کسی چه کاری انجام می‌دهد؟</b>
-    <p>مهم‌ترین نکته‌ی این بخش این است که Kubernetes «شبکه» را خودش نمی‌سازد؛‏ فقط <b>قرارداد</b> را تعریف می‌کند. جدول زیر نشان می‌دهد هر بخش از مدل را کدام component پیاده‌سازی می‌کند:</p>
-    <div class="tbl"><table><thead><tr><th>بخش مدل</th><th>پیاده‌ساز</th><th>مثال</th></tr></thead><tbody>
-      <tr><td>network namespace برای Pod</td><td>container runtime (از طریق CRI)</td><td>containerd،‏ CRI-O</td></tr>
-      <tr><td>IP برای Pod و ارتباط Pod به Pod</td><td>CNI plugin</td><td>Calico،‏ Cilium،‏ Flannel (خارج از مستندات رسمی)</td></tr>
-      <tr><td>virtual IP برای Service</td><td>kube-proxy یا service proxy یک CNI</td><td>kube-proxy در حالت iptables/nftables</td></tr>
-      <tr><td>NetworkPolicy</td><td>CNI plugin (اگر پشتیبانی کند)</td><td>Flannel به‌تنهایی NetworkPolicy را اعمال نمی‌کند (خارج از مستندات رسمی)</td></tr>
-      <tr><td>ورود ترافیک از بیرون</td><td>Gateway/Ingress controller یا cloud load balancer</td><td>—</td></tr>
-    </tbody></table></div>
-    <p>پیامد عملی: اگر یک NetworkPolicy ساختید و «هیچ اتفاقی نیفتاد»،‏ اول بررسی کنید CNI plugin شما اصلاً NetworkPolicy را پیاده‌سازی می‌کند یا نه؛‏ API بدون خطا object را می‌پذیرد ولی ممکن است اثری نداشته باشد.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: دیدن مدل «هر Pod یک IP» و ارتباط بدون NAT</b>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment web --image=nginx:1.27 --replicas=2
 kubectl rollout status deployment/web
@@ -260,6 +249,21 @@ web-5d7f6b8c9d-qm7tz   1/1     Running   0          20s   10.42.0.62   k3s-lab  
 </pre></div>
     <p>Pod موقت نشانی <code>‎10.42.0.63‎</code> دارد و در log دسترسی nginx همان نشانی به‌عنوان مبدأ آمده است،‏ نه نشانی Node؛‏ این همان «بدون NAT» در مدل شبکه است. در k3s تک‌Node هر دو Pod روی یک Node‌اند؛‏ در فصل ۹ همین آزمایش را بین دو Node تکرار می‌کنید و ترافیک از شبکه‌ی Flannel بین Nodeها عبور می‌کند.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چه کسی چه کاری انجام می‌دهد؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چه کسی چه کاری انجام می‌دهد؟</b>
+    <p>مهم‌ترین نکته‌ی این بخش این است که Kubernetes «شبکه» را خودش نمی‌سازد؛‏ فقط <b>قرارداد</b> را تعریف می‌کند. جدول زیر نشان می‌دهد هر بخش از مدل را کدام component پیاده‌سازی می‌کند:</p>
+    <div class="tbl"><table><thead><tr><th>بخش مدل</th><th>پیاده‌ساز</th><th>مثال</th></tr></thead><tbody>
+      <tr><td>network namespace برای Pod</td><td>container runtime (از طریق CRI)</td><td>containerd،‏ CRI-O</td></tr>
+      <tr><td>IP برای Pod و ارتباط Pod به Pod</td><td>CNI plugin</td><td>Calico،‏ Cilium،‏ Flannel (خارج از مستندات رسمی)</td></tr>
+      <tr><td>virtual IP برای Service</td><td>kube-proxy یا service proxy یک CNI</td><td>kube-proxy در حالت iptables/nftables</td></tr>
+      <tr><td>NetworkPolicy</td><td>CNI plugin (اگر پشتیبانی کند)</td><td>Flannel به‌تنهایی NetworkPolicy را اعمال نمی‌کند (خارج از مستندات رسمی)</td></tr>
+      <tr><td>ورود ترافیک از بیرون</td><td>Gateway/Ingress controller یا cloud load balancer</td><td>—</td></tr>
+    </tbody></table></div>
+    <p>پیامد عملی: اگر یک NetworkPolicy ساختید و «هیچ اتفاقی نیفتاد»،‏ اول بررسی کنید CNI plugin شما اصلاً NetworkPolicy را پیاده‌سازی می‌کند یا نه؛‏ API بدون خطا object را می‌پذیرد ولی ممکن است اثری نداشته باشد.</p>
+  </div>
+  </details>
 
   <h3 id="ch5-a-cluster-networking">شبکه‌ی cluster <small>(Cluster Networking)</small></h3>
   <p>شبکه بخش مرکزی کوبرنتیز است،‏ اما فهمیدن این‌که دقیقاً چطور باید کار کند می‌تواند چالش‌برانگیز باشد. چهار مسئله‌ی شبکه‌ای متمایز وجود دارد که باید حل شوند:</p>
@@ -297,12 +301,15 @@ web-5d7f6b8c9d-qm7tz   1/1     Running   0          20s   10.42.0.62   k3s-lab  
 
   <h4>How to implement the Kubernetes network model</h4>
   <p>مدل شبکه توسط container runtime روی هر Node پیاده‌سازی می‌شود. رایج‌ترین container runtimeها از pluginهای Container Network Interface (CNI) برای مدیریت قابلیت‌های شبکه و امنیتی خود استفاده می‌کنند. CNI pluginهای زیادی از vendorهای مختلف وجود دارند. برخی فقط قابلیت‌های پایه‌ای مثل اضافه و حذف network interface را فراهم می‌کنند و برخی دیگر راه‌حل‌های پیچیده‌تری ارائه می‌دهند،‏ مثل یکپارچگی با سایر سیستم‌های container orchestration،‏ اجرای چند CNI plugin،‏ قابلیت‌های پیشرفته‌ی IPAM و غیره. فهرست (غیرجامع) networking addonهای پشتیبانی‌شده در صفحه‌ی addons مستندات آمده است.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">سه بازه‌ی IP که نباید هم‌پوشانی داشته باشند</span></summary>
   <div class="deep"><b>توضیح تکمیلی: سه بازه‌ی IP که نباید هم‌پوشانی داشته باشند</b>
     <p>در یک cluster معمولی با kubeadm سه بازه دارید: Pod CIDR (مثلاً <code>‎10.244.0.0/16‎</code> که به CNI و <code>--cluster-cidr</code> داده می‌شود)،‏ Service CIDR (مثلاً <code>‎10.96.0.0/12‎</code> در <code>--service-cluster-ip-range</code> روی kube-apiserver) و شبکه‌ی Nodeها (مثلاً <code>‎192.168.10.0/24‎</code>). اگر Service CIDR با شبکه‌ی داخلی شرکت (مثلاً VPN یا پایگاه‌داده بیرونی) هم‌پوشانی داشته باشد،‏ kube-proxy ترافیک Podها به آن مقصد بیرونی را به‌عنوان ترافیک Service رهگیری می‌کند و اتصال به سرور واقعی شکست می‌خورد. این یک اشتباه رایج در طراحی cluster است که بعداً تغییرش بسیار سخت است (خارج از مستندات رسمی).</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh"># دیدن IPهایی که Kubernetes برای Node و Pod می‌شناسد
 kubectl get node -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.addresses}{"\n"}{end}'
 kubectl get pod web-5d7f6b8c9d-2kx8p -o jsonpath='{.status.podIPs}'</pre></div>
   </div>
+  </details>
 
   <h3 id="ch5-a-service">Service</h3>
   <p>در کوبرنتیز،‏ یک Service روشی برای در معرض قرار دادن (expose) یک برنامه‌ی شبکه‌ای است که به‌صورت یک یا چند Pod در cluster شما اجرا می‌شود.</p>
@@ -326,9 +333,12 @@ kubectl get pod web-5d7f6b8c9d-2kx8p -o jsonpath='{.status.podIPs}'</pre></div>
   <p>اگر بتوانید در برنامه‌ی خود از Kubernetes APIها برای service discovery استفاده کنید،‏ می‌توانید از API server برای EndpointSliceهای منطبق query بگیرید. Kubernetes هر بار که مجموعه‌ی Podهای یک Service تغییر کند،‏ EndpointSliceهای آن Service را به‌روز می‌کند.</p>
   <p>برای برنامه‌های non-native،‏ Kubernetes روش‌هایی ارائه می‌دهد تا یک network port یا load balancer بین برنامه‌ی شما و backend Podها قرار گیرد.</p>
   <p>در هر دو حالت،‏ workload شما می‌تواند از سازوکارهای service discovery (بخش Discovering services) برای پیدا کردن مقصدی که می‌خواهد به آن وصل شود استفاده کند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">دو سبک service discovery</span></summary>
   <div class="deep"><b>توضیح تکمیلی: دو سبک service discovery</b>
     <p>(۱) سبک «native»: برنامه (مثلاً یک gRPC client با client-side load balancing) خودش EndpointSliceها را از API watch می‌کند و مستقیماً به IP Podها وصل می‌شود؛‏ این کار به RBAC با دسترسی <code>list/watch</code> روی <code>endpointslices</code> نیاز دارد. (۲) سبک «non-native»: برنامه فقط یک نام DNS مثل <code>orders.shop.svc</code> می‌شناسد و virtual IP و kube-proxy باقی کار را انجام می‌دهند. ۹۵٪ برنامه‌ها سبک دوم را استفاده می‌کنند و هدف اصلی طراحی Service هم همین است: برنامه نباید بداند روی کوبرنتیز است.</p>
   </div>
+  </details>
 
   <h3 id="ch5-a-defining-service">Defining a Service</h3>
   <p>یک Service یک object است (همان‌طور که یک Pod یا یک ConfigMap object است). می‌توانید تعریف Serviceها را با استفاده از Kubernetes API بسازید،‏ ببینید یا تغییر دهید. معمولاً از ابزاری مثل <code>kubectl</code> استفاده می‌کنید تا این API callها را برای شما انجام دهد.</p>
@@ -405,10 +415,6 @@ spec:
   <p>این روش حتی وقتی کار می‌کند که ترکیبی از Podها در Service باشند که از یک نام پیکربندی‌شده‌ی واحد استفاده می‌کنند،‏ با همان network protocol که روی شماره‌ی portهای متفاوتی در دسترس است. این انعطاف زیادی برای deploy کردن و تکامل Serviceهایتان فراهم می‌کند. برای مثال،‏ می‌توانید شماره‌ی portهایی را که Podها expose می‌کنند در نسخه‌ی بعدی نرم‌افزار backend تغییر دهید،‏ بدون این‌که clientها دچار مشکل شوند.</p>
   <p>protocol پیش‌فرض برای Serviceها TCP است؛‏ می‌توانید از هر protocol پشتیبانی‌شده‌ی دیگر (مثل UDP و SCTP) هم استفاده کنید.</p>
   <p>چون بسیاری از Serviceها نیاز دارند بیش از یک port را expose کنند،‏ Kubernetes از تعریف چند port برای یک Service واحد پشتیبانی می‌کند (Multi-port Services). هر تعریف port می‌تواند <code>protocol</code> یکسان یا متفاوتی داشته باشد.</p>
-  <div class="deep"><b>توضیح تکمیلی: named targetPort در یک rolling update واقعی</b>
-    <p>فرض کنید نسخه‌ی v1 برنامه روی 8080 گوش می‌دهد و v2 روی 9090. اگر Service با <code>targetPort: 8080</code> تعریف شده باشد،‏ در طول rollout ترافیک به Podهای v2 روی 8080 می‌رود و refuse می‌شود. اما اگر در هر دو نسخه port را <code>name: http</code> بنامید و در Service بنویسید <code>targetPort: http</code>،‏ EndpointSlice controller برای هر Pod شماره‌ی واقعی را resolve می‌کند؛‏ Podهای v1 با 8080 و Podهای v2 با 9090 در EndpointSliceهای جداگانه قرار می‌گیرند (چون هر EndpointSlice یک مجموعه port مشترک دارد؛‏ بخش EndpointSliceها را ببینید). نتیجه: rollout بدون قطعی.</p>
-  </div>
-
   <h4 id="ch5-a-no-selector">Services without selectors</h4>
   <p>Serviceها بیشتر اوقات به لطف selector،‏ دسترسی به Podهای کوبرنتیز را abstract می‌کنند؛‏ اما وقتی بدون selector و همراه با مجموعه‌ای متناظر از objectهای EndpointSlice استفاده شوند،‏ Service می‌تواند انواع دیگری از backendها را abstract کند،‏ از جمله backendهایی که بیرون از cluster اجرا می‌شوند.</p>
   <p>برای مثال:</p>
@@ -519,10 +525,6 @@ kubectl -n shop run psql --rm -it --image=postgres:16 --restart=Never -- \
   <p>در آن حالت،‏ Kubernetes حداکثر ۱۰۰۰ endpoint پشتیبان ممکن را برای ذخیره در object مربوط به Endpoints انتخاب می‌کند و این annotation را روی Endpoints قرار می‌دهد: <code>endpoints.kubernetes.io/over-capacity: truncated</code>. control plane وقتی تعداد backend Podها به زیر ۱۰۰۰ برسد،‏ این annotation را حذف می‌کند.</p>
   <p>ترافیک همچنان به backendها ارسال می‌شود،‏ اما هر سازوکار load balancing که به Endpoints API قدیمی متکی باشد،‏ ترافیک را حداکثر به ۱۰۰۰ endpoint از endpointهای پشتیبان موجود ارسال می‌کند.</p>
   <p>همین محدودیت API به این معناست که نمی‌توانید یک Endpoints را به‌صورت دستی طوری به‌روز کنید که بیش از ۱۰۰۰ endpoint داشته باشد.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا EndpointSlice؟ حساب سرانگشتی</b>
-    <p>Serviceی با ۵۰۰۰ Pod را در نظر بگیرید. در مدل قدیمی Endpoints،‏ کل فهرست در <b>یک</b> object بود؛‏ با تغییر یک Pod (مثلاً restart)،‏ کل object چند صد کیلوبایتی دوباره به همه‌ی kube-proxyهای ۱۰۰۰ Node ارسال می‌شد. در EndpointSlice،‏ فهرست در حدود ۵۰ slice صدتایی تقسیم می‌شود و تغییر یک Pod فقط یک slice کوچک را به‌روز می‌کند. یعنی ترافیک watch حدود ۵۰ برابر کمتر. ابزارهای قدیمی که هنوز <code>kubectl get endpoints</code> را می‌خوانند (مثلاً اسکریپت‌های مانیتورینگ قدیمی) بعد از ۱۰۰۰ Pod تصویر ناقصی می‌بینند (خارج از مستندات رسمی،‏ به‌عنوان مثال محاسباتی).</p>
-  </div>
-
   <h4 id="ch5-a-app-protocol">Application protocol</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.20 [stable]</span></p>
   <p>فیلد <code>appProtocol</code> راهی برای تعیین یک application protocol برای هر port از Service فراهم می‌کند. از این فیلد به‌عنوان یک hint برای پیاده‌سازی‌ها استفاده می‌شود تا برای protocolهایی که می‌فهمند رفتار غنی‌تری ارائه دهند. مقدار این فیلد در objectهای متناظر Endpoints و EndpointSlice بازتاب (mirror) داده می‌شود.</p>
@@ -537,22 +539,6 @@ kubectl -n shop run psql --rm -it --image=postgres:16 --restart=Never -- \
     <tr><td><code>kubernetes.io/ws</code></td><td>WebSocket روی cleartext همان‌طور که در RFC 6455 توصیف شده</td></tr>
     <tr><td><code>kubernetes.io/wss</code></td><td>WebSocket روی TLS همان‌طور که در RFC 6455 توصیف شده</td></tr>
   </tbody></table></div>
-  <div class="deep"><b>توضیح تکمیلی</b>
-    <p>kube-proxy خودش در لایه‌ی ۴ کار می‌کند و به <code>appProtocol</code> اهمیتی نمی‌دهد. مصرف‌کننده‌های اصلی این فیلد،‏ Gateway/Ingress controllerها،‏ service meshها و cloud load balancerها هستند؛‏ مثلاً یک پیاده‌سازی Gateway می‌تواند با دیدن <code>appProtocol: kubernetes.io/h2c</code> به backend با HTTP/2 بدون TLS وصل شود (برای gRPC لازم است). رفتار دقیق به پیاده‌سازی بستگی دارد.</p>
-    <div class="code"><div class="lbl"><span>grpc-svc.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
-kind: Service
-metadata:
-  name: pricing-grpc
-spec:
-  selector:
-    app: pricing
-  ports:
-  - name: grpc
-    port: 50051
-    targetPort: 50051
-    appProtocol: kubernetes.io/h2c   # hint برای Gateway/mesh</pre></div>
-  </div>
-
   <h4 id="ch5-a-multiport">Multi-port Services</h4>
   <p>برای برخی Serviceهای لازم است بیش از یک port را expose کنید. Kubernetes به شما اجازه می‌دهد چند تعریف port روی یک object از نوع Service پیکربندی کنید. وقتی از چند port برای یک Service استفاده می‌کنید،‏ باید به همه‌ی portها نام بدهید تا ابهامی وجود نداشته باشد. برای مثال:</p>
   <div class="code"><div class="lbl"><span>multi-port-service.yaml (از متن مستندات)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -573,9 +559,33 @@ spec:
       targetPort: 9377
 </pre></div>
   <div class="note"><b>نکته</b><p>مثل نام‌های کوبرنتیز به‌طور کلی،‏ نام portها باید فقط شامل کاراکترهای الفبایی-عددی کوچک و <code>‎-‎</code> باشند. نام portها همچنین باید با یک کاراکتر الفبایی-عددی شروع و تمام شوند.</p><p>برای مثال،‏ نام‌های <code>123-abc</code> و <code>web</code> معتبرند،‏ اما <code>123_abc</code> و <code>-web</code> معتبر نیستند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">named targetPort در یک rolling update واقعی · چرا EndpointSlice؟ حساب سرانگشتی · چرا نام‌گذاری اجباری است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: named targetPort در یک rolling update واقعی</b>
+    <p>فرض کنید نسخه‌ی v1 برنامه روی 8080 گوش می‌دهد و v2 روی 9090. اگر Service با <code>targetPort: 8080</code> تعریف شده باشد،‏ در طول rollout ترافیک به Podهای v2 روی 8080 می‌رود و refuse می‌شود. اما اگر در هر دو نسخه port را <code>name: http</code> بنامید و در Service بنویسید <code>targetPort: http</code>،‏ EndpointSlice controller برای هر Pod شماره‌ی واقعی را resolve می‌کند؛‏ Podهای v1 با 8080 و Podهای v2 با 9090 در EndpointSliceهای جداگانه قرار می‌گیرند (چون هر EndpointSlice یک مجموعه port مشترک دارد؛‏ بخش EndpointSliceها را ببینید). نتیجه: rollout بدون قطعی.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا EndpointSlice؟ حساب سرانگشتی</b>
+    <p>Serviceی با ۵۰۰۰ Pod را در نظر بگیرید. در مدل قدیمی Endpoints،‏ کل فهرست در <b>یک</b> object بود؛‏ با تغییر یک Pod (مثلاً restart)،‏ کل object چند صد کیلوبایتی دوباره به همه‌ی kube-proxyهای ۱۰۰۰ Node ارسال می‌شد. در EndpointSlice،‏ فهرست در حدود ۵۰ slice صدتایی تقسیم می‌شود و تغییر یک Pod فقط یک slice کوچک را به‌روز می‌کند. یعنی ترافیک watch حدود ۵۰ برابر کمتر. ابزارهای قدیمی که هنوز <code>kubectl get endpoints</code> را می‌خوانند (مثلاً اسکریپت‌های مانیتورینگ قدیمی) بعد از ۱۰۰۰ Pod تصویر ناقصی می‌بینند (خارج از مستندات رسمی،‏ به‌عنوان مثال محاسباتی).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+    <p>kube-proxy خودش در لایه‌ی ۴ کار می‌کند و به <code>appProtocol</code> اهمیتی نمی‌دهد. مصرف‌کننده‌های اصلی این فیلد،‏ Gateway/Ingress controllerها،‏ service meshها و cloud load balancerها هستند؛‏ مثلاً یک پیاده‌سازی Gateway می‌تواند با دیدن <code>appProtocol: kubernetes.io/h2c</code> به backend با HTTP/2 بدون TLS وصل شود (برای gRPC لازم است). رفتار دقیق به پیاده‌سازی بستگی دارد.</p>
+    <div class="code"><div class="lbl"><span>grpc-svc.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: pricing-grpc
+spec:
+  selector:
+    app: pricing
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+    appProtocol: kubernetes.io/h2c   # hint برای Gateway/mesh</pre></div>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: چرا نام‌گذاری اجباری است؟</b>
     <p>نام port در سه جا مصرف می‌شود: (۱) در EndpointSlice،‏ portها با نام به portهای Service جفت می‌شوند؛‏ بدون نام،‏ kube-proxy نمی‌داند endpoint port 9377 مال کدام port Service است. (۲) رکوردهای DNS SRV به شکل <code>_https._tcp.my-service.my-ns</code> فقط برای portهای نام‌دار ساخته می‌شوند. (۳) Ingress/Gateway می‌توانند backend را با نام port ارجاع دهند. اگر API server سرویس دو-portی بدون نام را ببیند با خطای <code>spec.ports[0].name: Required value</code> آن را رد می‌کند.</p>
   </div>
+  </details>
 
   <h3 id="ch5-a-service-type">Service type</h3>
   <p>برای برخی بخش‌های برنامه‌تان (مثلاً frontendها) ممکن است بخواهید یک Service را روی یک IP address بیرونی expose کنید؛‏ آدرسی که از بیرون cluster قابل دسترس باشد.</p>
@@ -588,17 +598,6 @@ spec:
     <tr><td><code>ExternalName</code></td><td>Service را به محتوای فیلد <code>externalName</code> نگاشت می‌کند (مثلاً به hostname <code>api.foo.bar.example</code>). این نگاشت،‏ DNS server cluster را طوری پیکربندی می‌کند که یک رکورد <code>CNAME</code> با مقدار آن hostname بیرونی برگرداند. هیچ نوع proxy کردنی راه‌اندازی نمی‌شود.</td></tr>
   </tbody></table></div>
   <p>فیلد <code>type</code> در Service API به‌صورت قابلیت‌های تو در تو (nested) طراحی شده است؛‏ هر سطح به سطح قبلی اضافه می‌شود. با این حال یک استثنا در این طراحی تو در تو وجود دارد: می‌توانید یک Service از نوع <code>LoadBalancer</code> را با غیرفعال کردن تخصیص <code>NodePort</code> برای load balancer تعریف کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی: طراحی تو در تو در عمل</b>
-    <p>LoadBalancer ⊃ NodePort ⊃ ClusterIP. یعنی یک Service از نوع LoadBalancer هم ClusterIP دارد (برای ترافیک داخلی)،‏ هم nodePort روی همه‌ی Nodeها (که cloud LB به آن ترافیک می‌فرستد) و هم IP بیرونی LB. خروجی زیر این لایه‌ها را نشان می‌دهد:</p>
-    <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">$ kubectl get svc
-NAME        TYPE           CLUSTER-IP      EXTERNAL-IP                 PORT(S)        AGE
-api         ClusterIP      10.96.10.20     &lt;none&gt;                      80/TCP         5d
-api-np      NodePort       10.96.10.21     &lt;none&gt;                      80:31080/TCP   5d
-api-lb      LoadBalancer   10.96.10.22     203.0.113.40                80:30559/TCP   5d
-legacy-db   ExternalName   &lt;none&gt;          db.legacy.example.com       &lt;none&gt;         5d</pre></div>
-    <p>در ستون PORT(S)،‏ شکل <code>80:30559/TCP</code> یعنی port سرویس 80 و nodePort 30559.‏ ExternalName هیچ ClusterIP و هیچ portی ندارد،‏ چون فقط یک رکورد DNS است.</p>
-  </div>
-
   <h4 id="ch5-a-type-clusterip">type: ClusterIP</h4>
   <p>این Service type پیش‌فرض یک IP address از یک pool از IP addressهایی که cluster شما برای این منظور رزرو کرده است اختصاص می‌دهد.</p>
   <p>چند type دیگر از Service روی type مربوط به <code>ClusterIP</code> به‌عنوان پایه ساخته می‌شوند.</p>
@@ -654,9 +653,6 @@ spec:
     <li>Dynamic band: 30086-32767</li>
   </ul>
   <p>برای جزئیات بیشتر درباره‌ی نحوه‌ی محاسبه‌ی باندهای static و dynamic،‏ مقاله‌ی وبلاگ کوبرنتیز با عنوان «Avoid Collisions Assigning Ports to NodePort Services» را ببینید.</p>
-  <div class="deep"><b>توضیح تکمیلی: قاعده‌ی عملی</b>
-    <p>اگر تیم شبکه در firewall یا load balancer سخت‌افزاری یک nodePort ثابت (مثلاً 30080) را hard-code کرده است،‏ آن را از باند static (30000 تا 30085) انتخاب کنید. در این صورت احتمال این‌که یک Service دیگر با تخصیص خودکار پیش از شما آن port را بگیرد (که باعث شکست <code>kubectl apply</code> شما با خطای <code>provided port is already allocated</code> می‌شود) بسیار کم است،‏ چون تخصیص خودکار تا وقتی ۲۶۸۲ port باند بالایی تمام نشده،‏ سراغ باند پایینی نمی‌رود.</p>
-  </div>
   <h4 id="ch5-a-nodeport-addresses">IP address configuration for type: NodePort Services</h4>
   <p>وقتی از kube-proxy در حالت <code>iptables</code> استفاده می‌کنید،‏ NodePort Serviceها به‌طور پیش‌فرض روی همه‌ی IPهای Node در دسترس‌اند. وقتی از حالت <code>nftables</code> استفاده می‌کنید،‏ به‌طور پیش‌فرض فقط روی IP اصلی (primary) Node (یا IPهای primary در dual-stack) در دسترس‌اند.</p>
   <p>می‌توانید مجموعه‌ی IPهای Node را که NodePort Serviceها روی آن‌ها در دسترس‌اند با flag <code>--nodeport-addresses</code> در kube-proxy یا فیلد معادل <code>nodePortAddresses</code> در فایل پیکربندی kube-proxy تغییر دهید. این گزینه یک فهرست جداشده با کاما از IP blockها (مثلاً <code>‎10.0.0.0/8‎</code>،‏ <code>‎192.0.2.0/25‎</code>) یا یک یا چند کلیدواژه‌ی زیر را می‌پذیرد:</p>
@@ -683,10 +679,6 @@ nodePortAddresses:
     <li>در حالت <code>nftables</code>،‏ NodePort Serviceها روی localhost در دسترس خواهند بود اگر feature gate <code>KubeProxyNFTablesLocalhostNodePorts</code> فعال باشد و <code>--nodeport-addresses</code> روی مقداری تنظیم شده باشد که صراحتاً شامل <code>localhost</code> است. (تنظیم آن فقط روی <code>all</code>،‏ NodePort Serviceهای localhost را فعال <i>نمی‌کند</i>.) این قابلیت با redirect کردن اتصال‌های localhost NodePort از طریق یک proxy در userspace پیاده‌سازی شده،‏ بنابراین به اندازه‌ی service proxying معمولی کارآمد نیست.</li>
   </ul>
   <p>network pluginهای third-party که پیاده‌سازی service proxy خودشان را دارند ممکن است از NodePortهای localhost پشتیبانی کنند یا نکنند؛‏ به مستندات آن pluginها مراجعه کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا localhost NodePort مهم است؟</b>
-    <p>برخی سیستم‌ها (مثلاً یک agent روی Node که با <code>curl 127.0.0.1:30080</code> health check می‌کند،‏ یا برنامه‌های hostNetwork) بی‌صدا به این رفتار وابسته‌اند. وقتی از iptables به nftables مهاجرت کنید،‏ این اتصال‌ها بدون خطای واضح شکست می‌خورند. به همین دلیل مستندات metric <code>iptables_localhost_nodeports_accepted_packets_total</code> را معرفی کرده تا قبل از مهاجرت بفهمید کسی به آن وابسته است یا نه (بخش nftables را ببینید).</p>
-  </div>
-
   <h4 id="ch5-a-type-loadbalancer">type: LoadBalancer</h4>
   <p>روی cloud providerهایی که از load balancerهای بیرونی پشتیبانی می‌کنند،‏ تنظیم فیلد <code>type</code> روی <code>LoadBalancer</code> یک load balancer برای Service شما provision می‌کند. ساخت واقعی load balancer به‌صورت ناهمگام (asynchronous) انجام می‌شود و اطلاعات مربوط به balancer ایجادشده در فیلد <code>.status.loadBalancer</code> سرویس منتشر می‌شود. برای مثال:</p>
   <div class="code"><div class="lbl"><span>loadbalancer-service.yaml (از متن مستندات)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -742,22 +734,6 @@ spec:
   <p>برای یک Service که <code>type</code> آن <code>LoadBalancer</code> است،‏ فیلد <code>.spec.loadBalancerClass</code> امکان استفاده از یک پیاده‌سازی load balancer غیر از پیش‌فرض cloud provider را فراهم می‌کند.</p>
   <p>به‌طور پیش‌فرض،‏ <code>.spec.loadBalancerClass</code> تنظیم نشده و یک Service از نوع <code>LoadBalancer</code> از پیاده‌سازی پیش‌فرض load balancer مربوط به cloud provider استفاده می‌کند؛‏ به شرطی که cluster با flag <code>--cloud-provider</code> روی componentها با یک cloud provider پیکربندی شده باشد.</p>
   <p>اگر <code>.spec.loadBalancerClass</code> را مشخص کنید،‏ فرض بر این است که یک پیاده‌سازی load balancer منطبق با class مشخص‌شده در حال watch کردن Serviceهاست. هر پیاده‌سازی پیش‌فرض load balancer (مثلاً آنچه cloud provider ارائه می‌دهد) Serviceهایی را که این فیلد را دارند نادیده می‌گیرد. <code>spec.loadBalancerClass</code> فقط روی Service از نوع <code>LoadBalancer</code> قابل تنظیم است. پس از تنظیم،‏ قابل تغییر نیست. مقدار <code>spec.loadBalancerClass</code> باید یک شناسه‌ی شبیه label باشد،‏ با یک prefix اختیاری مثل «<code>internal-vip</code>» یا «<code>example.com/internal-vip</code>». نام‌های بدون prefix برای کاربران نهایی رزرو شده‌اند.</p>
-  <div class="deep"><b>توضیح تکمیلی: مثال bare metal</b>
-    <p>در یک cluster روی سرورهای فیزیکی ممکن است هم MetalLB (برای IPهای عمومی) و هم یک load balancer داخلی دیگر داشته باشید. با <code>loadBalancerClass</code> مشخص می‌کنید کدام controller مسئول کدام Service است و دو controller سر یک Service دعوا نمی‌کنند. نام class دقیق به controller بستگی دارد (خارج از مستندات رسمی):</p>
-    <div class="code"><div class="lbl"><span>lb-class.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
-kind: Service
-metadata:
-  name: internal-api
-spec:
-  type: LoadBalancer
-  loadBalancerClass: example.com/internal-vip   # immutable پس از ساخت
-  selector:
-    app: api
-  ports:
-  - port: 443
-    targetPort: 8443</pre></div>
-    <p>اگر هیچ controllerی این class را watch نکند،‏ ستون EXTERNAL-IP برای همیشه <code>&lt;pending&gt;</code> می‌ماند و هیچ خطایی هم نمی‌بینید؛‏ این یکی از دلایل رایج «pending ماندن» LoadBalancer است.</p>
-  </div>
   <h4 id="ch5-a-lb-ipmode">Load balancer IP address mode</h4>
   <p>برای یک Service از نوع <code>type: LoadBalancer</code>،‏ یک controller می‌تواند <code>.status.loadBalancer.ingress.ipMode</code> را تنظیم کند. <code>.status.loadBalancer.ingress.ipMode</code> مشخص می‌کند که IP مربوط به load balancer چطور رفتار می‌کند. این فیلد فقط وقتی قابل تعیین است که فیلد <code>.status.loadBalancer.ingress.ip</code> هم مشخص شده باشد.</p>
   <p>دو مقدار ممکن برای <code>.status.loadBalancer.ingress.ipMode</code> وجود دارد: «VIP» و «Proxy». مقدار پیش‌فرض «VIP» است،‏ به این معنی که ترافیک با مقصدی برابر با IP و port مربوط به load balancer به Node تحویل داده می‌شود. برای تنظیم آن روی «Proxy» دو حالت وجود دارد،‏ بسته به این‌که load balancer مربوط به cloud provider ترافیک را چطور تحویل می‌دهد:</p>
@@ -766,9 +742,6 @@ spec:
     <li>اگر ترافیک مستقیماً به Pod تحویل داده شود،‏ مقصد برابر با IP و port مربوط به Pod خواهد بود.</li>
   </ul>
   <p>پیاده‌سازی‌های Service ممکن است از این اطلاعات برای تنظیم routing ترافیک استفاده کنند.</p>
-  <div class="deep"><b>توضیح تکمیلی: چرا ipMode لازم شد؟</b>
-    <p>در حالت VIP،‏ kube-proxy روی هر Node قاعده‌ای می‌گذارد که ترافیک مقصد IP load balancer را مستقیماً (بدون خروج از Node) به Podها بفرستد. این برای Podهای داخل cluster که به IP عمومی LB وصل می‌شوند یک «میان‌بر» است. اما اگر LB یک proxy واقعی باشد (مثلاً TLS termination یا PROXY protocol انجام دهد)،‏ این میان‌بر باعث می‌شود ترافیک داخلی از آن قابلیت‌ها عبور نکند و مثلاً backend که انتظار PROXY protocol header دارد،‏ اتصال را خراب ببیند. با <code>ipMode: Proxy</code>،‏ kube-proxy این میان‌بر را نمی‌سازد و ترافیک واقعاً از LB عبور می‌کند.</p>
-  </div>
   <h4 id="ch5-a-internal-lb">Internal load balancer</h4>
   <p>در یک محیط ترکیبی گاهی لازم است ترافیک از Serviceها در داخل همان بلوک آدرس شبکه‌ی (مجازی) route شود.</p>
   <p>در یک محیط split-horizon DNS به دو Service نیاز خواهید داشت تا بتوانید هم ترافیک بیرونی و هم ترافیک داخلی را به endpointهایتان route کنید.</p>
@@ -841,6 +814,45 @@ curl: (60) SSL: no alternative certificate subject name matches target host name
     <p>DNS درست کار کرد (CNAME)،‏ اما TLS شکست خورد چون certificate سرور برای <code>kubernetes.io</code> است و client با نام <code>kube-docs</code> وصل شده؛‏ دقیقاً همان هشدار Caution.‏ ExternalName برای protocolهایی مثل PostgreSQL بدون بررسی hostname یا وقتی client نام مقصد واقعی را در SNI/Host می‌فرستد مناسب‌تر است.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۵)</small> <span class="m-t">طراحی تو در تو در عمل · قاعده‌ی عملی · چرا localhost NodePort مهم است؟ · مثال bare metal · چرا ipMode لازم شد؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: طراحی تو در تو در عمل</b>
+    <p>LoadBalancer ⊃ NodePort ⊃ ClusterIP. یعنی یک Service از نوع LoadBalancer هم ClusterIP دارد (برای ترافیک داخلی)،‏ هم nodePort روی همه‌ی Nodeها (که cloud LB به آن ترافیک می‌فرستد) و هم IP بیرونی LB. خروجی زیر این لایه‌ها را نشان می‌دهد:</p>
+    <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">$ kubectl get svc
+NAME        TYPE           CLUSTER-IP      EXTERNAL-IP                 PORT(S)        AGE
+api         ClusterIP      10.96.10.20     &lt;none&gt;                      80/TCP         5d
+api-np      NodePort       10.96.10.21     &lt;none&gt;                      80:31080/TCP   5d
+api-lb      LoadBalancer   10.96.10.22     203.0.113.40                80:30559/TCP   5d
+legacy-db   ExternalName   &lt;none&gt;          db.legacy.example.com       &lt;none&gt;         5d</pre></div>
+    <p>در ستون PORT(S)،‏ شکل <code>80:30559/TCP</code> یعنی port سرویس 80 و nodePort 30559.‏ ExternalName هیچ ClusterIP و هیچ portی ندارد،‏ چون فقط یک رکورد DNS است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: قاعده‌ی عملی</b>
+    <p>اگر تیم شبکه در firewall یا load balancer سخت‌افزاری یک nodePort ثابت (مثلاً 30080) را hard-code کرده است،‏ آن را از باند static (30000 تا 30085) انتخاب کنید. در این صورت احتمال این‌که یک Service دیگر با تخصیص خودکار پیش از شما آن port را بگیرد (که باعث شکست <code>kubectl apply</code> شما با خطای <code>provided port is already allocated</code> می‌شود) بسیار کم است،‏ چون تخصیص خودکار تا وقتی ۲۶۸۲ port باند بالایی تمام نشده،‏ سراغ باند پایینی نمی‌رود.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا localhost NodePort مهم است؟</b>
+    <p>برخی سیستم‌ها (مثلاً یک agent روی Node که با <code>curl 127.0.0.1:30080</code> health check می‌کند،‏ یا برنامه‌های hostNetwork) بی‌صدا به این رفتار وابسته‌اند. وقتی از iptables به nftables مهاجرت کنید،‏ این اتصال‌ها بدون خطای واضح شکست می‌خورند. به همین دلیل مستندات metric <code>iptables_localhost_nodeports_accepted_packets_total</code> را معرفی کرده تا قبل از مهاجرت بفهمید کسی به آن وابسته است یا نه (بخش nftables را ببینید).</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: مثال bare metal</b>
+    <p>در یک cluster روی سرورهای فیزیکی ممکن است هم MetalLB (برای IPهای عمومی) و هم یک load balancer داخلی دیگر داشته باشید. با <code>loadBalancerClass</code> مشخص می‌کنید کدام controller مسئول کدام Service است و دو controller سر یک Service دعوا نمی‌کنند. نام class دقیق به controller بستگی دارد (خارج از مستندات رسمی):</p>
+    <div class="code"><div class="lbl"><span>lb-class.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: internal-api
+spec:
+  type: LoadBalancer
+  loadBalancerClass: example.com/internal-vip   # immutable پس از ساخت
+  selector:
+    app: api
+  ports:
+  - port: 443
+    targetPort: 8443</pre></div>
+    <p>اگر هیچ controllerی این class را watch نکند،‏ ستون EXTERNAL-IP برای همیشه <code>&lt;pending&gt;</code> می‌ماند و هیچ خطایی هم نمی‌بینید؛‏ این یکی از دلایل رایج «pending ماندن» LoadBalancer است.</p>
+  </div>
+  <div class="deep"><b>توضیح تکمیلی: چرا ipMode لازم شد؟</b>
+    <p>در حالت VIP،‏ kube-proxy روی هر Node قاعده‌ای می‌گذارد که ترافیک مقصد IP load balancer را مستقیماً (بدون خروج از Node) به Podها بفرستد. این برای Podهای داخل cluster که به IP عمومی LB وصل می‌شوند یک «میان‌بر» است. اما اگر LB یک proxy واقعی باشد (مثلاً TLS termination یا PROXY protocol انجام دهد)،‏ این میان‌بر باعث می‌شود ترافیک داخلی از آن قابلیت‌ها عبور نکند و مثلاً backend که انتظار PROXY protocol header دارد،‏ اتصال را خراب ببیند. با <code>ipMode: Proxy</code>،‏ kube-proxy این میان‌بر را نمی‌سازد و ترافیک واقعاً از LB عبور می‌کند.</p>
+  </div>
+  </details>
+
   <h3 id="ch5-a-headless">Headless Services</h3>
   <p>گاهی به load balancing و یک Service IP واحد نیاز ندارید. در این حالت می‌توانید چیزی را بسازید که به آن <i>headless Service</i> گفته می‌شود؛‏ با تعیین صریح مقدار <code>"None"</code> برای cluster IP address (<code>.spec.clusterIP</code>).</p>
   <p>می‌توانید از یک headless Service برای ارتباط با سایر سازوکارهای service discovery استفاده کنید،‏ بدون این‌که وابسته به پیاده‌سازی کوبرنتیز شوید.</p>
@@ -891,10 +903,6 @@ REDIS_PRIMARY_PORT_6379_TCP_ADDR=10.0.0.11
 </pre></div>
   <div class="note"><b>نکته</b><p>وقتی یک Pod دارید که نیاز دارد به یک Service دسترسی داشته باشد و از روش environment variable برای انتشار port و cluster IP به Podهای client استفاده می‌کنید،‏ باید Service را <i>قبل از</i> به وجود آمدن Podهای client بسازید. در غیر این صورت environment variableهای آن Podهای client مقداردهی نمی‌شوند.</p><p>اگر فقط از DNS برای کشف cluster IP یک Service استفاده کنید،‏ لازم نیست نگران این مسئله‌ی ترتیب باشید.</p></div>
   <p>کوبرنتیز همچنین متغیرهایی را پشتیبانی و فراهم می‌کند که با قابلیت «legacy container links» در Docker Engine سازگارند. می‌توانید تابع <code>makeLinkVariables</code> را در کد کوبرنتیز بخوانید تا ببینید این قابلیت چطور پیاده‌سازی شده است.</p>
-  <div class="deep"><b>توضیح تکمیلی: هزینه‌ی پنهان environment variableها</b>
-    <p>kubelet برای <b>همه‌ی</b> Serviceهای namespace (و Service <code>kubernetes</code> در default) این متغیرها را تزریق می‌کند. در namespaceی با ۲۰۰۰ Service،‏ هر container هزاران environment variable می‌گیرد؛‏ این می‌تواند باعث کندی شروع container یا حتی خطای «argument list too long» در برخی برنامه‌ها شود،‏ و همچنین متغیرهایی مثل <code>REDIS_PORT=tcp://10.0.0.11:6379</code> ممکن است با متغیر پیکربندی خود برنامه (که انتظار عدد دارد) تداخل پیدا کنند. راه‌حل: <code>enableServiceLinks: false</code> در spec Pod (خارج از متن این صفحه،‏ اما فیلد رسمی Pod API است). با این تنظیم فقط متغیرهای Service <code>kubernetes</code> باقی می‌مانند و discovery کاملاً از طریق DNS انجام می‌شود.</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run e --rm -it --image=busybox:1.36 --restart=Never -- env | grep _SERVICE_HOST | sort | head</pre></div>
-  </div>
   <h4 id="ch5-a-dns-discovery">DNS</h4>
   <p>می‌توانید (و تقریباً همیشه باید) یک DNS service برای Cluster Kubernetes خود با استفاده از یک add-on راه‌اندازی کنید.</p>
   <p>یک DNS server آگاه از cluster،‏ مثل CoreDNS،‏ Kubernetes API را برای Serviceهای جدید watch می‌کند و برای هر کدام مجموعه‌ای از رکوردهای DNS می‌سازد. اگر DNS در سراسر cluster فعال شده باشد،‏ همه‌ی Podها باید به‌طور خودکار بتوانند Serviceها را با نام DNS آن‌ها resolve کنند.</p>
@@ -902,6 +910,14 @@ REDIS_PRIMARY_PORT_6379_TCP_ADDR=10.0.0.11
   <p>Podهای namespaceهای دیگر باید نام را به شکل <code>my-service.my-ns</code> کامل کنند. این نام‌ها به cluster IP تخصیص‌یافته به Service resolve می‌شوند.</p>
   <p>کوبرنتیز همچنین از رکوردهای DNS SRV (Service) برای portهای نام‌دار پشتیبانی می‌کند. اگر Service با نام <code>my-service.my-ns</code> یک port به نام <code>http</code> با protocol <code>TCP</code> داشته باشد،‏ می‌توانید یک DNS SRV query برای <code>_http._tcp.my-service.my-ns</code> انجام دهید تا شماره‌ی port مربوط به <code>http</code> و همچنین IP address را کشف کنید.</p>
   <p>Kubernetes DNS server تنها راه دسترسی به Serviceهای <code>ExternalName</code> است. اطلاعات بیشتر درباره‌ی resolution مربوط به <code>ExternalName</code> را در بخش DNS for Services and Pods (در همین فصل) می‌یابید.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">هزینه‌ی پنهان environment variableها</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: هزینه‌ی پنهان environment variableها</b>
+    <p>kubelet برای <b>همه‌ی</b> Serviceهای namespace (و Service <code>kubernetes</code> در default) این متغیرها را تزریق می‌کند. در namespaceی با ۲۰۰۰ Service،‏ هر container هزاران environment variable می‌گیرد؛‏ این می‌تواند باعث کندی شروع container یا حتی خطای «argument list too long» در برخی برنامه‌ها شود،‏ و همچنین متغیرهایی مثل <code>REDIS_PORT=tcp://10.0.0.11:6379</code> ممکن است با متغیر پیکربندی خود برنامه (که انتظار عدد دارد) تداخل پیدا کنند. راه‌حل: <code>enableServiceLinks: false</code> در spec Pod (خارج از متن این صفحه،‏ اما فیلد رسمی Pod API است). با این تنظیم فقط متغیرهای Service <code>kubernetes</code> باقی می‌مانند و discovery کاملاً از طریق DNS انجام می‌شود.</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run e --rm -it --image=busybox:1.36 --restart=Never -- env | grep _SERVICE_HOST | sort | head</pre></div>
+  </div>
+  </details>
 
   <h3 id="ch5-a-vip-mechanism">Virtual IP addressing mechanism</h3>
   <p>صفحه‌ی Virtual IPs and Service Proxies سازوکاری را که کوبرنتیز برای expose کردن یک Service با یک virtual IP address فراهم می‌کند توضیح می‌دهد (این صفحه در ادامه‌ی همین فصل به‌طور کامل آمده است).</p>
@@ -939,9 +955,12 @@ spec:
     - 198.51.100.32
 </pre></div>
   <div class="note"><b>نکته</b><p>کوبرنتیز تخصیص <code>externalIPs</code> را مدیریت نمی‌کند؛‏ این‌ها مسئولیت administrator cluster هستند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا externalIPs خطرناک است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا externalIPs خطرناک است؟</b>
     <p>چون کوبرنتیز مالکیت این IPها را بررسی نمی‌کند،‏ هر کاربری که اجازه‌ی ساخت Service در یک namespace را داشته باشد می‌تواند <code>externalIPs</code> را روی IP یک سرویس دیگر (مثلاً IP یک DNS server بیرونی یا API یک بانک) بگذارد و kube-proxy روی همه‌ی Nodeها ترافیک Podها به آن IP را به backend خودش رهگیری می‌کند؛‏ یعنی یک حمله‌ی man-in-the-middle در داخل Cluster (این آسیب‌پذیری با شناسه‌ی CVE-2020-8554 شناخته می‌شود؛‏ خارج از مستندات رسمی). به همین دلیل admission controller با نام <code>DenyServiceExternalIPs</code> وجود دارد و این فیلد deprecated شده است.</p>
   </div>
+  </details>
 
   <h3 id="ch5-a-api-object">API Object</h3>
   <p>Service یک resource سطح بالا در Kubernetes REST API است. جزئیات بیشتر را در مرجع Service API object (<code>v1/Service</code> در core API group) می‌یابید.</p>
@@ -1031,10 +1050,6 @@ iptables:
   <h4>syncPeriod</h4>
   <p>پارامتر <code>syncPeriod</code> تعدادی عملیات همگام‌سازی را کنترل می‌کند که مستقیماً به تغییرات تک‌تک Serviceها و EndpointSliceها مربوط نیستند. به‌ویژه کنترل می‌کند که kube-proxy با چه سرعتی متوجه شود یک component بیرونی در قوانین iptables آن دخالت کرده است. در clusterهای بزرگ،‏ kube-proxy همچنین برخی عملیات پاک‌سازی را فقط یک بار در هر <code>syncPeriod</code> انجام می‌دهد تا از کار غیرضروری پرهیز کند.</p>
   <p>در بیشتر موارد،‏ انتظار نمی‌رود افزایش <code>syncPeriod</code> تأثیر زیادی بر عملکرد داشته باشد،‏ اما در گذشته گاهی مفید بود که آن را روی یک مقدار خیلی بزرگ (مثلاً <code>1h</code>) تنظیم کنند. این کار دیگر توصیه نمی‌شود و احتمالاً بیشتر به عملکرد صحیح آسیب می‌زند تا این‌که عملکرد را بهبود دهد.</p>
-  <div class="deep"><b>توضیح تکمیلی: ارتباط minSyncPeriod با خطاهای 5xx در rollout</b>
-    <p>زمانی که یک Pod حذف می‌شود،‏ مسیر رسیدن این خبر به data plane چند مرحله دارد: kubelet/API server ←‏ EndpointSlice controller (endpoint را terminating/not ready می‌کند) ← watch به kube-proxy همه‌ی Nodeها ← انتظار تا حداکثر <code>minSyncPeriod</code> ← نوشتن قوانین. در همین بازه،‏ Pod ممکن است SIGTERM گرفته و بسته شده باشد،‏ ولی Nodeهای دیگر هنوز اتصال جدید به آن می‌فرستند. هرچه <code>minSyncPeriod</code> و اندازه‌ی cluster بزرگ‌تر،‏ این پنجره بزرگ‌تر. به همین دلیل راه‌حل استاندارد،‏ یک <code>preStop</code> با sleep کوتاه در Pod است تا Pod در این پنجره هنوز درخواست بپذیرد (فصل ۳،‏ termination of Pods). تمرین‌های انتهای فصل این سناریو را کامل بررسی می‌کنند.</p>
-  </div>
-
   <h4 id="ch5-a-mode-ipvs">IPVS proxy mode</h4>
   <p><span class="fs">FEATURE STATE: Kubernetes v1.35 [deprecated]</span></p>
   <p><i>این proxy mode فقط روی Nodeهای Linux در دسترس است.</i></p>
@@ -1116,12 +1131,18 @@ table ip kube-proxy {
   <h4 id="ch5-a-session-timeout">Session stickiness timeout</h4>
   <p>همچنین می‌توانید حداکثر زمان session sticky را با تنظیم مناسب <code>.spec.sessionAffinityConfig.clientIP.timeoutSeconds</code> برای یک Service مشخص کنید (مقدار پیش‌فرض ۱۰۸۰۰ است که برابر با ۳ ساعت می‌شود).</p>
   <div class="note"><b>نکته</b><p>روی Windows،‏ تنظیم حداکثر زمان session sticky برای Serviceها پشتیبانی نمی‌شود.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">ارتباط minSyncPeriod با خطاهای 5xx در rollout · ClientIP در برابر session affinity واقعی لایه‌ی ۷</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: ارتباط minSyncPeriod با خطاهای 5xx در rollout</b>
+    <p>زمانی که یک Pod حذف می‌شود،‏ مسیر رسیدن این خبر به data plane چند مرحله دارد: kubelet/API server ←‏ EndpointSlice controller (endpoint را terminating/not ready می‌کند) ← watch به kube-proxy همه‌ی Nodeها ← انتظار تا حداکثر <code>minSyncPeriod</code> ← نوشتن قوانین. در همین بازه،‏ Pod ممکن است SIGTERM گرفته و بسته شده باشد،‏ ولی Nodeهای دیگر هنوز اتصال جدید به آن می‌فرستند. هرچه <code>minSyncPeriod</code> و اندازه‌ی cluster بزرگ‌تر،‏ این پنجره بزرگ‌تر. به همین دلیل راه‌حل استاندارد،‏ یک <code>preStop</code> با sleep کوتاه در Pod است تا Pod در این پنجره هنوز درخواست بپذیرد (فصل ۳،‏ termination of Pods). تمرین‌های انتهای فصل این سناریو را کامل بررسی می‌کنند.</p>
+  </div>
   <div class="deep"><b>توضیح تکمیلی: ClientIP در برابر session affinity واقعی لایه‌ی ۷</b>
     <p><code>sessionAffinity: ClientIP</code> در سطح لایه‌ی ۴/۳ کار می‌کند: kube-proxy بر اساس IP مبدأ client (نه cookie یا session token برنامه) تصمیم می‌گیرد. این یعنی اگر چند client پشت یک NAT مشترک (مثلاً یک شرکت با یک IP خروجی،‏ یا یک Ingress controller که به‌عنوان proxy عمل می‌کند) قرار داشته باشند،‏ همه‌شان از دید Service یک client به‌حساب می‌آیند و یک backend می‌گیرند — که می‌تواند باعث نامتوازن شدن بار شود. برای sticky session واقعی در سطح HTTP (بر اساس cookie)،‏ باید این کار را در لایه‌ی Ingress/L7 load balancer انجام دهید،‏ نه در سطح Service.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl patch service my-service -p '{"spec":{"sessionAffinity":"ClientIP","sessionAffinityConfig":{"clientIP":{"timeoutSeconds":3600}}}}'
 kubectl get service my-service -o jsonpath='{.spec.sessionAffinity} {.spec.sessionAffinityConfig.clientIP.timeoutSeconds}{"\n"}'</pre></div>
     <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">ClientIP 3600</pre></div>
   </div>
+  </details>
 
   <h3 id="ch5-a-ip-assignment">IP address assignment to Services</h3>
   <p>برخلاف Pod IP addressها که واقعاً به یک مقصد مشخص route می‌شوند،‏ Service IPها توسط یک host واحد پاسخ داده نمی‌شوند. در عوض kube-proxy از منطق پردازش بسته (مثل Linux iptables) استفاده می‌کند تا IP addressهای <i>virtual</i> تعریف کند که به‌صورت شفاف و بر حسب نیاز redirect می‌شوند.</p>
@@ -1237,6 +1258,8 @@ spec:
   <p>اگر feature gate با نام <code>ProxyTerminatingEndpoints</code> در kube-proxy فعال باشد و traffic policy روی <code>Local</code> باشد،‏ kube-proxy آن Node از یک الگوریتم پیچیده‌تر برای انتخاب endpointهای یک Service استفاده می‌کند. با فعال بودن این feature،‏ kube-proxy بررسی می‌کند که آیا Node endpointهای محلی دارد یا نه و آیا همه‌ی آن endpointهای محلی به‌عنوان terminating علامت‌گذاری شده‌اند یا نه. اگر endpointهای محلی وجود داشته باشند و <b>همه‌ی</b> آن‌ها در حال terminate باشند،‏ kube-proxy ترافیک را به آن endpointهای terminating forward می‌کند. در غیر این صورت،‏ kube-proxy همیشه ترجیح می‌دهد ترافیک را به endpointهایی که terminating نیستند forward کند.</p>
   <p>این رفتار forward کردن برای endpointهای terminating وجود دارد تا به Serviceهای <code>NodePort</code> و <code>LoadBalancer</code> اجازه دهد وقتی از <code>externalTrafficPolicy: Local</code> استفاده می‌کنند،‏ connectionها را به‌آرامی drain کنند.</p>
   <p>در طول یک rolling update (جایگزینی تدریجی Podهای قدیمی با Podهای جدید بدون قطعی)،‏ Nodeهایی که پشتیبان یک load balancer هستند ممکن است از N replica به ۰ replica از آن deployment انتقال یابند. در برخی موارد،‏ external load balancerها می‌توانند بین probeهای health check ترافیک را به Nodeای با ۰ replica بفرستند. route کردن ترافیک به endpointهای terminating تضمین می‌کند Nodeهایی که در حال scale down کردن Podها هستند بتوانند به‌آرامی ترافیک را دریافت و به آن Podهای terminating drain کنند. تا زمانی که Pod کار terminate شدن را کامل کند،‏ external load balancer باید health check Node را دیده باشد که شکست خورده و Node را کاملاً از backend pool حذف کرده باشد.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">race شناخته‌شده‌ی endpoint-removal و خطاهای ۵xx کوتاه‌مدت</span></summary>
   <div class="deep"><b>توضیح تکمیلی: race شناخته‌شده‌ی endpoint-removal و خطاهای ۵xx کوتاه‌مدت</b>
     <p>حتی با <code>ProxyTerminatingEndpoints</code>،‏ یک race معروف در production وجود دارد: وقتی یک Pod پشت یک Service (به‌خصوص با <code>externalTrafficPolicy: Cluster</code> یا در ارتباط Pod-to-Pod از طریق ClusterIP) پاک می‌شود،‏ سه رویداد باید هماهنگ شوند: (۱) container واقعاً باید <code>SIGTERM</code> بگیرد و شروع به بستن connectionهای جدید کند،‏ (۲) endpoint controller باید آن Pod را از EndpointSlice حذف کند،‏ و (۳) kube-proxy روی هر Node باید قانون iptables/ipvs/nftables مربوطه را حذف کند. این‌ها <i>هم‌زمان</i> رخ می‌دهند،‏ نه به‌ترتیب تضمین‌شده. در فاصله‌ی کوتاهی (معمولاً چند صد میلی‌ثانیه تا چند ثانیه،‏ بسته به <code>syncPeriod</code> kube-proxy)،‏ ممکن است هنوز ترافیک به Podی فرستاده شود که containerش در حال shutdown است و دیگر به connection جدید گوش نمی‌دهد ← connection refused یا ۵۰۲/۵۰۳ از دید client. راه‌حل رسمی مستندات: از یک <code>preStop</code> lifecycle hook (فصل ۲) استفاده کنید که چند ثانیه <code>sleep</code> می‌کند پیش از این‌که واقعاً سیگنال terminate را به فرآیند برنامه برسانید — این به kube-proxy و endpoint controller فرصت می‌دهد قوانین را در همه‌ی Nodeها به‌روزرسانی کنند،‏ درحالی‌که Pod هنوز به‌عنوان یک backend فعال به درخواست‌های در حال پرواز پاسخ می‌دهد.</p>
     <div class="code"><div class="lbl"><span>fix-graceful-shutdown.yaml (خارج از مستندات رسمی: الگوی preStop)</span><button type="button">کپی</button></div><pre class="yaml">spec:
@@ -1248,6 +1271,7 @@ spec:
           command: ["sh", "-c", "sleep 5"]
     terminationGracePeriodSeconds: 30</pre></div>
   </div>
+  </details>
 
   <h3 id="ch5-a-traffic-distribution-full">Traffic distribution control</h3>
   <p>فیلد <code>spec.trafficDistribution</code> در یک Kubernetes Service به شما اجازه می‌دهد ترجیحاتی درباره‌ی نحوه‌ی route شدن ترافیک به endpointهای Service بیان کنید.</p>
@@ -1368,11 +1392,14 @@ spec:
     <tr><td>Range end</td><td>10.96.255.254</td></tr>
   </tbody></table></div>
   <p>یعنی ۲۵۶ آدرس static در برابر ۶۵۲۷۸ آدرس dynamic. مشاهده می‌کنید که با بزرگ‌تر شدن محدوده،‏ اندازه‌ی مطلق باند static ثابت می‌ماند (سقف ۲۵۶) اما سهم آن از کل محدوده کوچک‌تر می‌شود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا این تقسیم‌بندی؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا این تقسیم‌بندی؟</b>
     <p>این فرمول یک مصالحه است: اگر باند static خیلی کوچک باشد (مثلاً همیشه فقط چند آدرس)،‏ administratorها فضای کافی برای IPهای static شناخته‌شده (DNS،‏ webhookها،‏ و غیره) ندارند؛‏ اگر باند static خیلی بزرگ باشد (مثلاً نصف محدوده)،‏ فضای کافی برای تخصیص پویای خودکار در clusterهای بزرگ با هزاران Service باقی نمی‌ماند. با انتخاب مقدار پویا از باند بالایی و توصیه‌ی مشخص انتخاب دستی از باند پایینی،‏ احتمال این‌که یک تخصیص خودکار دقیقاً همان IPای را بگیرد که شما بعداً می‌خواهید دستی تنظیم کنید (باند پایینی) به‌شدت کم می‌شود. مثال عملی این تداخل: اگر بدون این جداسازی فقط تصادفی یک IP آزاد از کل محدوده انتخاب می‌شد،‏ هر بار که یک Service جدید ساخته می‌شد احتمال (هرچند کم) وجود داشت که دقیقاً همان IPای را بگیرد که administrator برای <code>kube-dns</code> کنار گذاشته بود.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get servicecidrs
 kubectl get svc -A -o wide | grep -E "10\.96\.0\.[0-9]\b"</pre></div>
   </div>
+  </details>
 
   <h3 id="ch5-a-svc-internal-tp">Service Internal Traffic Policy</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes stable since v1.26</span></p>
@@ -1467,9 +1494,12 @@ endpoints:
   </ul>
   <h4 id="ch5-a-tar-custom">Custom heuristics</h4>
   <p>کوبرنتیز به روش‌های بسیار متفاوتی deploy می‌شود،‏ هیچ heuristic واحدی برای تخصیص endpoint به zoneها برای هر use case کار نمی‌کند. یکی از اهداف کلیدی این feature،‏ فعال کردن توسعه‌ی heuristicهای سفارشی است اگر heuristic درون‌ساخت برای use case شما کار نکند. اولین قدم‌ها برای فعال کردن heuristicهای سفارشی در release نسخه‌ی 1.27 گنجانده شد. این یک پیاده‌سازی محدود است که ممکن است هنوز برخی موقعیت‌های مرتبط و محتمل را پوشش ندهد.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">trafficDistribution در برابر topology-mode: Auto — کدام را انتخاب کنیم؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: trafficDistribution در برابر <code>topology-mode: Auto</code> — کدام را انتخاب کنیم؟</b>
     <p>هر دو feature هدف مشترکی دارند اما فلسفه‌های متفاوتی: <code>topology-mode: Auto</code> برای Serviceهای با تعداد endpoint زیاد و ترافیک نسبتاً متوازن بین zoneها مناسب است،‏ چون سعی می‌کند تناسب با ظرفیت CPU برقرار کند و safeguardهای متعددی دارد که آن را در clusterهای کوچک یا نامتوازن غیرفعال می‌کند. <code>trafficDistribution: PreferSameZone</code> ساده‌تر و قطعی‌تر است — یا همه‌ی ترافیک zone به endpointهای همان zone می‌رود یا (اگر خالی باشد) به همه‌جا سرریز می‌شود — اما مسئولیت جلوگیری از overload به‌عهده‌ی شماست (مثلاً با Pod Topology Spread Constraints). در production،‏ برای Serviceهایی با endpoint کم در هر zone (مثل ۱-۲ replica در هر zone)،‏ <code>trafficDistribution</code> پیش‌بینی‌پذیرتر و ترجیح داده می‌شود؛‏ برای Serviceهای بزرگ با ده‌ها replica،‏ <code>topology-mode: Auto</code> معمولاً توزیع متوازن‌تری می‌دهد.</p>
   </div>
+  </details>
 
   <h3 id="ch5-a-endpointslices">EndpointSlices</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes stable since v1.21</span></p>
@@ -1734,6 +1764,8 @@ options ndots:5</pre></div>
     <li>روی Windows،‏ چند resolver DNS وجود دارد که می‌توان استفاده کرد. چون این‌ها با رفتارهای کمی متفاوت می‌آیند،‏ استفاده از cmdlet پاورشل <code>Resolve-DNSName</code> برای resolution پرس‌وجوهای نام توصیه می‌شود.</li>
     <li>روی Linux،‏ یک فهرست پسوند DNS دارید که پس از شکست resolution یک نام به‌عنوان fully qualified استفاده می‌شود. روی Windows،‏ فقط می‌توانید ۱ پسوند DNS داشته باشید،‏ که پسوند DNS مرتبط با namespace آن Pod است (مثال: <code>mydns.svc.cluster.local</code>). Windows می‌تواند FQDNها،‏ Serviceها،‏ یا نام شبکه‌ای که با این پسوند واحد resolve می‌شود را resolve کند. برای مثال،‏ یک Pod که در namespace <code>default</code> ساخته می‌شود،‏ پسوند DNS <code>default.svc.cluster.local</code> را خواهد داشت. داخل یک Pod ویندوزی،‏ می‌توانید هم <code>kubernetes.default.svc.cluster.local</code> و هم <code>kubernetes</code> را resolve کنید،‏ اما نام‌های نیمه‌کامل (<code>kubernetes.default</code> یا <code>kubernetes.default.svc</code>) را نمی‌توانید.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">هزینه‌ی پنهان ndots:5 و تأخیر DNS lookup برنامه‌های خارج از cluster</span></summary>
   <div class="deep"><b>توضیح تکمیلی: هزینه‌ی پنهان <code>ndots:5</code> و تأخیر DNS lookup برنامه‌های خارج از cluster</b>
     <p>پیش‌فرض <code>ndots:5</code> در <code>/etc/resolv.conf</code> یک اثر جانبی مهم در production دارد: هر نامی که کمتر از ۵ نقطه داشته باشد (که تقریباً همه‌ی نام‌های دامنه‌ی خارجی مثل <code>api.stripe.com</code> یا <code>s3.amazonaws.com</code> را شامل می‌شود) ابتدا با هر یک از پسوندهای فهرست <code>search</code> ترکیب و امتحان می‌شود،‏ پیش از این‌که به‌عنوان یک نام absolute (با یک نقطه‌ی انتهایی) امتحان شود. یعنی برای resolve کردن <code>api.stripe.com</code>،‏ glibc resolver به‌ترتیب این‌ها را امتحان می‌کند: <code>api.stripe.com.default.svc.cluster.local</code> (NXDOMAIN)،‏ <code>api.stripe.com.svc.cluster.local</code> (NXDOMAIN)،‏ <code>api.stripe.com.cluster.local</code> (NXDOMAIN)،‏ و در نهایت <code>api.stripe.com</code> (موفق). هر NXDOMAIN یک round-trip کامل به CoreDNS است — یعنی به‌جای ۱ پرس‌وجو،‏ ۴ پرس‌وجو،‏ که هرکدام چند میلی‌ثانیه (و در بار بالا،‏ بیشتر) طول می‌کشد. در برنامه‌هایی با تعداد زیاد فراخوانی API خارجی (مثلاً هر request به یک microservice چند فراخوانی HTTP خارجی دارد)،‏ این می‌تواند p99 latency را به‌طرز قابل‌توجهی افزایش دهد و بار اضافی روی CoreDNS بگذارد که گاهی منجر به throttling یا CoreDNS pod OOM می‌شود. راه‌حل‌های رایج (خارج از مستندات رسمی،‏ اما مبتنی بر همین فیلدهای رسمی): (۱) یک نقطه‌ی انتهایی به نام‌های کاملاً واجد شرایط اضافه کنید (<code>api.stripe.com.</code>) تا resolver مستقیم به absolute برود؛‏ (۲) با <code>dnsConfig.options</code> مقدار <code>ndots</code> را برای Podهایی که عمدتاً به بیرون cluster صحبت می‌کنند کاهش دهید (مثلاً ۲)؛‏ (۳) از یک local DNS cache (node-local-dns) استفاده کنید تا NXDOMAINهای تکراری local پاسخ داده شوند و به CoreDNS نرسند.</p>
     <div class="code"><div class="lbl"><span>low-ndots-pod.yaml (خارج از مستندات رسمی)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -1749,6 +1781,7 @@ spec:
   - name: app
     image: myapp:1.0</pre></div>
   </div>
+  </details>
 
   <h3 id="ch5-a-dual-stack">IPv4/IPv6 dual-stack</h3>
   <p><span class="fs">FEATURE STATE: Kubernetes stable since v1.23</span></p>
@@ -1979,8 +2012,8 @@ kubectl get svc web-dual -o jsonpath='{.spec.clusterIPs}{"\n"}'
   </div>
   <div class="warn"><b>هشدار</b><p>فعال کردن dual-stack روی یک cluster production موجود نیازمند برنامه‌ریزی دقیق است: باید مطمئن شوید همه‌ی componentها (CNI plugin،‏ cloud provider،‏ Ingress controller،‏ service mesh در صورت وجود) از IPv6 پشتیبانی می‌کنند،‏ در غیر این صورت ممکن است با تخصیص آدرس IPv6ای مواجه شوید که هیچ route واقعی‌ای ندارد و traffic روی آن silently drop می‌شود.</p></div>
 
-  <div id="ch5-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۵،‏ بخش اول <small>۱۵ تمرین</small></div>
+  <details id="ch5-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۵،‏ بخش اول <small>۱۵ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>چرا کوبرنتیز به‌جای این‌که به DNS با چند رکورد A و round-robin resolution اعتماد کند،‏ از proxying (virtual IP) برای هدایت ترافیک به Serviceها استفاده می‌کند؟ سه دلیل رسمی مستندات را بیان کنید.
         <details class="ans"><summary>پاسخ</summary><p>طبق <code>reference/networking/virtual-ips.md</code>: (۱) تاریخچه‌ی طولانی از پیاده‌سازی‌های DNS که TTL رکورد را رعایت نمی‌کنند و نتایج name lookup را حتی پس از انقضا cache می‌کنند؛‏ (۲) برخی برنامه‌ها فقط یک‌بار DNS lookup می‌کنند و نتیجه را برای همیشه cache می‌کنند؛‏ (۳) حتی اگر برنامه‌ها و کتابخانه‌ها به‌درستی دوباره resolve کنند،‏ TTLهای کم یا صفر روی رکوردهای DNS می‌تواند بار زیادی روی DNS بگذارد که مدیریتش سخت می‌شود. به همین دلیل،‏ Kubernetes یک IP ثابت (VIP) می‌دهد و load balancing واقعی را در سطح kernel/proxy (iptables/IPVS/nftables) انجام می‌دهد،‏ نه در سطح DNS.</p></details></li>
@@ -2162,7 +2195,7 @@ options ndots:2 edns0</pre></div>
         <p><b>پیشگیری:</b> (۱) مطمئن شوید health check مربوط به cloud load balancer دقیقاً روی <code>${NODE_IP}:10256/healthz</code> با فاصله‌ی کوتاه (مثلاً هر ۵ ثانیه) و آستانه‌ی failure پایین تنظیم شده؛‏ (۲) پیش از حذف Node،‏ آن را <code>cordon</code> و <code>drain</code> کنید (فصل ۹) و اجازه دهید replicaها روی Node دیگر بالا بیایند و به‌عنوان endpoint سالم اضافه شوند،‏ سپس منتظر یک بازه‌ی زمانی برابر با چند برابر <code>syncPeriod</code> cluster بمانید تا مطمئن شوید همه‌ی load balancerها به‌روزرسانی شده‌اند،‏ پیش از پاک کردن نهایی Node؛‏ (۳) با ۶ replica روی حداقل ۳ Node،‏ از Pod Topology Spread Constraints استفاده کنید تا هیچ‌گاه بیش از یک replica حیاتی روی یک Node تنها متمرکز نشود.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 <!-- chapter 8 part b -->
 
 <h3 id="ch5-b-ingress">Ingress</h3>
@@ -2179,10 +2212,13 @@ options ndots:2 edns0</pre></div>
 </ul>
 </div>
 
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>«frozen» با «deprecated» فرق دارد. یک API که deprecated می‌شود در نهایت طبق deprecation policy حذف می‌شود؛‏ اما Ingress حذف نمی‌شود،‏ فقط feature جدیدی نمی‌گیرد. پس manifestهای <code>networking.k8s.io/v1</code> شما سال‌ها کار می‌کنند،‏ ولی هر قابلیت پیشرفته (header matching،‏ traffic splitting با وزن،‏ routing برای gRPC و ...) را باید یا از annotationهای مخصوص هر Ingress controller بگیرید (که portable نیستند) یا به Gateway API مهاجرت کنید. به همین دلیل در این بخش هم Ingress کامل پوشش داده می‌شود (چون در بیشتر clusterهای Production موجود است) و هم Gateway API (چون مسیر آینده است).</p>
 <p>توجه: مستندات رسمی نسخه‌ی v1.37 در این صفحه‌ها درباره‌ی بازنشستگی یک Ingress controller خاص چیزی نمی‌گوید؛‏ بنابراین اینجا هم ادعایی در این باره نمی‌کنیم. اگر controller فعلی شما برنامه‌ی پایان پشتیبانی دارد،‏ آن را از مستندات خود پروژه‌ی controller بررسی کنید.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-terminology">اصطلاحات <small>(Terminology)</small></h3>
 <p>برای وضوح،‏ این راهنما اصطلاحات زیر را تعریف می‌کند:</p>
@@ -2201,7 +2237,9 @@ options ndots:2 edns0</pre></div>
 <p>یک Ingress می‌تواند طوری پیکربندی شود که به Serviceها URLهای قابل دسترس از بیرون بدهد،‏ ترافیک را load balance کند،‏ SSL / TLS را terminate کند و name-based virtual hosting ارائه دهد. یک <a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers">Ingress controller</a> مسئول برآورده کردن (fulfilling) Ingress است،‏ معمولاً با یک load balancer،‏ هرچند ممکن است edge router یا frontendهای اضافه را هم برای کمک به مدیریت ترافیک پیکربندی کند.</p>
 <p>یک Ingress پورت‌ها یا پروتکل‌های دلخواه را expose نمی‌کند. برای expose کردن سرویس‌هایی غیر از HTTP و HTTPS به اینترنت معمولاً از Service از نوع <a href="https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport">Service.Type=NodePort</a> یا <a href="https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer">Service.Type=LoadBalancer</a> استفاده می‌شود (بخش اول همین فصل).</p>
 
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>چرا Ingress وقتی Service از نوع LoadBalancer داریم؟ فرض کنید ۱۲ microservice وب دارید. با LoadBalancer برای هر کدام یک load balancer ابری (و یک IP عمومی و هزینه‌ی جداگانه) لازم است. Ingress در لایه‌ی ۷ (HTTP) کار می‌کند؛‏ یک نقطه‌ی ورود دارد و بر اساس <code>Host</code> header و path تصمیم می‌گیرد درخواست به کدام Service برود. پس یک IP،‏ یک certificate management متمرکز و یک جا برای ruleها.</p>
 <div class="tbl"><table><thead><tr><th>ویژگی</th><th>Service نوع LoadBalancer</th><th>Ingress</th></tr></thead><tbody>
 <tr><td>لایه‌ی OSI</td><td>لایه‌ی ۴ (TCP/UDP/SCTP)</td><td>لایه‌ی ۷ (فقط HTTP/HTTPS)</td></tr>
@@ -2211,6 +2249,7 @@ options ndots:2 edns0</pre></div>
 <tr><td>پروتکل‌های دلخواه (مثلاً PostgreSQL روی 5432)</td><td>بله</td><td>خیر</td></tr>
 </tbody></table></div>
 </div>
+  </details>
 
 <h3 id="ch5-b-ingress-prerequisites">Prerequisites <small>(Ingress)</small></h3>
 <p>برای برآورده شدن یک Ingress باید یک <a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers">Ingress controller</a> داشته باشید. صرفاً ساختن یک resource از نوع Ingress هیچ اثری ندارد.</p>
@@ -2218,9 +2257,12 @@ options ndots:2 edns0</pre></div>
 <p>در حالت ایده‌آل،‏ همه‌ی Ingress controllerها باید با reference specification سازگار باشند. در واقعیت،‏ Ingress controllerهای مختلف کمی متفاوت عمل می‌کنند.</p>
 <div class="note"><b>نکته</b><p>حتماً مستندات Ingress controller خود را بررسی کنید تا از caveatهای انتخاب آن آگاه شوید.</p></div>
 
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>این نکته که «ساختن Ingress بدون controller اثری ندارد» از الگوی کلی کوبرنتیز می‌آید: هر object فقط desired state (وضعیتی که کاربر در spec اعلام کرده است) را ثبت می‌کند و یک controller با control loop آن را به current state تبدیل می‌کند (فصل ۱۲). برخلاف Deployment که controllerاش داخل kube-controller-manager است،‏ هیچ Ingress controllerی همراه kube-controller-manager نیست؛‏ یک workload جدا (معمولاً Deployment یا DaemonSet در cluster،‏ یا یک سرویس مدیریت‌شده‌ی ابری) است که Ingressها را watch می‌کند. نشانه‌ی رایج نبود controller: ستون <code>ADDRESS</code> در <code>kubectl get ingress</code> برای همیشه خالی می‌ماند و در <code>kubectl describe</code> هیچ Eventی دیده نمی‌شود.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-ingress-resource">The Ingress resource</h3>
 <p>یک مثال حداقلی از resource از نوع Ingress:</p>
@@ -2246,16 +2288,6 @@ spec:
 <p>اگر <code>ingressClassName</code> حذف شود،‏ باید یک <a href="#ch5-b-default-ingressclass">default Ingress class</a> تعریف شده باشد.</p>
 <p>برخی Ingress controllerها حتی بدون تعریف یک default IngressClass هم کار می‌کنند. حتی اگر از Ingress controllerی استفاده می‌کنید که می‌تواند بدون هیچ IngressClassی کار کند،‏ پروژه‌ی کوبرنتیز باز هم توصیه می‌کند یک default IngressClass تعریف کنید.</p>
 
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>بیایید minimal-ingress را field به field بخوانیم:</p>
-<ul>
-<li><code>ingressClassName: nginx-example</code>: این Ingress متعلق به IngressClass با نام <code>nginx-example</code> است؛‏ فقط controllerی که آن IngressClass را پیاده می‌کند باید این Ingress را پردازش کند.</li>
-<li><code>rules[0]</code> هیچ <code>host</code>ی ندارد،‏ پس برای هر Host headerی اعمال می‌شود.</li>
-<li><code>path: /testpath</code> با <code>pathType: Prefix</code>: درخواست‌های <code>/testpath</code> و <code>/testpath/...</code> match می‌شوند (جزئیات در Path types).</li>
-<li><code>backend.service</code>: مقصد،‏ Service با نام <code>test</code> روی پورت 80 در <b>همان namespace</b> Ingress است. Ingress نمی‌تواند مستقیماً به Serviceی در namespace دیگر اشاره کند؛‏ این یکی از تفاوت‌ها با Gateway API است.</li>
-</ul>
-</div>
-
 <h4>Ingress rules</h4>
 <p>هر HTTP rule شامل اطلاعات زیر است:</p>
 <ul>
@@ -2265,23 +2297,9 @@ spec:
 </ul>
 <p>معمولاً یک <code>defaultBackend</code> در Ingress controller پیکربندی می‌شود تا به هر درخواستی که با هیچ pathی در spec match نمی‌شود سرویس دهد.</p>
 
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>تفاوت <code>service.port.name</code> و <code>service.port.number</code>: اگر در Service پورت را نام‌گذاری کرده باشید (مثلاً <code>name: http</code>)،‏ ارجاع با نام باعث می‌شود اگر روزی شماره‌ی پورت Service از 80 به 8080 تغییر کند،‏ Ingress دست نخورد. این دو field متقابلاً انحصاری‌اند؛‏ فقط یکی را بنویسید.</p>
-<div class="code"><div class="lbl"><span>مثال: ارجاع با نام پورت</span><button type="button">کپی</button></div><pre class="yaml">backend:
-  service:
-    name: shop-api
-    port:
-      name: http    # به‌جای number: 80
-</pre></div>
-</div>
-
 <h4 id="ch5-b-default-backend-h">DefaultBackend</h4>
 <p>یک Ingress بدون rule،‏ تمام ترافیک را به یک default backend واحد می‌فرستد و <code>.spec.defaultBackend</code> همان backendی است که در این حالت باید درخواست‌ها را رسیدگی کند. <code>defaultBackend</code> به‌طور قراردادی یک گزینه‌ی پیکربندی در <a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers">Ingress controller</a> است و در resourceهای Ingress شما مشخص نمی‌شود. اگر هیچ <code>.spec.rules</code>ی مشخص نشده باشد،‏ <code>.spec.defaultBackend</code> باید مشخص شود. اگر <code>defaultBackend</code> تنظیم نشده باشد،‏ رسیدگی به درخواست‌هایی که با هیچ ruleی match نمی‌شوند به Ingress controller واگذار می‌شود (مستندات Ingress controller خود را ببینید تا بفهمید این حالت را چگونه مدیریت می‌کند).</p>
 <p>اگر هیچ‌یک از hostها یا pathها در Ingress objectها با درخواست HTTP match نشوند،‏ ترافیک به default backend شما route می‌شود.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>در عمل،‏ بیشتر controllerها (خارج از مستندات رسمی) یک default backend داخلی دارند که پاسخ 404 برمی‌گرداند. پس اگر کاربر آدرسی را باز کرد و 404 خام controller را دید،‏ یعنی Host header یا path با هیچ ruleی match نشده است؛‏ نه اینکه Service شما 404 داده باشد. تشخیص این دو از هم در troubleshooting خیلی مهم است: log پاسخ‌دهنده را نگاه کنید؛‏ اگر درخواست اصلاً به Pod نرسیده،‏ مشکل در rule است.</p>
-</div>
-
 <h4 id="ch5-b-ingress-resource-backends">Resource backends</h4>
 <p>یک <code>Resource</code> backend یک ObjectRef به resource دیگری از کوبرنتیز در <b>همان namespace</b> Ingress object است. <code>Resource</code> با Service یک تنظیم متقابلاً انحصاری (mutually exclusive) است و اگر هر دو مشخص شوند validation شکست می‌خورد. یک کاربرد رایج <code>Resource</code> backend،‏ هدایت داده به یک object storage backend با static assetهاست.</p>
 <div class="code"><div class="lbl"><span>service/networking/ingress-resource-backend.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: networking.k8s.io/v1
@@ -2320,10 +2338,6 @@ Rules:
 Annotations:  &lt;none&gt;
 Events:       &lt;none&gt;
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p><code>StorageBucket</code> در گروه <code>k8s.example.com</code> یک CRD فرضی است. API server فقط شکل ارجاع را validate می‌کند؛‏ اینکه controller شما واقعاً می‌داند با یک <code>StorageBucket</code> چه کند یا نه،‏ به پیاده‌سازی آن controller بستگی دارد. اگر controller این نوع backend را نشناسد،‏ Ingress ساخته می‌شود ولی هیچ ترافیکی سرویس داده نمی‌شود. توجه کنید که در خروجی بالا <code>Address</code> خالی و <code>Events</code> برابر <code>&lt;none&gt;</code> است؛‏ یعنی هنوز هیچ controllerی این Ingress را پردازش نکرده است. host <code>‎*‎</code> هم یعنی rule برای همه‌ی hostها معتبر است.</p>
-</div>
-
 <h4 id="ch5-b-path-types-h">Path types</h4>
 <p>هر path در یک Ingress باید یک path type متناظر داشته باشد. pathهایی که <code>pathType</code> صریح ندارند در validation رد می‌شوند. سه path type پشتیبانی می‌شود:</p>
 <ul>
@@ -2390,6 +2404,34 @@ for p in /foo /foo/ /foo/bar /foobar; do echo -n "$p -&gt; "; curl -s -o /dev/nu
 </pre></div><p><code>/foo</code> با هر دو قاعده مطابقت دارد و طولشان برابر است،‏ پس طبق مستندات Exact برنده است. <code>/foo/</code> با Exact مطابقت ندارد (ردیف چهارم جدول). <code>/foobar</code> با Prefix <code>/foo</code> مطابقت ندارد چون مقایسه بخش‌به‌بخش است؛‏ Traefik برای درخواستی که هیچ قاعده‌ای ندارد،‏ خودش ۴۰۴ با متن <code>404 page not found</code> برمی‌گرداند.</p><div class="note"><b>اگر /foo جواب prefix داد</b><p>هر Ingress controller قاعده‌های Ingress را به زبان خودش ترجمه می‌کند. Traefik اولویت قاعده‌ها را از طول قاعده‌ی ترجمه‌شده حساب می‌کند و در بعضی نسخه‌ها ممکن است در تساوی طول مسیر،‏ Prefix را جلو بیندازد. اگر چنین دیدید،‏ این یک تفاوت پیاده‌سازی است؛‏ در کار واقعی دو قاعده‌ی هم‌مسیر با pathType متفاوت ننویسید.</p></div>
 </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>بیایید minimal-ingress را field به field بخوانیم:</p>
+<ul>
+<li><code>ingressClassName: nginx-example</code>: این Ingress متعلق به IngressClass با نام <code>nginx-example</code> است؛‏ فقط controllerی که آن IngressClass را پیاده می‌کند باید این Ingress را پردازش کند.</li>
+<li><code>rules[0]</code> هیچ <code>host</code>ی ندارد،‏ پس برای هر Host headerی اعمال می‌شود.</li>
+<li><code>path: /testpath</code> با <code>pathType: Prefix</code>: درخواست‌های <code>/testpath</code> و <code>/testpath/...</code> match می‌شوند (جزئیات در Path types).</li>
+<li><code>backend.service</code>: مقصد،‏ Service با نام <code>test</code> روی پورت 80 در <b>همان namespace</b> Ingress است. Ingress نمی‌تواند مستقیماً به Serviceی در namespace دیگر اشاره کند؛‏ این یکی از تفاوت‌ها با Gateway API است.</li>
+</ul>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>تفاوت <code>service.port.name</code> و <code>service.port.number</code>: اگر در Service پورت را نام‌گذاری کرده باشید (مثلاً <code>name: http</code>)،‏ ارجاع با نام باعث می‌شود اگر روزی شماره‌ی پورت Service از 80 به 8080 تغییر کند،‏ Ingress دست نخورد. این دو field متقابلاً انحصاری‌اند؛‏ فقط یکی را بنویسید.</p>
+<div class="code"><div class="lbl"><span>مثال: ارجاع با نام پورت</span><button type="button">کپی</button></div><pre class="yaml">backend:
+  service:
+    name: shop-api
+    port:
+      name: http    # به‌جای number: 80
+</pre></div>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>در عمل،‏ بیشتر controllerها (خارج از مستندات رسمی) یک default backend داخلی دارند که پاسخ 404 برمی‌گرداند. پس اگر کاربر آدرسی را باز کرد و 404 خام controller را دید،‏ یعنی Host header یا path با هیچ ruleی match نشده است؛‏ نه اینکه Service شما 404 داده باشد. تشخیص این دو از هم در troubleshooting خیلی مهم است: log پاسخ‌دهنده را نگاه کنید؛‏ اگر درخواست اصلاً به Pod نرسیده،‏ مشکل در rule است.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p><code>StorageBucket</code> در گروه <code>k8s.example.com</code> یک CRD فرضی است. API server فقط شکل ارجاع را validate می‌کند؛‏ اینکه controller شما واقعاً می‌داند با یک <code>StorageBucket</code> چه کند یا نه،‏ به پیاده‌سازی آن controller بستگی دارد. اگر controller این نوع backend را نشناسد،‏ Ingress ساخته می‌شود ولی هیچ ترافیکی سرویس داده نمی‌شود. توجه کنید که در خروجی بالا <code>Address</code> خالی و <code>Events</code> برابر <code>&lt;none&gt;</code> است؛‏ یعنی هنوز هیچ controllerی این Ingress را پردازش نکرده است. host <code>‎*‎</code> هم یعنی rule برای همه‌ی hostها معتبر است.</p>
+</div>
+  </details>
+
 <h3 id="ch5-b-hostname-wildcards">Hostname wildcards</h3>
 <p>hostها می‌توانند match دقیق باشند (مثلاً «<code>foo.bar.com</code>») یا wildcard (مثلاً «<code>*.foo.com</code>»). match دقیق نیازمند آن است که HTTP <code>host</code> header با field <code>host</code> برابر باشد. match با wildcard نیازمند آن است که HTTP <code>host</code> header با suffix قاعده‌ی wildcard برابر باشد.</p>
 <div class="tbl"><table><thead><tr><th>Host</th><th>Host header</th><th>Match?</th></tr></thead><tbody>
@@ -2425,9 +2467,12 @@ spec:
             port:
               number: 80
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>با این Ingress: <code>curl -H 'Host: foo.bar.com' http://IP/bar</code> به service1 می‌رود؛‏ <code>curl -H 'Host: app.foo.com' http://IP/foo</code> به service2 می‌رود؛‏ اما <code>Host: a.b.foo.com</code> یا <code>Host: foo.com</code> با هیچ ruleی match نمی‌شوند و به default backend می‌روند. در یک SaaS چندمستأجری که هر مشتری یک subdomain دارد (<code>acme.foo.com</code>،‏ <code>globex.foo.com</code>)،‏ wildcard یک rule برای همه‌ی مشتری‌ها کافی است؛‏ ولی اگر ساختار دولایه (<code>eu.acme.foo.com</code>) بخواهید،‏ wildcard تک‌لایه جواب نمی‌دهد. این دقیقاً همان رفتار wildcard certificateها هم هست که فقط یک label را پوشش می‌دهند (خارج از مستندات رسمی).</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-ingress-class">Ingress class</h3>
 <p>Ingressها می‌توانند توسط controllerهای مختلف و اغلب با پیکربندی‌های متفاوت پیاده‌سازی شوند. هر Ingress باید یک class مشخص کند؛‏ یعنی ارجاعی به یک resource از نوع IngressClass که پیکربندی اضافه،‏ از جمله نام controllerی که باید این class را پیاده کند،‏ در خود دارد.</p>
@@ -2444,10 +2489,6 @@ spec:
 </pre></div>
 <p>field <code>.spec.parameters</code> در یک IngressClass به شما اجازه می‌دهد به resource دیگری ارجاع دهید که پیکربندی مربوط به آن IngressClass را فراهم می‌کند.</p>
 <p>نوع مشخص parameterهایی که باید استفاده شود به Ingress controllerی بستگی دارد که در field <code>.spec.controller</code> از IngressClass تعیین می‌کنید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>رابطه‌ی سه object را این‌طور در نظر بگیرید: Ingress با <code>ingressClassName</code> به IngressClass اشاره می‌کند؛‏ IngressClass با <code>spec.controller</code> (یک رشته به شکل domain-prefixed path،‏ مثل <code>example.com/ingress-controller</code>) می‌گوید کدام controller صاحب آن است؛‏ و با <code>spec.parameters</code> به یک object پیکربندی (اغلب یک CRD خود controller) اشاره می‌کند. هر controller هنگام شروع می‌داند controller name خودش چیست و فقط Ingressهایی را پردازش می‌کند که IngressClassشان این نام را دارد. این همان سازوکاری است که اجرای هم‌زمان یک controller «external» (برای اینترنت) و یک controller «internal» (برای شبکه‌ی داخلی شرکت) را ممکن می‌کند.</p>
-</div>
-
 <h4>IngressClass scope</h4>
 <p>بسته به Ingress controller شما،‏ ممکن است بتوانید از parameterهایی استفاده کنید که در سطح کل Cluster (cluster-wide) تنظیم می‌کنید،‏ یا فقط برای یک namespace.</p>
 <p><b>تب Cluster:</b></p>
@@ -2499,10 +2540,6 @@ spec:
     namespace: external-configuration
     name: external-config
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>یک سناریوی واقعی: تیم platform مالک IngressClass <code>external-lb-2</code> است (چون IngressClass cluster-scoped است،‏ ساختنش نیازمند دسترسی cluster-level است). اما parameterها (مثلاً timeout و اندازه‌ی body) در namespace <code>external-configuration</code> هستند. با یک Role و RoleBinding در همان namespace،‏ تیم برنامه می‌تواند parameterها را تغییر دهد بدون اینکه ذره‌ای دسترسی cluster-wide بگیرد. این همان «delegate کردن کنترل» است که مستندات می‌گوید. در بخش Gateway API خواهید دید که این ایده‌ی role-oriented آنجا به هسته‌ی طراحی تبدیل شده است.</p>
-</div>
-
 <h4>Deprecated annotation</h4>
 <p>قبل از اینکه resource از نوع IngressClass و field <code>ingressClassName</code> در Kubernetes 1.18 اضافه شوند،‏ Ingress classها با یک annotation به نام <code>kubernetes.io/ingress.class</code> روی Ingress مشخص می‌شدند. این annotation هرگز به‌طور رسمی تعریف نشد،‏ اما به‌طور گسترده توسط Ingress controllerها پشتیبانی می‌شد.</p>
 <p>field جدیدتر <code>ingressClassName</code> روی Ingressها جایگزین آن annotation است،‏ اما معادل مستقیم آن نیست. در حالی که annotation عموماً برای ارجاع به <b>نام Ingress controller</b>ی که باید Ingress را پیاده کند استفاده می‌شد،‏ field یک ارجاع به <b>یک resource از نوع IngressClass</b> است که پیکربندی اضافه‌ی Ingress،‏ از جمله نام Ingress controller،‏ را در خود دارد.</p>
@@ -2545,6 +2582,16 @@ example-class
 <p>admission controller مقدار <code>ingressClassName</code> را در لحظه‌ی ساخت پر کرد. نکته‌ی مهم: این کار فقط هنگام <b>ساخت</b> انجام می‌شود؛‏ اگر بعداً default را عوض کنید،‏ Ingressهای موجود IngressClass قبلی را نگه می‌دارند. حالا اگر یک IngressClass دوم هم با همان annotation بسازید و دوباره یک Ingress بدون class بسازید،‏ درخواست رد می‌شود (Caution بالا).</p>
 </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>رابطه‌ی سه object را این‌طور در نظر بگیرید: Ingress با <code>ingressClassName</code> به IngressClass اشاره می‌کند؛‏ IngressClass با <code>spec.controller</code> (یک رشته به شکل domain-prefixed path،‏ مثل <code>example.com/ingress-controller</code>) می‌گوید کدام controller صاحب آن است؛‏ و با <code>spec.parameters</code> به یک object پیکربندی (اغلب یک CRD خود controller) اشاره می‌کند. هر controller هنگام شروع می‌داند controller name خودش چیست و فقط Ingressهایی را پردازش می‌کند که IngressClassشان این نام را دارد. این همان سازوکاری است که اجرای هم‌زمان یک controller «external» (برای اینترنت) و یک controller «internal» (برای شبکه‌ی داخلی شرکت) را ممکن می‌کند.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>یک سناریوی واقعی: تیم platform مالک IngressClass <code>external-lb-2</code> است (چون IngressClass cluster-scoped است،‏ ساختنش نیازمند دسترسی cluster-level است). اما parameterها (مثلاً timeout و اندازه‌ی body) در namespace <code>external-configuration</code> هستند. با یک Role و RoleBinding در همان namespace،‏ تیم برنامه می‌تواند parameterها را تغییر دهد بدون اینکه ذره‌ای دسترسی cluster-wide بگیرد. این همان «delegate کردن کنترل» است که مستندات می‌گوید. در بخش Gateway API خواهید دید که این ایده‌ی role-oriented آنجا به هسته‌ی طراحی تبدیل شده است.</p>
+</div>
+  </details>
+
 <h3 id="ch5-b-types-of-ingress">Types of Ingress</h3>
 
 <h4>Ingress backed by a single Service</h4>
@@ -2568,10 +2615,6 @@ test-ingress   external-lb   *       203.0.113.123   80      59s
 </pre></div>
 <p>که در آن <code>‎203.0.113.123‎</code> IP است که Ingress controller برای برآورده کردن این Ingress تخصیص داده است.</p>
 <div class="note"><b>نکته</b><p>Ingress controllerها و load balancerها ممکن است یکی دو دقیقه برای تخصیص یک IP address زمان لازم داشته باشند. تا آن زمان،‏ اغلب address را به‌صورت <code>&lt;pending&gt;</code> می‌بینید.</p></div>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>ستون <code>CLASS</code> مقدار <code>external-lb</code> را نشان می‌دهد در حالی که manifest هیچ <code>ingressClassName</code>ی نداشت؛‏ یعنی در آن cluster،‏ <code>external-lb</code> به‌عنوان default IngressClass علامت خورده بوده است. ستون <code>HOSTS</code> برابر <code>‎*‎</code> است چون هیچ host ruleی نداریم. ستون <code>ADDRESS</code> را controller در <code>status.loadBalancer.ingress</code> می‌نویسد؛‏ پس خالی ماندن طولانی آن اولین نشانه‌ی کار نکردن controller است.</p>
-</div>
-
 <h4>Simple fanout</h4>
 <p>یک پیکربندی fanout ترافیک را از یک IP address واحد،‏ بر اساس HTTP URI درخواست‌شده،‏ به بیش از یک Service route می‌کند. یک Ingress به شما اجازه می‌دهد تعداد load balancerها را در حداقل نگه دارید. برای مثال،‏ چیدمانی مثل:</p>
 <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/84ce08ac2b.svg" alt="ingress-fanout-diagram"></div><figcaption><b>شکل ۵-۷.</b> Ingress Fan Out: یک load balancer و یک IP،‏ درخواست‌های <code>/foo</code> را به service1 و درخواست‌های <code>/bar</code> را به service2 می‌فرستد. منبع: <span class="en">concepts/services-networking/ingress</span></figcaption></figure>
@@ -2620,10 +2663,6 @@ Events:
 </pre></div>
 <p>Ingress controller یک load balancer وابسته به پیاده‌سازی (implementation-specific) فراهم می‌کند که Ingress را برآورده کند،‏ به شرط اینکه Serviceها (<code>service1</code>،‏ <code>service2</code>) وجود داشته باشند. وقتی این کار را انجام داد،‏ می‌توانید آدرس load balancer را در field Address ببینید.</p>
 <div class="note"><b>نکته</b><p>بسته به <a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/">Ingress controller</a>ی که استفاده می‌کنید،‏ ممکن است لازم باشد یک <a href="https://kubernetes.io/docs/concepts/services-networking/service/">Service</a> با نام default-http-backend بسازید.</p></div>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>به ستون Backends دقت کنید: <code>service1:4200 (10.8.0.90:4200)</code>. عدد داخل پرانتز IP:port یک endpoint واقعی (Pod) است که از EndpointSliceهای Service خوانده شده. اگر آنجا <code>&lt;error: endpoints "service1" not found&gt;</code> یا پرانتز خالی دیدید،‏ یعنی Service وجود ندارد یا هیچ Pod ready پشت آن نیست (selector اشتباه،‏ readiness probe ناموفق). این مهم‌ترین خط troubleshooting در خروجی <code>describe ingress</code> است. همچنین توجه کنید path <code>/foo</code> همان‌طور که هست به backend فرستاده می‌شود؛‏ یعنی service1 باید خودش به <code>/foo/...</code> پاسخ دهد. rewrite کردن path بخشی از Ingress API نیست و فقط با annotationهای مخصوص controller ممکن است (در Gateway API یک filter استاندارد به نام URLRewrite برای این کار وجود دارد؛‏ خارج از مستندات رسمی کوبرنتیز،‏ در مستندات Gateway API).</p>
-</div>
-
 <h4>Name based virtual hosting</h4>
 <p>name-based virtual hostها از routing ترافیک HTTP به چند host name روی یک IP address یکسان پشتیبانی می‌کنند.</p>
 <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/6d997a97b6.svg" alt="ingress-namebase-diagram"></div><figcaption><b>شکل ۵-۸.</b> Ingress Name Based Virtual hosting: درخواست‌های <code>Host: foo.bar.com</code> به service1 و درخواست‌های <code>Host: bar.foo.com</code> به service2 می‌روند،‏ هر دو روی یک IP. منبع: <span class="en">concepts/services-networking/ingress</span></figcaption></figure>
@@ -2760,9 +2799,18 @@ curl -vk --resolve https-example.foo.com:443:$IP https://https-example.foo.com/ 
 <h4>Load balancing</h4>
 <p>یک Ingress controller با تعدادی تنظیمات load balancing policy راه‌اندازی (bootstrap) می‌شود که روی همه‌ی Ingressها اعمال می‌کند،‏ مثل الگوریتم load balancing،‏ طرح وزن‌دهی backendها (backend weight scheme) و موارد دیگر. مفاهیم پیشرفته‌تر load balancing (مثلاً persistent sessionها،‏ وزن‌های پویا) هنوز از طریق Ingress در دسترس نیستند. به‌جای آن می‌توانید این featureها را از طریق load balancerی که برای یک Service استفاده می‌شود به دست آورید.</p>
 <p>همچنین قابل ذکر است که با اینکه health checkها مستقیماً از طریق Ingress در دسترس نیستند،‏ مفاهیم موازی در کوبرنتیز مثل <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/">readiness probeها</a> وجود دارند که به شما اجازه می‌دهند به همان نتیجه برسید. لطفاً مستندات مخصوص controller را بررسی کنید تا ببینید health checkها را چگونه مدیریت می‌کنند.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۳)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>ستون <code>CLASS</code> مقدار <code>external-lb</code> را نشان می‌دهد در حالی که manifest هیچ <code>ingressClassName</code>ی نداشت؛‏ یعنی در آن cluster،‏ <code>external-lb</code> به‌عنوان default IngressClass علامت خورده بوده است. ستون <code>HOSTS</code> برابر <code>‎*‎</code> است چون هیچ host ruleی نداریم. ستون <code>ADDRESS</code> را controller در <code>status.loadBalancer.ingress</code> می‌نویسد؛‏ پس خالی ماندن طولانی آن اولین نشانه‌ی کار نکردن controller است.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>به ستون Backends دقت کنید: <code>service1:4200 (10.8.0.90:4200)</code>. عدد داخل پرانتز IP:port یک endpoint واقعی (Pod) است که از EndpointSliceهای Service خوانده شده. اگر آنجا <code>&lt;error: endpoints "service1" not found&gt;</code> یا پرانتز خالی دیدید،‏ یعنی Service وجود ندارد یا هیچ Pod ready پشت آن نیست (selector اشتباه،‏ readiness probe ناموفق). این مهم‌ترین خط troubleshooting در خروجی <code>describe ingress</code> است. همچنین توجه کنید path <code>/foo</code> همان‌طور که هست به backend فرستاده می‌شود؛‏ یعنی service1 باید خودش به <code>/foo/...</code> پاسخ دهد. rewrite کردن path بخشی از Ingress API نیست و فقط با annotationهای مخصوص controller ممکن است (در Gateway API یک filter استاندارد به نام URLRewrite برای این کار وجود دارد؛‏ خارج از مستندات رسمی کوبرنتیز،‏ در مستندات Gateway API).</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>چرا readiness probe جایگزین health check است؟ وقتی readiness probe یک Pod شکست می‌خورد،‏ Pod از EndpointSliceهای Service حذف می‌شود (فصل ۳ و بخش اول همین فصل). بیشتر Ingress controllerها مستقیماً به endpointهای Pod ترافیک می‌فرستند و فهرست آن‌ها را از همین EndpointSliceها می‌خوانند؛‏ پس Pod ناسالم خودبه‌خود از چرخه‌ی load balancing خارج می‌شود. اما load balancerهای ابری (مثلاً وقتی ترافیک را به NodePort می‌فرستند) ممکن است health check جداگانه‌ی خودشان را داشته باشند که باید با readiness probe هماهنگ شود.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-updating-ingress">Updating an Ingress</h3>
 <p>برای به‌روزرسانی یک Ingress موجود و اضافه کردن یک Host جدید،‏ می‌توانید با ویرایش resource آن را به‌روز کنید:</p>
@@ -2830,15 +2878,21 @@ Events:
   Normal   ADD     45s                loadbalancer-controller  default/test
 </pre></div>
 <p>می‌توانید با اجرای <code>kubectl replace -f</code> روی یک فایل YAML تغییریافته‌ی Ingress هم به همین نتیجه برسید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>در Production،‏ <code>kubectl edit</code> تغییری را می‌سازد که در Git نیست (drift). روش بهتر: فایل Ingress را در مخزن تغییر دهید و با <code>kubectl diff -f</code> و سپس <code>kubectl apply -f</code> (یا ابزار GitOps) اعمال کنید (فصل ۸). <code>kubectl replace -f</code> کل object را جایگزین می‌کند؛‏ اگر فایل شما fieldی را نداشته باشد که کس دیگری اضافه کرده،‏ آن field پاک می‌شود.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-failing-across-zones">Failing across availability zones</h3>
 <p>تکنیک‌های پخش ترافیک در میان failure domainها بین cloud providerها متفاوت است. لطفاً برای جزئیات،‏ مستندات <a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers">Ingress controller</a> مربوطه را بررسی کنید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>Ingress API هیچ fieldی برای zone ندارد؛‏ پس پایداری بین zoneها از دو لایه می‌آید: (۱) خود controller یا load balancer ابری که باید در چند zone حضور داشته باشد (مثلاً replicaهای controller با topology spread constraints روی zoneها پخش شوند،‏ فصل ۹)،‏ و (۲) Podهای backend که آن‌ها هم باید در چند zone باشند. برای ترجیح دادن endpointهای همان zone،‏ topology-aware routing را در بخش اول همین فصل ببینید.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-ingress-alternatives">Alternatives</h3>
 <p>می‌توانید یک Service را به چند روش که مستقیماً resource از نوع Ingress را درگیر نمی‌کنند expose کنید:</p>
@@ -2903,7 +2957,11 @@ Events:
 <p>اگر برای یک Ingress،‏ IngressClass مشخص نکنید و cluster شما دقیقاً یک IngressClass علامت‌خورده به‌عنوان default داشته باشد،‏ Kubernetes default IngressClass آن cluster را روی Ingress اعمال می‌کند. یک IngressClass را با تنظیم annotation <code>ingressclass.kubernetes.io/is-default-class</code> روی آن،‏ با مقدار رشته‌ای <code>"true"</code>،‏ به‌عنوان default علامت می‌زنید.</p>
 <p>در حالت ایده‌آل،‏ همه‌ی ingress controllerها باید این specification را برآورده کنند،‏ اما ingress controllerهای مختلف کمی متفاوت عمل می‌کنند.</p>
 <div class="note"><b>نکته</b><p>حتماً مستندات ingress controller خود را بررسی کنید تا از caveatهای انتخاب آن آگاه شوید.</p></div>
-<div class="deep"><b>توضیح تکمیلی</b>
+<p class="next">ادامه‌ی مطالعه: Ingress</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>یک الگوی رایج Production با دو controller:</p>
 <div class="code"><div class="lbl"><span>دو IngressClass برای ترافیک عمومی و داخلی</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: networking.k8s.io/v1
 kind: IngressClass
@@ -2923,14 +2981,17 @@ spec:
 </pre></div>
 <p>controller داخلی پشت یک load balancer داخلی (بدون IP عمومی) قرار می‌گیرد و پنل‌های ادمین با <code>ingressClassName: internal</code> فقط از شبکه‌ی شرکت در دسترس‌اند. خطای رایج: فراموش کردن <code>ingressClassName</code> روی Ingress پنل ادمین؛‏ نتیجه این است که default (یعنی <code>public</code>) اعمال می‌شود و پنل روی اینترنت باز می‌شود. برای جلوگیری،‏ با یک admission policy (فصل ۶ و ۱۴) می‌توان الزام کرد که Ingressهای namespace ادمین حتماً <code>ingressClassName: internal</code> داشته باشند.</p>
 </div>
-<p class="next">ادامه‌ی مطالعه: Ingress</p>
+  </details>
 
 <h3 id="ch5-b-gateway-api">Gateway API</h3>
 <p>توضیح صفحه در مستندات: Gateway API خانواده‌ای از API kindها است که dynamic infrastructure provisioning و advanced traffic routing فراهم می‌کنند.</p>
 <p>سرویس‌های شبکه را با استفاده از یک سازوکار پیکربندی extensible،‏ role-oriented و protocol-aware در دسترس قرار دهید. <a href="https://gateway-api.sigs.k8s.io/">Gateway API</a> یک add-on است (یعنی کامپوننت‌ها و resourceهایی که عملکرد کوبرنتیز را گسترش می‌دهند) که شامل API <a href="https://gateway-api.sigs.k8s.io/references/spec/">kind</a>هایی است که dynamic infrastructure provisioning و advanced traffic routing فراهم می‌کنند.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>کلمه‌ی «add-on» مهم است: Gateway API برخلاف Ingress جزو APIهای built-in خود kube-apiserver نیست. kindهای آن به‌صورت CRD (group <code>gateway.networking.k8s.io</code>) تعریف شده‌اند و باید آن‌ها را نصب کنید (بخش What's next در انتهای همین صفحه). پس روی یک cluster تازه،‏ <code>kubectl get gateway</code> خطای <code>the server doesn't have a resource type "gateway"</code> می‌دهد تا CRDها نصب شوند. و درست مثل Ingress،‏ بدون یک implementation (controller) هیچ ترافیکی جابه‌جا نمی‌شود.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-gw-design">Design principles</h3>
 <p>اصول زیر به طراحی و معماری Gateway API شکل دادند:</p>
@@ -2945,7 +3006,9 @@ spec:
 <li><b>Expressive:‏</b> kindهای Gateway API از قابلیت‌هایی برای use caseهای رایج traffic routing پشتیبانی می‌کنند،‏ مثل header-based matching،‏ traffic weighting و موارد دیگر،‏ که در <a href="#ch5-b-ingress">Ingress</a> فقط با annotationهای سفارشی ممکن بودند.</li>
 <li><b>Extensible:‏</b> Gateway اجازه می‌دهد custom resourceها (نوع شیء تازه‌ای که کاربر به Kubernetes API اضافه می‌کند) در لایه‌های مختلف API پیوند داده شوند. این کار سفارشی‌سازی دقیق (granular) را در جاهای مناسب درون ساختار API ممکن می‌کند.</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>مقایسه‌ی مستقیم با Ingress برای فهم اینکه این اصول چه مشکلی را حل می‌کنند:</p>
 <div class="tbl"><table><thead><tr><th>مشکل در Ingress</th><th>راه‌حل در Gateway API</th></tr></thead><tbody>
 <tr><td>یک object (Ingress) هم پیکربندی زیرساخت (listener،‏ TLS) و هم routing برنامه را دارد؛‏ پس تیم برنامه و تیم platform روی یک فایل با هم درگیرند.</td><td>جداسازی به GatewayClass (Infrastructure Provider)،‏ Gateway (Cluster Operator) و HTTPRoute (Application Developer)؛‏ هر کدام با RBAC جدا.</td></tr>
@@ -2954,6 +3017,7 @@ spec:
 <tr><td>Ingress فقط به Service در همان namespace اشاره می‌کند.</td><td>Route می‌تواند از namespace دیگری به Gateway متصل شود (با <code>allowedRoutes</code>).</td></tr>
 </tbody></table></div>
 </div>
+  </details>
 
 <h3 id="ch5-b-gw-resource-model">Resource model</h3>
 <p>Gateway API چهار API kind پایدار (stable) دارد:</p>
@@ -2966,10 +3030,6 @@ spec:
 <p>Gateway API در قالب API kindهای مختلفی سازمان‌دهی شده که روابط وابسته به هم دارند تا از ماهیت role-oriented سازمان‌ها پشتیبانی کنند. یک Gateway object دقیقاً با یک GatewayClass مرتبط است؛‏ GatewayClass،‏ gateway controllerی را توصیف می‌کند که مسئول مدیریت Gatewayهای این class است. سپس یک یا چند نوع route،‏ مثل HTTPRoute،‏ به Gatewayها مرتبط می‌شوند. یک Gateway می‌تواند routeهایی را که ممکن است به <code>listeners</code> آن متصل شوند فیلتر کند و به این ترتیب یک مدل اعتماد دوطرفه (bidirectional trust model) با routeها شکل می‌دهد.</p>
 <p>شکل زیر روابط سه kind پایدار Gateway API را نشان می‌دهد:</p>
 <figure><div class="plate w-md"><img loading="lazy" decoding="async" src="img/02a42f65f4.svg" alt="A figure illustrating the relationships of the three stable Gateway API kinds"></div><figcaption><b>شکل ۵-۹.</b> روابط kindهای پایدار Gateway API:‏ HTTPRoute به Gateway اشاره می‌کند و Gateway به GatewayClass. منبع: <span class="en">concepts/services-networking/gateway</span></figcaption></figure>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>«مدل اعتماد دوطرفه» یعنی اتصال یک Route به یک Gateway فقط وقتی برقرار است که <b>هر دو طرف</b> موافق باشند: Route با <code>parentRefs</code> می‌گوید «می‌خواهم به این Gateway وصل شوم»،‏ و Gateway با <code>listeners[].allowedRoutes</code> می‌گوید «از کدام namespaceها و کدام kindها Route می‌پذیرم». اگر فقط Route اشاره کند ولی Gateway اجازه ندهد،‏ Route در status خود شرط <code>Accepted</code> را با مقدار <code>False</code> (reason معمولاً <code>NotAllowedByListeners</code>) نشان می‌دهد (جزئیات status از مستندات Gateway API،‏ خارج از مستندات رسمی کوبرنتیز). این جلوی آن را می‌گیرد که یک تیم دلخواه،‏ ترافیک hostname تیم دیگر را روی Gateway مشترک بدزدد.</p>
-</div>
-
 <h4>GatewayClass</h4>
 <p>Gatewayها می‌توانند توسط controllerهای مختلف و اغلب با پیکربندی‌های متفاوت پیاده‌سازی شوند. یک Gateway باید به یک GatewayClass ارجاع دهد که نام controllerی را که class را پیاده می‌کند در خود دارد.</p>
 <p>یک مثال حداقلی از GatewayClass:</p>
@@ -2982,10 +3042,6 @@ spec:
 </pre></div>
 <p>در این مثال،‏ یک controller که Gateway API را پیاده کرده است،‏ پیکربندی شده تا GatewayClassهایی با controller name برابر <code>example.com/gateway-controller</code> را مدیریت کند. Gatewayهای این class توسط controller آن implementation مدیریت می‌شوند.</p>
 <p>برای تعریف کامل این API kind،‏ reference <a href="https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.GatewayClass">GatewayClass</a> را ببینید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>GatewayClass معادل IngressClass است: cluster-scoped،‏ و field <code>controllerName</code> همان نقش <code>spec.controller</code> در IngressClass را دارد. معمولاً implementation هنگام نصب خودش یک GatewayClass می‌سازد و شما فقط نام آن را در Gateway استفاده می‌کنید. <code>kubectl get gatewayclass</code> ستون <code>ACCEPTED</code> را نشان می‌دهد؛‏ اگر <code>Unknown</code> بماند یعنی هیچ controllerی با آن <code>controllerName</code> در حال اجرا نیست.</p>
-</div>
-
 <h4>Gateway</h4>
 <p>یک Gateway یک نمونه از زیرساخت رسیدگی به ترافیک را توصیف می‌کند. یک network endpoint تعریف می‌کند که می‌تواند برای پردازش ترافیک استفاده شود،‏ یعنی filtering،‏ balancing،‏ splitting و غیره برای backendهایی مثل یک Service. برای مثال،‏ یک Gateway ممکن است نماینده‌ی یک cloud load balancer یا یک proxy server درون cluster باشد که برای پذیرش ترافیک HTTP پیکربندی شده است.</p>
 <p>یک مثال معمول از resource از نوع Gateway:</p>
@@ -3008,34 +3064,6 @@ spec:
 <p>در این مثال،‏ یک نمونه از زیرساخت رسیدگی به ترافیک طوری program شده که برای ترافیک HTTP روی پورت 80 گوش دهد. چون field <code>addresses</code> مشخص نشده،‏ یک address یا hostname توسط controller آن implementation به Gateway تخصیص داده می‌شود. این address به‌عنوان network endpoint برای پردازش ترافیک به سمت network endpointهای backend که در routeها تعریف شده‌اند استفاده می‌شود.</p>
 <p>برای تعریف کامل این API kind،‏ reference <a href="https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.Gateway">Gateway</a> را ببینید. برای راهنمایی درباره‌ی پیکربندی listenerهای HTTPS/TLS،‏ <a href="https://gateway-api.sigs.k8s.io/guides/tls/">Gateway API TLS Guide</a> را ببینید.</p>
 <div class="note"><b>نکته</b><p>به‌طور پیش‌فرض،‏ یک Gateway فقط Routeهایی را از همان namespace می‌پذیرد. Routeهای cross-namespace نیازمند پیکربندی <code>allowedRoutes</code> هستند.</p></div>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>field به field: <code>listeners[].name</code> یک نام یکتا برای listener است (Routeها می‌توانند با <code>sectionName</code> فقط به یک listener خاص وصل شوند)؛‏ <code>protocol</code> و <code>port</code> مشخص می‌کنند چه چیزی شنیده شود؛‏ <code>hostname</code> محدود می‌کند این listener فقط درخواست‌های <code>www.example.com</code> را بپذیرد؛‏ و <code>allowedRoutes.namespaces.from: Same</code> همان رفتار پیش‌فرض است. مقادیر دیگر <code>from</code> در spec Gateway API عبارت‌اند از <code>All</code> و <code>Selector</code> (همراه با یک label selector روی namespaceها) (خارج از مستندات رسمی کوبرنتیز،‏ از spec Gateway API). یک Gateway مشترک در namespace <code>infra</code> که Routeهای namespaceهای دارای label <code>shared-gateway-access: "true"</code> را می‌پذیرد:</p>
-<div class="code"><div class="lbl"><span>Gateway مشترک با listener HTTPS</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: shared-gw
-  namespace: infra
-spec:
-  gatewayClassName: example-class
-  listeners:
-  - name: https
-    protocol: HTTPS
-    port: 443
-    hostname: "*.shop.example"
-    tls:
-      mode: Terminate
-      certificateRefs:
-      - name: shop-wildcard-tls      # Secret از نوع kubernetes.io/tls در namespace infra
-    allowedRoutes:
-      namespaces:
-        from: Selector
-        selector:
-          matchLabels:
-            shared-gateway-access: "true"
-</pre></div>
-<p>دقت کنید که certificate حالا در دست تیم platform (namespace <code>infra</code>) است و تیم‌های برنامه اصلاً به Secret آن دسترسی ندارند؛‏ در Ingress هر تیم باید Secret را در namespace خودش نگه می‌داشت.</p>
-</div>
-
 <h4>HTTPRoute</h4>
 <p>kind از نوع HTTPRoute رفتار routing درخواست‌های HTTP را از یک listener در Gateway به network endpointهای backend مشخص می‌کند. برای یک backend از نوع Service،‏ یک implementation ممکن است network endpoint backend را به شکل Service IP یا EndpointSliceهای پشتیبان Service نمایش دهد. یک HTTPRoute پیکربندی‌ای را نمایش می‌دهد که روی implementation زیرین Gateway اعمال می‌شود. برای مثال،‏ تعریف یک HTTPRoute جدید ممکن است به پیکربندی routeهای ترافیکی اضافه در یک cloud load balancer یا proxy server درون cluster منجر شود.</p>
 <p>یک مثال معمول از HTTPRoute:</p>
@@ -3059,38 +3087,6 @@ spec:
 </pre></div>
 <p>در این مثال،‏ ترافیک HTTP از Gateway <code>example-gateway</code> که Host:‏ header آن برابر <code>www.example.com</code> و request path آن <code>/login</code> باشد،‏ به Service <code>example-svc</code> روی پورت <code>‎8080‎</code> route می‌شود.</p>
 <p>برای تعریف کامل این API kind،‏ reference <a href="https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.HTTPRoute">HTTPRoute</a> را ببینید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>قابلیت‌هایی که در Ingress فقط با annotation ممکن بود،‏ در HTTPRoute fieldهای استاندارد هستند (نام‌ها از spec Gateway API؛‏ خارج از مستندات رسمی کوبرنتیز). مثال: درخواست‌هایی که header <code>x-canary: "true"</code> دارند همیشه به نسخه‌ی جدید بروند،‏ و بقیه‌ی ترافیک ۹۰/۱۰ بین v1 و v2 تقسیم شود:</p>
-<div class="code"><div class="lbl"><span>HTTPRoute با header matching و traffic weighting</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: checkout
-  namespace: shop
-spec:
-  parentRefs:
-  - name: shared-gw
-    namespace: infra
-  hostnames:
-  - "checkout.shop.example"
-  rules:
-  - matches:                       # rule اول: header matching
-    - headers:
-      - name: x-canary
-        value: "true"
-    backendRefs:
-    - name: checkout-v2
-      port: 8080
-  - backendRefs:                   # rule دوم: بقیه‌ی ترافیک با وزن
-    - name: checkout-v1
-      port: 8080
-      weight: 90
-    - name: checkout-v2
-      port: 8080
-      weight: 10
-</pre></div>
-<p>وزن‌ها نسبی‌اند (۹۰ و ۱۰ یعنی ۹۰٪ و ۱۰٪).‏ rule دوم چون <code>matches</code> ندارد،‏ به‌طور پیش‌فرض همه‌ی pathها (<code>PathPrefix /</code>) را پوشش می‌دهد.</p>
-</div>
-
 <h4>GRPCRoute</h4>
 <p>kind از نوع GRPCRoute رفتار routing درخواست‌های gRPC را از یک listener در Gateway به network endpointهای backend مشخص می‌کند. برای یک backend از نوع Service،‏ یک implementation ممکن است network endpoint backend را به شکل Service IP یا EndpointSliceهای پشتیبان Service نمایش دهد. یک GRPCRoute پیکربندی‌ای را نمایش می‌دهد که روی implementation زیرین Gateway اعمال می‌شود. برای مثال،‏ تعریف یک GRPCRoute جدید ممکن است به پیکربندی routeهای ترافیکی اضافه در یک cloud load balancer یا proxy server درون cluster منجر شود.</p>
 <p>Gatewayهایی که از GRPCRoute پشتیبانی می‌کنند ملزم‌اند از HTTP/2 بدون upgrade اولیه از HTTP/1 پشتیبانی کنند،‏ تا جریان درست ترافیک gRPC تضمین شود.</p>
@@ -3131,9 +3127,76 @@ spec:
 </pre></div>
 <p>در این حالت،‏ GRPCRoute هر ترافیکی را برای svc.example.com match می‌کند و ruleهای routing خود را برای فرستادن ترافیک به backend درست اعمال می‌کند. چون فقط یک match مشخص شده،‏ فقط درخواست‌های مربوط به method <code>com.example.User.Login</code> به svc.example.com فرستاده می‌شوند. RPCهای هر method دیگری توسط این Route match نمی‌شوند.</p>
 <p>برای تعریف کامل این API kind،‏ reference <a href="https://gateway-api.sigs.k8s.io/references/spec/#grpcroute">GRPCRoute</a> را ببینید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۵)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>«مدل اعتماد دوطرفه» یعنی اتصال یک Route به یک Gateway فقط وقتی برقرار است که <b>هر دو طرف</b> موافق باشند: Route با <code>parentRefs</code> می‌گوید «می‌خواهم به این Gateway وصل شوم»،‏ و Gateway با <code>listeners[].allowedRoutes</code> می‌گوید «از کدام namespaceها و کدام kindها Route می‌پذیرم». اگر فقط Route اشاره کند ولی Gateway اجازه ندهد،‏ Route در status خود شرط <code>Accepted</code> را با مقدار <code>False</code> (reason معمولاً <code>NotAllowedByListeners</code>) نشان می‌دهد (جزئیات status از مستندات Gateway API،‏ خارج از مستندات رسمی کوبرنتیز). این جلوی آن را می‌گیرد که یک تیم دلخواه،‏ ترافیک hostname تیم دیگر را روی Gateway مشترک بدزدد.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>GatewayClass معادل IngressClass است: cluster-scoped،‏ و field <code>controllerName</code> همان نقش <code>spec.controller</code> در IngressClass را دارد. معمولاً implementation هنگام نصب خودش یک GatewayClass می‌سازد و شما فقط نام آن را در Gateway استفاده می‌کنید. <code>kubectl get gatewayclass</code> ستون <code>ACCEPTED</code> را نشان می‌دهد؛‏ اگر <code>Unknown</code> بماند یعنی هیچ controllerی با آن <code>controllerName</code> در حال اجرا نیست.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>field به field: <code>listeners[].name</code> یک نام یکتا برای listener است (Routeها می‌توانند با <code>sectionName</code> فقط به یک listener خاص وصل شوند)؛‏ <code>protocol</code> و <code>port</code> مشخص می‌کنند چه چیزی شنیده شود؛‏ <code>hostname</code> محدود می‌کند این listener فقط درخواست‌های <code>www.example.com</code> را بپذیرد؛‏ و <code>allowedRoutes.namespaces.from: Same</code> همان رفتار پیش‌فرض است. مقادیر دیگر <code>from</code> در spec Gateway API عبارت‌اند از <code>All</code> و <code>Selector</code> (همراه با یک label selector روی namespaceها) (خارج از مستندات رسمی کوبرنتیز،‏ از spec Gateway API). یک Gateway مشترک در namespace <code>infra</code> که Routeهای namespaceهای دارای label <code>shared-gateway-access: "true"</code> را می‌پذیرد:</p>
+<div class="code"><div class="lbl"><span>Gateway مشترک با listener HTTPS</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: shared-gw
+  namespace: infra
+spec:
+  gatewayClassName: example-class
+  listeners:
+  - name: https
+    protocol: HTTPS
+    port: 443
+    hostname: "*.shop.example"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: shop-wildcard-tls      # Secret از نوع kubernetes.io/tls در namespace infra
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            shared-gateway-access: "true"
+</pre></div>
+<p>دقت کنید که certificate حالا در دست تیم platform (namespace <code>infra</code>) است و تیم‌های برنامه اصلاً به Secret آن دسترسی ندارند؛‏ در Ingress هر تیم باید Secret را در namespace خودش نگه می‌داشت.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>قابلیت‌هایی که در Ingress فقط با annotation ممکن بود،‏ در HTTPRoute fieldهای استاندارد هستند (نام‌ها از spec Gateway API؛‏ خارج از مستندات رسمی کوبرنتیز). مثال: درخواست‌هایی که header <code>x-canary: "true"</code> دارند همیشه به نسخه‌ی جدید بروند،‏ و بقیه‌ی ترافیک ۹۰/۱۰ بین v1 و v2 تقسیم شود:</p>
+<div class="code"><div class="lbl"><span>HTTPRoute با header matching و traffic weighting</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: checkout
+  namespace: shop
+spec:
+  parentRefs:
+  - name: shared-gw
+    namespace: infra
+  hostnames:
+  - "checkout.shop.example"
+  rules:
+  - matches:                       # rule اول: header matching
+    - headers:
+      - name: x-canary
+        value: "true"
+    backendRefs:
+    - name: checkout-v2
+      port: 8080
+  - backendRefs:                   # rule دوم: بقیه‌ی ترافیک با وزن
+    - name: checkout-v1
+      port: 8080
+      weight: 90
+    - name: checkout-v2
+      port: 8080
+      weight: 10
+</pre></div>
+<p>وزن‌ها نسبی‌اند (۹۰ و ۱۰ یعنی ۹۰٪ و ۱۰٪).‏ rule دوم چون <code>matches</code> ندارد،‏ به‌طور پیش‌فرض همه‌ی pathها (<code>PathPrefix /</code>) را پوشش می‌دهد.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>چرا یک kind جدا برای gRPC؟ gRPC روی HTTP/2 کار می‌کند و هر فراخوانی در واقع یک POST به path <code>/&lt;package.Service&gt;/&lt;Method&gt;</code> است. با HTTPRoute هم می‌شد این path را match کرد،‏ اما GRPCRoute مفاهیم gRPC (service و method) را مستقیم بیان می‌کند و الزام HTTP/2 بدون upgrade (یعنی h2c یا HTTP/2 روی TLS) را تضمین می‌کند. نکته‌ی عملی: در Ingress کلاسیک،‏ load balancing برای gRPC اغلب بد کار می‌کند چون یک اتصال HTTP/2 طولانی‌مدت همه‌ی RPCها را به یک Pod می‌برد؛‏ proxyهای L7 که GRPCRoute را پیاده می‌کنند درخواست‌ها را در سطح هر RPC پخش می‌کنند (خارج از مستندات رسمی).</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-gw-request-flow">Request flow</h3>
 <p>این یک مثال ساده از ترافیک HTTP است که با استفاده از یک Gateway و یک HTTPRoute به یک Service route می‌شود:</p>
@@ -3151,26 +3214,16 @@ spec:
 <h3 id="ch5-b-gw-conformance">Conformance</h3>
 <p>Gateway API مجموعه‌ی گسترده‌ای از featureها را پوشش می‌دهد و به‌طور گسترده پیاده‌سازی شده است. این ترکیب نیازمند تعریف‌ها و testهای conformance روشن است تا تضمین شود API هر جا که استفاده می‌شود تجربه‌ی یکسانی ارائه می‌کند.</p>
 <p>مستندات <a href="https://gateway-api.sigs.k8s.io/docs/concepts/conformance/">conformance</a> را ببینید تا جزئیاتی مثل release channelها،‏ support levelها و اجرای testهای conformance را بفهمید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>(از مستندات Gateway API،‏ خارج از مستندات رسمی کوبرنتیز) featureها support level دارند: <b>Core</b> (همه‌ی implementationها باید پشتیبانی کنند)،‏ <b>Extended</b> (اختیاری ولی اگر پیاده شد باید portable باشد) و <b>Implementation-specific</b>. همچنین CRDها در دو release channel منتشر می‌شوند: <b>Standard</b> (پایدار) و <b>Experimental</b>. هنگام انتخاب implementation برای Production،‏ گزارش conformance آن را برای نسخه‌ی Gateway API مورد نظرتان بررسی کنید؛‏ مثلاً اگر traffic splitting با وزن برایتان حیاتی است،‏ مطمئن شوید آن implementation آن را پاس کرده است.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-gw-migrating">Migrating from Ingress</h3>
 <p>Gateway API جانشین <a href="#ch5-b-ingress">Ingress</a> API است. با این حال،‏ kind Ingress را در بر ندارد. در نتیجه،‏ یک تبدیل یک‌باره از resourceهای Ingress موجود به resourceهای Gateway API لازم است.</p>
 <p>برای جزئیات مهاجرت resourceهای Ingress به resourceهای Gateway API،‏ به راهنمای <a href="https://gateway-api.sigs.k8s.io/guides/getting-started/migrating-from-ingress">ingress migration</a> مراجعه کنید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>نگاشت مفهومی Ingress به Gateway API:</p>
-<div class="tbl"><table><thead><tr><th>Ingress</th><th>Gateway API</th></tr></thead><tbody>
-<tr><td>IngressClass</td><td>GatewayClass</td></tr>
-<tr><td>Ingress controller + load balancer (ضمنی)</td><td>Gateway (صریح: listenerها،‏ پورت‌ها،‏ TLS)</td></tr>
-<tr><td><code>spec.tls</code> روی Ingress</td><td><code>listeners[].tls.certificateRefs</code> روی Gateway</td></tr>
-<tr><td><code>spec.rules[].host</code></td><td><code>HTTPRoute.spec.hostnames</code></td></tr>
-<tr><td><code>pathType: Prefix</code> / <code>Exact</code></td><td><code>path.type: PathPrefix</code> / <code>Exact</code></td></tr>
-<tr><td><code>backend.service.name/port</code></td><td><code>backendRefs[].name/port</code> (به‌علاوه‌ی <code>weight</code>)</td></tr>
-<tr><td>annotationهای controller برای rewrite و header</td><td><code>filters</code> استاندارد</td></tr>
-</tbody></table></div>
-<p>(خارج از مستندات رسمی) پروژه‌ی Gateway API ابزاری به نام <code>ingress2gateway</code> دارد که Ingressهای موجود را به Gateway و HTTPRoute تبدیل می‌کند؛‏ خروجی آن را باید بازبینی کنید چون annotationهای خاص هر controller همیشه قابل تبدیل نیستند. روش امن مهاجرت: Gateway جدید را کنار Ingress قدیمی با IP جدا بالا بیاورید،‏ با <code>curl --resolve</code> تست کنید،‏ سپس DNS را به تدریج منتقل کنید و Ingress قدیمی را بعد از صفر شدن ترافیکش حذف کنید.</p>
-</div>
 <p>ادامه‌ی مسیر: به‌جای اینکه resourceهای Gateway API به‌صورت native توسط کوبرنتیز پیاده‌سازی شوند،‏ specificationها به‌صورت <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">Custom Resource</a> تعریف شده‌اند که توسط طیف گسترده‌ای از <a href="https://gateway-api.sigs.k8s.io/implementations/">implementation</a>ها پشتیبانی می‌شوند. CRDهای Gateway API را <a href="https://gateway-api.sigs.k8s.io/guides/#installing-gateway-api">نصب</a> کنید یا دستورالعمل نصب implementation انتخابی خود را دنبال کنید. بعد از نصب یک implementation،‏ از راهنمای <a href="https://gateway-api.sigs.k8s.io/guides/">Getting Started</a> برای شروع سریع کار با Gateway API استفاده کنید.</p>
 <div class="note"><b>نکته</b><p>حتماً مستندات implementation انتخابی خود را بررسی کنید تا از caveatهای آن آگاه شوید.</p></div>
 <p>برای جزئیات بیشتر درباره‌ی همه‌ی kindهای Gateway API به <a href="https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/">API specification</a> مراجعه کنید.</p>
@@ -3197,6 +3250,23 @@ ResolvedRefs=True (ResolvedRefs)
 <p>برخلاف Ingress که status بسیار محدودی دارد (فقط address)،‏ Gateway API برای هر Route در هر parent شرط‌های <code>Accepted</code> (آیا Gateway این Route را پذیرفت؟) و <code>ResolvedRefs</code> (آیا backendRefها پیدا شدند؟) را گزارش می‌کند. این troubleshooting را بسیار ساده‌تر می‌کند.</p>
 </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>نگاشت مفهومی Ingress به Gateway API:</p>
+<div class="tbl"><table><thead><tr><th>Ingress</th><th>Gateway API</th></tr></thead><tbody>
+<tr><td>IngressClass</td><td>GatewayClass</td></tr>
+<tr><td>Ingress controller + load balancer (ضمنی)</td><td>Gateway (صریح: listenerها،‏ پورت‌ها،‏ TLS)</td></tr>
+<tr><td><code>spec.tls</code> روی Ingress</td><td><code>listeners[].tls.certificateRefs</code> روی Gateway</td></tr>
+<tr><td><code>spec.rules[].host</code></td><td><code>HTTPRoute.spec.hostnames</code></td></tr>
+<tr><td><code>pathType: Prefix</code> / <code>Exact</code></td><td><code>path.type: PathPrefix</code> / <code>Exact</code></td></tr>
+<tr><td><code>backend.service.name/port</code></td><td><code>backendRefs[].name/port</code> (به‌علاوه‌ی <code>weight</code>)</td></tr>
+<tr><td>annotationهای controller برای rewrite و header</td><td><code>filters</code> استاندارد</td></tr>
+</tbody></table></div>
+<p>(خارج از مستندات رسمی) پروژه‌ی Gateway API ابزاری به نام <code>ingress2gateway</code> دارد که Ingressهای موجود را به Gateway و HTTPRoute تبدیل می‌کند؛‏ خروجی آن را باید بازبینی کنید چون annotationهای خاص هر controller همیشه قابل تبدیل نیستند. روش امن مهاجرت: Gateway جدید را کنار Ingress قدیمی با IP جدا بالا بیاورید،‏ با <code>curl --resolve</code> تست کنید،‏ سپس DNS را به تدریج منتقل کنید و Ingress قدیمی را بعد از صفر شدن ترافیکش حذف کنید.</p>
+</div>
+  </details>
+
 <h3 id="ch5-b-network-policies">Network Policies</h3>
 <p>توضیح صفحه در مستندات: اگر می‌خواهید جریان ترافیک را در سطح IP address یا پورت (لایه‌ی ۳ یا ۴ مدل OSI) کنترل کنید،‏ NetworkPolicyها به شما اجازه می‌دهند ruleهایی برای جریان ترافیک درون cluster،‏ و همچنین بین Podها و دنیای بیرون،‏ تعریف کنید. Cluster شما باید از یک network plugin استفاده کند که از اعمال (enforcement) NetworkPolicy پشتیبانی می‌کند.</p>
 <p>اگر می‌خواهید جریان ترافیک را در سطح IP address یا پورت برای پروتکل‌های TCP،‏ UDP و SCTP کنترل کنید،‏ ممکن است استفاده از NetworkPolicyهای کوبرنتیز را برای برنامه‌های خاصی در cluster خود در نظر بگیرید. NetworkPolicyها یک ساختار application-centric هستند که به شما اجازه می‌دهند مشخص کنید یک Pod چگونه اجازه دارد با «موجودیت‌های» (entities) مختلف شبکه ارتباط برقرار کند (اینجا از کلمه‌ی «entity» استفاده می‌کنیم تا از بار اضافه‌ی معنایی اصطلاحات رایج‌تر مثل «endpoints» و «services» که در کوبرنتیز معنای خاصی دارند پرهیز کنیم).‏ NetworkPolicyها روی اتصالی اعمال می‌شوند که در یک یا هر دو سر آن یک Pod باشد،‏ و به اتصال‌های دیگر ربطی ندارند.</p>
@@ -3208,15 +3278,21 @@ ResolvedRefs=True (ResolvedRefs)
 </ol>
 <p>هنگام تعریف یک NetworkPolicy مبتنی بر Pod یا namespace،‏ از یک selector استفاده می‌کنید تا مشخص کنید چه ترافیکی به و از Pod(های)ی که با selector match می‌شوند مجاز است.</p>
 <p>در همین حال،‏ وقتی NetworkPolicyهای مبتنی بر IP ساخته می‌شوند،‏ policyها را بر اساس IP blockها (بازه‌های CIDR) تعریف می‌کنیم.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>مدل پیش‌فرض شبکه‌ی Kubernetes (فصل ۱۲) «flat» است: هر Pod می‌تواند به هر Pod دیگری در هر namespace وصل شود. این برای شروع راحت است،‏ اما در Production یعنی اگر یک Pod frontend آسیب‌پذیر compromise شود،‏ مهاجم مستقیماً به پایگاه داده،‏ Redis و API داخلی همه‌ی تیم‌ها دسترسی شبکه‌ای دارد. NetworkPolicy ابزار استاندارد کوبرنتیز برای segmentation است؛‏ یک firewall توزیع‌شده که ruleهایش بر اساس label نوشته می‌شوند نه IP،‏ پس با جابه‌جا شدن و ساخته شدن Podها خودش را تطبیق می‌دهد.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-prerequisites">Prerequisites <small>(NetworkPolicy)</small></h3>
 <p>network policyها توسط <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/">network plugin</a> پیاده‌سازی می‌شوند. برای استفاده از network policyها باید از یک networking solution استفاده کنید که از NetworkPolicy پشتیبانی کند. ساختن یک resource از نوع NetworkPolicy بدون controllerی که آن را پیاده کند هیچ اثری ندارد.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>این خطرناک‌ترین نکته‌ی این صفحه است: API server هر NetworkPolicy را بدون خطا می‌پذیرد،‏ حتی اگر CNI شما (مثلاً Flannel به‌تنهایی) اصلاً آن را اعمال نکند (خارج از مستندات رسمی: نام CNIها).‏ k3s کنار Flannel یک network policy controller داخلی دارد که به‌طور پیش‌فرض فعال است؛‏ پس روی cluster ما policyها اجرا می‌شوند. نتیجه: تیم امنیت فکر می‌کند segmentation دارد در حالی که ندارد. همیشه بعد از اعمال policy،‏ اثر آن را با یک تست واقعی (مثل آزمایش <code>wget --timeout=1</code> در ادامه) بسنجید. چند CNI که از NetworkPolicy پشتیبانی می‌کنند در صفحه‌ی Declare Network Policy آمده‌اند: Antrea،‏ Calico،‏ Cilium،‏ Kube-router.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-isolation">The two sorts of pod isolation</h3>
 <p>دو نوع isolation برای یک Pod وجود دارد: isolation برای egress،‏ و isolation برای ingress. این دو به اینکه چه اتصال‌هایی می‌توانند برقرار شوند مربوط‌اند. «Isolation» در اینجا مطلق نیست،‏ بلکه به معنای «برخی محدودیت‌ها اعمال می‌شود» است. حالت مقابل،‏ «non-isolated برای $direction»،‏ یعنی هیچ محدودیتی در جهت مذکور اعمال نمی‌شود. این دو نوع isolation (یا نبود آن) مستقل از هم اعلام می‌شوند و هر دو برای یک اتصال از یک Pod به Pod دیگر مرتبط هستند.</p>
@@ -3224,7 +3300,9 @@ ResolvedRefs=True (ResolvedRefs)
 <p>به‌طور پیش‌فرض،‏ یک Pod برای ingress،‏ non-isolated است؛‏ همه‌ی اتصال‌های ورودی مجازند. یک Pod برای ingress isolated است اگر هر NetworkPolicyی وجود داشته باشد که هم آن Pod را select کند و هم «Ingress» را در <code>policyTypes</code> خود داشته باشد؛‏ می‌گوییم چنین policyی برای ingress روی Pod اعمال می‌شود. وقتی یک Pod برای ingress isolated است،‏ تنها اتصال‌های مجاز به داخل Pod آن‌هایی هستند که از Node خود Pod می‌آیند و آن‌هایی که توسط فهرست <code>ingress</code> یکی از NetworkPolicyهایی که برای ingress روی Pod اعمال می‌شوند مجاز شده‌اند. ترافیک پاسخ برای آن اتصال‌های مجاز هم به‌طور ضمنی مجاز است. اثر آن فهرست‌های <code>ingress</code> به‌صورت جمعی ترکیب می‌شود.</p>
 <p>network policyها با هم تعارض (conflict) ندارند؛‏ جمع‌پذیر (additive) هستند. اگر یک یا چند policy برای یک جهت مشخص روی یک Pod اعمال شوند،‏ اتصال‌های مجاز در آن جهت از آن Pod،‏ اجتماع (union) چیزهایی است که policyهای اعمال‌شده مجاز می‌کنند. بنابراین ترتیب ارزیابی روی نتیجه‌ی policy اثری ندارد.</p>
 <p>برای اینکه یک اتصال از یک Pod مبدأ به یک Pod مقصد مجاز باشد،‏ هم egress policy روی Pod مبدأ و هم ingress policy روی Pod مقصد باید اتصال را مجاز کنند. اگر هر یک از دو طرف اتصال را مجاز نکند،‏ اتصال برقرار نمی‌شود.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>جدول تصمیم برای اتصال Pod A (مبدأ) به Pod B (مقصد):</p>
 <div class="tbl"><table><thead><tr><th>A برای egress</th><th>B برای ingress</th><th>نتیجه</th></tr></thead><tbody>
 <tr><td>non-isolated</td><td>non-isolated</td><td>مجاز</td></tr>
@@ -3235,6 +3313,7 @@ ResolvedRefs=True (ResolvedRefs)
 </tbody></table></div>
 <p>دو پیامد مهم: (۱) چون همه‌چیز allow است و deny صریح وجود ندارد،‏ اضافه کردن یک policy جدید هرگز چیزی را که policy دیگری مجاز کرده ممنوع نمی‌کند،‏ <b>مگر</b> اینکه آن policy جدید اولین policyی باشد که Pod را isolated می‌کند. این «اثر اولین policy» منشأ بسیاری از outageهاست: شما فقط می‌خواستید به frontend اجازه دهید،‏ ولی با اولین ingress policy روی Pod،‏ هر ترافیک دیگری (مثلاً از Prometheus) قطع می‌شود. (۲) «reply traffic implicitly allowed» یعنی policyها stateful هستند؛‏ لازم نیست برای پاسخ‌ها rule جدا بنویسید.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-resource">The NetworkPolicy resource</h3>
 <p>برای تعریف کامل این resource،‏ reference <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#networkpolicy-v1-networking-k8s-io">NetworkPolicy</a> را ببینید.</p>
@@ -3293,10 +3372,13 @@ spec:
 <li>(Egress ruleها) اتصال از هر Pod در namespace <code>default</code> با label <code>role=db</code> به CIDR <code>‎10.0.0.0/24‎</code> روی پورت TCP 5978 را مجاز می‌کند</li>
 </ol>
 <p>برای مثال‌های بیشتر،‏ walkthrough <a href="#ch5-b-declare-np">Declare Network Policy</a> را ببینید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>یک پیامد پنهان این مثال: Podهای <code>role=db</code> حالا برای egress isolated هستند و تنها egress مجازشان <code>‎10.0.0.0/24:5978‎</code> است. پس این Podهای دیگر نمی‌توانند DNS query بفرستند (پورت 53 به CoreDNS مجاز نیست). اگر پایگاه داده برای replication از hostname استفاده کند،‏ از کار می‌افتد. همیشه هنگام نوشتن egress policy بپرسید: «آیا این Pod به DNS نیاز دارد؟» (Caution بخش Default deny all egress traffic را ببینید.)</p>
 <p>همچنین قاعده‌ی «rule = from <b>AND</b> ports» و «عناصر from = <b>OR</b>» را به خاطر بسپارید: در این مثال سه peer با OR ترکیب شده‌اند و نتیجه با پورت 6379 AND شده است.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-selectors">Behavior of <code>to</code> and <code>from</code> selectors</h3>
 <p>چهار نوع selector وجود دارد که می‌توان در بخش <code>from</code> از یک <code>ingress</code> یا بخش <code>to</code> از یک <code>egress</code> مشخص کرد:</p>
@@ -3328,7 +3410,13 @@ spec:
 </pre></div>
 <p>این یکی دو عنصر در آرایه‌ی <code>from</code> دارد و اتصال از Podهای namespace محلی با label <code>role=client</code>،‏ <i>یا</i> از هر Pod در هر namespace با label <code>user=alice</code> را مجاز می‌کند.</p>
 <p>در صورت شک،‏ از <code>kubectl describe</code> استفاده کنید تا ببینید کوبرنتیز،‏ policy را چگونه تفسیر کرده است.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+<p><b>ipBlock</b>: بازه‌های CIDR خاصی از IP را select می‌کند تا به‌عنوان منبع ingress یا مقصد egress مجاز باشند. این‌ها باید IPهای خارج از cluster باشند،‏ چون IPهای Pod موقتی (ephemeral) و غیرقابل پیش‌بینی هستند.</p>
+<p>سازوکارهای ingress و egress در cluster اغلب نیازمند بازنویسی (rewrite) IP مبدأ یا مقصد packetها هستند. در مواردی که این اتفاق می‌افتد،‏ تعریف نشده است که قبل یا بعد از پردازش NetworkPolicy رخ دهد،‏ و رفتار ممکن است برای ترکیب‌های مختلف network plugin،‏ cloud provider،‏ پیاده‌سازی <code>Service</code> و غیره متفاوت باشد.</p>
+<p>در مورد ingress،‏ این یعنی در برخی موارد ممکن است بتوانید packetهای ورودی را بر اساس IP مبدأ اصلی واقعی فیلتر کنید،‏ در حالی که در موارد دیگر،‏ «IP مبدأ»ی که NetworkPolicy روی آن عمل می‌کند ممکن است IP یک <code>LoadBalancer</code> یا IP Node آن Pod و غیره باشد.</p>
+<p>برای egress،‏ این یعنی اتصال‌ها از Podها به IPهای <code>Service</code> که به IPهای خارج از cluster بازنویسی می‌شوند،‏ ممکن است مشمول policyهای مبتنی بر <code>ipBlock</code> بشوند یا نشوند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>تنها تفاوت دو YAML بالا یک کاراکتر <code>‎-‎</code> قبل از <code>podSelector</code> است،‏ اما اولی «Podهای client <b>در</b> namespaceهای alice» و دومی «Podهای client محلی <b>یا</b> <b>همه‌ی</b> Podهای namespaceهای alice» است. دومی به‌مراتب گسترده‌تر است و یک حفره‌ی امنیتی رایج است. خروجی <code>kubectl describe networkpolicy</code> این تفاوت را صریح نشان می‌دهد (شکل خروجی ممکن است بین نسخه‌های kubectl کمی فرق کند):</p>
 <div class="code"><div class="lbl"><span>خروجی describe برای حالت اول (AND)</span><button type="button">کپی</button></div><pre class="out">  Allowing ingress traffic:
     To Port: &lt;any&gt; (traffic allowed to all ports)
@@ -3345,13 +3433,10 @@ spec:
       PodSelector: role=client
 </pre></div>
 </div>
-<p><b>ipBlock</b>: بازه‌های CIDR خاصی از IP را select می‌کند تا به‌عنوان منبع ingress یا مقصد egress مجاز باشند. این‌ها باید IPهای خارج از cluster باشند،‏ چون IPهای Pod موقتی (ephemeral) و غیرقابل پیش‌بینی هستند.</p>
-<p>سازوکارهای ingress و egress در cluster اغلب نیازمند بازنویسی (rewrite) IP مبدأ یا مقصد packetها هستند. در مواردی که این اتفاق می‌افتد،‏ تعریف نشده است که قبل یا بعد از پردازش NetworkPolicy رخ دهد،‏ و رفتار ممکن است برای ترکیب‌های مختلف network plugin،‏ cloud provider،‏ پیاده‌سازی <code>Service</code> و غیره متفاوت باشد.</p>
-<p>در مورد ingress،‏ این یعنی در برخی موارد ممکن است بتوانید packetهای ورودی را بر اساس IP مبدأ اصلی واقعی فیلتر کنید،‏ در حالی که در موارد دیگر،‏ «IP مبدأ»ی که NetworkPolicy روی آن عمل می‌کند ممکن است IP یک <code>LoadBalancer</code> یا IP Node آن Pod و غیره باشد.</p>
-<p>برای egress،‏ این یعنی اتصال‌ها از Podها به IPهای <code>Service</code> که به IPهای خارج از cluster بازنویسی می‌شوند،‏ ممکن است مشمول policyهای مبتنی بر <code>ipBlock</code> بشوند یا نشوند.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>مثال عملی از این عدم قطعیت: می‌خواهید فقط IPهای دفتر شرکت (<code>‎198.51.100.0/24‎</code>) به یک پنل ادمین که از طریق Service نوع LoadBalancer expose شده دسترسی داشته باشند. اگر load balancer یا kube-proxy مبدأ را SNAT کند (مثلاً با <code>externalTrafficPolicy: Cluster</code>)،‏ Pod ترافیک را با IP یک Node یا load balancer می‌بیند و ipBlock شما یا همه را رد می‌کند یا (اگر IP Node را مجاز کرده باشید) همه را مجاز می‌کند. با <code>externalTrafficPolicy: Local</code> (بخش اول همین فصل) IP مبدأ client معمولاً حفظ می‌شود،‏ اما مستندات صراحتاً می‌گوید این رفتار به ترکیب plugin و provider وابسته است؛‏ پس حتماً تست کنید. برای فیلتر IP در لایه‌ی HTTP،‏ ابزار مناسب‌تر Ingress controller یا Gateway است.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-default-policies">Default policies</h3>
 <p>به‌طور پیش‌فرض،‏ اگر هیچ policyی در یک namespace وجود نداشته باشد،‏ همه‌ی ترافیک ingress و egress به و از Podهای آن namespace مجاز است. مثال‌های زیر به شما اجازه می‌دهند رفتار پیش‌فرض را در آن namespace تغییر دهید.</p>
@@ -3400,33 +3485,6 @@ spec:
 </pre></div>
 <p>این تضمین می‌کند که حتی Podهایی که توسط هیچ NetworkPolicy دیگری select نشده‌اند،‏ اجازه‌ی ترافیک egress نداشته باشند. این policy رفتار ingress isolation هیچ Podی را تغییر نمی‌دهد.</p>
 <div class="warn"><b>هشدار</b><p>یک default deny-all egress policy ترافیک DNS را هم block می‌کند. اگر workloadهای شما به DNS resolution نیاز دارند،‏ باید یک NetworkPolicy جداگانه اضافه کنید که egress به DNS service Cluster شما را مجاز کند.</p></div>
-<div class="deep"><b>توضیح تکمیلی</b>
-<p>یک policy رایج برای مجاز کردن DNS،‏ همراه با default deny egress (label <code>k8s-app: kube-dns</code> روی Podهای CoreDNS در kubeadm رایج است اما در distributionهای مختلف ممکن است فرق کند؛‏ خارج از مستندات رسمی). از label استاندارد <code>kubernetes.io/metadata.name</code> برای انتخاب namespace <code>kube-system</code> استفاده شده (بخش Targeting a Namespace by its name):</p>
-<div class="code"><div class="lbl"><span>allow-dns-egress.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-dns-egress
-spec:
-  podSelector: {}
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          kubernetes.io/metadata.name: kube-system
-      podSelector:
-        matchLabels:
-          k8s-app: kube-dns
-    ports:
-    - protocol: UDP
-      port: 53
-    - protocol: TCP
-      port: 53     # پاسخ‌های بزرگ DNS روی TCP می‌آیند
-</pre></div>
-<p>توجه کنید پورت مقصد در این rule پورت <b>Pod</b> CoreDNS است. اگر CoreDNS شما روی پورت دیگری (مثلاً 1053 یا 8053) listen کند و Service پورت 53 را به آن map کند،‏ باید پورت واقعی Pod را بنویسید،‏ چون policy معمولاً بعد از DNAT کردن Service IP به Pod IP ارزیابی می‌شود (خارج از مستندات رسمی؛‏ رفتار رایج CNIها). همچنین اگر از NodeLocal DNSCache استفاده می‌کنید،‏ مقصد IP محلی Node است و باید با <code>ipBlock</code> مجاز شود.</p>
-</div>
-
 <h4>Allow all egress traffic</h4>
 <p>اگر می‌خواهید همه‌ی اتصال‌ها از همه‌ی Podهای یک namespace را مجاز کنید،‏ می‌توانید policyی بسازید که صراحتاً همه‌ی اتصال‌های خروجی از Podهای آن namespace را مجاز کند.</p>
 <div class="code"><div class="lbl"><span>service/networking/network-policy-allow-all-egress.yaml</span><button type="button">کپی</button></div><pre class="yaml">---
@@ -3457,7 +3515,36 @@ spec:
   - Egress
 </pre></div>
 <p>این تضمین می‌کند که حتی Podهایی که توسط هیچ NetworkPolicy دیگری select نشده‌اند،‏ اجازه‌ی ترافیک ingress یا egress نداشته باشند.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
+<p>یک policy رایج برای مجاز کردن DNS،‏ همراه با default deny egress (label <code>k8s-app: kube-dns</code> روی Podهای CoreDNS در kubeadm رایج است اما در distributionهای مختلف ممکن است فرق کند؛‏ خارج از مستندات رسمی). از label استاندارد <code>kubernetes.io/metadata.name</code> برای انتخاب namespace <code>kube-system</code> استفاده شده (بخش Targeting a Namespace by its name):</p>
+<div class="code"><div class="lbl"><span>allow-dns-egress.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53     # پاسخ‌های بزرگ DNS روی TCP می‌آیند
+</pre></div>
+<p>توجه کنید پورت مقصد در این rule پورت <b>Pod</b> CoreDNS است. اگر CoreDNS شما روی پورت دیگری (مثلاً 1053 یا 8053) listen کند و Service پورت 53 را به آن map کند،‏ باید پورت واقعی Pod را بنویسید،‏ چون policy معمولاً بعد از DNAT کردن Service IP به Pod IP ارزیابی می‌شود (خارج از مستندات رسمی؛‏ رفتار رایج CNIها). همچنین اگر از NodeLocal DNSCache استفاده می‌کنید،‏ مقصد IP محلی Node است و باید با <code>ipBlock</code> مجاز شود.</p>
+</div>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>تفاوت سه شکل خالی را دقیق ببینید؛‏ این‌ها مهم‌ترین نکات syntax در NetworkPolicy هستند:</p>
 <div class="tbl"><table><thead><tr><th>نوشته</th><th>معنی</th></tr></thead><tbody>
 <tr><td><code>podSelector: {}</code></td><td>همه‌ی Podهای namespace (selector خالی = همه)</td></tr>
@@ -3467,13 +3554,17 @@ spec:
 </tbody></table></div>
 <p>الگوی توصیه‌شده در Production: در هر namespace برنامه یک <code>default-deny-all</code> به‌علاوه‌ی <code>allow-dns-egress</code> بگذارید و سپس برای هر جریان لازم یک policy «allow» صریح بنویسید (مدل zero-trust). چون کوبرنتیز راهی برای اعمال خودکار policy پیش‌فرض روی همه‌ی namespaceها ندارد (بخش What you can't do)،‏ این policyها را در template ساخت namespace (مثلاً در GitOps) قرار دهید.</p>
 </div>
+  </details>
 <h3 id="ch5-b-np-traffic-filtering">Network traffic filtering</h3>
 <p>NetworkPolicy برای اتصال‌های <a href="https://en.wikipedia.org/wiki/OSI_model#Layer_4:_Transport_layer">لایه‌ی ۴</a> تعریف می‌شود (TCP،‏ UDP،‏ و به‌صورت اختیاری SCTP). برای بقیه‌ی پروتکل‌ها،‏ رفتار ممکن است بین network pluginهای مختلف فرق کند.</p>
 <div class="note"><b>نکته</b><p>باید از یک CNI plugin استفاده کنید که از NetworkPolicyهای پروتکل SCTP پشتیبانی می‌کند.</p></div>
 <p>وقتی یک network policy از نوع «deny all» تعریف می‌شود،‏ تنها تضمین می‌شود که اتصال‌های TCP،‏ UDP و SCTP رد شوند. برای پروتکل‌های دیگر،‏ مثل ARP یا ICMP،‏ رفتار تعریف‌نشده (undefined) است. همین موضوع برای allow ruleها هم صادق است: وقتی یک Pod خاص به‌عنوان مبدأ ingress یا مقصد egress مجاز شده،‏ مشخص نیست برای بسته‌های (مثلاً) ICMP چه اتفاقی می‌افتد. پروتکل‌هایی مثل ICMP ممکن است توسط بعضی network pluginهای مجاز و توسط بعضی دیگر رد شوند.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>نکته‌ی عملی این بخش: اگر بعد از اعمال یک default-deny policy همچنان بتوانید Pod مقصد را <code>ping</code> کنید ولی نتوانید با <code>curl</code> به آن وصل شوید (یا برعکس)،‏ این یک باگ نیست — این «undefined behavior» برای ICMP است که در مستندات صراحتاً ذکر شده. برای تست واقعی اینکه آیا NetworkPolicy شما اعمال می‌شود،‏ همیشه از یک پروتکل لایه‌ی ۴ (مثلاً <code>wget</code> یا <code>nc</code> روی TCP) استفاده کنید،‏ نه <code>ping</code>. SCTP در کوبرنتیز عمدتاً برای workloadهای telecom (مثل 5G core) به کار می‌رود؛‏ اگر CNI شما (مثلاً یک نسخه‌ی قدیمی‌تر) از SCTP در NetworkPolicy پشتیبانی نکند،‏ rule مربوط به SCTP بی‌اثر می‌ماند بدون هیچ خطایی از API server.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-port-range">Targeting a range of ports</h3>
 <p><span class="fs">FEATURE STATE: Kubernetes v1.25 [stable]</span></p>
@@ -3507,9 +3598,12 @@ spec:
 <li>هر دو پورت باید عددی باشند.</li>
 </ul>
 <div class="note"><b>نکته</b><p>cluster شما باید از یک CNI plugin استفاده کند که از field <code>endPort</code> در specهای NetworkPolicy پشتیبانی می‌کند. اگر <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/">network plugin</a> شما از field <code>endPort</code> پشتیبانی نکند و شما یک NetworkPolicy با آن مشخص کنید،‏ policy فقط برای همان field تکی <code>port</code> اعمال می‌شود.</p></div>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>پیش از <code>endPort</code> (که از v1.25 stable است)،‏ برای اجازه دادن به یک بازه‌ی پورت مجبور بودید یک rule جدا برای هر پورت بنویسید که هم manifest را حجیم می‌کرد و هم خطای انسانی در نگه‌داری آن زیاد بود. کاربرد رایج این field،‏ محدود کردن دسترسی به بازه‌ی پورت‌های اِفمرال (ephemeral) یک سرویس backend مثل یک connection pool پایگاه‌داده یا یک cluster از nodeهایی است که روی بازه‌ای از پورت‌ها listen می‌کنند (مثل بعضی برنامه‌های legacy). قبل از تکیه به آن،‏ حتماً با <code>kubectl explain networkpolicy.spec.egress.ports.endPort</code> یا مستندات CNI خودتان (Calico،‏ Cilium،‏ ...) پشتیبانی آن را تأیید کنید،‏ چون در صورت عدم پشتیبانی،‏ هیچ خطایی دریافت نمی‌کنید و فقط پورت اول اعمال می‌شود — یک منبع رایج outageهای «چرا این rule کار نمی‌کند».</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-multi-ns-label">Targeting multiple namespaces by label</h3>
 <p>در این سناریو،‏ NetworkPolicyی از نوع <code>Egress</code> شما بیش از یک namespace را با استفاده از نام labelهایشان هدف می‌گیرد. برای اینکه این کار کند،‏ باید namespaceهای مقصد را label بزنید. برای مثال:</p>
@@ -3536,9 +3630,12 @@ spec:
           values: ["frontend", "backend"]
 </pre></div>
 <div class="note"><b>نکته</b><p>مستقیماً امکان مشخص کردن نام namespaceها در یک NetworkPolicy وجود ندارد. باید از یک <code>namespaceSelector</code> با <code>matchLabels</code> یا <code>matchExpressions</code> استفاده کنید تا namespaceها را بر اساس labelشان select کنید.</p></div>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>توجه کنید در این مثال،‏ rule سطح بالای <code>to</code> فقط یک عنصر دارد (<code>namespaceSelector</code>) که خودش با <code>operator: In</code> چند مقدار را می‌پذیرد — این با نوشتن دو عنصر جدا در <code>to</code> (که یعنی OR بین دو selector مستقل) فرق دارد؛‏ اینجا هر دو راه به یک نتیجه می‌رسند،‏ اما وقتی <code>podSelector</code> هم به هر عنصر <code>to</code> اضافه شود تفاوت مهم می‌شود (به بخش «Behavior of to and from selectors» در قسمت قبل مراجعه کنید).</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-ns-by-name">Targeting a Namespace by its name</h3>
 <p>control plane کوبرنتیز یک label تغییرناپذیر (immutable) به نام <code>kubernetes.io/metadata.name</code> روی همه‌ی namespaceها تنظیم می‌کند که مقدار آن،‏ نام namespace است.</p>
@@ -3582,9 +3679,12 @@ monitoring   Active   90d   kubernetes.io/metadata.name=monitoring
 <p>هر NetworkPolicyی که ساخته می‌شود بالاخره توسط یک network plugin پردازش می‌شود،‏ اما هیچ راهی برای فهمیدن از Kubernetes API وجود ندارد که دقیقاً چه زمانی این اتفاق می‌افتد.</p>
 <p>بنابراین،‏ Podها باید در برابر شروع‌شدن با connectivity شبکه‌ای متفاوت از حالت مورد انتظار مقاوم (resilient) باشند. اگر نیاز دارید مطمئن شوید Pod می‌تواند پیش از شروع به کار به مقصدهای مشخصی برسد،‏ می‌توانید از یک <a href="#ch3-a-init-containers">init container</a> استفاده کنید تا پیش از اینکه kubelet containerهای app را شروع کند،‏ منتظر در‌دسترس‌بودن آن مقصدها بماند.</p>
 <p>هر NetworkPolicy بالاخره روی همه‌ی Podهای select‌شده اعمال می‌شود. چون ممکن است network plugin،‏ NetworkPolicy را به‌صورت توزیع‌شده (distributed) پیاده‌سازی کند،‏ ممکن است Podها هنگام اولین ساخته‌شدن،‏ یا هنگام تغییر Podها یا policyها،‏ دید کمی ناسازگار (inconsistent) از network policyها داشته باشند. برای مثال،‏ یک Pod تازه‌ساخته‌شده که قرار است بتواند هم به Pod A روی Node 1 و هم Pod B روی Node 2 برسد،‏ ممکن است ببیند که فوراً می‌تواند به Pod A برسد،‏ ولی تا چند ثانیه بعد نتواند به Pod B برسد.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>این بخش دلیل فنیِ یک الگوی رایج incident در Production را توضیح می‌دهد: «Deployment جدید rollout شد،‏ همه‌ی Podها Ready شدند،‏ اما ۲-۵ ثانیه‌ی اول درخواست‌ها با connection refused/timeout رد شدند.» چون NetworkPolicy یک ویژگی eventual-consistency دارد (نه مثل RBAC که فوری اعمال می‌شود)،‏ در این پنجره‌ی کوتاه یک Pod تازه ممکن است isolated باشد ولی هنوز allow rule برایش اعمال نشده باشد. راه‌کارهای رایج: (۱) یک <code>readinessProbe</code> واقع‌بینانه که فقط بعد از موفقیت یک health-check واقعی،‏ ترافیک را به Pod هدایت کند (فصل ۳) — این احتمال برخورد با این پنجره را کم می‌کند،‏ نه صفر؛‏ (۲) در برنامه‌های حساس،‏ یک retry با backoff کوتاه روی اولین اتصال‌های خروجی؛‏ (۳) هرگز فرض نکنید NetworkPolicy مثل یک firewall سنتی «فوری» اعمال می‌شود.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-hostnetwork">NetworkPolicy and <code>hostNetwork</code> pods</h3>
 <p>رفتار NetworkPolicy برای Podهای <code>hostNetwork</code> تعریف‌نشده (undefined) است،‏ اما باید به ۲ حالت زیر محدود باشد:</p>
@@ -3615,9 +3715,12 @@ monitoring   Active   90d   kubernetes.io/metadata.name=monitoring
 </li>
 </ol>
 <p>هم‌زمان،‏ چون Podهای <code>hostNetwork</code> همان IP addressهای Nodeی که رویش قرار دارند را دارند،‏ اتصال‌های آن‌ها مثل اتصال‌های Node رفتار می‌شود. برای مثال،‏ می‌توانید با یک rule از نوع <code>ipBlock</code> ترافیک از یک Pod <code>hostNetwork</code> را مجاز کنید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>این undefined-behavior یکی از دلایلی است که در Production معمولاً Podهای <code>hostNetwork: true</code> (مثل بعضی DaemonSetهای monitoring یا CNIهای خود) را از پوشش NetworkPolicy کنار می‌گذارند و امنیت آن‌ها را با مکانیزم‌های دیگر (مثل RBAC روی چه کسی می‌تواند چنین Podی بسازد،‏ و PodSecurity admission — فصل ۱۴) تأمین می‌کنند. اگر با CNI خاص خود نیاز به رفتار قطعی دارید،‏ مستندات همان CNI را بخوانید؛‏ فرض عمومی‌سازی از این صفحه اشتباه است.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-cant-do">What you can't do with network policies (at least, not yet)</h3>
 <p>تا Kubernetes 1.37،‏ قابلیت‌های زیر در NetworkPolicy API وجود ندارند،‏ اما ممکن است بتوانید با استفاده از اجزای سیستم‌عامل (مثل SELinux،‏ OpenVSwitch،‏ IPTables و غیره) یا فناوری‌های لایه‌ی ۷ (Ingress controllerها،‏ پیاده‌سازی‌های Service Mesh) یا admission controllerها،‏ راه‌حل‌های جایگزین (workaround) پیاده کنید. اگر با امنیت شبکه در کوبرنتیز تازه آشنا شده‌اید،‏ ارزش دارد بدانید User Storyهای زیر (هنوز) با NetworkPolicy API قابل پیاده‌سازی نیستند:</p>
@@ -3633,16 +3736,22 @@ monitoring   Active   90d   kubernetes.io/metadata.name=monitoring
 <li>توانایی صریح deny کردن policyها (در حال حاضر مدل NetworkPolicyها deny-by-default است،‏ با تنها امکان اضافه کردن allow ruleها).</li>
 <li>توانایی جلوگیری از ترافیک loopback یا ترافیک ورودیِ host (Podها در حال حاضر نمی‌توانند دسترسی localhost را block کنند،‏ و همچنین توانایی block کردن دسترسی از Node میزبان خودشان را ندارند).</li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>این فهرست مرز دقیق NetworkPolicy را مشخص می‌کند و چرایی وجود Service Meshها (مثل Istio یا Linkerd) را روشن می‌سازد: mTLS،‏ policyهای لایه‌ی ۷ (مثلاً «فقط متد HTTP GET مجاز است»)،‏ و logging دقیق اتصال‌ها همگی خارج از NetworkPolicy API هستند. در طراحی امنیت شبکه‌ی یک namespace چندمستأجری (multi-tenant)،‏ معمولاً NetworkPolicy را برای segmentation لایه‌ی ۴/۳ (کدام namespace به کدام namespace) و یک لایه‌ی مکمل (service mesh،‏ یا حتی فقط RBAC و admission control) را برای بقیه‌ی نیازها در نظر می‌گیرند؛‏ به‌تنهایی نباید NetworkPolicy را معادل یک راه‌حل امنیتی کامل در نظر گرفت.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-np-existing-connections">NetworkPolicy's impact on existing connections</h3>
 <p>وقتی مجموعه‌ی NetworkPolicyهایی که روی یک اتصال موجود اعمال می‌شوند تغییر می‌کند — این می‌تواند به‌دلیل تغییر در NetworkPolicyها یا تغییر labelهای مرتبط namespaceها/Podهای select‌شده توسط policy (هم subject و هم peerها) در میانه‌ی یک اتصال موجود رخ دهد — implementation-defined است که آیا این تغییر روی آن اتصال موجود اثر می‌کند یا نه.</p>
 <p>مثال: یک policy ساخته می‌شود که باعث رد شدن یک اتصال قبلاً مجاز می‌شود؛‏ پیاده‌سازی زیرین network plugin مسئول تعیین این است که آیا این policy جدید اتصال‌های موجود را می‌بندد یا نه. توصیه می‌شود policyها/Podها/namespaceها را به شکل‌هایی که ممکن است روی اتصال‌های موجود اثر بگذارند تغییر ندهید.</p>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>در عمل این یعنی اگر یک اتصال TCP long-lived (مثل یک WebSocket یا یک connection pool پایگاه‌داده) را با یک NetworkPolicy جدید deny کنید،‏ بسته به CNI (که با iptables/nftables یا با eBPF پیاده‌سازی شده) ممکن است آن اتصال تا زمانی که یکی از دو طرف آن را ببندد باز بماند. برای قطع قطعی یک اتصال compromise شده،‏ نباید فقط به تغییر NetworkPolicy تکیه کنید؛‏ باید Pod مربوطه را هم به‌صورت صریح حذف/restart کنید تا اتصال‌های TCP موجودش بسته شوند (خارج از مستندات رسمی؛‏ رفتار رایج در incident response).</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-declare-np">تعریف NetworkPolicy؛‏ راهنمای عملی <small>(Declare Network Policy)</small></h3>
 <p>این بخش یک راهنمای گام‌به‌گام رسمی برای شروع کار با NetworkPolicy API است.</p>
@@ -3723,9 +3832,12 @@ wget: download timed out
 <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">Connecting to nginx (10.100.0.16:80)
 remote file exists
 </pre></div>
-<div class="deep"><b>توضیح تکمیلی</b>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>این راهنما یک الگوی مهم را نشان می‌دهد: یک NetworkPolicy تنها Podهایی را که <code>podSelector</code>ش match می‌کند isolated می‌کند (اینجا <code>app: nginx</code>)؛‏ بقیه‌ی Podهای namespace <code>default</code> (مثل busyboxهای بالا) هنوز non-isolated هستند،‏ مگر اینکه policy دیگری آن‌ها را هم select کند. بنابراین در تست دوم،‏ خودِ Pod busybox محدود نشده — این Service <code>nginx</code> است که به آن دسترسی محدود شده. برای تشخیص «آیا NetworkPolicy درست کار می‌کند؟» همیشه یک تست منفی (Pod بدون label لازم که باید رد شود) و یک تست مثبت (Pod با label لازم که باید مجاز شود) هر دو را انجام دهید — فقط یکی کافی نیست.</p>
 </div>
+  </details>
 
 <h3 id="ch5-b-windows-networking">Windows Networking</h3>
 <p>کوبرنتیز از اجرای Node روی Linux یا Windows پشتیبانی می‌کند. می‌توانید هر دو نوع Node را در یک cluster واحد ترکیب کنید. این صفحه یک مرور کلی از شبکه‌سازی مختص سیستم‌عامل Windows ارائه می‌دهد.</p>
@@ -3821,14 +3933,18 @@ remote file exists
 </ul>
 </li>
 </ul>
-<div class="deep"><b>توضیح تکمیلی</b>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b>
 <p>در عمل،‏ اکثر clusterهای Production که Node Windows دارند (معمولاً برای اجرای برنامه‌های legacy دات‌نت/.NET Framework کنار Linux workloadها) از یکی از win-bridge (host network) یا win-overlay (VXLAN) استفاده می‌کنند؛‏ Azure AKS اغلب از Azure-CNI برای Node Windows استفاده می‌کند تا Podها IP مستقیم از vNet بگیرند. نکته‌ی مهم برای طراحی: محدودیت «۶۴ backend pod برای یک Service» یعنی اگر یک Deployment روی Windows Node بخواهد به بیش از ۶۴ replica مقیاس یابد و پشت یک Service واحد باشد،‏ با یک سقف سخت روبه‌رو می‌شوید که باید با تقسیم به چند Service یا مهاجرت به Linux workaround شود؛‏ و نبودِ Host networking mode یعنی الگوهایی مثل DaemonSetهای monitoring با <code>hostNetwork: true</code> که روی Linux رایج‌اند (فصل ۱۱)،‏ روی Windows Node باید به شکل دیگری (مثل NodePort یا یک sidecar) طراحی شوند (خارج از مستندات رسمی).</p>
 </div>
+  </details>
 <h3 id="ch5-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>فروشگاه حالا از بیرون با یک نام باز می‌شود و از داخل هم مرزبندی دارد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>باز شدن فروشگاه با نام <code>shopify.local</code></td><td>Ingress با دو مسیر روی Traefik؛‏ <code>/api</code> به API و بقیه به frontend</td><td>گام ۵</td></tr><tr><td>پیدا کردن API با نام،‏ نه IP</td><td>Service برای هر بخش و DNS داخلی؛‏ مرورگر هم API را با مسیر <code>/api</code> روی همان دامنه صدا می‌زند</td><td>گام‌های ۱ تا ۳ و ۵</td></tr><tr><td>دسترسی همه‌ی Podها به پایگاه داده</td><td>NetworkPolicy که فقط Podهای دارای label به نام <code>db-access</code> را روی port 5432 می‌پذیرد</td><td>گام ۶</td></tr></tbody></table></div><p><b>فایل‌های تازه یا تغییرکرده:</b></p><div class="tbl"><table><thead><tr><th>فایل</th><th>تغییر</th></tr></thead><tbody><tr><td><code>shop-web-svc.yaml</code></td><td>Service از نوع ClusterIP برای frontend</td></tr><tr><td><code>shopify-ingress.yaml</code></td><td>Ingress با host برابر <code>shopify.local</code> و دو مسیر</td></tr><tr><td><code>postgres-netpol.yaml</code></td><td>NetworkPolicy برای ورودی PostgreSQL</td></tr><tr><td><code>shop-api.yaml</code> و <code>shop-migrate.yaml</code> و <code>shop-report.yaml</code></td><td>label به نام <code>db-access: "true"</code> در Pod template</td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> رمز پایگاه داده هنوز داخل کد و فایل YAML است و گزارش شبانه سقف مصرف CPU ندارد (فصل ۶)؛‏ داده‌ی PostgreSQL با حذف Pod از بین می‌رود (فصل ۷)؛‏ فروشگاه هنوز HTTPS ندارد.</p><p><b>هفته‌ی بعد:</b> رمز پایگاه داده از image (بسته‌ی فقط‌خواندنی شامل برنامه و وابستگی‌هایش که container از آن ساخته می‌شود) و Git بیرون می‌آید و برای مصرف منابع سقف می‌گذاریم.</p></div>
 
-  <div id="ch5-ex3" class="ex">
-<div class="ex-h">تمرین‌های فصل ۵،‏ بخش دوم <small>۱۶ تمرین</small></div>
+  <details id="ch5-ex3" class="ex">
+<summary class="ex-h">تمرین‌های فصل ۵،‏ بخش دوم <small>۱۶ تمرین</small></summary>
 <ol>
 
 <li><span class="lvl l1">مفهومی</span>مستندات Ingress می‌گوید «An Ingress does not expose arbitrary ports or protocols» و برای exposing سرویس‌های غیر HTTP/HTTPS باید از <code>Service.Type=NodePort</code> یا <code>Service.Type=LoadBalancer</code> استفاده کرد. چرا Ingress این محدودیت را دارد و این محدودیت چه ارتباطی با نیاز به وجود <code>ingressClassName</code> و یک Ingress controller دارد؟
@@ -4224,10 +4340,10 @@ spec:
 </details></li>
 
 </ol>
-</div>
+</details>
 
-  <div id="ch5-ex4" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۵ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch5-ex4" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۵ <small>۱۲ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>Service در کوبرنتیز چه مشکلی را حل می‌کند و چطور کار می‌کند؟
         <details class="ans"><summary>پاسخ</summary>
@@ -4289,7 +4405,7 @@ spec:
           <p>Endpoints همه‌ی IPهای یک Service را در یک شیء نگه می‌داشت؛‏ در Serviceهای بزرگ هر تغییر یعنی ارسال دوباره‌ی یک شیء بزرگ به همه‌ی Nodeها. EndpointSlice فهرست را به تکه‌های کوچک (پیش‌فرض حداکثر ۱۰۰ نشانی) تقسیم می‌کند،‏ از dual-stack پشتیبانی می‌کند و اطلاعاتی مثل zone و وضعیت serving و terminating را هم دارد. API مربوط به Endpoints از v1.33 منسوخ است.</p><p><b>نکته‌ی امتیازآور:</b> kube-proxy و CoreDNS فقط EndpointSlice را می‌خوانند؛‏ ابزارهایی که هنوز Endpoints را می‌خوانند باید مهاجرت کنند.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch5-recap">
     <div class="recap-h">خلاصه‌ی فصل ۵ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

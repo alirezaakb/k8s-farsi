@@ -50,6 +50,12 @@
   </ol>
   <div class="note"><b>نکته</b><p>یک flowchart برای انتخاب extension point در مستندات رسمی وجود دارد (Extension point choice flowchart) که کمک می‌کند اگر مطمئن نیستید از کجا شروع کنید. توجه داشته باشید که برخی راه‌حل‌ها ممکن است شامل چند نوع extension باشند.</p></div>
 
+  <h4 id="ch15-a-client-extensions">extensionهای سمت client <small>(Client extensions)</small></h4>
+  <p>Pluginهای kubectl باینری‌های جداگانه‌ای هستند که رفتار subcommandهای خاص را اضافه یا جایگزین می‌کنند. ابزار <code>kubectl</code> همچنین می‌تواند با credential pluginها یکپارچه شود. این extensionها فقط روی محیط محلی یک کاربر تأثیر می‌گذارند،‏ و بنابراین نمی‌توانند policyهای سراسری (site-wide) را اعمال کنند.</p>
+  <p>اگر می‌خواهید ابزار <code>kubectl</code> را توسعه دهید،‏ راهنمای Extend kubectl with plugins را بخوانید.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b>
     <p>نکته‌ی کلیدی این دیاگرام این است که کوبرنتیز در هر لایه یک extension point جدا دارد؛‏ این یعنی شما لازم نیست کل apiserver یا scheduler (جزئی که برای هر Pod تازه،‏ Node مناسب را انتخاب می‌کند) را fork کنید تا یک نیاز خاص را برطرف کنید. جدول زیر خلاصه‌ای از این extension pointها و نمونه‌ی استفاده‌ی هرکدام است:</p>
     <div class="tbl"><table><thead><tr><th>Extension point</th><th>لایه</th><th>نمونه‌ی استفاده</th></tr></thead><tbody>
@@ -65,10 +71,7 @@
       <tr><td>CNI plugin</td><td>Node</td><td>پیاده‌سازی Pod network با Calico،‏ Cilium و مانند آن</td></tr>
     </tbody></table></div>
   </div>
-
-  <h4 id="ch15-a-client-extensions">extensionهای سمت client <small>(Client extensions)</small></h4>
-  <p>Pluginهای kubectl باینری‌های جداگانه‌ای هستند که رفتار subcommandهای خاص را اضافه یا جایگزین می‌کنند. ابزار <code>kubectl</code> همچنین می‌تواند با credential pluginها یکپارچه شود. این extensionها فقط روی محیط محلی یک کاربر تأثیر می‌گذارند،‏ و بنابراین نمی‌توانند policyهای سراسری (site-wide) را اعمال کنند.</p>
-  <p>اگر می‌خواهید ابزار <code>kubectl</code> را توسعه دهید،‏ راهنمای Extend kubectl with plugins را بخوانید.</p>
+  </details>
 
   <h3 id="ch15-a-api-extensions">extensionهای API <small>(API extensions)</small></h3>
   <h4>تعریف custom resource <small>(Custom resource definitions)</small></h4>
@@ -359,9 +362,12 @@ example1   blue   S
 example2   blue   M
 </pre></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا CRD در برابر Aggregated API؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا CRD در برابر Aggregated API؟</b>
     <p>یک قانون سرانگشتی (خارج از مستندات رسمی): اگر یک تیم پلتفرم بخواهد یک نوع resource داخلی سازمانی مثل <code>DatabaseClaim</code> یا <code>TeamQuota</code> بسازد که کاربران با <code>kubectl apply</code> با آن کار کنند و یک controller آن را reconcile کند،‏ CRD تقریباً همیشه انتخاب درست است — زیرا صفر سرویس اضافی برای نگهداری،‏ storage رایگان از طریق etcd و validation قدرتمند (OpenAPI + CEL) به همراه دارد. Aggregated API فقط زمانی توجیه دارد که به یک ویژگی که CRD به‌صراحت ندارد نیاز باشد: storage غیر-etcd (مثلاً time-series)،‏ subresourceهای غیر-CRUD مثل <code>exec</code>/<code>logs</code>،‏ یا Protocol Buffers.‏ metrics-server نمونه‌ی کلاسیک یک Aggregated API است دقیقاً چون به یک storage backend متفاوت (in-memory،‏ اخیراً pull-based) نیاز دارد نه ذخیره‌سازی در etcd.</p>
   </div>
+  </details>
 
   <h3 id="ch15-a-apiserver-aggregation">لایه‌ی aggregation <small>(The aggregation layer)</small></h3>
   <p>aggregation layer اجازه می‌دهد کوبرنتیز با APIهای اضافی،‏ فراتر از آنچه APIهای هسته‌ی کوبرنتیز ارائه می‌دهند،‏ توسعه یابد. APIهای اضافی می‌توانند یا راه‌حل‌های آماده مثل یک metrics server،‏ یا APIهایی که خودتان توسعه می‌دهید باشند.</p>
@@ -376,6 +382,24 @@ example2   blue   M
   <p>اگر extension API server شما نمی‌تواند به این نیازمندی latency برسد،‏ تغییراتی که به شما اجازه می‌دهند به آن برسید را در نظر بگیرید.</p>
 
   <figure><div class="plate"><svg viewBox="0 0 760 330" width="760" height="330" role="img" aria-label="مسیر یک درخواست aggregated از client تا metrics-server" style="max-width:100%;height:auto;display:block"><defs><marker id="c15f2-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="c15f2-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="c15f2-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="c15f2-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a94ab"></path></marker></defs><rect x="612" y="40" width="134" height="92" rx="8" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="732" y="64" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#326ce5" direction="rtl" text-anchor="start">client</text><text x="624" y="88" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">kubectl top nodes</text><text x="624" y="110" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">GET /apis/metrics</text><rect x="330" y="20" width="250" height="152" rx="8" fill="#ffffff" stroke="#4a5672" stroke-width="1.5"></rect><text x="566" y="44" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#16213a" direction="rtl" text-anchor="start">kube-apiserver</text><rect x="344" y="56" width="222" height="30" rx="6" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.5"></rect><text x="556" y="76" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="700" fill="#326ce5" direction="rtl" text-anchor="start">۱. authentication و authorization</text><rect x="344" y="92" width="222" height="30" rx="6" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"></rect><text x="556" y="112" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="700" fill="#b26b00" direction="rtl" text-anchor="start">۲. path متعلق به یک APIService است</text><rect x="344" y="128" width="222" height="30" rx="6" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="556" y="148" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">۳. aggregation layer: proxy</text><line x1="610" y1="86" x2="584" y2="86" stroke="#326ce5" stroke-width="1.6" marker-end="url(#c15f2-b)"></line><rect x="136" y="52" width="176" height="52" rx="8" fill="#e1f4f0" stroke="#12806f" stroke-width="1.5"></rect><text x="300" y="74" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">Service</text><text x="144" y="94" font-family="JetBrains Mono, ui-monospace, monospace" font-size="8.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">kube-system/metrics-server</text><rect x="14" y="140" width="160" height="70" rx="8" fill="#ffffff" stroke="#12806f" stroke-width="1.5"></rect><text x="162" y="164" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="700" fill="#12806f" direction="rtl" text-anchor="start">Pod به نام metrics-server</text><text x="162" y="186" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">داده فقط در memory</text><line x1="328" y1="150" x2="316" y2="90" stroke="#12806f" stroke-width="1.6" marker-end="url(#c15f2-g)"></line><path d="M136,90 C104,90 96,110 96,136" fill="none" stroke="#12806f" stroke-width="1.6" marker-end="url(#c15f2-g)"></path><rect x="330" y="190" width="250" height="70" rx="8" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.5"></rect><text x="566" y="212" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="700" fill="#b26b00" direction="rtl" text-anchor="start">هویت کاربر در header فرستاده می‌شود</text><text x="342" y="234" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10.5" font-weight="400" fill="#16213a" direction="ltr" text-anchor="start">X-Remote-User: alice</text><text x="342" y="252" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="start">proxy client cert of apiserver</text><rect x="14" y="256" width="104" height="46" rx="8" fill="#f2f4f8" stroke="#8a94ab" stroke-width="1.5"></rect><text x="66" y="275" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="700" fill="#4a5672" direction="ltr" text-anchor="middle">kubelet</text><text x="66" y="293" font-family="JetBrains Mono, ui-monospace, monospace" font-size="8.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">/metrics/resource</text><line x1="66" y1="254" x2="100" y2="214" stroke="#8a94ab" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c15f2-k)"></line><rect x="124" y="256" width="104" height="46" rx="8" fill="#f2f4f8" stroke="#8a94ab" stroke-width="1.5"></rect><text x="176" y="275" font-family="JetBrains Mono, ui-monospace, monospace" font-size="11" font-weight="700" fill="#4a5672" direction="ltr" text-anchor="middle">kubelet</text><text x="176" y="293" font-family="JetBrains Mono, ui-monospace, monospace" font-size="8.5" font-weight="400" fill="#4a5672" direction="ltr" text-anchor="middle">/metrics/resource</text><line x1="176" y1="254" x2="136" y2="214" stroke="#8a94ab" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#c15f2-k)"></line><text x="318" y="244" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">scrape دوره‌ای</text><text x="746" y="320" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#4a5672" direction="rtl" text-anchor="start">پاسخ از همان مسیر و بدون تغییر به client برمی‌گردد؛ اگر APIService سالم نباشد کد 503 برمی‌گردد.</text></svg></div><figcaption><b>شکل ۱۵-۲.</b> <span style="flex:1 1 0;min-width:0">مسیر یک درخواست aggregated:‏ kube-apiserver پس از authentication و authorization درخواست را به Service مربوط به APIService می‌فرستد و هویت کاربر را در header منتقل می‌کند؛‏ metrics-server داده را از kubeletها جمع کرده است.</span></figcaption></figure>
+  <div class="lab"><b>آزمایش عملی: بررسی APIServiceهای موجود در یک cluster</b>
+    <p>روی هر clusterی که metrics-server نصب شده باشد (مثل kind با addon metrics-server،‏ یا هر managed cluster):</p>
+    <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh">kubectl get apiservice
+kubectl get apiservice v1beta1.metrics.k8s.io -o jsonpath='{.status.conditions[0]}'
+</pre></div>
+    <p>خروجی نمونه از <code>kubectl get apiservice</code>:</p>
+    <div class="code"><div class="lbl"><span>out</span><button type="button">کپی</button></div><pre class="out">NAME                                   SERVICE                      AVAILABLE   AGE
+v1.                                    Local                        True        40d
+v1.apps                                Local                        True        40d
+v1.admissionregistration.k8s.io        Local                        True        40d
+...
+v1beta1.metrics.k8s.io                 kube-system/metrics-server   True        12d
+</pre></div>
+    <p>اگر <code>AVAILABLE</code> برابر <code>False</code> باشد (مثلاً با پیام <code>FailedDiscoveryCheck</code>)،‏ این نشانه‌ی این است که یا extension API server در حال اجرا نیست،‏ یا شرط latency پنج‌ثانیه‌ای برقرار نمی‌شود،‏ یا TLS بین aggregation layer و آن برقرار نیست — می‌توانید با <code>kubectl describe apiservice v1beta1.metrics.k8s.io</code> جزئیات condition را ببینید.</p>
+  </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">APIService و جریان یک request aggregated</span></summary>
   <div class="deep"><b>توضیح تکمیلی: APIService و جریان یک request aggregated</b>
     <p>وقتی یک client (مثل kubectl) یک request به <code>/apis/metrics.k8s.io/v1beta1/nodes</code> می‌فرستد،‏ جریان این‌طور است:</p>
     <ol>
@@ -409,22 +433,7 @@ status:
     type: Available
 </pre></div>
   </div>
-
-  <div class="lab"><b>آزمایش عملی: بررسی APIServiceهای موجود در یک cluster</b>
-    <p>روی هر clusterی که metrics-server نصب شده باشد (مثل kind با addon metrics-server،‏ یا هر managed cluster):</p>
-    <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh">kubectl get apiservice
-kubectl get apiservice v1beta1.metrics.k8s.io -o jsonpath='{.status.conditions[0]}'
-</pre></div>
-    <p>خروجی نمونه از <code>kubectl get apiservice</code>:</p>
-    <div class="code"><div class="lbl"><span>out</span><button type="button">کپی</button></div><pre class="out">NAME                                   SERVICE                      AVAILABLE   AGE
-v1.                                    Local                        True        40d
-v1.apps                                Local                        True        40d
-v1.admissionregistration.k8s.io        Local                        True        40d
-...
-v1beta1.metrics.k8s.io                 kube-system/metrics-server   True        12d
-</pre></div>
-    <p>اگر <code>AVAILABLE</code> برابر <code>False</code> باشد (مثلاً با پیام <code>FailedDiscoveryCheck</code>)،‏ این نشانه‌ی این است که یا extension API server در حال اجرا نیست،‏ یا شرط latency پنج‌ثانیه‌ای برقرار نمی‌شود،‏ یا TLS بین aggregation layer و آن برقرار نیست — می‌توانید با <code>kubectl describe apiservice v1beta1.metrics.k8s.io</code> جزئیات condition را ببینید.</p>
-  </div>
+  </details>
   <h3 id="ch15-a-operator">الگوی Operator <small>(Operator pattern)</small></h3>
   <p>Operatorها extensionهای نرم‌افزاری برای کوبرنتیز هستند که از custom resource برای مدیریت برنامه‌ها و اجزای آن‌ها استفاده می‌کنند. Operatorها اصول کوبرنتیز،‏ به‌ویژه control loop،‏ را دنبال می‌کنند.</p>
 
@@ -490,6 +499,54 @@ kubectl edit SampleDB/example-database # manually change some settings
     <li>shell-operator</li>
   </ul>
 
+  <div class="lab"><b>آزمایش عملی: نصب یک operator واقعی با Helm و مشاهده‌ی reconciliation</b>
+    <p>روی یک minikube یا kind cluster،‏ prometheus-operator (یکی از پرکاربردترین operatorهای اکوسیستم) نصب می‌کنیم و می‌بینیم چطور یک custom resource باعث ساخت resourceهای واقعی می‌شود:</p>
+    <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh"># Install the CRDs and the operator with Helm
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace monitoring --create-namespace
+
+# CRDs registered by the operator
+kubectl get crd | grep monitoring.coreos.com
+</pre></div>
+    <div class="code"><div class="lbl"><span>out</span><button type="button">کپی</button></div><pre class="out">alertmanagerconfigs.monitoring.coreos.com   2026-10-10T08:12:45Z
+alertmanagers.monitoring.coreos.com         2026-10-10T08:12:45Z
+podmonitors.monitoring.coreos.com           2026-10-10T08:12:45Z
+probes.monitoring.coreos.com                2026-10-10T08:12:45Z
+prometheusagents.monitoring.coreos.com      2026-10-10T08:12:45Z
+prometheuses.monitoring.coreos.com          2026-10-10T08:12:45Z
+prometheusrules.monitoring.coreos.com       2026-10-10T08:12:45Z
+scrapeconfigs.monitoring.coreos.com         2026-10-10T08:12:45Z
+servicemonitors.monitoring.coreos.com       2026-10-10T08:12:45Z
+thanosrulers.monitoring.coreos.com          2026-10-10T08:12:45Z
+</pre></div>
+    <p>حالا یک custom resource از نوع <code>ServiceMonitor</code> ایجاد می‌کنیم — که به operator می‌گوید یک Service خاص را برای scrape کردن metric پیدا کند:</p>
+    <div class="code"><div class="lbl"><span>my-servicemonitor.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: my-app-monitor
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames: ["default"]
+  selector:
+    matchLabels:
+      app: my-app
+  endpoints:
+  - port: metrics
+    interval: 30s
+</pre></div>
+    <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f my-servicemonitor.yaml
+kubectl get servicemonitor -n monitoring my-app-monitor
+</pre></div>
+    <p>فرض بر این است که در namespace به نام default یک Service با label <code>app: my-app</code> و یک port به نام <code>metrics</code> وجود دارد. ظرف چند ثانیه operator این object را می‌بیند (watch) و پیکربندی Prometheus را بازسازی می‌کند: پیکربندی در یک Secret به نام <code>prometheus-&lt;name&gt;</code> نوشته می‌شود و sidecar به نام config-reloader آن را در Prometheus بارگذاری می‌کند تا target جدید اضافه شود؛‏ بدون این‌که شما هیچ کاری با فایل پیکربندی Prometheus انجام دهید. این دقیقاً همان الگوی operator است: شما desired state را (یک <code>ServiceMonitor</code>) declare کردید،‏ و controller (prometheus-operator) واقعیت را با آن sync نگه می‌دارد.</p>
+  </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">تشریح مثال SampleDB به‌صورت YAML</span></summary>
   <div class="deep"><b>توضیح تکمیلی: تشریح مثال SampleDB به‌صورت YAML</b>
     <p>برای این‌که الگوی operator ملموس شود،‏ در ادامه یک نمونه‌ی ساده از CRD و custom object <code>SampleDB</code> که در مثال بالا توصیف شد آمده است (این YAML خود مثالی ساخته‌شده منطبق با روایت مستندات است،‏ نه یک منبع رسمی جداگانه):</p>
     <div class="code"><div class="lbl"><span>sampledb-crd.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apiextensions.k8s.io/v1
@@ -544,52 +601,7 @@ spec:
 </pre></div>
     <p>وقتی cluster-adminی این <code>SampleDB</code> را با <code>kubectl apply</code> ایجاد می‌کند،‏ هیچ اتفاقی به‌خودی‌خود نمی‌افتد — CRD فقط یک نوع resource جدید ثبت می‌کند. تازه وقتی Deployment operator (که به‌عنوان یک controller این <code>kind: SampleDB</code> را <b>watch</b> می‌کند) هم در cluster اجرا باشد،‏ operator این object جدید را می‌بیند و منطق reconciliation خودش (ساخت StatefulSet،‏ PVC،‏ Job پیکربندی اولیه) را اجرا می‌کند. این جداسازی — CRD به‌عنوان API،‏ Deployment operator به‌عنوان پیاده‌سازی — دقیقاً همان چیزی است که الگوی Operator را از یک CRD تنها متمایز می‌کند: <b>CRD + control loop = الگوی controllers؛‏ وقتی control loop جای یک human operator را می‌گیرد و دانش عملیاتی (operational knowledge) را کد می‌کند = الگوی Operator.</b></p>
   </div>
-
-  <div class="lab"><b>آزمایش عملی: نصب یک operator واقعی با Helm و مشاهده‌ی reconciliation</b>
-    <p>روی یک minikube یا kind cluster،‏ prometheus-operator (یکی از پرکاربردترین operatorهای اکوسیستم) نصب می‌کنیم و می‌بینیم چطور یک custom resource باعث ساخت resourceهای واقعی می‌شود:</p>
-    <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh"># Install the CRDs and the operator with Helm
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-  --namespace monitoring --create-namespace
-
-# CRDs registered by the operator
-kubectl get crd | grep monitoring.coreos.com
-</pre></div>
-    <div class="code"><div class="lbl"><span>out</span><button type="button">کپی</button></div><pre class="out">alertmanagerconfigs.monitoring.coreos.com   2026-10-10T08:12:45Z
-alertmanagers.monitoring.coreos.com         2026-10-10T08:12:45Z
-podmonitors.monitoring.coreos.com           2026-10-10T08:12:45Z
-probes.monitoring.coreos.com                2026-10-10T08:12:45Z
-prometheusagents.monitoring.coreos.com      2026-10-10T08:12:45Z
-prometheuses.monitoring.coreos.com          2026-10-10T08:12:45Z
-prometheusrules.monitoring.coreos.com       2026-10-10T08:12:45Z
-scrapeconfigs.monitoring.coreos.com         2026-10-10T08:12:45Z
-servicemonitors.monitoring.coreos.com       2026-10-10T08:12:45Z
-thanosrulers.monitoring.coreos.com          2026-10-10T08:12:45Z
-</pre></div>
-    <p>حالا یک custom resource از نوع <code>ServiceMonitor</code> ایجاد می‌کنیم — که به operator می‌گوید یک Service خاص را برای scrape کردن metric پیدا کند:</p>
-    <div class="code"><div class="lbl"><span>my-servicemonitor.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: my-app-monitor
-  namespace: monitoring
-  labels:
-    release: kube-prometheus-stack
-spec:
-  namespaceSelector:
-    matchNames: ["default"]
-  selector:
-    matchLabels:
-      app: my-app
-  endpoints:
-  - port: metrics
-    interval: 30s
-</pre></div>
-    <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f my-servicemonitor.yaml
-kubectl get servicemonitor -n monitoring my-app-monitor
-</pre></div>
-    <p>فرض بر این است که در namespace به نام default یک Service با label <code>app: my-app</code> و یک port به نام <code>metrics</code> وجود دارد. ظرف چند ثانیه operator این object را می‌بیند (watch) و پیکربندی Prometheus را بازسازی می‌کند: پیکربندی در یک Secret به نام <code>prometheus-&lt;name&gt;</code> نوشته می‌شود و sidecar به نام config-reloader آن را در Prometheus بارگذاری می‌کند تا target جدید اضافه شود؛‏ بدون این‌که شما هیچ کاری با فایل پیکربندی Prometheus انجام دهید. این دقیقاً همان الگوی operator است: شما desired state را (یک <code>ServiceMonitor</code>) declare کردید،‏ و controller (prometheus-operator) واقعیت را با آن sync نگه می‌دارد.</p>
-  </div>
+  </details>
 
   <h3 id="ch15-a-crd-create">ساختن CustomResourceDefinition <small>(Create a CustomResourceDefinition)</small></h3>
   <p>این بخش نشان می‌دهد چطور یک custom resource را در Kubernetes API با ساخت یک CustomResourceDefinition نصب کنید.</p>
@@ -960,10 +972,6 @@ properties:
 
   <p class="next">ارائه‌ی چند نسخه از یک CRD (Serving multiple versions of a CRD)،‏ conversion webhook و migration objectها بین نسخه‌ها به‌طور کامل در نیمه‌ی دوم فصل،‏ تحت عنوان CRD versioning پوشش داده می‌شود.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چرا structural schema اجباری شد؟</b>
-    <p>پیش از GA شدن CRD (در <code>apiextensions.k8s.io/v1beta1</code>)،‏ schema اختیاری بود؛‏ یک CRD بدون schema هر JSONی را می‌پذیرفت. این یعنی <code>kubectl explain</code>،‏ client-side validation،‏ pruning و ابزارهایی مثل OpenAPI publishing نمی‌توانستند کار کنند،‏ چون هیچ ساختار قابل‌اتکایی برای تحلیل وجود نداشت. با اجباری شدن structural schema در <code>apiextensions.k8s.io/v1</code>،‏ هر CRD تضمین می‌کند که یک OpenAPI schema قابل تحلیل (introspectable) دارد — که پیش‌نیاز pruning،‏ defaulting،‏ validation rule (CEL)،‏ و انتشار در OpenAPI است. این یک مثال خوب از این است که چطور یک محدودیت API (structural schema) در ازای مقداری انعطاف،‏ قابلیت‌های قدرتمندتری (validation،‏ tooling،‏ defaulting) را ممکن می‌کند.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: مشاهده‌ی رفتار field pruning</b>
     <p>با همان CRD <code>crontabs.stable.example.com</code>:</p>
     <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh">cat &lt;&lt;EOF &gt; pruned-example.yaml
@@ -990,6 +998,13 @@ spec:
 </pre></div>
     <p>با <code>--validate=false</code> همان object بدون خطا ساخته می‌شود و <code>notInSchema</code> در object ذخیره‌شده وجود ندارد؛‏ API server آن را بی‌صدا prune کرد چون schema آن را نمی‌شناسد. pruning رفتار پیش‌فرض API server است؛‏ رد کردن درخواست به‌خاطر فیلد ناشناخته فقط وقتی رخ می‌دهد که client آن را بخواهد (Strict). admission webhook هم می‌تواند درخواست را رد کند؛‏ جزئیات در نیمه‌ی دوم فصل.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا structural schema اجباری شد؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا structural schema اجباری شد؟</b>
+    <p>پیش از GA شدن CRD (در <code>apiextensions.k8s.io/v1beta1</code>)،‏ schema اختیاری بود؛‏ یک CRD بدون schema هر JSONی را می‌پذیرفت. این یعنی <code>kubectl explain</code>،‏ client-side validation،‏ pruning و ابزارهایی مثل OpenAPI publishing نمی‌توانستند کار کنند،‏ چون هیچ ساختار قابل‌اتکایی برای تحلیل وجود نداشت. با اجباری شدن structural schema در <code>apiextensions.k8s.io/v1</code>،‏ هر CRD تضمین می‌کند که یک OpenAPI schema قابل تحلیل (introspectable) دارد — که پیش‌نیاز pruning،‏ defaulting،‏ validation rule (CEL)،‏ و انتشار در OpenAPI است. این یک مثال خوب از این است که چطور یک محدودیت API (structural schema) در ازای مقداری انعطاف،‏ قابلیت‌های قدرتمندتری (validation،‏ tooling،‏ defaulting) را ممکن می‌کند.</p>
+  </div>
+  </details>
   <h3 id="ch15-a-crd-advanced">مباحث پیشرفته‌ی CRD <small>(Advanced topics)</small></h3>
 
   <h4 id="ch15-a-crd-finalizers">finalizerها <small>(Finalizers)</small></h4>
@@ -1315,10 +1330,6 @@ maxLength where arrays, maps, and strings are used)
           - rule: "self.all(x, x == 5)"
 </pre></div>
   <p>دلیل این است که هر آیتم <code>foo</code> خودش یک array است،‏ و هر subarray به‌نوبه‌ی خود <code>self.all</code> را فرا می‌خواند. تا حد امکان از listها و mapهای تودرتو در جایی که validation rule استفاده می‌شود اجتناب کنید.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: چرا CEL برای validation ruleها و نه یک language عمومی‌تر؟</b>
-    <p>CEL (Common Expression Language) عمداً Turing-complete نیست (مثلاً حلقه‌ی نامحدود ندارد) و هر عبارت آن پیش از اجرا قابل تخمین هزینه است. این دو ویژگی — non-Turing-complete بودن و قابلیت cost estimation — دقیقاً همان چیزی است که به API server اجازه می‌دهد یک rule دلخواه نوشته‌شده توسط یک cluster-admin یا حتی یک کاربر عادی (در برخی سازمان‌ها) را بدون ریسک DoS کردن apiserver اجرا کند. این با admission webhookها (که یک سرویس remote دلخواه صدا می‌زنند و می‌توانند timeout یا crash کنند) فرق اساسی دارد: CEL rule همیشه در همان process apiserver،‏ تحت یک بودجه‌ی محاسباتی محدود،‏ اجرا می‌شود.</p>
-  </div>
 
   <div class="lab"><b>آزمایش عملی: نوشتن یک CEL validation rule برای اعمال immutability</b>
     <p>فرض کنید می‌خواهیم فیلد <code>spec.engine</code> یک <code>SampleDB</code> پس از ساخت غیرقابل‌تغییر (immutable) باشد — یک نیاز production بسیار رایج (تغییر engine پایگاه‌داده نباید بدون حذف و ساخت مجدد resource مجاز باشد):</p>
@@ -1785,8 +1796,15 @@ shop-frontend   registry.example.com/shop-frontend:1.4.2   2                  4s
 </pre></div>
     <p>این CRD اکنون می‌تواند هدف یک HorizontalPodAutoscaler هم باشد (چون scale subresource دارد)،‏ در <code>kubectl get all</code> ظاهر می‌شود (چون category <code>all</code> دارد)،‏ و status آن را یک controller جدا از طریق subresource <code>/status</code> به‌روزرسانی می‌کند،‏ بدون این‌که تغییرات spec کاربر را overwrite کند. ستون READY خالی است،‏ چون هنوز controllerی برای WebApp وجود ندارد که <code>status.readyReplicas</code> را پر کند.</p>
   </div>
-  <div id="ch15-ex1" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۵،‏ بخش اول <small>۱۶ تمرین</small></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا CEL برای validation ruleها و نه یک language عمومی‌تر؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا CEL برای validation ruleها و نه یک language عمومی‌تر؟</b>
+    <p>CEL (Common Expression Language) عمداً Turing-complete نیست (مثلاً حلقه‌ی نامحدود ندارد) و هر عبارت آن پیش از اجرا قابل تخمین هزینه است. این دو ویژگی — non-Turing-complete بودن و قابلیت cost estimation — دقیقاً همان چیزی است که به API server اجازه می‌دهد یک rule دلخواه نوشته‌شده توسط یک cluster-admin یا حتی یک کاربر عادی (در برخی سازمان‌ها) را بدون ریسک DoS کردن apiserver اجرا کند. این با admission webhookها (که یک سرویس remote دلخواه صدا می‌زنند و می‌توانند timeout یا crash کنند) فرق اساسی دارد: CEL rule همیشه در همان process apiserver،‏ تحت یک بودجه‌ی محاسباتی محدود،‏ اجرا می‌شود.</p>
+  </div>
+  </details>
+
+  <details id="ch15-ex1" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۵،‏ بخش اول <small>۱۶ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>تفاوت میان <i>configuration</i> و <i>extension</i> در مدل توسعه‌ی کوبرنتیز چیست؟ یک مثال از هرکدام بزنید.
         <details class="ans"><summary>پاسخ</summary><p><i>Configuration</i> فقط شامل تغییر command line argumentها،‏ فایل‌های پیکربندی محلی یا API resourceهای built-in (policy APIها مثل ResourceQuota) است — چیزی که از قبل در binaryهای کوبرنتیز وجود دارد و فقط تنظیم می‌شود. <i>Extension</i> شامل اجرای برنامه‌های اضافی یا سرویس‌های شبکه‌ی جدید است که رفتار جدیدی به cluster اضافه می‌کنند — مثل یک CRD به‌همراه یک controller،‏ یا یک admission webhook. مثال configuration: تنظیم <code>--enable-admission-plugins</code> روی kube-apiserver یا ساخت یک NetworkPolicy. مثال extension: نصب یک CRD جدید مثل <code>CronTab</code> به‌همراه یک controller که آن را reconcile می‌کند.</p></details></li>
@@ -1983,7 +2001,7 @@ error: timed out waiting for the condition on sampledbs/example-database
 </pre></div>
         <p>بلافاصله پس از این،‏ کوبرنتیز object را واقعاً حذف می‌کند؛‏ همان رفتاری که در بخش Finalizers آمد: وقتی فهرست finalizerها خالی شد،‏ resource حذف می‌شود.</p></details></li>
     </ol>
-  </div>
+  </details>
 <!-- chapter 15 part b -->
   <h3 id="ch15-b-dac-intro">admission control پویا <small>(Dynamic Admission Control)</small></h3>
   <p>در فصل قبل با admission controllerهای کامپایل‌شده (compiled-in) که به‌صورت ثابت در باینری kube-apiserver قرار دارند آشنا شدیم. اما کوبرنتیز راهی هم برای توسعه‌ی admission controller به‌صورت extension و اجرای آن به شکل webhook در زمان اجرا (runtime) فراهم می‌کند؛‏ به این مکانیزم <b>Dynamic Admission Control</b> گفته می‌شود. این بخش نحوه‌ی ساخت،‏ پیکربندی،‏ استفاده و مانیتور کردن admission webhookها را شرح می‌دهد.</p>
@@ -1992,7 +2010,10 @@ error: timed out waiting for the condition on sampledbs/example-database
   <h3 id="ch15-b-what-are-webhooks">admission webhook چیست؟ <small>(What are admission webhooks?)</small></h3>
   <p>admission webhookها HTTP callbackهایی هستند که admission requestها را دریافت کرده و روی آن‌ها کاری انجام می‌دهند. دو نوع admission webhook قابل تعریف است: <a href="#ch14-b-adm-validatingadmissionwebhook">validating admission webhook</a> و <a href="#ch14-b-adm-mutatingadmissionwebhook">mutating admission webhook</a>. mutating admission webhookها ابتدا فراخوانی می‌شوند و می‌توانند objectهای ارسالی به API server را برای اعمال defaultهای سفارشی تغییر دهند (mutate). پس از آن‌که همه‌ی تغییرات روی object کامل شد و incoming object توسط API server validate شد،‏ validating admission webhookها فراخوانی می‌شوند و می‌توانند برای اعمال policyهای سفارشی درخواست‌ها را رد کنند.</p>
   <div class="note"><b>نکته</b><p>admission webhookهایی که باید تضمین کنند آخرین (final) state یک object را برای اعمال policy می‌بینند باید از validating admission webhook استفاده کنند،‏ چون objectها می‌توانند بعد از دیده‌شدن توسط mutating webhookها تغییر کنند.</p></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b><p>ترتیب کلی pipeline در admission چنین است: ابتدا mutating admission pluginهای compiled-in اجرا می‌شوند،‏ سپس MutatingAdmissionPolicy و بعد MutatingAdmissionWebhook (که webhookهای mutating شما را فراخوانی می‌کند). بعد object نهایی در برابر schema خودش validate می‌شود و به validating admission pluginهای compiled-in،‏ سپس ValidatingAdmissionPolicy و ValidatingAdmissionWebhook می‌رسد؛‏ ResourceQuota آخرین plugin است (این ترتیب در فهرست pluginهای kube-apiserver در v1.37 ثابت است). شکل ۱۵-۳ این مسیر را نشان می‌دهد. به همین دلیل اگر بخواهید مطمئن شوید object پس از همه‌ی تغییرات همچنان یک invariant را رعایت می‌کند،‏ باید حتماً از یک validating admission webhook یا ValidatingAdmissionPolicy استفاده کنید،‏ نه یک mutating webhook.</p></div>
+  </details>
 
   <h3 id="ch15-b-experimenting">آزمودن admission webhook <small>(Experimenting with admission webhooks)</small></h3>
   <p>admission webhookها اساساً بخشی از control plane هستند. باید آن‌ها را با احتیاط زیاد بنویسید و deploy کنید. در ادامه نحوه‌ی آزمایش سریع admission webhookها شرح داده می‌شود.</p>
@@ -2205,7 +2226,10 @@ roleRef:
   }
 }
 </pre></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
   <div class="deep"><b>توضیح تکمیلی</b><p>این ویژگی در v1.37 هنوز alpha است،‏ اما مشکلی که حل می‌کند واقعی است: در روش سنتی (kubeConfigFile)،‏ credentialهای static باید به‌صورت دستی ساخته،‏ rotate و roll شوند و در صورت لو رفتن،‏ به همه‌ی webhookهای مرتبط دسترسی می‌دهند. با این مکانیزم جدید می‌توان از TokenRequest برای هر webhook یک token کوتاه‌عمر و scope‌شده به یک API group خاص گرفت،‏ که ریسک نشت credential را به‌شدت کاهش می‌دهد؛‏ شبیه به همان روندی که برای ServiceAccount tokenهای projected در فصل ۱۴ دیدیم. توجه کنید که این مکانیزم فقط صدور token را انجام می‌دهد؛‏ اتصال آن به فراخوانی واقعی webhook (ارسال Authorization header) در v1.37 بخشی از این feature نیست.</p></div>
+  </details>
 
   <h3 id="ch15-b-request-response">درخواست و پاسخ webhook <small>(Webhook request and response)</small></h3>
 
@@ -2547,8 +2571,6 @@ webhooks:
         resources: ["*"]
         scope: "Namespaced"
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی</b><p>ترکیب <code>namespaceSelector</code> و <code>objectSelector</code> یکی از رایج‌ترین ابزارها برای کاهش blast radius (دامنه‌ی آسیب در صورت خرابی) یک webhook در production است. برای مثال،‏ می‌توانید namespaceی که خود webhook در آن deploy شده و همچنین <code>kube-system</code> و <code>kube-node-lease</code> را با <code>namespaceSelector</code> از دامنه‌ی webhook خارج کنید تا احتمال قفل‌شدن (deadlock) اجزای حیاتی cluster را از بین ببرید؛‏ این همان توصیه‌هایی است که در بخش <a href="#ch15-b-awgp-intro">Admission Webhooks Good Practices</a> با عنوان‌های «Limit the scope of each webhook» و «Avoid self-mutations» می‌بینیم.</p></div>
-
   <h4 id="ch15-b-matchpolicy">تطبیق درخواست با matchPolicy <small>(Matching requests: matchPolicy)</small></h4>
   <p>API serverها می‌توانند objectها را از طریق چند API group یا version در دسترس قرار دهند.</p>
   <p>برای مثال،‏ اگر webhookای فقط یک rule برای برخی API groupها/versionها مشخص کرده باشد (مثل <code>apiGroups:["apps"], apiVersions:["v1","v1beta1"]</code>)،‏ و درخواستی برای تغییر آن resource از طریق یک API group/version دیگر (مثل <code>extensions/v1beta1</code>) انجام شود،‏ آن درخواست به webhook ارسال نخواهد شد.</p>
@@ -2798,6 +2820,11 @@ webhooks:
   <p><code>failurePolicy</code> پیش‌فرض برای یک admission webhook،‏ <code>Fail</code> است.</p>
   <div class="warn"><b>هشدار</b><p>ترکیب <code>failurePolicy: Fail</code> با یک <code>rules</code> بسیار گسترده (مثل تطبیق همه‌ی CREATE Podها در همه‌ی namespaceها) خطرناک‌ترین حالت ممکن برای یک cluster production است: اگر webhook server از دسترس خارج شود یا timeout کند،‏ هیچ Pod جدیدی در کل cluster (نه فقط برنامه‌ی شما) قابل ایجاد نخواهد بود. این دقیقاً سناریوی یکی از تمرین‌های Production در پایان این نیمه است.</p></div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>ترکیب <code>namespaceSelector</code> و <code>objectSelector</code> یکی از رایج‌ترین ابزارها برای کاهش blast radius (دامنه‌ی آسیب در صورت خرابی) یک webhook در production است. برای مثال،‏ می‌توانید namespaceی که خود webhook در آن deploy شده و همچنین <code>kube-system</code> و <code>kube-node-lease</code> را با <code>namespaceSelector</code> از دامنه‌ی webhook خارج کنید تا احتمال قفل‌شدن (deadlock) اجزای حیاتی cluster را از بین ببرید؛‏ این همان توصیه‌هایی است که در بخش <a href="#ch15-b-awgp-intro">Admission Webhooks Good Practices</a> با عنوان‌های «Limit the scope of each webhook» و «Avoid self-mutations» می‌بینیم.</p></div>
+  </details>
+
   <h3 id="ch15-b-monitoring">پایش admission webhook <small>(Monitoring admission webhooks)</small></h3>
   <p>API server راه‌هایی برای مانیتور کردن رفتار admission webhookها فراهم می‌کند. این مکانیزم‌های مانیتورینگ به مدیران cluster کمک می‌کنند به پرسش‌هایی مثل موارد زیر پاسخ دهند:</p>
   <ol>
@@ -2983,8 +3010,6 @@ grep "mutation.webhook.admission.k8s.io" /var/log/kubernetes/audit/audit.log | t
     </tbody>
   </table></div>
   <p>به‌طور کلی،‏ وقتی می‌خواهید روشی توسعه‌پذیر (extensible) برای اعلان یا پیکربندی منطق داشته باشید،‏ از admission control مبتنی بر <em>webhook</em> استفاده کنید. وقتی می‌خواهید منطق ساده‌تری بدون overhead اجرای یک webhook server اعلان کنید،‏ از admission control مبتنی بر CEL استفاده کنید. پروژه‌ی کوبرنتیز توصیه می‌کند تا حد ممکن از admission control مبتنی بر CEL استفاده کنید.</p>
-  <div class="deep"><b>توضیح تکمیلی</b><p>این توصیه به‌ویژه برای تیم‌هایی که تازه استفاده از سیاست‌های admission را شروع می‌کنند اهمیت دارد: نوشتن و نگهداری یک webhook server (با تمام مسائل TLS،‏ rollout،‏ HA و latency آن) هزینه‌ی عملیاتی بسیار بیشتری نسبت به نوشتن یک ValidatingAdmissionPolicy یا MutatingAdmissionPolicy درون‌فرآیندی (in-process) با CEL دارد. بسیاری از قوانینی که در گذشته با ابزارهایی مثل OPA Gatekeeper یا یک webhook دست‌ساز پیاده‌سازی می‌شدند (مثل «هر container باید resource limit داشته باشد» یا «فقط imageهای registry مجاز پذیرفته می‌شوند») امروز با ValidatingAdmissionPolicy قابل پیاده‌سازی هستند،‏ بدون هیچ Pod اضافی،‏ بدون هیچ network hop و بدون خطر single-point-of-failure یک webhook server.</p></div>
-
   <h5>validation و defaulting داخلی CRD را به کار ببرید <small>(Use built-in validation and defaulting for CustomResourceDefinitions)</small></h5>
   <p>اگر از CustomResourceDefinitionها استفاده می‌کنید،‏ از admission webhookها برای validate کردن مقادیر در specificationهای CustomResource یا تنظیم مقادیر پیش‌فرض فیلدها استفاده نکنید. کوبرنتیز اجازه می‌دهد هنگام ایجاد CustomResourceDefinitionها،‏ validation ruleها و مقادیر پیش‌فرض فیلدها را تعریف کنید.</p>
   <p>برای اطلاعات بیشتر به منابع زیر مراجعه کنید:</p>
@@ -3267,6 +3292,11 @@ kubectl get pod test-pod -n webhook-canary -o yaml | grep -A3 sidecar
 </pre></div>
   <p>این توالی مطابق توصیه‌ی رسمی «Install and enable a mutating webhook» است و ریسک از کار افتادن کل cluster به‌خاطر یک webhook تازه‌نوشته را به حداقل می‌رساند. failurePolicy در پایان هم Ignore می‌ماند؛‏ طبق بخش «Fail open and validate the final state»،‏ اعمال قانون کار validating policy است.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small></summary>
+  <div class="deep"><b>توضیح تکمیلی</b><p>این توصیه به‌ویژه برای تیم‌هایی که تازه استفاده از سیاست‌های admission را شروع می‌کنند اهمیت دارد: نوشتن و نگهداری یک webhook server (با تمام مسائل TLS،‏ rollout،‏ HA و latency آن) هزینه‌ی عملیاتی بسیار بیشتری نسبت به نوشتن یک ValidatingAdmissionPolicy یا MutatingAdmissionPolicy درون‌فرآیندی (in-process) با CEL دارد. بسیاری از قوانینی که در گذشته با ابزارهایی مثل OPA Gatekeeper یا یک webhook دست‌ساز پیاده‌سازی می‌شدند (مثل «هر container باید resource limit داشته باشد» یا «فقط imageهای registry مجاز پذیرفته می‌شوند») امروز با ValidatingAdmissionPolicy قابل پیاده‌سازی هستند،‏ بدون هیچ Pod اضافی،‏ بدون هیچ network hop و بدون خطر single-point-of-failure یک webhook server.</p></div>
+  </details>
   <h3 id="ch15-b-map-intro">سیاست mutating مبتنی بر CEL <small>(MutatingAdmissionPolicy)</small></h3>
   <p><span class="fs">FEATURE STATE: stable since v1.36،‏ پیش‌فرض=true،‏ feature gate: <code>MutatingAdmissionPolicy</code></span></p>
   <p>این بخش یک مرور کلی از <em>MutatingAdmissionPolicyها</em> ارائه می‌دهد. MutatingAdmissionPolicyها اجازه می‌دهند تغییر دهید هنگامی‌که کسی یک تغییر (change) به API کوبرنتیز می‌نویسد چه اتفاقی می‌افتد. اگر می‌خواهید از policyهای اعلانی (declarative) صرفاً برای جلوگیری از نوع خاصی از تغییر روی resourceها استفاده کنید (برای مثال: محافظت از namespaceهای پلتفرم در برابر حذف)،‏ <a href="#ch15-b-vap-intro">ValidatingAdmissionPolicy</a> جایگزینی ساده‌تر و مؤثرتر است.</p>
@@ -3482,20 +3512,6 @@ spec:
   </ul>
   <p>از Kubernetes v1.37،‏ <a href="#ch15-b-excluded-virtual">admission webhookها</a> نیز به‌صورت پیش‌فرض این resourceهای مجازی را exclude می‌کنند.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: چرا MutatingAdmissionPolicy به‌جای mutating webhook؟</b>
-  <p>MutatingAdmissionPolicy مزایای مهمی نسبت به یک mutating webhook دستی دارد که ارزش دارد مرور شوند:</p>
-  <div class="tbl"><table>
-    <thead><tr><th>ویژگی</th><th>Mutating admission webhook</th><th>MutatingAdmissionPolicy</th></tr></thead>
-    <tbody>
-      <tr><td>زیرساخت لازم</td><td>یک webhook server (Deployment + Service + TLS certificate)</td><td>هیچ؛‏ کاملاً in-process در kube-apiserver</td></tr>
-      <tr><td>latency شبکه</td><td>یک HTTP round-trip به ازای هر درخواست تطبیق‌یافته</td><td>صفر؛‏ عبارت CEL درون همان process ارزیابی می‌شود</td></tr>
-      <tr><td>single point of failure</td><td>بله؛‏ اگر webhook از دسترس خارج یا کند شود و <code>failurePolicy: Fail</code> باشد</td><td>خیر؛‏ در خود kube-apiserver اجرا می‌شود (ولی عبارت CEL خطادار با <code>failurePolicy: Fail</code> همچنان درخواست‌ها را رد می‌کند)</td></tr>
-      <tr><td>پیچیدگی منطق پشتیبانی‌شده</td><td>هر منطقی به هر زبانی (فراخوانی API خارجی،‏ پایگاه‌داده،‏ ...)</td><td>محدود به آنچه CEL و apply configuration/JSON Patch امکان‌پذیر می‌کنند</td></tr>
-    </tbody>
-  </table></div>
-  <p>برای mutationهای ساده مثل تنظیم یک label،‏ افزودن یک annotation،‏ یا inject کردن یک init container ثابت (بدون فراخوانی سرویس خارجی)،‏ MutatingAdmissionPolicy انتخاب اول و توصیه‌شده‌ی رسمی کوبرنتیز است.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: inject کردن یک sidecar با MutatingAdmissionPolicy</b>
   <p>در یک cluster kind با نسخه‌ی v1.36 یا بالاتر:</p>
   <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh">cat &lt;&lt;'EOF' | kubectl apply -f -
@@ -3548,6 +3564,23 @@ kubectl get pod demo -o jsonpath='{.spec.initContainers[*].name}{"\n"}'
   <p>خروجی موردانتظار <code>mesh-proxy</code> است،‏ بدون این‌که هیچ webhook serverی اجرا کرده باشید. چون image ساختگی است،‏ Pod در وضعیت <code>Init:ErrImagePull</code> می‌ماند؛‏ هدف فقط دیدن mutation است.</p>
     <p><b>یادداشت نویسنده:</b> دو تفاوت با مثال مستندات عمدی است. اول،‏ <code>paramKind</code> حذف شده؛‏ policyی که به kind ناموجودی مثل <code>Sidecar</code> اشاره کند و <code>failurePolicy: Fail</code> داشته باشد،‏ هنگام ارزیابی خطای پیکربندی می‌دهد و ساخت همه‌ی Podها را رد می‌کند. دوم،‏ شرط <code>has(object.spec.initContainers)</code> اضافه شده؛‏ دسترسی به فیلدی که در Pod تنظیم نشده در CEL خطای <code>no such key</code> می‌دهد و با <code>failurePolicy: Fail</code> درخواست رد می‌شود.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا MutatingAdmissionPolicy به‌جای mutating webhook؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا MutatingAdmissionPolicy به‌جای mutating webhook؟</b>
+  <p>MutatingAdmissionPolicy مزایای مهمی نسبت به یک mutating webhook دستی دارد که ارزش دارد مرور شوند:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>ویژگی</th><th>Mutating admission webhook</th><th>MutatingAdmissionPolicy</th></tr></thead>
+    <tbody>
+      <tr><td>زیرساخت لازم</td><td>یک webhook server (Deployment + Service + TLS certificate)</td><td>هیچ؛‏ کاملاً in-process در kube-apiserver</td></tr>
+      <tr><td>latency شبکه</td><td>یک HTTP round-trip به ازای هر درخواست تطبیق‌یافته</td><td>صفر؛‏ عبارت CEL درون همان process ارزیابی می‌شود</td></tr>
+      <tr><td>single point of failure</td><td>بله؛‏ اگر webhook از دسترس خارج یا کند شود و <code>failurePolicy: Fail</code> باشد</td><td>خیر؛‏ در خود kube-apiserver اجرا می‌شود (ولی عبارت CEL خطادار با <code>failurePolicy: Fail</code> همچنان درخواست‌ها را رد می‌کند)</td></tr>
+      <tr><td>پیچیدگی منطق پشتیبانی‌شده</td><td>هر منطقی به هر زبانی (فراخوانی API خارجی،‏ پایگاه‌داده،‏ ...)</td><td>محدود به آنچه CEL و apply configuration/JSON Patch امکان‌پذیر می‌کنند</td></tr>
+    </tbody>
+  </table></div>
+  <p>برای mutationهای ساده مثل تنظیم یک label،‏ افزودن یک annotation،‏ یا inject کردن یک init container ثابت (بدون فراخوانی سرویس خارجی)،‏ MutatingAdmissionPolicy انتخاب اول و توصیه‌شده‌ی رسمی کوبرنتیز است.</p>
+  </div>
+  </details>
   <h3 id="ch15-b-vap-intro">سیاست validating مبتنی بر CEL <small>(ValidatingAdmissionPolicy)</small></h3>
   <p><span class="fs">FEATURE STATE: stable since v1.30</span></p>
   <p>این بخش یک مرور کلی از Validating Admission Policy ارائه می‌دهد.</p>
@@ -4079,44 +4112,6 @@ spec:
   </ul>
   <p>از Kubernetes v1.37،‏ admission webhookها نیز به‌صورت پیش‌فرض این resourceهای مجازی را exclude می‌کنند.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: جایگزین‌کردن یک policy مبتنی بر OPA/Gatekeeper با ValidatingAdmissionPolicy</b>
-  <p>بسیاری از تیم‌ها پیش از استاندارد شدن ValidatingAdmissionPolicy از <a href="https://open-policy-agent.github.io/gatekeeper/">OPA Gatekeeper</a> برای اعمال قوانینی مثل «هر container باید resource limits داشته باشد» استفاده می‌کردند. یک ConstraintTemplate در Gatekeeper با Rego نوشته می‌شود و از طریق یک validating webhook اجرا می‌شود؛‏ یعنی همان معماری webhook با تمام overheadهای شبکه و نگهداری آن. معادل این قانون با ValidatingAdmissionPolicy،‏ بدون هیچ webhook serverای،‏ چنین است:</p>
-  <div class="code"><div class="lbl"><span>require-resource-limits-policy.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicy
-metadata:
-  name: "require-resource-limits.example.com"
-spec:
-  failurePolicy: Fail
-  matchConstraints:
-    resourceRules:
-    - apiGroups:   [""]
-      apiVersions: ["v1"]
-      operations:  ["CREATE"]
-      resources:   ["pods"]
-  validations:
-    - expression: &gt;
-        object.spec.containers.all(c,
-          has(c.resources) &amp;&amp; has(c.resources.limits) &amp;&amp;
-          has(c.resources.limits.cpu) &amp;&amp; has(c.resources.limits.memory))
-      message: "every container must set resources.limits.cpu and resources.limits.memory"
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingAdmissionPolicyBinding
-metadata:
-  name: "require-resource-limits-binding.example.com"
-spec:
-  policyName: "require-resource-limits.example.com"
-  validationActions: [Deny]
-  matchResources:
-    namespaceSelector:
-      matchExpressions:
-      - key: kubernetes.io/metadata.name
-        operator: NotIn
-        values: ["kube-system", "kube-node-lease"]
-</pre></div>
-  <p>binding بالا namespaceهای سیستمی را کنار می‌گذارد؛‏ بدون این استثنا،‏ Podهای بعضی اجزای سیستمی که limit ندارند (مثلاً DaemonSetها در kube-system) دیگر ساخته نمی‌شوند. در تمرین‌های پایان این بخش،‏ سناریوی مهاجرت واقعی از یک policy مبتنی بر Gatekeeper به ValidatingAdmissionPolicy با جزئیات بیشتری بررسی خواهد شد.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: محدود کردن تعداد replica با ValidatingAdmissionPolicy و parameter</b>
   <p>روی یک cluster kind با نسخه‌ی v1.30 یا بالاتر:</p>
   <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh"># 1. The parameter CRD (simple schema)
@@ -4212,6 +4207,47 @@ pod/web created
 </pre></div>
     <p>شرط اول imageهایی را می‌پذیرد که با digest pin شده‌اند؛‏ یعنی نامشان <code>@sha256:</code> دارد. شرط دوم فقط بخش آخر نام image را بررسی می‌کند،‏ چون در <code>registry.example.com:5000/app</code> دونقطه مربوط به port است و tag نیست. برای Deployment،‏ رد شدن Pod در eventهای ReplicaSet با reason برابر <code>FailedCreate</code> دیده می‌شود؛‏ اگر می‌خواهید خطا همان لحظه‌ی <code>kubectl apply</code> برگردد،‏ rule مشابهی روی <code>spec.template.spec.containers</code> در Deployment هم بگذارید.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جایگزین‌کردن یک policy مبتنی بر OPA/Gatekeeper با ValidatingAdmissionPolicy</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: جایگزین‌کردن یک policy مبتنی بر OPA/Gatekeeper با ValidatingAdmissionPolicy</b>
+  <p>بسیاری از تیم‌ها پیش از استاندارد شدن ValidatingAdmissionPolicy از <a href="https://open-policy-agent.github.io/gatekeeper/">OPA Gatekeeper</a> برای اعمال قوانینی مثل «هر container باید resource limits داشته باشد» استفاده می‌کردند. یک ConstraintTemplate در Gatekeeper با Rego نوشته می‌شود و از طریق یک validating webhook اجرا می‌شود؛‏ یعنی همان معماری webhook با تمام overheadهای شبکه و نگهداری آن. معادل این قانون با ValidatingAdmissionPolicy،‏ بدون هیچ webhook serverای،‏ چنین است:</p>
+  <div class="code"><div class="lbl"><span>require-resource-limits-policy.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: "require-resource-limits.example.com"
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   [""]
+      apiVersions: ["v1"]
+      operations:  ["CREATE"]
+      resources:   ["pods"]
+  validations:
+    - expression: &gt;
+        object.spec.containers.all(c,
+          has(c.resources) &amp;&amp; has(c.resources.limits) &amp;&amp;
+          has(c.resources.limits.cpu) &amp;&amp; has(c.resources.limits.memory))
+      message: "every container must set resources.limits.cpu and resources.limits.memory"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: "require-resource-limits-binding.example.com"
+spec:
+  policyName: "require-resource-limits.example.com"
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values: ["kube-system", "kube-node-lease"]
+</pre></div>
+  <p>binding بالا namespaceهای سیستمی را کنار می‌گذارد؛‏ بدون این استثنا،‏ Podهای بعضی اجزای سیستمی که limit ندارند (مثلاً DaemonSetها در kube-system) دیگر ساخته نمی‌شوند. در تمرین‌های پایان این بخش،‏ سناریوی مهاجرت واقعی از یک policy مبتنی بر Gatekeeper به ValidatingAdmissionPolicy با جزئیات بیشتری بررسی خواهد شد.</p>
+  </div>
+  </details>
   <h3 id="ch15-b-crdver-intro">نسخه‌بندی CustomResourceDefinition <small>(CustomResourceDefinition Versioning)</small></h3>
   <p>این بخش شرح می‌دهد چگونه به CustomResourceDefinitionها اطلاعات نسخه‌بندی (versioning) اضافه کنید تا سطح ثبات (stability level) آن‌ها را نشان دهید یا API خود را به یک نسخه‌ی جدید با تبدیل (conversion) بین نمایش‌های API ارتقا دهید. همچنین شرح می‌دهد چگونه یک object را از یک نسخه به نسخه‌ی دیگر ارتقا دهید.</p>
 
@@ -4731,19 +4767,6 @@ spec:
   <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh">kubectl patch customresourcedefinitions &lt;CRD_Name&gt; --subresource='status' --type='merge' -p '{"status":{"storedVersions":["v1"]}}'
 </pre></div></div>
 
-  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی conversion strategy None و Webhook</b>
-  <div class="tbl"><table>
-    <thead><tr><th>ویژگی</th><th><code>strategy: None</code></th><th><code>strategy: Webhook</code></th></tr></thead>
-    <tbody>
-      <tr><td>پیش‌نیاز</td><td>schema یکسان بین همه‌ی نسخه‌ها</td><td>هیچ؛‏ می‌تواند schemaهای کاملاً متفاوت را map کند</td></tr>
-      <tr><td>زیرساخت اضافه</td><td>ندارد</td><td>یک webhook server (مثل conversion webhook این بخش)</td></tr>
-      <tr><td>تغییر آنچه ذخیره یا برگردانده می‌شود</td><td>فقط <code>apiVersion</code></td><td>هر تبدیل دلخواه فیلدها (مثل تبدیل <code>hostPort</code> به <code>host</code> و <code>port</code>)</td></tr>
-      <tr><td>ریسک عملیاتی</td><td>پایین</td><td>مشابه یک admission webhook: اگر webhook در دسترس نباشد،‏ خواندن/نوشتن آن CRD در نسخه‌های غیر-storage مختل می‌شود</td></tr>
-    </tbody>
-  </table></div>
-  <p>در عمل،‏ اکثر CRDهایی که مستقیماً از یک ابزار code-generation (مثل controller-gen) تولید می‌شوند و alpha/beta آن‌ها فقط annotation یا فیلد جدید اضافه می‌کنند (بدون تغییر نوع یا نام‌گذاری مجدد فیلد قدیمی) می‌توانند از <code>None</code> استفاده کنند. اما وقتی یک فیلد rename یا restructure می‌شود (مثل مثال <code>hostPort</code> ← <code>host</code> + <code>port</code> در همین بخش)،‏ conversion webhook اجباری است.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: مهاجرت یک CRD از v1beta1 به v1 بدون downtime</b>
   <p>روی یک cluster kind:</p>
   <div class="code"><div class="lbl"><span>sh</span><button type="button">کپی</button></div><pre class="sh"># 1. CRD with only v1beta1 (storage: true)
@@ -4771,8 +4794,24 @@ kubectl apply -f crontab-v1beta1-not-served.yaml
 </pre></div>
   <p>این توالی همان فرایند چهارمرحله‌ای بخش Overview است (شکل ۱۵-۴): افزودن نسخه،‏ مهاجرت clientها،‏ مهاجرت objectها و در پایان حذف نسخه‌ی قدیمی. بازنویسی دستی objectها فقط داده را به v1 می‌برد؛‏ <code>storedVersions</code> خودکار کوتاه نمی‌شود و باید آن را patch کنید (فقط وقتی مطمئن‌اید هیچ object در v1beta1 باقی نمانده).</p>
   </div>
-  <div id="ch15-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۱۵،‏ بخش دوم <small>۱۸ تمرین</small></div>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مقایسه‌ی conversion strategy None و Webhook</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی conversion strategy None و Webhook</b>
+  <div class="tbl"><table>
+    <thead><tr><th>ویژگی</th><th><code>strategy: None</code></th><th><code>strategy: Webhook</code></th></tr></thead>
+    <tbody>
+      <tr><td>پیش‌نیاز</td><td>schema یکسان بین همه‌ی نسخه‌ها</td><td>هیچ؛‏ می‌تواند schemaهای کاملاً متفاوت را map کند</td></tr>
+      <tr><td>زیرساخت اضافه</td><td>ندارد</td><td>یک webhook server (مثل conversion webhook این بخش)</td></tr>
+      <tr><td>تغییر آنچه ذخیره یا برگردانده می‌شود</td><td>فقط <code>apiVersion</code></td><td>هر تبدیل دلخواه فیلدها (مثل تبدیل <code>hostPort</code> به <code>host</code> و <code>port</code>)</td></tr>
+      <tr><td>ریسک عملیاتی</td><td>پایین</td><td>مشابه یک admission webhook: اگر webhook در دسترس نباشد،‏ خواندن/نوشتن آن CRD در نسخه‌های غیر-storage مختل می‌شود</td></tr>
+    </tbody>
+  </table></div>
+  <p>در عمل،‏ اکثر CRDهایی که مستقیماً از یک ابزار code-generation (مثل controller-gen) تولید می‌شوند و alpha/beta آن‌ها فقط annotation یا فیلد جدید اضافه می‌کنند (بدون تغییر نوع یا نام‌گذاری مجدد فیلد قدیمی) می‌توانند از <code>None</code> استفاده کنند. اما وقتی یک فیلد rename یا restructure می‌شود (مثل مثال <code>hostPort</code> ← <code>host</code> + <code>port</code> در همین بخش)،‏ conversion webhook اجباری است.</p>
+  </div>
+  </details>
+
+  <details id="ch15-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۱۵،‏ بخش دوم <small>۱۸ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>چرا مستندات رسمی تأکید می‌کنند که برای تضمین دیدن state نهایی یک object،‏ باید از validating admission webhook (یا ValidatingAdmissionPolicy) استفاده کرد نه mutating admission webhook؟
         <details class="ans"><summary>پاسخ</summary><p>چون mutating admission webhookها پشت سر هم (sequential) و بدون تضمین ترتیب ثابت اجرا می‌شوند،‏ و پس از فراخوانی یک mutating webhook،‏ mutating webhookهای دیگر (یا حتی همان webhook در reinvocation) همچنان می‌توانند object را تغییر دهند. بنابراین اگر یک webhook روی object بلافاصله پس از mutation خودش تکیه کند،‏ ممکن است چیزی را validate کند که بعداً توسط یک webhook دیگر overwrite می‌شود. validating webhookها (و ValidatingAdmissionPolicyها) تنها پس از کامل‌شدن تمام mutationها اجرا می‌شوند،‏ پس تضمین می‌کنند دقیقاً روی همان stateای که در storage نوشته خواهد شد قضاوت می‌کنند.</p></details></li>
@@ -4963,14 +5002,14 @@ spec:
       <li><span class="lvl l3">سناریوی Production</span>یک سرویس conversion webhook برای یک CRD به‌نام <code>Order</code> که <code>v1alpha1</code> را به <code>v1</code> تبدیل می‌کند،‏ به‌خاطر یک باگ در نسخه‌ی جدید آن،‏ برای برخی objectها به‌جای <code>result.status: "Success"</code> مقدار <code>"Failed"</code> برمی‌گرداند. چه اثری روی clientهایی که با <code>v1</code> کار می‌کنند دارد و توصیه‌ی رسمی مستندات درباره‌ی استفاده از conversion failure چیست؟
         <details class="ans"><summary>پاسخ</summary><p>هر clientی که آن object خاص را در نسخه‌ی <code>v1</code> (نسخه‌ای غیر از storage) بخواهد،‏ update کند یا delete کند با خطا مواجه می‌شود،‏ چون API server باید ابتدا آن object را از نسخه‌ی storage به <code>v1</code> تبدیل کند و این تبدیل شکست می‌خورد؛‏ بدتر این‌که LIST و WATCH در v1 هم شکست می‌خورند،‏ چون کل پاسخ list باید تبدیل شود؛‏ پس controllerهایی که informer روی v1 دارند از کار می‌افتند،‏ حتی اگر فقط یک object خراب باشد و داده در storage سالم باشد. طبق هشدار رسمی مستندات CRD versioning،‏ شکست conversion باید تا حد ممکن اجتناب شود و هرگز نباید برای اعمال قوانین validation استفاده شود (validation باید در schema یا admission انجام شود،‏ نه در conversion webhook)؛‏ اصلاح فوری،‏ rollback کردن conversion webhook به نسخه‌ی سالم قبلی و افزودن تست e2e است که همه‌ی objectهای واقعی موجود در storage را از نسخه‌ی قدیمی به جدید و برعکس تبدیل می‌کند پیش از هر deploy جدید webhook.</p></details></li>
     </ol>
-  </div>
+  </details>
 
   
   <h3 id="ch15-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این فصل،‏ حالا</b><p>قانون‌ها و کارهای تکراری حالا درون خود cluster اجرا می‌شوند:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>backup پایگاه‌داده باید مثل یک object در YAML اعلام شود</td><td>CustomResourceDefinition برای نوع تازه (در این فصل SampleDB) و Operator که object را watch می‌کند و کار را انجام می‌دهد</td><td><a href="#ch15-a-crd-create">ساختن CRD</a> و <a href="#ch15-a-operator">الگوی Operator</a></td></tr><tr><td>tag به نام latest به production رسید</td><td>ValidatingAdmissionPolicy با عبارت CEL و binding برای namespaceهای production؛‏ درخواست ناسازگار پیش از ذخیره رد می‌شود</td><td><a href="#ch15-b-vap-intro">ValidatingAdmissionPolicy</a> و <a href="#ch15-b-no-latest">آزمایش</a></td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> همه‌ی این‌ها پیش از انتقال نهایی باید یک بار کنار هم آزموده شوند (فصل ۱۶).</p><p><b>فصل بعد:</b> تمرین کامل پیش از روز انتشار.</p></div>
 
-  <div id="ch15-ex3" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۵ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch15-ex3" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۱۵ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>CRD و aggregated API server چه فرقی دارند و هر کدام کجا مناسب است؟
         <details class="ans"><summary>پاسخ</summary>
@@ -5048,7 +5087,7 @@ spec:
           <p><b>نکته‌ی امتیازآور:</b> mutating webhookها ترتیب ثابت ندارند؛‏ برای اطمینان از نتیجه،‏ وضعیت نهایی را با یک validating policy بسنجید و با audit annotationهای <code>mutation.webhook.admission.k8s.io</code> و <code>patch.webhook.admission.k8s.io</code> loopها را پیدا کنید.</p>
         </details></li>
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch15-recap">
     <div class="recap-h">خلاصه‌ی فصل ۱۵ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

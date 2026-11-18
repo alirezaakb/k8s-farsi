@@ -260,6 +260,8 @@ Containers:
       <p>گروه‌بندی چند container co-located و co-managed در یک Pod یک use case نسبتاً پیشرفته است. فقط در موارد خاصی که containerها واقعاً tightly coupled هستند از این الگو استفاده کنید.</p>
       <p>برای replication (به‌خاطر resilience یا ظرفیت) نیازی به اجرای چند container ندارید؛‏ اگر چند replica می‌خواهید،‏ به Workload management مراجعه کنید (فصل ۴).</p></li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">Pod به‌عنوان ماشین منطقی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: Pod به‌عنوان ماشین منطقی</b>
     <p>Pod را «ماشین منطقی» ببینید. در دنیای قبل از container،‏ روی یک VM ممکن بود یک web server و یک agent ارسال log کنار هم اجرا شوند؛‏ با localhost با هم ارتباط برقرار می‌کردند و یک disk مشترک داشتند. Pod همان ایده است: هر container یک process (یا گروه process) است و Pod همان «ماشین» است که IP،‏ hostname و volumeها را فراهم می‌کند.</p>
     <p>یک قاعده‌ی سرانگشتی برای تصمیم‌گیری: «اگر این دو container روی دو Node متفاوت باشند،‏ باز هم کار می‌کنند؟» اگر بله (مثلاً یک API و database آن)،‏ باید در Podهای جدا باشند؛‏ چون scaling،‏ rollout و lifecycle مستقل می‌خواهند. اگر نه (مثلاً برنامه و یک proxy service mesh که روی localhost به آن وصل می‌شود،‏ یا یک log shipper که فایل‌های log را از volume مشترک می‌خواند)،‏ کاندیدای یک Pod مشترک هستند.</p>
@@ -271,6 +273,7 @@ Containers:
       <tr><td>IPC (SystemV،‏ POSIX shm)</td><td>ممکن</td><td>بدون پیکربندی خاص ممکن نیست</td></tr>
     </tbody></table></div>
   </div>
+  </details>
 
   <h3 id="ch3-a-using-pods">استفاده از Podها <small>(Using Pods)</small></h3>
   <p>مثال زیر یک Pod است که از یک container تشکیل شده که image <code>nginx:1.14.2</code> را اجرا می‌کند.</p>
@@ -300,8 +303,6 @@ spec:
   <p>در کوبرنتیز به‌ندرت Podهای منفرد را مستقیم می‌سازید،‏ حتی Podهای singleton را. دلیلش این است که Podها طوری طراحی شده‌اند که موجودیت‌هایی نسبتاً ephemeral و disposable (دورانداختنی) باشند. وقتی یک Pod ساخته می‌شود (مستقیم توسط شما یا غیرمستقیم توسط یک controller)،‏ Pod جدید schedule می‌شود تا روی یک Node در cluster اجرا شود. Pod روی همان Node می‌ماند تا زمانی که: اجرای Pod تمام شود،‏ object Pod حذف شود،‏ Pod به‌خاطر کمبود منابع <em>evict</em> شود،‏ یا Node از کار بیفتد.</p>
   <div class="note"><b>نکته</b><p>restart کردن یک container درون Pod را نباید با restart کردن Pod اشتباه گرفت. Pod یک process نیست،‏ بلکه محیطی برای اجرای container(ها) است. یک Pod تا زمانی که حذف شود باقی می‌ماند.</p></div>
   <p>نام یک Pod باید یک مقدار معتبر <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names#dns-subdomain-names">DNS subdomain</a> باشد،‏ اما این ممکن است برای hostname Pod نتایج غیرمنتظره‌ای ایجاد کند. برای بهترین سازگاری،‏ نام باید از قواعد سخت‌گیرانه‌تر <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names#dns-label-names">DNS label</a> پیروی کند (فصل ۸).</p>
-  <div class="deep"><b>توضیح تکمیلی: محدودیت‌های نام Pod</b><p>DNS subdomain تا ۲۵۳ کاراکتر و نقطه (<code>‎.‎</code>) را مجاز می‌داند،‏ اما DNS label حداکثر ۶۳ کاراکتر است و نقطه ندارد. hostname داخل container از نام Pod گرفته می‌شود و hostname لینوکس محدود به ۶۳ کاراکتر است؛‏ پس نامی مثل <code>api.v2.payment</code> یا نامی ۱۰۰ کاراکتری از API server پذیرفته می‌شود ولی hostname غیرمنتظره (کوتاه‌شده) می‌سازد. جزئیات hostname در بخش Pod Hostname (بخش دوم همین فصل) آمده است.</p></div>
-
   <h4>سیستم‌عامل Pod <small>(Pod OS)</small></h4>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.25 [stable]</span></p>
   <p>باید فیلد <code>.spec.os.name</code> را روی <code>windows</code> یا <code>linux</code> تنظیم کنید تا سیستم‌عامل مورد نیاز containerهای آن Pod را مشخص کنید. در حال حاضر فقط همین دو سیستم‌عامل توسط کوبرنتیز پشتیبانی می‌شوند. ممکن است در آینده این فهرست گسترش یابد.</p>
@@ -358,7 +359,11 @@ spec:
   <p>برای مثال،‏ StatefulSet controller اطمینان حاصل می‌کند که Podهای در حال اجرا با pod template فعلی هر StatefulSet object منطبق باشند. اگر StatefulSet را ویرایش کنید تا pod template آن تغییر کند،‏ StatefulSet شروع به ساختن Podهای جدید بر اساس template به‌روز‌شده می‌کند. در نهایت،‏ همه‌ی Podهای قدیمی با Podهای جدید جایگزین می‌شوند و update کامل می‌شود.</p>
   <p>هر workload resource قواعد خودش را برای مدیریت تغییرات Pod template (الگویی که controller،‏ Podها را از روی آن می‌سازد) پیاده‌سازی می‌کند. اگر می‌خواهید درباره‌ی StatefulSet بیشتر بخوانید،‏ Update strategy را در tutorial StatefulSet Basics ببینید (فصل ۴).</p>
   <p>روی Nodeها،‏ kubelet مستقیماً هیچ‌کدام از جزئیات مربوط به pod templateها و updateها را مشاهده یا مدیریت نمی‌کند؛‏ این جزئیات abstract شده‌اند. این abstraction و separation of concerns،‏ semantics سیستم را ساده می‌کند و امکان گسترش رفتار cluster را بدون تغییر کد موجود فراهم می‌کند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">محدودیت‌های نام Pod · زنجیره‌ی Deployment،‏ ReplicaSet و Pod</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: محدودیت‌های نام Pod</b><p>DNS subdomain تا ۲۵۳ کاراکتر و نقطه (<code>‎.‎</code>) را مجاز می‌داند،‏ اما DNS label حداکثر ۶۳ کاراکتر است و نقطه ندارد. hostname داخل container از نام Pod گرفته می‌شود و hostname لینوکس محدود به ۶۳ کاراکتر است؛‏ پس نامی مثل <code>api.v2.payment</code> یا نامی ۱۰۰ کاراکتری از API server پذیرفته می‌شود ولی hostname غیرمنتظره (کوتاه‌شده) می‌سازد. جزئیات hostname در بخش Pod Hostname (بخش دوم همین فصل) آمده است.</p></div>
   <div class="deep"><b>توضیح تکمیلی: زنجیره‌ی Deployment،‏ ReplicaSet و Pod</b><p>کل زنجیره این است: Deployment ←‏ ReplicaSet ←‏ Pod. شما فقط <code>spec.template</code> Deployment را عوض می‌کنید؛‏ Deployment controller یک ReplicaSet جدید با hash template جدید (label <code>pod-template-hash</code>) می‌سازد و Podهای قدیمی را کم‌کم جایگزین می‌کند. kubelet فقط یک Pod تکمیل‌شده با <code>spec.nodeName</code> می‌بیند و اصلاً نمی‌داند این Pod از کدام template آمده است. به همین دلیل <code>kubectl edit pod</code> روی یک Pod متعلق به Deployment برای تغییر env بی‌فایده است: هم اغلب فیلدها immutable هستند و هم controller در rollout بعدی آن را با template جایگزین می‌کند.</p></div>
+  </details>
 
   <h3 id="ch3-a-pod-update">به‌روزرسانی و جایگزینی Pod <small>(Pod update and replacement)</small></h3>
   <p>همان‌طور که در بخش قبل گفته شد،‏ وقتی Pod template یک workload resource تغییر می‌کند،‏ controller به‌جای update یا patch کردن Podهای موجود،‏ Podهای جدید بر اساس template به‌روز‌شده می‌سازد.</p>
@@ -392,11 +397,6 @@ The Pod "demo" is invalid: spec: Forbidden: pod updates may not change fields ot
     <li><b>Status:‏</b> subresource <code>status</code> اجازه می‌دهد status Pod update شود. این معمولاً فقط توسط kubelet و سایر system controllerها استفاده می‌شود.</li>
     <li><b>Binding:‏</b> subresource <code>binding</code> اجازه می‌دهد <code>spec.nodeName</code> Pod از طریق یک درخواست <code>Binding</code> تنظیم شود. این معمولاً فقط توسط scheduler استفاده می‌شود.</li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: subresourceها و RBAC</b><p>subresourceها در RBAC مسیر جداگانه دارند (مثلاً <code>pods/status</code>،‏ <code>pods/binding</code>،‏ <code>pods/resize</code>،‏ <code>pods/ephemeralcontainers</code>). یعنی می‌توانید به تیم on-call اجازه‌ی <code>pods/ephemeralcontainers</code> برای <code>kubectl debug</code> بدهید بی‌آنکه اجازه‌ی <code>update</code> روی خود Pod داشته باشند (فصل ۱۴). نمونه‌ی resize با kubectl:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl patch pod demo --subresource resize --patch \
-  '{"spec":{"containers":[{"name":"demo","resources":{"requests":{"cpu":"300m"},"limits":{"cpu":"300m"}}}]}}'
-</pre></div></div>
-
   <h4>فیلد generation در Pod <small>(Pod generation)</small></h4>
   <ul><li>فیلد <code>metadata.generation</code> منحصربه‌فرد است. سیستم آن را به‌طور خودکار طوری تنظیم می‌کند که Podهای جدید <code>metadata.generation</code> برابر 1 داشته باشند و هر update روی فیلدهای mutable spec Pod،‏ <code>metadata.generation</code> را یک واحد افزایش دهد.</li></ul>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.35 [stable]</span> (feature gate: <code>PodObservedGenerationTracking</code>،‏ همیشه فعال)</p>
@@ -420,11 +420,18 @@ The Pod "demo" is invalid: spec: Forbidden: pod updates may not change fields ot
     <li><b>state مربوط به container</b>: در حین یک resize در جریان که restart policy آن نیازمند restart است،‏ state container درخواست generation قبلی را منعکس می‌کند.</li>
     <li><b>activeDeadlineSeconds</b> و <b>terminationGracePeriodSeconds</b> و <b>deletionTimestamp</b>: اثر این فیلدها روی status Pod نتیجه‌ی specification قبلاً observe‌شده است.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">subresourceها و RBAC · کاربرد observedGeneration</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: subresourceها و RBAC</b><p>subresourceها در RBAC مسیر جداگانه دارند (مثلاً <code>pods/status</code>،‏ <code>pods/binding</code>،‏ <code>pods/resize</code>،‏ <code>pods/ephemeralcontainers</code>). یعنی می‌توانید به تیم on-call اجازه‌ی <code>pods/ephemeralcontainers</code> برای <code>kubectl debug</code> بدهید بی‌آنکه اجازه‌ی <code>update</code> روی خود Pod داشته باشند (فصل ۱۴). نمونه‌ی resize با kubectl:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl patch pod demo --subresource resize --patch \
+  '{"spec":{"containers":[{"name":"demo","resources":{"requests":{"cpu":"300m"},"limits":{"cpu":"300m"}}}]}}'
+</pre></div></div>
   <div class="deep"><b>توضیح تکمیلی: کاربرد observedGeneration</b><p>کاربرد عملی: یک ابزار CI/CD که image یک Pod را patch می‌کند،‏ می‌تواند منتظر بماند تا <code>status.observedGeneration == metadata.generation</code> شود؛‏ این یعنی kubelet spec جدید را «دیده» است. اما دیدن به معنای اجرا شدن نیست: <code>imageID</code> تا pull image جدید مقدار قبلی را نشان می‌دهد.</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pod demo -o jsonpath='{.metadata.generation} {.status.observedGeneration}{"\n"}'
 </pre></div>
     <div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">2 2
 </pre></div></div>
+  </details>
 
   <h3 id="ch3-a-resource-sharing">اشتراک منابع و ارتباط <small>(Resource sharing and communication)</small></h3>
   <p>Podها امکان اشتراک داده و ارتباط بین containerهای تشکیل‌دهنده‌شان را فراهم می‌کنند.</p>
@@ -488,11 +495,14 @@ spec:
     <li>برای آشنایی با محدودیت‌های امنیتی سطح kernel که می‌توانید استفاده کنید،‏ Linux kernel security constraints for Pods and containers را ببینید.</li>
     <li>برای آشنایی بیشتر با Pod security context،‏ Configure a Security Context for a Pod or Container را ببینید.</li>
   </ul>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">اثر runAsUser،‏ runAsGroup و fsGroup</span></summary>
   <div class="deep"><b>توضیح تکمیلی: اثر runAsUser،‏ runAsGroup و fsGroup</b><p>با manifest بالا،‏ process container با UID 1000 و GID 3000 اجرا می‌شود و فایل‌هایی که روی volumeها ساخته می‌شوند group 2000 می‌گیرند:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl exec security-context-demo -- id
 </pre></div>
     <div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">uid=1000 gid=3000 groups=2000,3000
 </pre></div></div>
+  </details>
 
   <h3 id="ch3-a-requests-limits">request و limit منابع <small>(Resource requests and limits)</small></h3>
   <p>وقتی یک Pod را تعریف می‌کنید،‏ می‌توانید به‌صورت اختیاری مشخص کنید هر container چه مقدار از هر resource نیاز دارد. رایج‌ترین resourceهایی که مشخص می‌شوند CPU و memory (RAM) هستند.</p>
@@ -500,7 +510,10 @@ spec:
   <p>CPU limitها با CPU throttling اعمال می‌شوند. وقتی یک container به CPU limit خود نزدیک می‌شود،‏ kernel دسترسی آن به CPU را محدود می‌کند. memory limitها توسط kernel با out-of-memory (OOM) kill اعمال می‌شوند،‏ وقتی یک container از limit خود فراتر می‌رود.</p>
   <div class="note"><b>نکته</b><p>تنظیم CPU limit یک trade-off دارد. CPU limitها به جلوگیری از مشکل noisy neighbor کمک می‌کنند،‏ جایی که یک workload واحد،‏ workloadهای دیگر روی همان Node را گرسنه نگه می‌دارد. این موضوع به‌ویژه در محیط‌های multi-tenant مهم است. اما CPU limitها می‌توانند حتی وقتی Node ظرفیت CPU آزاد دارد باعث throttling شوند و به‌طور بالقوه performance workloadهای حساس به latency را کاهش دهند. اینکه CPU limit تنظیم کنید یا نه به محیط،‏ ویژگی‌های workload (برنامه‌ای که روی cluster اجرا می‌شود) و نیازهای isolation شما بستگی دارد.</p></div>
   <p>برای جزئیات واحدهای resource،‏ رفتار enforcement و نمونه‌های پیکربندی،‏ Resource Management for Pods and Containers (فصل ۶) را ببینید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">CPU throttling و probeها</span></summary>
   <div class="deep"><b>توضیح تکمیلی: CPU throttling و probeها</b><p>این بخش ارتباط مستقیمی با موضوع probeها دارد: CPU throttling باعث می‌شود پاسخ endpoint <code>/healthz</code> کند شود و با <code>timeoutSeconds: 1</code> (مقدار پیش‌فرض) probe شکست بخورد،‏ در حالی که برنامه واقعاً سالم است. در تمرین‌های انتهای این بخش یک سناریوی production از همین نوع بررسی می‌شود. OOM kill هم در <code>kubectl describe</code> به‌صورت <code>Last State: Terminated, Reason: OOMKilled, Exit Code: 137</code> دیده می‌شود.</p></div>
+  </details>
 
   <h3 id="ch3-a-static-pods-intro">Static Pods</h3>
   <p><em>Static Pod</em>ها مستقیماً توسط daemon kubelet روی یک Node مشخص مدیریت می‌شوند،‏ بدون اینکه API server آن‌ها را observe کند. در حالی که بیشتر Podها توسط control plane (اجزای مدیریتی cluster که تصمیم‌ها را می‌گیرند و وضعیت را نگه می‌دارند) مدیریت می‌شوند (برای مثال یک Deployment)،‏ در مورد static Podها (Podی که kubelet مستقیماً از فایلی روی Node اجرا می‌کند،‏ بدون API server)،‏ kubelet مستقیماً هر static Pod را نظارت می‌کند (و اگر fail شود restart می‌کند).</p>
@@ -549,6 +562,12 @@ spec:
   <p>کوبرنتیز از یک abstraction سطح بالاتر به نام controller استفاده می‌کند که کار مدیریت instanceهای نسبتاً disposable Pod را انجام می‌دهد.</p>
   <p>یک Pod مشخص (که با UID تعریف می‌شود) هرگز روی Node دیگری «reschedule» نمی‌شود؛‏ در عوض،‏ آن Pod می‌تواند با یک Pod جدید و تقریباً یکسان جایگزین شود. اگر یک Pod جایگزین بسازید،‏ حتی می‌تواند همان نام (<code>.metadata.name</code>) Pod قدیمی را داشته باشد،‏ اما جایگزین یک <code>.metadata.uid</code> متفاوت از Pod قدیمی خواهد داشت.</p>
   <p>کوبرنتیز تضمین نمی‌کند که جایگزین یک Pod موجود روی همان Node Pod قدیمی schedule شود.</p>
+  <h4>طول عمر اشیای وابسته <small>(Associated lifetimes)</small></h4>
+  <p>وقتی گفته می‌شود چیزی همان lifetime یک Pod را دارد،‏ مثلاً یک volume،‏ یعنی آن چیز تا زمانی وجود دارد که آن Pod مشخص (با همان UID دقیق) وجود داشته باشد. اگر آن Pod به هر دلیلی حذف شود،‏ حتی اگر یک جایگزین یکسان ساخته شود،‏ چیز مرتبط (در این مثال یک volume) هم نابود می‌شود و از نو ساخته می‌شود.</p>
+  <p>(شکل ۳-۲ که در بالا آمد،‏ در صفحه‌ی Pod Lifecycle هم با عنوان «Figure 1» آمده است: یک Pod چند containerی با یک sidecar file puller و یک web server که از یک ephemeral <code>emptyDir</code> volume برای storage مشترک استفاده می‌کند.)</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">سه سطح ترمیم</span></summary>
   <div class="deep"><b>توضیح تکمیلی: سه سطح ترمیم</b><p>سه سطح «ترمیم» را از هم جدا کنید:</p>
     <div class="tbl"><table><thead><tr><th>سطح</th><th>چه کسی</th><th>نتیجه</th></tr></thead><tbody>
       <tr><td>restart container</td><td>kubelet،‏ بر اساس <code>restartPolicy</code></td><td>همان Pod،‏ همان UID،‏ همان IP و همان Node؛‏ شمارنده‌ی <code>RESTARTS</code> یکی زیاد می‌شود</td></tr>
@@ -556,10 +575,7 @@ spec:
       <tr><td>جایگزینی Pod</td><td>controller (ReplicaSet،‏ StatefulSet،‏ Job ...)</td><td>Pod جدید با UID جدید،‏ احتمالاً IP و Node جدید؛‏ <code>emptyDir</code> از دست می‌رود</td></tr>
     </tbody></table></div>
     <p>StatefulSet نمونه‌ی خوبی از «همان نام،‏ UID متفاوت» است: <code>db-0</code> پس از حذف با همان نام دوباره ساخته می‌شود ولی یک object کاملاً جدید است.</p></div>
-
-  <h4>طول عمر اشیای وابسته <small>(Associated lifetimes)</small></h4>
-  <p>وقتی گفته می‌شود چیزی همان lifetime یک Pod را دارد،‏ مثلاً یک volume،‏ یعنی آن چیز تا زمانی وجود دارد که آن Pod مشخص (با همان UID دقیق) وجود داشته باشد. اگر آن Pod به هر دلیلی حذف شود،‏ حتی اگر یک جایگزین یکسان ساخته شود،‏ چیز مرتبط (در این مثال یک volume) هم نابود می‌شود و از نو ساخته می‌شود.</p>
-  <p>(شکل ۳-۲ که در بالا آمد،‏ در صفحه‌ی Pod Lifecycle هم با عنوان «Figure 1» آمده است: یک Pod چند containerی با یک sidecar file puller و یک web server که از یک ephemeral <code>emptyDir</code> volume برای storage مشترک استفاده می‌کند.)</p>
+  </details>
 
   <h3 id="ch3-a-pod-phase">Pod phase</h3>
   <p>فیلد <code>status</code> یک Pod یک object از نوع <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#podstatus-v1-core">PodStatus</a> است که یک فیلد <code>phase</code> دارد.</p>
@@ -612,6 +628,8 @@ Running
   <h4><code>Terminated</code></h4>
   <p>containerی که در state <code>Terminated</code> است،‏ اجرا را شروع کرده و سپس یا تا انتها اجرا شده یا به دلیلی fail شده است. وقتی با <code>kubectl</code> یک Pod را query می‌کنید که containerی در حالت <code>Terminated</code> دارد،‏ یک reason،‏ یک exit code و زمان شروع و پایان دوره‌ی اجرای آن container را می‌بینید.</p>
   <p>اگر یک container یک hook <code>preStop</code> پیکربندی‌شده داشته باشد،‏ این hook قبل از ورود container به state <code>Terminated</code> اجرا می‌شود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">خواندن وضعیت container پس از OOM</span></summary>
   <div class="deep"><b>توضیح تکمیلی: خواندن وضعیت container پس از OOM</b><p>نمونه‌ی خروجی <code>kubectl describe pod</code> برای containerی که یک بار OOM شده و الان دوباره اجرا می‌شود:</p>
     <div class="code"><div class="lbl"><span>kubectl describe pod api-7d9f (بخشی)</span><button type="button">کپی</button></div><pre class="out">Containers:
   api:
@@ -626,6 +644,7 @@ Running
     Restart Count:  1
 </pre></div>
     <p>reasonهای رایج (خارج از مستندات رسمی،‏ از رفتار kubelet): برای <code>Waiting</code>: <code>ContainerCreating</code>،‏ <code>PodInitializing</code>،‏ <code>ErrImagePull</code>،‏ <code>ImagePullBackOff</code>،‏ <code>CreateContainerConfigError</code> (مثلاً Secret یا ConfigMap ناموجود)،‏ <code>CrashLoopBackOff</code>. برای <code>Terminated</code>: <code>Completed</code> (exit 0)،‏ <code>Error</code> (exit غیرصفر)،‏ <code>OOMKilled</code>. exit code 137 یعنی 128+9 (SIGKILL) و 143 یعنی 128+15 (SIGTERM).</p></div>
+  </details>
 
   <h3 id="ch3-a-container-restarts">رفتار Pod با مشکلات container <small>(How Pods handle problems with containers)</small></h3>
   <p>کوبرنتیز خرابی‌های container درون Podها را با یک <code>restartPolicy</code> که در <code>spec</code> Pod تعریف شده مدیریت می‌کند. این policy تعیین می‌کند کوبرنتیز چگونه به خروج containerها به‌خاطر خطا یا دلایل دیگر واکنش نشان دهد،‏ که به ترتیب زیر است:</p>
@@ -653,19 +672,6 @@ Running
     <li><b>بررسی resource limitها</b>: مطمئن شود container،‏ CPU و memory کافی تخصیص‌یافته دارد. گاهی افزایش منابع در تعریف Pod مشکل را حل می‌کند.</li>
     <li><b>debug برنامه</b>: ممکن است باگ یا پیکربندی نادرستی در کد برنامه وجود داشته باشد. اجرای این container image به‌صورت local یا در یک محیط development می‌تواند به تشخیص مشکلات خاص برنامه کمک کند.</li>
   </ol>
-  <div class="deep"><b>توضیح تکمیلی: log مربوط به instance قبلی</b><p>یک نکته‌ی کلیدی که اغلب فراموش می‌شود: <code>kubectl logs</code> به‌طور پیش‌فرض log container <em>فعلی</em> را نشان می‌دهد که ممکن است تازه start شده و هنوز خطایی ننوشته باشد. برای دیدن log اجرای قبلی (همانی که crash کرد) از <code>--previous</code> استفاده کنید:</p>
-    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl logs payment-7c4b9-xk2lp --previous
-kubectl get pod payment-7c4b9-xk2lp -o jsonpath='{.status.containerStatuses[0].lastState.terminated}{"\n"}'
-kubectl get events --field-selector involvedObject.name=payment-7c4b9-xk2lp --sort-by=.lastTimestamp
-</pre></div>
-    <div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">Error: required env var DATABASE_URL is not set
-{"exitCode":1,"finishedAt":"2026-09-20T11:03:21Z","reason":"Error","startedAt":"2026-09-20T11:03:20Z"}
-LAST SEEN   TYPE      REASON    OBJECT                    MESSAGE
-2m          Normal    Pulled    pod/payment-7c4b9-xk2lp   Container image "registry.example.com/payment:4.2.0" already present on machine
-90s         Warning   BackOff   pod/payment-7c4b9-xk2lp   Back-off restarting failed container payment in pod payment-7c4b9-xk2lp_shop(...)
-</pre></div>
-    <p>ترتیب پیشنهادی تشخیص: <code>lastState.terminated.reason</code> (OOMKilled؟ Error؟) ← exit code → <code>logs --previous</code> → eventها (آیا <code>Killing ... failed liveness probe</code> دیده می‌شود؟). اگر reason Killing مربوط به liveness باشد،‏ مشکل «crash» نیست بلکه «kill شدن توسط kubelet» است و باید probe را بررسی کنید.</p></div>
-
   <h4>restart شدن container <small>(Container restarts)</small></h4>
   <p>وقتی containerی در Pod شما متوقف می‌شود یا دچار failure می‌شود،‏ کوبرنتیز می‌تواند آن را restart کند. restart همیشه مناسب نیست؛‏ برای مثال،‏ init containerها (در صورت موفقیت) فقط یک بار،‏ در طول startup Pod،‏ اجرا می‌شوند. می‌توانید restartها را به‌صورت یک policy که روی همه‌ی Podها اعمال می‌شود پیکربندی کنید،‏ یا از پیکربندی سطح container استفاده کنید (برای مثال وقتی یک sidecar container تعریف می‌کنید)،‏ یا یک override سطح container تعریف کنید.</p>
 
@@ -760,18 +766,6 @@ spec:
 </pre></div>
   <div class="note"><b>نکته</b><p>در حالی که container برنامه‌ی اصلی از <code>restartPolicy: OnFailure</code> Pod پیروی می‌کند،‏ sidecar container بدون توجه به exit code خود restart می‌شود،‏ چون sidecar containerها همیشه <code>restartPolicy: Always</code> در سطح container دارند.</p></div>
   <p>وقتی kubelet،‏ restartهای container را بر اساس restart policy پیکربندی‌شده مدیریت می‌کند،‏ این فقط به restartهایی اعمال می‌شود که containerهای جایگزین را درون همان Pod و روی همان Node می‌سازند. پس از خروج containerهای یک Pod،‏ kubelet آن‌ها را با یک exponential backoff delay (10s،‏ 20s،‏ 40s،‏ …) restart می‌کند که سقف آن ۳۰۰ ثانیه (۵ دقیقه) است. وقتی یک container ۱۰ دقیقه بدون هیچ مشکلی اجرا شد،‏ kubelet تایمر restart backoff آن container را reset می‌کند. بخش Sidecar containers and Pod lifecycle رفتار <code>init containers</code> را وقتی فیلد <code>restartPolicy</code> روی آن مشخص می‌شود توضیح می‌دهد.</p>
-  <div class="deep"><b>توضیح تکمیلی: جدول زمانی backoff</b>
-    <div class="tbl"><table><thead><tr><th>crash شماره</th><th>تأخیر قبل از restart بعدی</th><th>زمان تجمعی تقریبی (بدون احتساب زمان اجرا)</th></tr></thead><tbody>
-      <tr><td>۱</td><td>فوری (۰)</td><td>0s</td></tr>
-      <tr><td>۲</td><td>10s</td><td>10s</td></tr>
-      <tr><td>۳</td><td>20s</td><td>30s</td></tr>
-      <tr><td>۴</td><td>40s</td><td>1m10s</td></tr>
-      <tr><td>۵</td><td>80s</td><td>2m30s</td></tr>
-      <tr><td>۶</td><td>160s</td><td>5m10s</td></tr>
-      <tr><td>۷ و بعد</td><td>300s (سقف)</td><td>هر ۵ دقیقه یک تلاش</td></tr>
-    </tbody></table></div>
-    <p>پیامد production: وقتی علت crash (مثلاً database یا یک Secret) برطرف شد،‏ ممکن است تا ۵ دقیقه طول بکشد تا Pod خودش دوباره تلاش کند. در incident این زمان گران است؛‏ حذف Pod (تا controller یک Pod تازه بسازد) یا <code>kubectl rollout restart</code> این backoff را دور می‌زند،‏ چون backoff به container در همان Pod وابسته است.</p></div>
-
   <h4>restart policy و ruleهای هر container <small>(Individual container restart policy and rules)</small></h4>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.35 [beta]</span> (feature gate: <code>ContainerRestartRules</code>،‏ پیش‌فرض: فعال)</p>
   <p>اگر feature gate (کلید روشن و خاموش کردن قابلیت‌های جدید یا آزمایشی) <code>ContainerRestartRules</code> در cluster شما فعال باشد،‏ می‌توانید <code>restartPolicy</code> و <code>restartPolicyRules</code> را روی <em>containerهای منفرد</em> مشخص کنید تا restart policy Pod را override کنید. restart policy و ruleهای container روی app containerهای Pod و روی init containerهای معمولی اعمال می‌شوند.</p>
@@ -835,8 +829,6 @@ spec:
         values: [42]
 </pre></div>
   <p>restart ruleها را می‌توان برای بسیاری از سناریوهای پیشرفته‌تر مدیریت lifecycle استفاده کرد. توجه کنید که restart ruleها تحت تأثیر همان ناسازگاری‌هایی هستند که restart policy معمولی دارد. restartهای kubelet،‏ garbage collection (پاک‌سازی خودکار اشیای بی‌استفاده) container runtime و مشکلات اتصال متناوب با control plane ممکن است باعث از دست رفتن state شوند و containerها ممکن است حتی وقتی انتظار ندارید restart شوند،‏ دوباره اجرا شوند.</p>
-  <div class="deep"><b>توضیح تکمیلی: restart rule بر اساس exit code</b><p>کاربرد واقعی: یک worker پردازش صف که در صورت از دست رفتن اتصال به broker با کد 75 (<code>EX_TEMPFAIL</code>) خارج می‌شود و در صورت داده‌ی خراب با کد 65 (<code>EX_DATAERR</code>). با <code>restartPolicy: Never</code> و یک rule برای <code>values: [75]</code>،‏ خطای موقتی retry می‌شود ولی خطای داده باعث fail شدن Pod و ثبت آن در Job می‌شود،‏ به‌جای اینکه بی‌نهایت restart شود. چون به هشدار بالا،‏ کد شما باید idempotent باشد: ممکن است container <code>Never</code> هم در شرایط نادر دوباره اجرا شود.</p></div>
-
   <h4>restart همه‌ی containerها <small>(Restart All Containers)</small></h4>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.36 [beta]</span> (feature gate: <code>RestartAllContainersOnContainerExits</code>،‏ پیش‌فرض: فعال)</p>
   <p>اگر feature gate <code>RestartAllContainersOnContainerExits</code> در cluster شما فعال باشد،‏ می‌توانید <code>RestartAllContainers</code> را به‌عنوان یک action در <code>restartPolicyRules</code> سطح container مشخص کنید. وقتی خروج یک container با ruleی با این action تطابق پیدا کند،‏ کل Pod terminate می‌شود و به‌صورت in-place restart می‌شود.</p>
@@ -923,7 +915,34 @@ crashLoopBackOff:
     maxContainerRestartPeriod: "2s"
 </pre></div>
   <p>اگر از این feature همراه با feature alpha <code>ReduceDefaultCrashLoopBackOffDecay</code> (که در بالا توضیح داده شد) استفاده کنید،‏ پیش‌فرض‌های cluster برای backoff اولیه و حداکثر،‏ دیگر 10s و 300s نخواهند بود،‏ بلکه 1s و 60s خواهند بود. پیکربندی per node بر پیش‌فرض‌های تعیین‌شده توسط <code>ReduceDefaultCrashLoopBackOffDecay</code> اولویت دارد،‏ حتی اگر باعث شود یک Node حداکثر backoff طولانی‌تری نسبت به Nodeهای دیگر cluster داشته باشد.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">log مربوط به instance قبلی · جدول زمانی backoff · restart rule بر اساس exit code · دنباله‌ی تأخیر با سقف سفارشی</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: log مربوط به instance قبلی</b><p>یک نکته‌ی کلیدی که اغلب فراموش می‌شود: <code>kubectl logs</code> به‌طور پیش‌فرض log container <em>فعلی</em> را نشان می‌دهد که ممکن است تازه start شده و هنوز خطایی ننوشته باشد. برای دیدن log اجرای قبلی (همانی که crash کرد) از <code>--previous</code> استفاده کنید:</p>
+    <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl logs payment-7c4b9-xk2lp --previous
+kubectl get pod payment-7c4b9-xk2lp -o jsonpath='{.status.containerStatuses[0].lastState.terminated}{"\n"}'
+kubectl get events --field-selector involvedObject.name=payment-7c4b9-xk2lp --sort-by=.lastTimestamp
+</pre></div>
+    <div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">Error: required env var DATABASE_URL is not set
+{"exitCode":1,"finishedAt":"2026-09-20T11:03:21Z","reason":"Error","startedAt":"2026-09-20T11:03:20Z"}
+LAST SEEN   TYPE      REASON    OBJECT                    MESSAGE
+2m          Normal    Pulled    pod/payment-7c4b9-xk2lp   Container image "registry.example.com/payment:4.2.0" already present on machine
+90s         Warning   BackOff   pod/payment-7c4b9-xk2lp   Back-off restarting failed container payment in pod payment-7c4b9-xk2lp_shop(...)
+</pre></div>
+    <p>ترتیب پیشنهادی تشخیص: <code>lastState.terminated.reason</code> (OOMKilled؟ Error؟) ← exit code → <code>logs --previous</code> → eventها (آیا <code>Killing ... failed liveness probe</code> دیده می‌شود؟). اگر reason Killing مربوط به liveness باشد،‏ مشکل «crash» نیست بلکه «kill شدن توسط kubelet» است و باید probe را بررسی کنید.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: جدول زمانی backoff</b>
+    <div class="tbl"><table><thead><tr><th>crash شماره</th><th>تأخیر قبل از restart بعدی</th><th>زمان تجمعی تقریبی (بدون احتساب زمان اجرا)</th></tr></thead><tbody>
+      <tr><td>۱</td><td>فوری (۰)</td><td>0s</td></tr>
+      <tr><td>۲</td><td>10s</td><td>10s</td></tr>
+      <tr><td>۳</td><td>20s</td><td>30s</td></tr>
+      <tr><td>۴</td><td>40s</td><td>1m10s</td></tr>
+      <tr><td>۵</td><td>80s</td><td>2m30s</td></tr>
+      <tr><td>۶</td><td>160s</td><td>5m10s</td></tr>
+      <tr><td>۷ و بعد</td><td>300s (سقف)</td><td>هر ۵ دقیقه یک تلاش</td></tr>
+    </tbody></table></div>
+    <p>پیامد production: وقتی علت crash (مثلاً database یا یک Secret) برطرف شد،‏ ممکن است تا ۵ دقیقه طول بکشد تا Pod خودش دوباره تلاش کند. در incident این زمان گران است؛‏ حذف Pod (تا controller یک Pod تازه بسازد) یا <code>kubectl rollout restart</code> این backoff را دور می‌زند،‏ چون backoff به container در همان Pod وابسته است.</p></div>
+  <div class="deep"><b>توضیح تکمیلی: restart rule بر اساس exit code</b><p>کاربرد واقعی: یک worker پردازش صف که در صورت از دست رفتن اتصال به broker با کد 75 (<code>EX_TEMPFAIL</code>) خارج می‌شود و در صورت داده‌ی خراب با کد 65 (<code>EX_DATAERR</code>). با <code>restartPolicy: Never</code> و یک rule برای <code>values: [75]</code>،‏ خطای موقتی retry می‌شود ولی خطای داده باعث fail شدن Pod و ثبت آن در Job می‌شود،‏ به‌جای اینکه بی‌نهایت restart شود. چون به هشدار بالا،‏ کد شما باید idempotent باشد: ممکن است container <code>Never</code> هم در شرایط نادر دوباره اجرا شود.</p></div>
   <div class="deep"><b>توضیح تکمیلی: دنباله‌ی تأخیر با سقف سفارشی</b><p>با <code>maxContainerRestartPeriod: "100s"</code> دنباله‌ی تأخیرها 10s،‏ 20s،‏ 40s،‏ 80s،‏ 100s،‏ 100s،‏ ... است. با <code>"2s"</code> (کمتر از 10s) همه‌ی تأخیرها 2s است. trade-off: سقف کوتاه‌تر یعنی recovery سریع‌تر پس از رفع مشکل،‏ اما containerهای معیوب بار بیشتری روی kubelet،‏ container runtime،‏ registry (اگر <code>imagePullPolicy: Always</code> باشد) و سیستم logging می‌گذارند. معمولاً سقف کوتاه را فقط برای Node poolهای خاص (مثلاً workloadهای batch) در نظر بگیرید.</p></div>
+  </details>
 
   <h3 id="ch3-a-pod-conditions">Pod conditionها <small>(Pod conditions)</small></h3>
   <p>یک Pod یک PodStatus دارد که آرایه‌ای از <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.37/#podcondition-v1-core">PodCondition</a>ها دارد که Pod از آن‌ها عبور کرده یا نکرده است. kubelet این PodConditionها را مدیریت می‌کند:</p>
@@ -1093,8 +1112,6 @@ PodResizePending True Infeasible
         stopSignal: SIGUSR1
 </pre></div>
   <p>اگر یک stop signal در lifecycle تعریف شده باشد،‏ سیگنال تعریف‌شده در container image را override می‌کند. اگر هیچ stop signalی در container spec تعریف نشده باشد،‏ container به رفتار پیش‌فرض برمی‌گردد.</p>
-  <div class="deep"><b>توضیح تکمیلی: stop signal در nginx</b><p>نمونه‌ی واقعی: nginx برای shutdown graceful از <code>SIGQUIT</code> استفاده می‌کند (SIGTERM در nginx یعنی fast shutdown) و image رسمی nginx به همین دلیل <code>STOPSIGNAL SIGQUIT</code> دارد (خارج از مستندات رسمی). مشکل رایج دیگر: اگر ENTRYPOINT یک shell script باشد (<code>sh -c "java -jar app.jar"</code>)،‏ PID 1 خود shell است و SIGTERM را به java نمی‌رساند؛‏ نتیجه این است که برنامه ۳۰ ثانیه هیچ کاری نمی‌کند و بعد SIGKILL می‌خورد (exit code 137). راه حل: استفاده از <code>exec</code> در script یا یک init سبک مثل tini.</p></div>
-
   <h4>روند terminate شدن Pod <small>(Pod Termination Flow)</small></h4>
   <p>جریان termination Pod،‏ با یک مثال:</p>
   <ol>
@@ -1119,6 +1136,39 @@ PodResizePending True Infeasible
         <li>API server،‏ API object Pod را حذف می‌کند و پس از آن دیگر از هیچ client ی قابل مشاهده نیست.</li>
       </ol></li>
   </ol>
+
+  <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" width="100%" style="max-width:760px;height:auto" role="img" aria-label="دو مسیر هم‌زمان هنگام terminate شدن Pod"><defs><marker id="f6tf-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f6tf-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f6tf-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f6tf-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f6tf-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="20" y="128" width="130" height="72" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.4"></rect><text x="85" y="156" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">حذف Pod</text><text x="85" y="180" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">deletionTimestamp</text><text x="745" y="40" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#326ce5" text-anchor="start" direction="rtl">مسیر A:‏ kubelet روی Node</text><text x="745" y="222" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#b26b00" text-anchor="start" direction="rtl">مسیر B:‏ control plane و شبکه</text><rect x="185" y="54" width="120" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="245" y="87" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">preStop</text><rect x="330" y="54" width="120" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="390" y="87" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">SIGTERM</text><rect x="475" y="54" width="120" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="535" y="76" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="rtl">انتظار تا پایان</text><text x="535" y="96" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">grace period</text><rect x="620" y="54" width="120" height="54" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="680" y="87" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">SIGKILL</text><line x1="305" y1="81" x2="328" y2="81" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></line><line x1="450" y1="81" x2="473" y2="81" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></line><line x1="595" y1="81" x2="618" y2="81" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></line><text x="680" y="126" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#b83227" text-anchor="middle" direction="rtl">اگر هنوز زنده باشد</text><rect x="185" y="238" width="260" height="58" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="315" y="260" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="rtl">وضعیت endpoint در EndpointSlice</text><text x="315" y="282" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">ready=false, terminating=true</text><rect x="480" y="238" width="260" height="58" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="610" y="260" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="rtl">به‌روزرسانی kube-proxy و load balancerها</text><text x="610" y="282" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">قطع ترافیک جدید</text><line x1="445" y1="267" x2="478" y2="267" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f6tf-ab26b00)"></line><path d="M150,150 C165,150 165,81 183,81" fill="none" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></path><path d="M150,178 C165,178 165,267 183,267" fill="none" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f6tf-ab26b00)"></path><text x="462" y="158" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">دو مسیر هم‌زمان شروع می‌شوند و منتظر هم نمی‌مانند.</text><text x="462" y="182" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر برنامه پیش از پایان مسیر B بسته شود، درخواست‌های تازه خطا می‌گیرند.</text></svg></div><figcaption><b>شکل ۳-۶.</b> <span style="flex:1 1 0;min-width:0">پس از ثبت <code>deletionTimestamp</code>،‏ kubelet (مسیر A) و EndpointSlice controller (مسیر B) هم‌زمان کار را شروع می‌کنند. grace period از لحظه‌ی حذف شمرده می‌شود و preStop هم از همین بودجه مصرف می‌کند. به همین دلیل یک preStop کوتاه با handler <code>sleep</code> رایج است: برنامه تا رسیدن مسیر B به همه‌ی Nodeها به پاسخ‌دادن ادامه می‌دهد.</span></figcaption></figure>
+  <h4>terminate اجباری Pod <small>(Forced Pod termination)</small></h4>
+  <div class="warn"><b>هشدار</b><p>حذف‌های اجباری (forced deletion) برای بعضی workloadها و Podهایشان می‌توانند به‌طور بالقوه مخرب باشند.</p></div>
+  <p>به‌طور پیش‌فرض،‏ همه‌ی حذف‌ها ظرف ۳۰ ثانیه graceful هستند. دستور <code>kubectl delete</code> از گزینه‌ی <code>--grace-period=&lt;seconds&gt;</code> پشتیبانی می‌کند که به شما اجازه می‌دهد پیش‌فرض را override کنید و مقدار خودتان را مشخص کنید.</p>
+  <p>تنظیم grace period روی <code>‎0‎</code>،‏ Pod را به‌صورت اجباری و فوری از API server حذف می‌کند. اگر Pod هنوز روی یک Node در حال اجرا بود،‏ این حذف اجباری باعث می‌شود kubelet پاک‌سازی فوری را آغاز کند.</p>
+  <p>با استفاده از kubectl،‏ برای انجام force deletion باید یک flag اضافه‌ی <code>--force</code> را همراه با <code>--grace-period=0</code> مشخص کنید.</p>
+  <p>وقتی force deletion انجام می‌شود،‏ API server منتظر تأیید kubelet مبنی بر terminate شدن Pod روی Nodeی که در آن اجرا می‌شد نمی‌ماند. Pod را فوراً از API حذف می‌کند تا یک Pod جدید با همان نام بتواند ساخته شود. روی Node،‏ به Podهایی که برای terminate فوری تنظیم شده‌اند،‏ باز هم یک grace period کوچک قبل از kill اجباری داده می‌شود.</p>
+  <div class="warn"><b>هشدار</b><p>حذف فوری منتظر تأیید terminate شدن resource در حال اجرا نمی‌ماند. آن resource ممکن است به‌طور نامحدود روی cluster به اجرا ادامه دهد.</p></div>
+  <p>اگر لازم است Podهایی را که بخشی از یک StatefulSet هستند force-delete کنید،‏ به مستندات task deleting Pods from a StatefulSet مراجعه کنید.</p>
+  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete pod web-5d8f --grace-period=0 --force
+</pre></div>
+  <div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">Warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
+pod "web-5d8f" force deleted
+</pre></div>
+  <h4>خاموش شدن Pod و sidecar containerها <small>(Pod shutdown and sidecar containers)</small></h4>
+  <p>اگر Pod شما شامل یک یا چند sidecar container (init containerهایی با restart policy <code>Always</code>) باشد،‏ kubelet ارسال سیگنال TERM به این sidecar containerها را تا زمانی که آخرین main container به‌طور کامل terminate شود به تأخیر می‌اندازد. sidecar containerها به ترتیب عکس تعریفشان در Pod spec terminate می‌شوند. این تضمین می‌کند sidecar containerها تا زمانی که دیگر لازم نیستند به serve کردن containerهای دیگر Pod ادامه دهند.</p>
+  <p>این یعنی termination کند یک main container،‏ termination sidecar containerها را هم به تأخیر می‌اندازد. اگر grace period قبل از کامل شدن فرایند termination منقضی شود،‏ Pod ممکن است وارد forced termination شود. در این حالت،‏ همه‌ی containerهای باقی‌مانده در Pod هم‌زمان با یک grace period کوتاه terminate می‌شوند.</p>
+  <p>به همین ترتیب،‏ اگر Pod یک hook <code>preStop</code> داشته باشد که از termination grace period بیشتر شود،‏ ممکن است emergency termination رخ دهد. به‌طور کلی،‏ اگر از hookهای <code>preStop</code> برای کنترل ترتیب termination بدون sidecar containerها استفاده کرده‌اید،‏ اکنون می‌توانید آن‌ها را حذف کنید و اجازه دهید kubelet،‏ termination sidecar را به‌طور خودکار مدیریت کند.</p>
+
+  <h4>garbage collection برای Podها <small>(Garbage collection of Pods)</small></h4>
+  <p>برای Podهای failed،‏ API objectها در API cluster باقی می‌مانند تا زمانی که یک انسان یا یک controller،‏ process صریحاً آن‌ها را حذف کند.</p>
+  <p>Pod garbage collector (PodGC)،‏ که یک controller در control plane است،‏ Podهای terminate‌شده (با phase <code>Succeeded</code> یا <code>Failed</code>) را وقتی تعداد Podها از threshold پیکربندی‌شده (که با <code>terminated-pod-gc-threshold</code> در kube-controller-manager تعیین می‌شود) بیشتر شود،‏ پاک‌سازی می‌کند. این از resource leak با گذشت زمان و ساخته و terminate شدن Podها جلوگیری می‌کند.</p>
+  <p>علاوه بر این،‏ PodGC هر Podی را که یکی از شرایط زیر را داشته باشد پاک‌سازی می‌کند:</p>
+  <ol>
+    <li>orphan Pod باشد - به Nodeی bind شده که دیگر وجود ندارد،‏</li>
+    <li>Pod terminating unscheduled باشد،‏</li>
+    <li>Pod terminating باشد که به یک Node non-ready bind شده که با taint <a href="https://kubernetes.io/docs/reference/labels-annotations-taints/#node-kubernetes-io-out-of-service"><code>node.kubernetes.io/out-of-service</code></a> taint شده است.</li>
+  </ol>
+  <p>PodGC همراه با پاک‌سازی Podها،‏ اگر در phase غیر terminal باشند،‏ آن‌ها را failed هم علامت‌گذاری می‌کند. همچنین PodGC هنگام پاک‌سازی یک orphan Pod یک Pod disruption condition اضافه می‌کند. برای جزئیات بیشتر Pod disruption conditions را ببینید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۴)</small> <span class="m-t">stop signal در nginx · race حذف endpoint · force delete و StatefulSet · آستانه‌ی PodGC در عمل</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: stop signal در nginx</b><p>نمونه‌ی واقعی: nginx برای shutdown graceful از <code>SIGQUIT</code> استفاده می‌کند (SIGTERM در nginx یعنی fast shutdown) و image رسمی nginx به همین دلیل <code>STOPSIGNAL SIGQUIT</code> دارد (خارج از مستندات رسمی). مشکل رایج دیگر: اگر ENTRYPOINT یک shell script باشد (<code>sh -c "java -jar app.jar"</code>)،‏ PID 1 خود shell است و SIGTERM را به java نمی‌رساند؛‏ نتیجه این است که برنامه ۳۰ ثانیه هیچ کاری نمی‌کند و بعد SIGKILL می‌خورد (exit code 137). راه حل: استفاده از <code>exec</code> در script یا یک init سبک مثل tini.</p></div>
   <div class="deep"><b>توضیح تکمیلی: race حذف endpoint</b>
     <p>نکته‌ی کلیدی مرحله‌ی ۳ عبارت «هم‌زمان» است. دو مسیر موازی شروع می‌شوند و هیچ‌کدام منتظر دیگری نمی‌ماند:</p>
     <ul>
@@ -1141,43 +1191,12 @@ PodResizePending True Infeasible
 </pre></div>
     <p>بودجه‌ی زمانی: ۱۰ ثانیه sleep + حداکثر ۳۰ ثانیه drain برنامه + حاشیه‌ی اطمینان = 45s. توجه کنید که grace period از لحظه‌ی حذف شروع می‌شود و زمان <code>preStop</code> هم از آن کم می‌شود.</p>
   </div>
-
-
-  <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" width="100%" style="max-width:760px;height:auto" role="img" aria-label="دو مسیر هم‌زمان هنگام terminate شدن Pod"><defs><marker id="f6tf-a4a5672" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker><marker id="f6tf-a326ce5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#326ce5"></path></marker><marker id="f6tf-a12806f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#12806f"></path></marker><marker id="f6tf-ab26b00" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b26b00"></path></marker><marker id="f6tf-ab83227" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b83227"></path></marker></defs><rect x="20" y="128" width="130" height="72" rx="10" fill="#eef2f9" stroke="#4a5672" stroke-width="1.4"></rect><text x="85" y="156" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">حذف Pod</text><text x="85" y="180" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">deletionTimestamp</text><text x="745" y="40" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#326ce5" text-anchor="start" direction="rtl">مسیر A:‏ kubelet روی Node</text><text x="745" y="222" font-family="Vazirmatn, Tahoma, sans-serif" font-size="13" font-weight="700" fill="#b26b00" text-anchor="start" direction="rtl">مسیر B:‏ control plane و شبکه</text><rect x="185" y="54" width="120" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="245" y="87" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">preStop</text><rect x="330" y="54" width="120" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="390" y="87" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="ltr">SIGTERM</text><rect x="475" y="54" width="120" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="535" y="76" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#326ce5" text-anchor="middle" direction="rtl">انتظار تا پایان</text><text x="535" y="96" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">grace period</text><rect x="620" y="54" width="120" height="54" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="680" y="87" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="700" fill="#b83227" text-anchor="middle" direction="ltr">SIGKILL</text><line x1="305" y1="81" x2="328" y2="81" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></line><line x1="450" y1="81" x2="473" y2="81" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></line><line x1="595" y1="81" x2="618" y2="81" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></line><text x="680" y="126" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11" font-weight="400" fill="#b83227" text-anchor="middle" direction="rtl">اگر هنوز زنده باشد</text><rect x="185" y="238" width="260" height="58" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="315" y="260" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="rtl">وضعیت endpoint در EndpointSlice</text><text x="315" y="282" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="ltr">ready=false, terminating=true</text><rect x="480" y="238" width="260" height="58" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="610" y="260" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#b26b00" text-anchor="middle" direction="rtl">به‌روزرسانی kube-proxy و load balancerها</text><text x="610" y="282" font-family="Vazirmatn, Tahoma, sans-serif" font-size="11.5" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">قطع ترافیک جدید</text><line x1="445" y1="267" x2="478" y2="267" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f6tf-ab26b00)"></line><path d="M150,150 C165,150 165,81 183,81" fill="none" stroke="#326ce5" stroke-width="1.6" marker-end="url(#f6tf-a326ce5)"></path><path d="M150,178 C165,178 165,267 183,267" fill="none" stroke="#b26b00" stroke-width="1.6" marker-end="url(#f6tf-ab26b00)"></path><text x="462" y="158" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12.5" font-weight="700" fill="#16213a" text-anchor="middle" direction="rtl">دو مسیر هم‌زمان شروع می‌شوند و منتظر هم نمی‌مانند.</text><text x="462" y="182" font-family="Vazirmatn, Tahoma, sans-serif" font-size="12" font-weight="400" fill="#4a5672" text-anchor="middle" direction="rtl">اگر برنامه پیش از پایان مسیر B بسته شود، درخواست‌های تازه خطا می‌گیرند.</text></svg></div><figcaption><b>شکل ۳-۶.</b> <span style="flex:1 1 0;min-width:0">پس از ثبت <code>deletionTimestamp</code>،‏ kubelet (مسیر A) و EndpointSlice controller (مسیر B) هم‌زمان کار را شروع می‌کنند. grace period از لحظه‌ی حذف شمرده می‌شود و preStop هم از همین بودجه مصرف می‌کند. به همین دلیل یک preStop کوتاه با handler <code>sleep</code> رایج است: برنامه تا رسیدن مسیر B به همه‌ی Nodeها به پاسخ‌دادن ادامه می‌دهد.</span></figcaption></figure>
-  <h4>terminate اجباری Pod <small>(Forced Pod termination)</small></h4>
-  <div class="warn"><b>هشدار</b><p>حذف‌های اجباری (forced deletion) برای بعضی workloadها و Podهایشان می‌توانند به‌طور بالقوه مخرب باشند.</p></div>
-  <p>به‌طور پیش‌فرض،‏ همه‌ی حذف‌ها ظرف ۳۰ ثانیه graceful هستند. دستور <code>kubectl delete</code> از گزینه‌ی <code>--grace-period=&lt;seconds&gt;</code> پشتیبانی می‌کند که به شما اجازه می‌دهد پیش‌فرض را override کنید و مقدار خودتان را مشخص کنید.</p>
-  <p>تنظیم grace period روی <code>‎0‎</code>،‏ Pod را به‌صورت اجباری و فوری از API server حذف می‌کند. اگر Pod هنوز روی یک Node در حال اجرا بود،‏ این حذف اجباری باعث می‌شود kubelet پاک‌سازی فوری را آغاز کند.</p>
-  <p>با استفاده از kubectl،‏ برای انجام force deletion باید یک flag اضافه‌ی <code>--force</code> را همراه با <code>--grace-period=0</code> مشخص کنید.</p>
-  <p>وقتی force deletion انجام می‌شود،‏ API server منتظر تأیید kubelet مبنی بر terminate شدن Pod روی Nodeی که در آن اجرا می‌شد نمی‌ماند. Pod را فوراً از API حذف می‌کند تا یک Pod جدید با همان نام بتواند ساخته شود. روی Node،‏ به Podهایی که برای terminate فوری تنظیم شده‌اند،‏ باز هم یک grace period کوچک قبل از kill اجباری داده می‌شود.</p>
-  <div class="warn"><b>هشدار</b><p>حذف فوری منتظر تأیید terminate شدن resource در حال اجرا نمی‌ماند. آن resource ممکن است به‌طور نامحدود روی cluster به اجرا ادامه دهد.</p></div>
-  <p>اگر لازم است Podهایی را که بخشی از یک StatefulSet هستند force-delete کنید،‏ به مستندات task deleting Pods from a StatefulSet مراجعه کنید.</p>
-  <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete pod web-5d8f --grace-period=0 --force
-</pre></div>
-  <div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">Warning: Immediate deletion does not wait for confirmation that the running resource has been terminated. The resource may continue to run on the cluster indefinitely.
-pod "web-5d8f" force deleted
-</pre></div>
   <div class="deep"><b>توضیح تکمیلی: force delete و StatefulSet</b><p>چرا برای StatefulSet خطرناک است؟ StatefulSet تضمین «حداکثر یک Pod با هر هویت» (at most one) می‌دهد. اگر Node <code>db-0</code> از شبکه جدا شده ولی هنوز روشن است و شما <code>db-0</code> را force-delete کنید،‏ StatefulSet controller بلافاصله یک <code>db-0</code> جدید روی Node دیگر می‌سازد،‏ در حالی که <code>db-0</code> قدیمی ممکن است هنوز روی همان volume بنویسد: split-brain و خرابی داده. قبل از force-delete مطمئن شوید Node واقعاً خاموش است،‏ یا از taint (علامتی روی Node که Podهای بدون toleration مناسب را دور نگه می‌دارد) <code>node.kubernetes.io/out-of-service</code> استفاده کنید (بخش Garbage collection of Pods پایین‌تر).</p></div>
-
-  <h4>خاموش شدن Pod و sidecar containerها <small>(Pod shutdown and sidecar containers)</small></h4>
-  <p>اگر Pod شما شامل یک یا چند sidecar container (init containerهایی با restart policy <code>Always</code>) باشد،‏ kubelet ارسال سیگنال TERM به این sidecar containerها را تا زمانی که آخرین main container به‌طور کامل terminate شود به تأخیر می‌اندازد. sidecar containerها به ترتیب عکس تعریفشان در Pod spec terminate می‌شوند. این تضمین می‌کند sidecar containerها تا زمانی که دیگر لازم نیستند به serve کردن containerهای دیگر Pod ادامه دهند.</p>
-  <p>این یعنی termination کند یک main container،‏ termination sidecar containerها را هم به تأخیر می‌اندازد. اگر grace period قبل از کامل شدن فرایند termination منقضی شود،‏ Pod ممکن است وارد forced termination شود. در این حالت،‏ همه‌ی containerهای باقی‌مانده در Pod هم‌زمان با یک grace period کوتاه terminate می‌شوند.</p>
-  <p>به همین ترتیب،‏ اگر Pod یک hook <code>preStop</code> داشته باشد که از termination grace period بیشتر شود،‏ ممکن است emergency termination رخ دهد. به‌طور کلی،‏ اگر از hookهای <code>preStop</code> برای کنترل ترتیب termination بدون sidecar containerها استفاده کرده‌اید،‏ اکنون می‌توانید آن‌ها را حذف کنید و اجازه دهید kubelet،‏ termination sidecar را به‌طور خودکار مدیریت کند.</p>
-
-  <h4>garbage collection برای Podها <small>(Garbage collection of Pods)</small></h4>
-  <p>برای Podهای failed،‏ API objectها در API cluster باقی می‌مانند تا زمانی که یک انسان یا یک controller،‏ process صریحاً آن‌ها را حذف کند.</p>
-  <p>Pod garbage collector (PodGC)،‏ که یک controller در control plane است،‏ Podهای terminate‌شده (با phase <code>Succeeded</code> یا <code>Failed</code>) را وقتی تعداد Podها از threshold پیکربندی‌شده (که با <code>terminated-pod-gc-threshold</code> در kube-controller-manager تعیین می‌شود) بیشتر شود،‏ پاک‌سازی می‌کند. این از resource leak با گذشت زمان و ساخته و terminate شدن Podها جلوگیری می‌کند.</p>
-  <p>علاوه بر این،‏ PodGC هر Podی را که یکی از شرایط زیر را داشته باشد پاک‌سازی می‌کند:</p>
-  <ol>
-    <li>orphan Pod باشد - به Nodeی bind شده که دیگر وجود ندارد،‏</li>
-    <li>Pod terminating unscheduled باشد،‏</li>
-    <li>Pod terminating باشد که به یک Node non-ready bind شده که با taint <a href="https://kubernetes.io/docs/reference/labels-annotations-taints/#node-kubernetes-io-out-of-service"><code>node.kubernetes.io/out-of-service</code></a> taint شده است.</li>
-  </ol>
-  <p>PodGC همراه با پاک‌سازی Podها،‏ اگر در phase غیر terminal باشند،‏ آن‌ها را failed هم علامت‌گذاری می‌کند. همچنین PodGC هنگام پاک‌سازی یک orphan Pod یک Pod disruption condition اضافه می‌کند. برای جزئیات بیشتر Pod disruption conditions را ببینید.</p>
   <div class="deep"><b>توضیح تکمیلی: آستانه‌ی PodGC در عمل</b><p>مقدار پیش‌فرض <code>--terminated-pod-gc-threshold</code> در kube-controller-manager برابر 12500 است (مقدار پیش‌فرض در کد kube-controller-manager). یعنی در یک cluster با CronJobهای پرتعداد،‏ Podهای Completed و Failed می‌توانند تا هزاران عدد انباشته شوند و خروجی <code>kubectl get pods</code> و بار etcd را زیاد کنند. راه حل درست: <code>ttlSecondsAfterFinished</code> روی Job و <code>successfulJobsHistoryLimit</code>/<code>failedJobsHistoryLimit</code> روی CronJob (فصل ۴). برای Node خاموش‌شده:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl taint nodes worker-3 node.kubernetes.io/out-of-service=nodeshutdown:NoExecute
 </pre></div>
     <p>این taint به PodGC اجازه می‌دهد Podهای terminating گیرکرده روی Node مرده را فوراً پاک کند تا StatefulSet بتواند جایگزین بسازد و volumeها detach شوند.</p></div>
+  </details>
 
   <h3 id="ch3-a-kubelet-restarts">رفتار Pod هنگام restart شدن kubelet <small>(Pod behavior during kubelet restarts)</small></h3>
   <p>اگر kubelet را restart کنید،‏ Podها (و containerهایشان) حتی در طول restart به اجرا ادامه می‌دهند. وقتی Podهای در حال اجرا روی یک Node وجود دارند،‏ متوقف کردن یا restart کردن kubelet روی آن Node باعث <b>نمی‌شود</b> kubelet قبل از توقف خودش همه‌ی Podهای local را متوقف کند. برای متوقف کردن Podهای یک Node،‏ می‌توانید از <code>kubectl drain</code> استفاده کنید.</p>
@@ -1191,8 +1210,12 @@ pod "web-5d8f" force deleted
     <li>در کوبرنتیز 1.37 می‌توانید به رفتار legacy opt in کنید که در آن kubelet پس از restart همیشه مقدار <code>ready</code> containerها را به false تغییر می‌دهد.
       <p>این رفتار legacy برای مدت طولانی پیش‌فرض بود،‏ اما برای کاربران کوبرنتیز،‏ به‌ویژه در deploymentهای بزرگ‌مقیاس،‏ مشکل ایجاد می‌کرد. اگرچه feature gate اجازه‌ی بازگشت موقت به این رفتار legacy را می‌دهد،‏ پروژه‌ی کوبرنتیز توصیه می‌کند در صورت مواجهه با مشکل یک bug report ثبت کنید. feature gate <code>ChangeContainerStatusOnKubeletRestart</code> در آینده حذف خواهد شد.</p></li>
   </ul>
-  <div class="deep"><b>توضیح تکمیلی: هزینه‌ی رفتار قدیمی هنگام ارتقای kubelet</b><p>چرا رفتار legacy مشکل‌ساز بود؟ تصور کنید یک upgrade kubelet به‌صورت rolling روی ۵۰۰ Node انجام می‌شود. با رفتار قدیمی،‏ هر restart kubelet همه‌ی containerهای آن Node را لحظه‌ای not ready می‌کرد،‏ Podها از EndpointSliceها خارج و دوباره وارد می‌شدند و موجی از churn در kube-proxy و load balancerها و حتی خطای 5xx ایجاد می‌شد،‏ در حالی که containerها در تمام این مدت سالم و در حال اجرا بودند.</p></div>
   <p class="next">ادامه‌ی مطالعه (What's next صفحه‌ی Pod Lifecycle):‏ attaching handlers to container lifecycle events ·‏ configuring Liveness, Readiness and Startup Probes ·‏ container lifecycle hooks ·‏ sidecar containers ·‏ API reference <code>status</code> برای Pod.</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">هزینه‌ی رفتار قدیمی هنگام ارتقای kubelet</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: هزینه‌ی رفتار قدیمی هنگام ارتقای kubelet</b><p>چرا رفتار legacy مشکل‌ساز بود؟ تصور کنید یک upgrade kubelet به‌صورت rolling روی ۵۰۰ Node انجام می‌شود. با رفتار قدیمی،‏ هر restart kubelet همه‌ی containerهای آن Node را لحظه‌ای not ready می‌کرد،‏ Podها از EndpointSliceها خارج و دوباره وارد می‌شدند و موجی از churn در kube-proxy و load balancerها و حتی خطای 5xx ایجاد می‌شد،‏ در حالی که containerها در تمام این مدت سالم و در حال اجرا بودند.</p></div>
+  </details>
   <h3 id="ch3-a-pod-condition-page">جزئیات Pod conditionها <small>(Pod conditions)</small></h3>
   <p>در کوبرنتیز،‏ بسیاری از objectها condition دارند. conditionها نشانگرهایی برای برخی جنبه‌های state واقعی چیزی هستند که آن object نمایندگی می‌کند. Podها هم condition دارند،‏ و Pod conditionها جنبه‌ی مهمی از این هستند که controllerها (و افرادی که troubleshoot می‌کنند) چگونه می‌توانند سلامت یک Pod را درک کنند.</p>
   <p>phase یک Pod خلاصه‌ای سطح بالا از جایگاه Pod در lifecycle آن ارائه می‌دهد،‏ اما یک مقدار تکی نمی‌تواند کل تصویر را نشان دهد. برای مثال،‏ یک Pod ممکن است در phase <code>Running</code> باشد اما هنوز آماده‌ی serve کردن traffic نباشد. Pod conditionها phase را تکمیل می‌کنند با ردیابی چند جنبه از state Pod به‌طور مستقل،‏ مثل اینکه آیا schedule شده،‏ آیا containerهایش ready هستند،‏ آیا یک resize در حال انجام است،‏ یا آیا Pod در شرف disruption به‌خاطر یک taint است.</p>
@@ -1340,7 +1363,10 @@ status:
     <li>همه‌ی conditionهای مشخص‌شده در <code>readinessGates</code> برابر <code>True</code> هستند.</li>
   </ul>
   <p>وقتی containerهای یک Pod Ready هستند اما دست‌کم یک condition custom گم شده یا <code>False</code> است،‏ kubelet،‏ condition <code>Ready</code> Pod را روی <code>status: "False"</code> با <code>reason: ReadinessGatesNotReady</code> تنظیم می‌کند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">readiness gate در service mesh</span></summary>
   <div class="deep"><b>توضیح تکمیلی: readiness gate در service mesh</b><p>readiness gate ابزار استاندارد service mesh هاست: یک sidecar مثل Istio یا Linkerd باید قبل از اینکه traffic اصلی وارد Pod شود،‏ proxy خودش را آماده کرده و به control plane mesh متصل شده باشد. اگر فقط از <code>readinessProbe</code> container اصلی استفاده شود،‏ ممکن است traffic به Podی برسد که sidecar آن هنوز route نمی‌کند و درخواست‌ها با connection refused fail شوند. با یک readiness gate سفارشی (مثل <code>istio.io/sidecar-ready</code>)،‏ همان controller،‏ mesh مقدار condition را set می‌کند و Pod تا وقتی sidecar واقعاً آماده نباشد Ready نمی‌شود (خارج از مستندات رسمی).</p></div>
+  </details>
 
   <h3 id="ch3-a-probes-page">جزئیات probeها <small>(Container probes)</small></h3>
   <p>کوبرنتیز به شما اجازه می‌دهد <em>probe</em>ها تعریف کنید تا به‌طور مداوم سلامت containerهای درون یک Pod را monitor کنید. probe یک تشخیص است که به‌طور دوره‌ای توسط kubelet روی یک container انجام می‌شود. برای انجام یک تشخیص،‏ kubelet یا کدی را درون container اجرا می‌کند یا یک درخواست شبکه می‌فرستد.</p>
@@ -1556,6 +1582,9 @@ spec:
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.37 [alpha]</span> (پیش‌فرض: غیرفعال،‏ feature gate: <code>GRPCContainerProbeTLS</code>)</p>
   <p>می‌توانید یک gRPC probe را طوری پیکربندی کنید که روی TLS متصل شود با تنظیم فیلد <code>mode</code> روی <code>TLS</code>. وقتی <code>mode</code> روی <code>TLS</code> تنظیم شود،‏ kubelet از TLS با <code>InsecureSkipVerify</code> استفاده می‌کند (server certificate را تأیید نمی‌کند). <code>mode</code> پیش‌فرض <code>Plaintext</code> است. برای جزئیات بیشتر به Use TLS with gRPC probes (پایین‌تر در این فصل) مراجعه کنید.</p>
 
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جمع‌بندی سه نوع probe</span></summary>
   <div class="deep"><b>توضیح تکمیلی: جمع‌بندی سه نوع probe</b><p>جدول جمع‌بندی سه نوع probe،‏ برای مرجع سریع:</p>
     <div class="tbl"><table><thead><tr><th></th><th>Startup</th><th>Liveness</th><th>Readiness</th></tr></thead><tbody>
       <tr><td>هدف</td><td>تشخیص start شدن برنامه</td><td>تشخیص deadlock / گیر کردن</td><td>تشخیص آمادگی برای traffic</td></tr>
@@ -1564,6 +1593,7 @@ spec:
       <tr><td>successThreshold</td><td>باید ۱ باشد</td><td>باید ۱ باشد</td><td>می‌تواند بیشتر از ۱ باشد</td></tr>
     </tbody></table></div>
     <p>اشتباه بسیار رایج در production: تعریف یک liveness probe که به یک dependency خارجی (مثل database) وابسته است. اگر database برای چند دقیقه کند شود،‏ همه‌ی Podهای برنامه هم‌زمان liveness probe را fail می‌کنند و kubelet همه را restart می‌کند؛‏ این یک self-inflicted outage است،‏ دقیقاً همان cascading failureی که مستندات هشدار می‌دهند. قاعده: liveness فقط باید health خود process (نه dependencyها) را چک کند؛‏ readiness باید dependencyها را چک کند.</p></div>
+  </details>
   <h3 id="ch3-a-init-containers">Init containers</h3>
   <p>این بخش یک overview از init containerها ارائه می‌دهد: containerهای تخصصی‌ای که قبل از app containerها در یک Pod اجرا می‌شوند. init containerها می‌توانند شامل utilityها یا setup scriptهایی باشند که در image برنامه وجود ندارند.</p>
   <p>می‌توانید init containerها را در Pod specification در کنار آرایه‌ی <code>containers</code> (که app containerها را توصیف می‌کند) مشخص کنید.</p>
@@ -1763,7 +1793,10 @@ myapp-pod   1/1       Running   0          9m
     <li>همه‌ی containerهای یک Pod وقتی <code>restartPolicy</code> روی Always تنظیم شده terminate شوند،‏ که باعث یک restart اجباری می‌شود،‏ و رکورد completion init container به‌خاطر garbage collection از دست رفته باشد.</li>
   </ul>
   <p>Pod وقتی image init container تغییر کند،‏ یا رکورد completion init container به‌خاطر garbage collection از دست رفته باشد،‏ restart نخواهد شد. این برای Kubernetes v1.20 و بالاتر اعمال می‌شود. اگر از نسخه‌ای قدیمی‌تر از کوبرنتیز استفاده می‌کنید،‏ به مستندات همان نسخه مراجعه کنید.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">database migration با init container</span></summary>
   <div class="deep"><b>توضیح تکمیلی: database migration با init container</b><p>یک الگوی رایج و بسیار عملی در production: استفاده از init container برای اجرای database migration پیش از start شدن app container در یک Deployment با rolling update (جایگزینی تدریجی Podهای قدیمی با Podهای جدید بدون قطعی). چون init containerها sequential و blocking هستند،‏ می‌توانید مطمئن شوید migration دقیقاً یک‌بار (به‌ازای هر Pod جدید) و پیش از اینکه هر replica جدید traffic بگیرد اجرا شود. نکته‌ی مهم (خارج از مستندات رسمی): اگر چند replica هم‌زمان rolling update شوند،‏ هر Pod جدید init container migration خودش را دوباره اجرا می‌کند؛‏ پس کد migration باید idempotent باشد (مثلاً از <code>CREATE TABLE IF NOT EXISTS</code> یا ابزارهایی مثل Flyway/Liquibase که خودشان state migration را ردیابی می‌کنند استفاده کنید)،‏ وگرنه race condition بین چند init container هم‌زمان می‌تواند رخ دهد.</p></div>
+  </details>
 
   <h3 id="ch3-a-sidecar-containers">Sidecar containers</h3>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.33 [stable]</span> (feature gate سابق: <code>SidecarContainers</code>)</p>
@@ -1886,7 +1919,10 @@ spec:
 
   <h4>sidecar containerها و cgroupهای Linux <small>(Sidecar containers and Linux cgroups)</small></h4>
   <p>در Linux،‏ تخصیص منابع برای Pod level control groups (cgroupها) بر اساس effective request و limit Pod است،‏ همانند scheduler.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">native sidecar در service mesh</span></summary>
   <div class="deep"><b>توضیح تکمیلی: native sidecar در service mesh</b><p>مثال کلاسیک sidecar در production: یک Envoy proxy که به‌عنوان native sidecar (با <code>restartPolicy: Always</code>) در کنار هر Pod یک service mesh (مثل Istio) اجرا می‌شود. پیش از v1.29 (که native sidecar به‌طور پیش‌فرض فعال شد)،‏ Istio مجبور بود این sidecar را به‌عنوان یک container معمولی در <code>containers</code> تعریف کند،‏ که دو مشکل داشت: (۱) اگر Job آن Pod کامل می‌شد ولی sidecar هنوز در حال اجرا بود،‏ Job هرگز Completed نمی‌شد و container اصلی باید در پایان کار خودش با فراخوانی endpoint مربوط به <code>/quitquitquit</code> در pilot-agent،‏ proxy را متوقف می‌کرد،‏ (۲) ترتیب start شدن تضمین‌شده نبود،‏ پس traffic اولیه ممکن بود قبل از آماده شدن proxy به container اصلی برسد. با native sidecar،‏ هر دوی این مشکل‌ها حل شده‌اند: proxy تضمین‌شده قبل از container اصلی start می‌شود و پس از آن terminate می‌شود،‏ و Job بدون نیاز به هیچ workaroundی به‌درستی Completed می‌شود (خارج از مستندات رسمی).</p></div>
+  </details>
 
   <h3 id="ch3-a-configure-probes-task">پیکربندی liveness،‏ readiness و startup probe <small>(Configure Liveness, Readiness and Startup Probes)</small></h3>
   <p>این صفحه نشان می‌دهد چگونه liveness،‏ readiness و startup probeها را برای containerها پیکربندی کنید.</p>
@@ -2239,8 +2275,8 @@ kubectl delete pod -l app=checkout-api --field-selector=status.phase=Running | h
 watch -n1 "kubectl get pod -l app=checkout-api -o custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.conditions[3].status"
 </pre></div>
   </div>
-  <div id="ch3-ex1" class="ex">
-  <div class="ex-h">تمرین‌های فصل ۳،‏ بخش اول <small>۱۷ تمرین</small></div>
+  <details id="ch3-ex1" class="ex">
+  <summary class="ex-h">تمرین‌های فصل ۳،‏ بخش اول <small>۱۷ تمرین</small></summary>
   <ol>
     <li><span class="lvl l1">مفهومی</span>تفاوت بین <code>Pod phase</code> و condition <code>Ready</code> چیست؟ چرا ممکن است یک Pod در phase <code>Running</code> باشد اما <code>Ready=False</code>؟
       <details class="ans"><summary>پاسخ</summary><p><code>phase</code> یک خلاصه‌ی خیلی سطح‌بالا از جایگاه Pod در lifecycle است (Pending/Running/Succeeded/Failed/Unknown) و صرفاً نشان می‌دهد آیا containerها ساخته شده و دست‌کم یکی در حال اجراست. condition <code>Ready</code> جزئیات بیشتری می‌دهد: آیا همه‌ی containerها readiness probe خودشان را pass کرده‌اند و (در صورت وجود) همه‌ی <code>readinessGates</code> برقرار هستند. یک container می‌تواند کاملاً <code>Running</code> باشد اما هنوز warming up کردن cache یا اتصال به database را تمام نکرده باشد،‏ پس readinessProbe fail می‌شود و Pod در phase Running با <code>Ready=False</code> می‌ماند و از EndpointSlice خارج می‌شود.</p></details></li>
@@ -2358,7 +2394,7 @@ kubectl get pod checkout-api-xxxx -o jsonpath='{.status.conditions}' | jq .
       <p><b>علت ریشه‌ای (طبق مستندات):</b> وقتی یک Pod به‌خاطر preemption (بیرون کردن Podهای کم‌اولویت برای باز کردن جا برای Pod پراولویت) scheduler برای جا باز کردن یک Pod priority بالاتر حذف می‌شود،‏ کوبرنتیز یک condition اختصاصی <code>DisruptionTarget</code> با <code>reason: PreemptionByScheduler</code> به آن اضافه می‌کند — دقیقاً برخلاف failureی که readiness/liveness probe گزارش می‌دهد. این یعنی مشکل از سلامت برنامه‌ی checkout نبود؛‏ بلکه یک تصمیم scheduling بود که به‌خاطر priority پایین‌تر آن رخ داد.</p>
       <p><b>رفع/پیشگیری:</b> برای سرویس‌های حیاتی مثل checkout،‏ یا یک <code>PriorityClass</code> اختصاصی با priority بالاتر از workloadهای batch تعریف کنید،‏ یا یک <code>PodDisruptionBudget</code> (فصل ۹) تعریف کنید. scheduler هنگام انتخاب Podهای قربانی سعی می‌کند PDB را رعایت کند،‏ ولی این فقط best-effort است و اگر راه دیگری نباشد PDB نقض می‌شود؛‏ حفاظت اصلی همان priority بالاتر است. همچنین monitoring را طوری تنظیم کنید که eventهای <code>Preempted</code> را از crashهای واقعی جدا نشان دهد تا در آینده debugging سریع‌تر شود.</p></details></li>
   </ol>
-  </div>
+  </details>
 <!-- chapter 6 part b -->
 
   <h3 id="ch3-b-qos">QoS classهای Pod <small>(Pod Quality of Service Classes)</small></h3>
@@ -2399,17 +2435,6 @@ kubectl get pod checkout-api-xxxx -o jsonpath='{.status.conditions}' | jq .
   <p>kubelet در صورتی که Node تحت resource pressure قرار گیرد،‏ ترجیح می‌دهد Podهای <code>BestEffort</code> را evict کند.</p>
   <h4>معیارهای BestEffort <small>(Criteria)</small></h4>
   <p>یک Pod کلاس QoS <code>BestEffort</code> دارد اگر معیارهای هیچ‌کدام از <code>Guaranteed</code> یا <code>Burstable</code> را برآورده نکند. به بیان دیگر،‏ یک Pod فقط وقتی <code>BestEffort</code> است که هیچ‌یک از Containerهای آن memory limit یا memory request نداشته باشند،‏ هیچ‌یک CPU limit یا CPU request نداشته باشند،‏ و خود Pod هم هیچ Pod-level memory یا CPU limit یا request نداشته باشد. Containerهای یک Pod می‌توانند منابع دیگری (غیر از CPU و memory) را request کنند و همچنان <code>BestEffort</code> دسته‌بندی شوند.</p>
-
-  <div class="deep"><b>توضیح تکمیلی: جدول تصمیم QoS</b>
-    <p>الگوریتم را می‌توان به صورت یک درخت تصمیم ساده دید. دقت کنید که «همه‌ی Containerها» شامل init containerها هم می‌شود؛‏ QoS بر اساس کل Pod محاسبه می‌شود (این جزئیات در کد kubelet و در صفحه‌ی task «Configure Quality of Service for Pods» هم دیده می‌شود).</p>
-    <div class="tbl"><table><thead><tr><th>وضعیت Containerها</th><th>QoS class</th><th>ترتیب eviction در Node pressure</th></tr></thead><tbody>
-      <tr><td>همه‌ی Containerها هم CPU و هم memory دارند و request = limit</td><td><code>Guaranteed</code></td><td>آخر از همه</td></tr>
-      <tr><td>فقط limit تعیین شده (request تعیین نشده)؛‏ request به طور خودکار برابر limit می‌شود</td><td><code>Guaranteed</code> (اگر برای همه‌ی Containerها و هر دو منبع صادق باشد)</td><td>آخر از همه</td></tr>
-      <tr><td>حداقل یک request یا limit برای CPU یا memory،‏ اما شرط Guaranteed برقرار نیست</td><td><code>Burstable</code></td><td>بعد از BestEffort</td></tr>
-      <tr><td>هیچ request یا limit برای CPU و memory (حتی اگر <code>ephemeral-storage</code> یا extended resource داشته باشد)</td><td><code>BestEffort</code></td><td>اول از همه</td></tr>
-    </tbody></table></div>
-    <p>ردیف دوم رفتار defaulting در API است: اگر برای یک منبع فقط limit بنویسید و request ننویسید،‏ کوبرنتیز request را برابر limit قرار می‌دهد (این در صفحه‌ی manage-resources-containers آمده است؛‏ فصل ۶).</p>
-  </div>
 
   <div class="lab"><b>آزمایش عملی: دیدن QoS class سه Pod</b>
     <p>روی cluster k3s (یا هر cluster یادگیری دیگر) سه Pod بسازید:</p>
@@ -2457,6 +2482,20 @@ qos-guaranteed   Guaranteed
     <p>(خارج از مستندات رسمی) روی Node،‏ kubelet برای هر QoS class یک cgroup والد جداگانه می‌سازد؛‏ با cgroup driver از نوع <code>systemd</code> مسیرها معمولاً شبیه <code>/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/...</code> و <code>kubepods-besteffort.slice</code> هستند و Podهای Guaranteed مستقیم زیر <code>kubepods.slice</code> قرار می‌گیرند. همچنین kubelet برای هر container مقدار <code>oom_score_adj</code> را بر اساس QoS تنظیم می‌کند (Guaranteed برابر ‎-997،‏ BestEffort برابر 1000 و Burstable بین 3 تا 999 بر اساس نسبت memory request به ظرفیت Node) تا OOM killer kernel هم همین ترتیب را رعایت کند؛‏ این جزئیات در صفحه‌ی Node-pressure eviction آمده است (فصل ۹).</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جدول تصمیم QoS</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: جدول تصمیم QoS</b>
+    <p>الگوریتم را می‌توان به صورت یک درخت تصمیم ساده دید. دقت کنید که «همه‌ی Containerها» شامل init containerها هم می‌شود؛‏ QoS بر اساس کل Pod محاسبه می‌شود (این جزئیات در کد kubelet و در صفحه‌ی task «Configure Quality of Service for Pods» هم دیده می‌شود).</p>
+    <div class="tbl"><table><thead><tr><th>وضعیت Containerها</th><th>QoS class</th><th>ترتیب eviction در Node pressure</th></tr></thead><tbody>
+      <tr><td>همه‌ی Containerها هم CPU و هم memory دارند و request = limit</td><td><code>Guaranteed</code></td><td>آخر از همه</td></tr>
+      <tr><td>فقط limit تعیین شده (request تعیین نشده)؛‏ request به طور خودکار برابر limit می‌شود</td><td><code>Guaranteed</code> (اگر برای همه‌ی Containerها و هر دو منبع صادق باشد)</td><td>آخر از همه</td></tr>
+      <tr><td>حداقل یک request یا limit برای CPU یا memory،‏ اما شرط Guaranteed برقرار نیست</td><td><code>Burstable</code></td><td>بعد از BestEffort</td></tr>
+      <tr><td>هیچ request یا limit برای CPU و memory (حتی اگر <code>ephemeral-storage</code> یا extended resource داشته باشد)</td><td><code>BestEffort</code></td><td>اول از همه</td></tr>
+    </tbody></table></div>
+    <p>ردیف دوم رفتار defaulting در API است: اگر برای یک منبع فقط limit بنویسید و request ننویسید،‏ کوبرنتیز request را برابر limit قرار می‌دهد (این در صفحه‌ی manage-resources-containers آمده است؛‏ فصل ۶).</p>
+  </div>
+  </details>
+
   <h3 id="ch3-b-memqos">Memory QoS با cgroup v2 <small>(Memory QoS with cgroup v2)</small></h3>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.37 [beta]</span> (feature gate <code>MemoryQoS</code>،‏ به صورت پیش‌فرض فعال)</p>
   <p><a href="https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#memoryqos">Memory QoS</a> از memory controller در cgroup v2 استفاده می‌کند تا memory throttling و memory protection را در کوبرنتیز مدیریت کند. این قابلیت از QoS class یک Pod استفاده می‌کند تا تصمیم بگیرد کدام تنظیمات cgroup اعمال شود،‏ اما نحوه‌ی دسته‌بندی Podها را تغییر نمی‌دهد.</p>
@@ -2499,16 +2538,6 @@ memoryReservationPolicy: TieredReservation
   <h4>پیش‌نیازهای سیستم <small>(System requirements)</small></h4>
   <p>Memory QoS به Linux با cgroup v2 نیاز دارد. kernel نسخه‌ی 5.9 یا بالاتر توصیه می‌شود،‏ چون throttling با <code>memory.high</code> روی kernelهای قدیمی‌تر می‌تواند یک <a href="https://lore.kernel.org/all/20200710012662.GA29679@chep.ntu.edu.tw/">livelock bug</a> شناخته‌شده را فعال کند. اگر feature gate <code>MemoryQoS</code> روی kernel قدیمی‌تر فعال باشد،‏ kubelet هنگام شروع یک warning در log ثبت می‌کند.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: سه فایل cgroup v2 و معنای هر کدام</b>
-    <div class="tbl"><table><thead><tr><th>فایل cgroup v2</th><th>معنا</th><th>چه کسی در کوبرنتیز آن را تنظیم می‌کند</th></tr></thead><tbody>
-      <tr><td><code>memory.max</code></td><td>hard limit؛‏ عبور از آن به OOM kill منجر می‌شود</td><td>همیشه از <code>limits.memory</code> (مستقل از Memory QoS)</td></tr>
-      <tr><td><code>memory.high</code></td><td>آستانه‌ی throttling؛‏ با عبور از آن kernel فرایند را کند می‌کند و reclaim تهاجمی انجام می‌دهد،‏ اما kill نمی‌کند</td><td>فقط با <code>memoryThrottlingFactor</code> برای Burstable و BestEffort</td></tr>
-      <tr><td><code>memory.low</code></td><td>best-effort protection؛‏ kernel تا حد امکان این مقدار را reclaim نمی‌کند</td><td><code>TieredReservation</code> برای Burstable</td></tr>
-      <tr><td><code>memory.min</code></td><td>hard protection؛‏ kernel هرگز این مقدار را reclaim نمی‌کند</td><td><code>TieredReservation</code> برای Guaranteed</td></tr>
-    </tbody></table></div>
-    <p>مثال عددی: Nodeی با 8 GiB node allocatable و factor برابر 0.9. یک container Burstable با request برابر 512Mi و بدون limit مقدار <code>memory.high = 512Mi + 0.9 × (8192Mi − 512Mi) = 7424Mi</code> می‌گیرد. یک container BestEffort مقدار <code>0 + 0.9 × 8192Mi ≈ 7373Mi</code> می‌گیرد. پس throttling برای containerهای بدون limit فقط نزدیک به پر شدن کل Node فعال می‌شود؛‏ ارزش اصلی آن برای containerهایی است که limit دارند و قبل از OOM kill ابتدا کند می‌شوند و فرصت آزادسازی memory (مثلاً اجرای GC در JVM یا Go) پیدا می‌کنند.</p>
-  </div>
-
   <div class="lab"><b>آزمایش عملی: مشاهده‌ی memory.high در یک container (روی Node با cgroup v2)</b>
     <p>(خارج از مستندات رسمی؛‏ مسیر دقیق به cgroup driver بستگی دارد.) پس از اعمال پیکربندی <code>memoryThrottlingFactor: 0.9</code> و restart کردن kubelet،‏ یک Pod Burstable با request 256Mi و limit 1Gi بسازید و از درون container فایل cgroup را بخوانید (در cgroup v2 با cgroup namespace،‏ ریشه‌ی <code>/sys/fs/cgroup</code> داخل container همان cgroup خود container است):</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run memq --image=busybox:1.36 --restart=Never \
@@ -2521,6 +2550,19 @@ kubectl exec memq -- cat /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.high
     <p>عدد دوم حدود 947 MiB است (256 + 0.9 × 768 = 947.2 MiB؛‏ kernel آن را به مضرب اندازه‌ی page گرد می‌کند). بدون فعال بودن throttling،‏ <code>memory.high</code> مقدار <code>max</code> خواهد بود.</p>
   </div>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">سه فایل cgroup v2 و معنای هر کدام</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: سه فایل cgroup v2 و معنای هر کدام</b>
+    <div class="tbl"><table><thead><tr><th>فایل cgroup v2</th><th>معنا</th><th>چه کسی در کوبرنتیز آن را تنظیم می‌کند</th></tr></thead><tbody>
+      <tr><td><code>memory.max</code></td><td>hard limit؛‏ عبور از آن به OOM kill منجر می‌شود</td><td>همیشه از <code>limits.memory</code> (مستقل از Memory QoS)</td></tr>
+      <tr><td><code>memory.high</code></td><td>آستانه‌ی throttling؛‏ با عبور از آن kernel فرایند را کند می‌کند و reclaim تهاجمی انجام می‌دهد،‏ اما kill نمی‌کند</td><td>فقط با <code>memoryThrottlingFactor</code> برای Burstable و BestEffort</td></tr>
+      <tr><td><code>memory.low</code></td><td>best-effort protection؛‏ kernel تا حد امکان این مقدار را reclaim نمی‌کند</td><td><code>TieredReservation</code> برای Burstable</td></tr>
+      <tr><td><code>memory.min</code></td><td>hard protection؛‏ kernel هرگز این مقدار را reclaim نمی‌کند</td><td><code>TieredReservation</code> برای Guaranteed</td></tr>
+    </tbody></table></div>
+    <p>مثال عددی: Nodeی با 8 GiB node allocatable و factor برابر 0.9. یک container Burstable با request برابر 512Mi و بدون limit مقدار <code>memory.high = 512Mi + 0.9 × (8192Mi − 512Mi) = 7424Mi</code> می‌گیرد. یک container BestEffort مقدار <code>0 + 0.9 × 8192Mi ≈ 7373Mi</code> می‌گیرد. پس throttling برای containerهای بدون limit فقط نزدیک به پر شدن کل Node فعال می‌شود؛‏ ارزش اصلی آن برای containerهایی است که limit دارند و قبل از OOM kill ابتدا کند می‌شوند و فرصت آزادسازی memory (مثلاً اجرای GC در JVM یا Go) پیدا می‌کنند.</p>
+  </div>
+  </details>
+
   <h3 id="ch3-b-qos-indep">رفتارهای مستقل از QoS class <small>(Some behavior is independent of QoS class)</small></h3>
   <p>برخی رفتارها مستقل از QoS classی هستند که کوبرنتیز تعیین می‌کند. برای مثال:</p>
   <ul>
@@ -2530,6 +2572,10 @@ kubectl exec memq -- cat /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.high
     <li>kube-scheduler هنگام انتخاب Podهایی که باید <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#preemption">preempt</a> شوند،‏ QoS class را در نظر نمی‌گیرد. preemption زمانی رخ می‌دهد که cluster منابع کافی برای اجرای همه‌ی Podهایی که تعریف کرده‌اید نداشته باشد.</li>
     <li>QoS class هنگام ساخت Pod تعیین می‌شود و در طول عمر Pod بدون تغییر می‌ماند. اگر بعداً یک <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-resize">in-place resize</a> انجام دهید که به QoS class متفاوتی منجر شود،‏ resize توسط admission رد می‌شود.</li>
   </ul>
+  <p class="next">ادامه‌ی مطالعه: resource management for Pods and Containers (فصل ۶) · Node-pressure eviction و Pod priority and preemption (فصل ۹) · Pod disruptions ·‏ assign memory/CPU resources ·‏ configure Quality of Service for Pods</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">eviction در برابر preemption در برابر OOM kill</span></summary>
   <div class="deep"><b>توضیح تکمیلی: eviction در برابر preemption در برابر OOM kill</b>
     <p>این سه مفهوم اغلب با هم اشتباه گرفته می‌شوند:</p>
     <div class="tbl"><table><thead><tr><th>مکانیزم</th><th>چه کسی انجام می‌دهد</th><th>چه چیزی را در نظر می‌گیرد</th><th>نتیجه</th></tr></thead><tbody>
@@ -2539,7 +2585,7 @@ kubectl exec memq -- cat /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.high
     </tbody></table></div>
     <p>نکته‌ی آخر فهرست بالا در عمل مهم است: اگر مقدار <code>requests.memory</code> یک Pod Guaranteed را با in-place resize تغییر دهید ولی limit را تغییر ندهید،‏ QoS به Burstable تغییر می‌کند و درخواست resize رد می‌شود؛‏ باید request و limit را با هم تغییر دهید.</p>
   </div>
-  <p class="next">ادامه‌ی مطالعه: resource management for Pods and Containers (فصل ۶) · Node-pressure eviction و Pod priority and preemption (فصل ۹) · Pod disruptions ·‏ assign memory/CPU resources ·‏ configure Quality of Service for Pods</p>
+  </details>
 
   <h3 id="ch3-b-downward">Downward API</h3>
   <p>گاهی مفید است که یک container اطلاعاتی درباره‌ی خودش داشته باشد،‏ بدون اینکه بیش از حد به کوبرنتیز وابسته (coupled) شود. <i>downward API</i> به containerها اجازه می‌دهد اطلاعاتی درباره‌ی خودشان یا cluster را بدون استفاده از Kubernetes client یا API server مصرف کنند.</p>
@@ -2595,6 +2641,8 @@ kubectl exec memq -- cat /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.high
   <h4>مقدار جایگزین برای resource limitها <small>(Fallback information for resource limits)</small></h4>
   <p>اگر CPU و memory limit برای یک container تعیین نشده باشد و شما با downward API سعی کنید آن اطلاعات را در دسترس بگذارید،‏ kubelet به صورت پیش‌فرض بیشترین مقدار allocatable برای CPU و memory را بر اساس محاسبه‌ی <a href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable">node allocatable</a> ارائه می‌کند.</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا برخی fieldها فقط در env و برخی فقط در volume؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا برخی fieldها فقط در env و برخی فقط در volume؟</b>
     <ul>
       <li><b>fieldهای <code>status.*</code> و <code>spec.nodeName</code></b> فقط پس از schedule شدن Pod و تخصیص IP معلوم می‌شوند؛‏ kubelet هنگام ساخت container مقدار نهایی آن‌ها را دارد و در env قرار می‌دهد. این مقادیر در طول عمر Pod ثابت هستند،‏ پس نیازی به به‌روزرسانی پویا ندارند.</li>
@@ -2603,6 +2651,7 @@ kubectl exec memq -- cat /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.high
     </ul>
     <p><b>divisor:</b> در <code>resourceFieldRef</code> فیلد اختیاری <code>divisor</code> واحد خروجی را تعیین می‌کند (پیش‌فرض <code>‎1‎</code>: یعنی core برای CPU و byte برای memory). مقدار خروجی به سمت بالا گرد می‌شود؛‏ برای همین CPU request برابر <code>125m</code> با divisor پیش‌فرض عدد <code>‎1‎</code> نمایش داده می‌شود (در ادامه همین را در خروجی مستندات می‌بینید).</p>
   </div>
+  </details>
 
   <h3 id="ch3-b-dapi-volume">رساندن اطلاعات Pod به containerها با فایل <small>(Expose Pod Information to Containers Through Files)</small></h3>
   <p>این task نشان می‌دهد یک Pod چگونه می‌تواند با یک <a href="https://kubernetes.io/docs/concepts/storage/volumes/#downwardapi">volume از نوع <code>downwardAPI</code></a> اطلاعاتی درباره‌ی خودش را در اختیار containerهای در حال اجرا در Pod بگذارد. یک volume از نوع <code>downwardAPI</code> می‌تواند fieldهای Pod و fieldهای container را در دسترس بگذارد.</p>
@@ -2790,6 +2839,10 @@ spec:
 cat /etc/podinfo/cpu_limit
 </pre></div>
   <p>با دستورهای مشابه می‌توانید فایل‌های <code>cpu_request</code>،‏ <code>mem_limit</code> و <code>mem_request</code> را هم ببینید.</p>
+  <h4>مسیر و permission دلخواه برای هر key <small>(Project keys to specific paths and file permissions)</small></h4>
+  <p>می‌توانید keyها را روی مسیرهای مشخص و با permissionهای مشخص به صورت per-file project کنید. برای اطلاعات بیشتر <a href="https://kubernetes.io/docs/concepts/configuration/secret/">Secrets</a> را ببینید (فصل ۶).</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۲)</small> <span class="m-t">خروجی مورد انتظار · مثال path و mode</span></summary>
   <div class="deep"><b>توضیح تکمیلی: خروجی مورد انتظار</b>
     <p>با divisorهای <code>1m</code> و <code>1Mi</code>،‏ مقادیر به صورت زیر خواهند بود (logهای container هر ۵ ثانیه آن‌ها را چاپ می‌کنند):</p>
     <div class="code"><div class="lbl"><span>kubectl logs kubernetes-downwardapi-volume-example-2 --tail=4</span><button type="button">کپی</button></div><pre class="out">250
@@ -2799,9 +2852,6 @@ cat /etc/podinfo/cpu_limit
 </pre></div>
     <p>یعنی cpu_limit=250 (millicore)،‏ cpu_request=125،‏ mem_limit=64 (Mi) و mem_request=32. کاربرد واقعی: برنامه‌ای که باید اندازه‌ی thread pool یا heap را از limit خودش بفهمد (مثلاً <code>GOMAXPROCS</code> یا اندازه‌ی heap در JVM)،‏ به جای خواندن تعداد CPUهای کل Node (که داخل container گمراه‌کننده است)،‏ مقدار واقعی limit را از downward API می‌خواند.</p>
   </div>
-
-  <h4>مسیر و permission دلخواه برای هر key <small>(Project keys to specific paths and file permissions)</small></h4>
-  <p>می‌توانید keyها را روی مسیرهای مشخص و با permissionهای مشخص به صورت per-file project کنید. برای اطلاعات بیشتر <a href="https://kubernetes.io/docs/concepts/configuration/secret/">Secrets</a> را ببینید (فصل ۶).</p>
   <div class="deep"><b>توضیح تکمیلی: مثال path و mode</b>
     <p>هر item در volume از نوع downwardAPI،‏ علاوه بر <code>path</code>،‏ فیلد اختیاری <code>mode</code> (permission فایل) می‌پذیرد و خود volume فیلد <code>defaultMode</code> دارد (پیش‌فرض 0644). <code>path</code> می‌تواند شامل زیردایرکتوری باشد اما نباید مطلق باشد یا با <code>‎..‎</code> شروع شود:</p>
     <div class="code"><div class="lbl"><span>dapi-mode.yaml (بخشی از spec)</span><button type="button">کپی</button></div><pre class="yaml">  volumes:
@@ -2818,6 +2868,7 @@ cat /etc/podinfo/cpu_limit
           fieldPath: metadata.labels['team']
 </pre></div>
   </div>
+  </details>
 
   <h3 id="ch3-b-dapi-env">رساندن اطلاعات Pod به containerها با environment variable <small>(Expose Pod Information to Containers Through Environment Variables)</small></h3>
   <p>این task نشان می‌دهد یک Pod چگونه می‌تواند با environment variableها و با استفاده از <i>downward API</i> اطلاعاتی درباره‌ی خودش را در اختیار containerهای در حال اجرا در Pod بگذارد. می‌توانید با environment variableها fieldهای Pod،‏ fieldهای container،‏ یا هر دو را در دسترس قرار دهید.</p>
@@ -2970,20 +3021,6 @@ kubectl get pods
 33554432
 67108864
 </pre></div>
-  <div class="deep"><b>توضیح تکمیلی: چرا CPU برابر 1 است؟</b>
-    <p>در این manifest هیچ <code>divisor</code>ی تعیین نشده،‏ پس پیش‌فرض <code>‎1‎</code> (یعنی واحد core) استفاده می‌شود و مقدار به عدد صحیح بالاتر گرد می‌شود: <code>125m</code> و <code>250m</code> هر دو به <code>‎1‎</code> تبدیل می‌شوند. memory با divisor پیش‌فرض بر حسب byte است: <code>32Mi = 33554432</code> و <code>64Mi = 67108864</code>. اگر برنامه‌ی شما به مقدار دقیق CPU نیاز دارد،‏ <code>divisor: 1m</code> بگذارید تا <code>‎125‎</code> و <code>‎250‎</code> دریافت کنید.</p>
-    <p>(خارج از مستندات رسمی) الگوی رایج در production: تنظیم <code>GOMAXPROCS</code> برای برنامه‌های Go از <code>limits.cpu</code> با divisor پیش‌فرض (که به بالا گرد می‌شود،‏ پس حداقل 1 است) و تنظیم heap برنامه‌های Java یا Node.js از <code>limits.memory</code>.</p>
-    <div class="code"><div class="lbl"><span>env برای برنامه‌ی Go</span><button type="button">کپی</button></div><pre class="yaml">        env:
-        - name: GOMAXPROCS
-          valueFrom:
-            resourceFieldRef:
-              resource: limits.cpu      # containerName is optional in env; defaults to this container
-        - name: GOMEMLIMIT
-          valueFrom:
-            resourceFieldRef:
-              resource: limits.memory
-</pre></div>
-  </div>
   <div class="lab"><b>آزمایش عملی: برچسب زدن logها با نام Pod و Node</b>
     <p>ترکیب downward API با <a href="https://kubernetes.io/docs/tasks/inject-data-application/define-interdependent-environment-variables/">dependent environment variables</a> (سینتکس <code>$(VAR)</code>) اجازه می‌دهد یک مقدار ترکیبی بسازید:</p>
     <div class="code"><div class="lbl"><span>log-labels.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
@@ -3016,6 +3053,24 @@ kubectl logs log-labels --tail=1
   </div>
   <p class="next">ادامه‌ی مطالعه: downwardAPI volumes (فصل ۷) · Defining Environment Variables for a Container · مرجع API برای PodSpec،‏ Container،‏ EnvVar،‏ EnvVarSource،‏ ObjectFieldSelector،‏ ResourceFieldSelector،‏ Volume،‏ DownwardAPIVolumeSource و DownwardAPIVolumeFile</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا CPU برابر 1 است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: چرا CPU برابر 1 است؟</b>
+    <p>در این manifest هیچ <code>divisor</code>ی تعیین نشده،‏ پس پیش‌فرض <code>‎1‎</code> (یعنی واحد core) استفاده می‌شود و مقدار به عدد صحیح بالاتر گرد می‌شود: <code>125m</code> و <code>250m</code> هر دو به <code>‎1‎</code> تبدیل می‌شوند. memory با divisor پیش‌فرض بر حسب byte است: <code>32Mi = 33554432</code> و <code>64Mi = 67108864</code>. اگر برنامه‌ی شما به مقدار دقیق CPU نیاز دارد،‏ <code>divisor: 1m</code> بگذارید تا <code>‎125‎</code> و <code>‎250‎</code> دریافت کنید.</p>
+    <p>(خارج از مستندات رسمی) الگوی رایج در production: تنظیم <code>GOMAXPROCS</code> برای برنامه‌های Go از <code>limits.cpu</code> با divisor پیش‌فرض (که به بالا گرد می‌شود،‏ پس حداقل 1 است) و تنظیم heap برنامه‌های Java یا Node.js از <code>limits.memory</code>.</p>
+    <div class="code"><div class="lbl"><span>env برای برنامه‌ی Go</span><button type="button">کپی</button></div><pre class="yaml">        env:
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu      # containerName is optional in env; defaults to this container
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+</pre></div>
+  </div>
+  </details>
+
   <h3 id="ch3-b-ephemeral">Ephemeral Containers</h3>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.25 [stable]</span></p>
   <p>این بخش مروری بر ephemeral containerها ارائه می‌کند: نوع خاصی از container که به طور موقت در یک Pod موجود اجرا می‌شود تا کارهایی را که کاربر آغاز می‌کند،‏ مانند troubleshooting،‏ انجام دهد. از ephemeral containerها برای بررسی (inspect) سرویس‌ها استفاده می‌کنید،‏ نه برای ساختن برنامه‌ها.</p>
@@ -3040,17 +3095,6 @@ kubectl logs log-labels --tail=1
   <p>به طور خاص،‏ <a href="https://github.com/GoogleContainerTools/distroless">distroless image</a>ها به شما امکان می‌دهند container imageهای حداقلی deploy کنید که attack surface و در معرض bug و آسیب‌پذیری بودن را کاهش می‌دهند. چون distroless imageها shell یا هیچ ابزار debugging ندارند،‏ troubleshooting آن‌ها فقط با <code>kubectl exec</code> دشوار است.</p>
   <p>هنگام استفاده از ephemeral containerها،‏ فعال کردن <a href="#ch3-b-shareproc">process namespace sharing</a> مفید است تا بتوانید processهای سایر containerها را ببینید.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: ephemeral container در عمل</b>
-    <p>ابزار استاندارد برای افزودن ephemeral container دستور <code>kubectl debug</code> است (صفحه‌ی task «Debug Running Pods»؛‏ فصل ۱۱). این دستور subresource <code>ephemeralcontainers</code> را PATCH می‌کند. مقایسه با سایر انواع container:</p>
-    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>container معمولی</th><th>init container</th><th>ephemeral container</th></tr></thead><tbody>
-      <tr><td>افزودن پس از ساخت Pod</td><td>ممکن نیست</td><td>ممکن نیست</td><td>ممکن است (فقط با subresource)</td></tr>
-      <tr><td><code>resources</code></td><td>مجاز</td><td>مجاز</td><td>غیرمجاز</td></tr>
-      <tr><td><code>ports</code> و probeها</td><td>مجاز</td><td>probe غیرمجاز</td><td>غیرمجاز</td></tr>
-      <tr><td>restart خودکار</td><td>بر اساس restartPolicy</td><td>بر اساس restartPolicy</td><td>هرگز</td></tr>
-      <tr><td>حذف یا تغییر</td><td>ممکن نیست (جز image)</td><td>ممکن نیست</td><td>ممکن نیست؛‏ پس از پایان در status به صورت terminated باقی می‌ماند</td></tr>
-    </tbody></table></div>
-    <p>چون ephemeral container بعد از خروج هم در spec می‌ماند،‏ هر اجرای <code>kubectl debug</code> یک ورودی جدید به <code>spec.ephemeralContainers</code> اضافه می‌کند. از نظر امنیتی،‏ دسترسی به subresource <code>pods/ephemeralcontainers</code> در RBAC عملاً معادل توانایی اجرای کد دلخواه در Pod است و باید مانند <code>pods/exec</code> محدود شود (خارج از مستندات رسمی این صفحه).</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: debug کردن یک image بدون shell</b>
     <p>این مثال از صفحه‌ی Debug Running Pods گرفته شده است. یک Pod از image مربوط به pause بسازید که هیچ shell ندارد:</p>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run ephemeral-demo --image=registry.k8s.io/pause:3.1 --restart=Never
@@ -3074,6 +3118,21 @@ kubectl describe pod ephemeral-demo | sed -n '/Ephemeral Containers:/,/Condition
 </pre></div>
     <p>فایل سیستم container هدف از مسیر <code>/proc/1/root</code> در دسترس است (به شرطی که دسترسی لازم وجود داشته باشد).</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">ephemeral container در عمل</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: ephemeral container در عمل</b>
+    <p>ابزار استاندارد برای افزودن ephemeral container دستور <code>kubectl debug</code> است (صفحه‌ی task «Debug Running Pods»؛‏ فصل ۱۱). این دستور subresource <code>ephemeralcontainers</code> را PATCH می‌کند. مقایسه با سایر انواع container:</p>
+    <div class="tbl"><table><thead><tr><th>ویژگی</th><th>container معمولی</th><th>init container</th><th>ephemeral container</th></tr></thead><tbody>
+      <tr><td>افزودن پس از ساخت Pod</td><td>ممکن نیست</td><td>ممکن نیست</td><td>ممکن است (فقط با subresource)</td></tr>
+      <tr><td><code>resources</code></td><td>مجاز</td><td>مجاز</td><td>غیرمجاز</td></tr>
+      <tr><td><code>ports</code> و probeها</td><td>مجاز</td><td>probe غیرمجاز</td><td>غیرمجاز</td></tr>
+      <tr><td>restart خودکار</td><td>بر اساس restartPolicy</td><td>بر اساس restartPolicy</td><td>هرگز</td></tr>
+      <tr><td>حذف یا تغییر</td><td>ممکن نیست (جز image)</td><td>ممکن نیست</td><td>ممکن نیست؛‏ پس از پایان در status به صورت terminated باقی می‌ماند</td></tr>
+    </tbody></table></div>
+    <p>چون ephemeral container بعد از خروج هم در spec می‌ماند،‏ هر اجرای <code>kubectl debug</code> یک ورودی جدید به <code>spec.ephemeralContainers</code> اضافه می‌کند. از نظر امنیتی،‏ دسترسی به subresource <code>pods/ephemeralcontainers</code> در RBAC عملاً معادل توانایی اجرای کد دلخواه در Pod است و باید مانند <code>pods/exec</code> محدود شود (خارج از مستندات رسمی این صفحه).</p>
+  </div>
+  </details>
 
   <h3 id="ch3-b-shareproc">اشتراک process namespace بین containerهای Pod <small>(Share Process Namespace between Containers in a Pod)</small></h3>
   <p>این task نشان می‌دهد چگونه process namespace sharing را برای یک Pod پیکربندی کنید. وقتی process namespace sharing فعال باشد،‏ processهای یک container برای همه‌ی containerهای دیگر در همان Pod قابل مشاهده‌اند.</p>
@@ -3157,9 +3216,12 @@ events {
     <li><b>processها برای containerهای دیگر در Pod قابل مشاهده‌اند.</b> این شامل همه‌ی اطلاعات قابل مشاهده در <code>/proc</code> می‌شود،‏ مانند passwordهایی که به عنوان argument یا environment variable منتقل شده‌اند. این اطلاعات فقط با permissionهای معمول Unix محافظت می‌شوند.</li>
     <li><b>file system هر container از طریق link با نام <code>/proc/$pid/root</code> برای containerهای دیگر Pod قابل مشاهده است.</b> این کار debugging را آسان‌تر می‌کند،‏ اما به این معنا هم هست که secretهای موجود در filesystem فقط با permissionهای filesystem محافظت می‌شوند.</li>
   </ol>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">shareProcessNamespace در برابر kubectl debug --target</span></summary>
   <div class="deep"><b>توضیح تکمیلی: shareProcessNamespace در برابر kubectl debug --target</b>
     <p><code>shareProcessNamespace: true</code> یک تصمیم در زمان ساخت Pod است و همه‌ی containerها را در یک PID namespace قرار می‌دهد (با <code>/pause</code> به عنوان PID 1 که zombieها را هم reap می‌کند). در مقابل،‏ <code>kubectl debug --target=X</code> فقط ephemeral container را به PID namespace همان container هدف می‌برد و نیازی به تغییر spec و ساخت دوباره‌ی Pod ندارد؛‏ البته <code>--target</code> به پشتیبانی container runtime نیاز دارد و اگر پشتیبانی نشود،‏ ephemeral container در PID namespace جداگانه شروع می‌شود (طبق صفحه‌ی Debug Running Pods). در production معمولاً <code>shareProcessNamespace</code> را فقط برای الگوهای همکار عمداً فعال می‌کنند (مثلاً sidecarی که به process اصلی signal reload می‌فرستد) و برای debugging موردی از ephemeral container استفاده می‌کنند.</p>
   </div>
+  </details>
 
   <h3 id="ch3-b-static">Static Pods</h3>
   <p><i>Static Pod</i>ها مستقیماً توسط daemon مربوط به kubelet روی یک Node مشخص مدیریت می‌شوند،‏ بدون اینکه API server آن‌ها را observe کند. برخلاف Podهایی که توسط control plane مدیریت می‌شوند (برای مثال یک Deployment)،‏ kubelet هر static Pod را watch می‌کند و در صورت شکست آن را restart می‌کند.</p>
@@ -3180,6 +3242,8 @@ events {
   <p>اگر کوبرنتیز را به صورت clusterی اجرا می‌کنید و از static Podها برای اجرای یک Pod روی هر Node استفاده می‌کنید،‏ احتمالاً باید به جای آن از یک DaemonSet استفاده کنید (فصل ۴).</p>
   <p>static Podها توسط control plane مدیریت نمی‌شوند،‏ بنابراین نمی‌توان آن‌ها را با مکانیزم‌های استاندارد کوبرنتیز rollout،‏ rollback یا scale کرد. DaemonSetها این قابلیت‌ها را فراهم می‌کنند و روش توصیه‌شده برای اجرای workloadهای سطح Node هستند.</p>
   <p>static Podها توسط kubelet پیش از در دسترس بودن API server شروع می‌شوند،‏ که آن‌ها را برای bootstrapping کردن control plane componentها مناسب می‌کند. DaemonSetها به یک control plane در حال اجرا نیاز دارند.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">مقایسه‌ی static Pod و DaemonSet</span></summary>
   <div class="deep"><b>توضیح تکمیلی: مقایسه‌ی static Pod و DaemonSet</b>
     <div class="tbl"><table><thead><tr><th>ویژگی</th><th>static Pod</th><th>DaemonSet</th></tr></thead><tbody>
       <tr><td>منبع حقیقت (source of truth)</td><td>فایل روی disk Node (یا URL)</td><td>object در API server</td></tr>
@@ -3191,6 +3255,7 @@ events {
     </tbody></table></div>
     <p>چرا static Pod نمی‌تواند به ConfigMap ارجاع دهد؟ چون تمام هدف static Pod این است که بدون API server کار کند؛‏ اگر kubelet برای ساخت Pod به خواندن یک ConfigMap از API server نیاز داشت،‏ kube-apiserver هرگز نمی‌توانست خودش را bootstrap کند. به همین دلیل در kubeadm پیکربندی و certificateها با <code>hostPath</code> به static Podهای control plane داده می‌شوند.</p>
   </div>
+  </details>
 
   <h3 id="ch3-b-static-task">ساختن static Pod <small>(Create static Pods)</small></h3>
   <p>این task نشان می‌دهد چگونه روی یک Node،‏ <i>static Pod</i> بسازید. برای مروری بر اینکه static Podها چه هستند و چه زمانی استفاده می‌شوند،‏ بخش Static Pods در بالا را ببینید.</p>
@@ -3414,20 +3479,6 @@ spec:
   <div class="note"><b>نکته</b><p>اگر <code>hostnameOverride</code> تنظیم شده باشد،‏ نمی‌توانید هم‌زمان fieldهای <code>hostNetwork</code> و <code>setHostnameAsFQDN</code> را تنظیم کنید. API server صراحتاً هر درخواست create را که این ترکیب را داشته باشد رد می‌کند.</p></div>
   <p>برای جزئیات رفتار وقتی <code>hostnameOverride</code> همراه با سایر fieldها (hostname،‏ subdomain،‏ setHostnameAsFQDN،‏ hostNetwork) تنظیم شود،‏ جدول موجود در <a href="https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/4762-allow-arbitrary-fqdn-as-pod-hostname/README.md#design-details">KEP-4762 design details</a> را ببینید.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: جدول خلاصه‌ی hostname و FQDN (از دید درون Pod)</b>
-    <p>فرض: namespace برابر <code>prod</code> و cluster domain برابر <code>cluster.local</code>،‏ و Pod با نام <code>web-0</code>.</p>
-    <p>در جدول،‏ <code>F</code> کوتاه‌شده‌ی <code>web-0.web.prod.svc.cluster.local</code> است.</p>
-    <div class="tbl"><table><thead><tr><th>فیلدهای تنظیم‌شده</th><th><code>hostname</code></th><th><code>hostname --fqdn</code></th><th>رکورد DNS در cluster</th></tr></thead><tbody>
-      <tr><td>هیچ</td><td><code>web-0</code></td><td><code>web-0</code></td><td>ندارد</td></tr>
-      <tr><td><code>hostname: api</code></td><td><code>api</code></td><td><code>api</code></td><td>ندارد</td></tr>
-      <tr><td><code>hostname: web-0</code> و <code>subdomain: web</code>،‏ با headless Service به نام <code>web</code> (حالت Podهای StatefulSet)</td><td><code>web-0</code></td><td><code>F</code></td><td>A/AAAA برای <code>F</code></td></tr>
-      <tr><td>ردیف قبل به‌اضافه‌ی <code>setHostnameAsFQDN: true</code></td><td><code>F</code></td><td><code>F</code></td><td>A/AAAA برای <code>F</code></td></tr>
-      <tr><td>ردیف سوم به‌اضافه‌ی <code>hostnameOverride: db.example.com</code></td><td><code>db.example.com</code></td><td><code>db.example.com</code></td><td>همچنان <code>F</code></td></tr>
-    </tbody></table></div>
-    <p>اگر فقط <code>subdomain</code> تنظیم شود و <code>hostname</code> نه،‏ hostname داخل Pod همچنان FQDN دارد،‏ ولی DNS فقط رکورد خود headless Service را می‌سازد و رکوردی برای نام این Pod ساخته نمی‌شود.</p>
-    <p>چرا setHostnameAsFQDN؟ برخی نرم‌افزارهای قدیمی (مثلاً برخی سرویس‌های Kerberos یا برنامه‌هایی که از <code>gethostname()</code> برای ساخت شناسه‌ی cluster استفاده می‌کنند) انتظار دارند <code>hostname</code> خود FQDN باشد. چرا hostnameOverride؟ وقتی برنامه به hostnameی کاملاً دلخواه (خارج از الگوی DNS cluster) نیاز دارد؛‏ اما این مقدار در DNS cluster ثبت نمی‌شود،‏ پس دیگران نمی‌توانند با آن نام به Pod برسند مگر خودتان DNS را جداگانه تنظیم کنید.</p>
-    <p>محاسبه‌ی محدودیت 64: برای <code>web-0.web.prod.svc.cluster.local</code> طول 32 کاراکتر است؛‏ اما نام StatefulSetی مثل <code>payment-reconciliation-worker-12</code> با subdomain هم‌نام و namespace با نام <code>finance-production</code> به <code>payment-reconciliation-worker-12.payment-reconciliation-worker.finance-production.svc.cluster.local</code> (بیش از 90 کاراکتر) می‌رسد و با setHostnameAsFQDN در <code>ContainerCreating</code> گیر می‌کند.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: subdomain و setHostnameAsFQDN</b>
     <div class="code"><div class="lbl"><span>fqdn-demo.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: Service
@@ -3467,6 +3518,24 @@ Address 1: 10.244.1.7 busybox-1.busybox-subdomain.default.svc.cluster.local
 </pre></div>
     <p>setHostnameAsFQDN را حذف کنید و Pod را دوباره بسازید؛‏ این بار <code>hostname</code> فقط <code>busybox-1</code> را برمی‌گرداند.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">جدول خلاصه‌ی hostname و FQDN (از دید درون Pod)</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: جدول خلاصه‌ی hostname و FQDN (از دید درون Pod)</b>
+    <p>فرض: namespace برابر <code>prod</code> و cluster domain برابر <code>cluster.local</code>،‏ و Pod با نام <code>web-0</code>.</p>
+    <p>در جدول،‏ <code>F</code> کوتاه‌شده‌ی <code>web-0.web.prod.svc.cluster.local</code> است.</p>
+    <div class="tbl"><table><thead><tr><th>فیلدهای تنظیم‌شده</th><th><code>hostname</code></th><th><code>hostname --fqdn</code></th><th>رکورد DNS در cluster</th></tr></thead><tbody>
+      <tr><td>هیچ</td><td><code>web-0</code></td><td><code>web-0</code></td><td>ندارد</td></tr>
+      <tr><td><code>hostname: api</code></td><td><code>api</code></td><td><code>api</code></td><td>ندارد</td></tr>
+      <tr><td><code>hostname: web-0</code> و <code>subdomain: web</code>،‏ با headless Service به نام <code>web</code> (حالت Podهای StatefulSet)</td><td><code>web-0</code></td><td><code>F</code></td><td>A/AAAA برای <code>F</code></td></tr>
+      <tr><td>ردیف قبل به‌اضافه‌ی <code>setHostnameAsFQDN: true</code></td><td><code>F</code></td><td><code>F</code></td><td>A/AAAA برای <code>F</code></td></tr>
+      <tr><td>ردیف سوم به‌اضافه‌ی <code>hostnameOverride: db.example.com</code></td><td><code>db.example.com</code></td><td><code>db.example.com</code></td><td>همچنان <code>F</code></td></tr>
+    </tbody></table></div>
+    <p>اگر فقط <code>subdomain</code> تنظیم شود و <code>hostname</code> نه،‏ hostname داخل Pod همچنان FQDN دارد،‏ ولی DNS فقط رکورد خود headless Service را می‌سازد و رکوردی برای نام این Pod ساخته نمی‌شود.</p>
+    <p>چرا setHostnameAsFQDN؟ برخی نرم‌افزارهای قدیمی (مثلاً برخی سرویس‌های Kerberos یا برنامه‌هایی که از <code>gethostname()</code> برای ساخت شناسه‌ی cluster استفاده می‌کنند) انتظار دارند <code>hostname</code> خود FQDN باشد. چرا hostnameOverride؟ وقتی برنامه به hostnameی کاملاً دلخواه (خارج از الگوی DNS cluster) نیاز دارد؛‏ اما این مقدار در DNS cluster ثبت نمی‌شود،‏ پس دیگران نمی‌توانند با آن نام به Pod برسند مگر خودتان DNS را جداگانه تنظیم کنید.</p>
+    <p>محاسبه‌ی محدودیت 64: برای <code>web-0.web.prod.svc.cluster.local</code> طول 32 کاراکتر است؛‏ اما نام StatefulSetی مثل <code>payment-reconciliation-worker-12</code> با subdomain هم‌نام و namespace با نام <code>finance-production</code> به <code>payment-reconciliation-worker-12.payment-reconciliation-worker.finance-production.svc.cluster.local</code> (بیش از 90 کاراکتر) می‌رسد و با setHostnameAsFQDN در <code>ContainerCreating</code> گیر می‌کند.</p>
+  </div>
+  </details>
 
   <h3 id="ch3-b-userns">user namespaceها <small>(User Namespaces)</small></h3>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.36 [stable]</span> (feature gate <code>UserNamespacesSupport</code>،‏ همیشه فعال)</p>
@@ -3590,9 +3659,12 @@ userNamespaces:
 </pre></div>
   <p>مقدار <code>idsPerPod</code> (از نوع uint32) باید مضربی از 65536 باشد. مقدار پیش‌فرض 65536 است. این مقدار فقط برای containerهایی اعمال می‌شود که پس از شروع kubelet با این <code>KubeletConfiguration</code> ساخته شوند. containerهای در حال اجرا تحت تأثیر این پیکربندی قرار نمی‌گیرند.</p>
   <p>در کوبرنتیز پیش از v1.33،‏ تعداد ID برای هر Pod به صورت hard-coded برابر 65536 بود.</p>
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">حساب بازه‌ها</span></summary>
   <div class="deep"><b>توضیح تکمیلی: حساب بازه‌ها</b>
     <p>با <code>idsPerPod: 1048576</code> (یعنی 16 × 65536) و <code>maxPods: 110</code>،‏ بازه‌ی subordinate برای کاربر kubelet باید دست‌کم <code>‎1048576 × 110 = 115343360‎</code> ID باشد؛‏ مثلاً <code>kubelet:65536:115343360</code>. قانون «count دست‌کم 65536 × maxPods» در بخش قبل برای حالت پیش‌فرض است؛‏ منطقاً هر Pod به اندازه‌ی idsPerPod ID مصرف می‌کند (استنتاج از مستندات). چه زمانی idsPerPod بزرگ‌تر لازم است؟ وقتی image فایل‌هایی با UID بالاتر از 65535 دارد (مثلاً برخی imageهای سازمانی که کاربرانی با UID برابر 100000 دارند)؛‏ در حالت پیش‌فرض آن فایل‌ها به صورت overflow ID (65534) و غیرقابل تغییر دیده می‌شوند.</p>
   </div>
+  </details>
 
   <h3 id="ch3-b-userns-psa">تعامل با Pod Security Admission <small>(Integration with Pod security admission checks)</small></h3>
   <p>برای Podهای Linux که user namespace را فعال می‌کنند،‏ کوبرنتیز اعمال <a href="https://kubernetes.io/docs/concepts/security/pod-security-standards">Pod Security Standards</a> را به شکلی کنترل‌شده آسان‌تر می‌کند (فصل ۱۴).</p>
@@ -3640,6 +3712,10 @@ userNamespaces:
     <li><code>started_user_namespaced_pods_total</code>: یک counter که تعداد Podهای user namespaced را که برای ساختشان تلاش شده دنبال می‌کند.</li>
     <li><code>started_user_namespaced_pods_errors_total</code>: یک counter که تعداد خطاها در ساخت Podهای user namespaced را دنبال می‌کند.</li>
   </ul>
+  <p class="next">ادامه‌ی مطالعه: Use a User Namespace With a Pod ·‏ Pod Security Standards (فصل ۱۴) · DNS for Services and Pods (فصل ۵)</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">یک alert عملی</span></summary>
   <div class="deep"><b>توضیح تکمیلی: یک alert عملی</b>
     <p>(خارج از مستندات رسمی) با ترکیب این دو counter می‌توان نرخ شکست را پایش کرد،‏ مثلاً یک rule در Prometheus:</p>
     <div class="code"><div class="lbl"><span>PromQL</span><button type="button">کپی</button></div><pre class="out">sum by (node) (rate(kubelet_started_user_namespaced_pods_errors_total[15m]))
@@ -3647,7 +3723,7 @@ userNamespaces:
 </pre></div>
     <p>نام دقیق metric پس از scrape ممکن است پیشوند <code>kubelet_</code> داشته باشد؛‏ آن را در endpoint مربوط به <code>/metrics</code> در kubelet بررسی کنید. افزایش این counter پس از ارتقای kernel یا اضافه شدن یک StorageClass جدید (مثلاً NFS) نشانه‌ی مشکل پشتیبانی idmap mount است.</p>
   </div>
-  <p class="next">ادامه‌ی مطالعه: Use a User Namespace With a Pod ·‏ Pod Security Standards (فصل ۱۴) · DNS for Services and Pods (فصل ۵)</p>
+  </details>
 
   <h3 id="ch3-b-advanced">پیکربندی پیشرفته‌ی Pod <small>(Advanced Pod Configuration)</small></h3>
   <p>این بخش موضوعات پیشرفته‌ی پیکربندی Pod را پوشش می‌دهد،‏ شامل PriorityClassها،‏ RuntimeClassها،‏ security context درون Podها،‏ و مقدمه‌ای بر جنبه‌های scheduling.</p>
@@ -3686,9 +3762,12 @@ spec:
   </ul>
   <p>برای اطلاعات بیشتر،‏ Pod Priority and Preemption را ببینید (فصل ۹).</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا PriorityClass به جای عدد خام؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا PriorityClass به جای عدد خام؟</b>
     <p>اگر <code>.spec.priority</code> مستقیماً قابل تنظیم بود،‏ هر کاربر عادی می‌توانست هر عددی بدهد و به‌راحتی مهم‌ترین workloadهای cluster را preempt کند. با میانجی‌گری PriorityClass،‏ مقادیر مجاز را مدیر cluster تعریف می‌کند و می‌تواند استفاده از PriorityClassهای پراولویت را با ResourceQuota و <code>scopeSelector</code> یا با یک admission policy (مثل ValidatingAdmissionPolicy) به namespaceهای مشخص محدود کند (RBAC به‌تنهایی این کار را نمی‌کند،‏ چون نوشتن <code>priorityClassName</code> در Pod فعل جداگانه‌ای ندارد)،‏ در حالی که خود Pod فقط یک نام رشته‌ای را ارجاع می‌دهد. مقدار <code>globalDefault: true</code> روی یک PriorityClass یعنی هر Podی که <code>priorityClassName</code> ندارد به طور خودکار این priority را می‌گیرد؛‏ فقط یک PriorityClass می‌تواند <code>globalDefault: true</code> داشته باشد. در production معمول است یک نردبان کوچک از priority class تعریف کنید،‏ مثلاً <code>system-node-critical</code> (بالاترین) &gt; <code>system-cluster-critical</code> &gt; <code>business-critical</code> (مثلاً 9000،‏ برای پرداخت و checkout) &gt; <code>default</code> (مثلاً 0) &gt; <code>best-effort-batch</code> (مثلاً منفی،‏ برای jobهای batch که باید اول preempt شوند).</p>
   </div>
+  </details>
 
   <h3 id="ch3-b-runtimeclasses">RuntimeClasses</h3>
   <p>یک <i>RuntimeClass</i> به شما امکان می‌دهد container runtime سطح پایین یک Pod را مشخص کنید. این وقتی مفید است که بخواهید برای انواع مختلف Pod،‏ container runtimeهای متفاوتی مشخص کنید،‏ مثلاً وقتی به سطوح isolation یا ویژگی‌های runtime متفاوتی نیاز دارید.</p>
@@ -3708,9 +3787,12 @@ spec:
   <p>مدیر cluster (cluster administrator) runtimeهای واقعی‌ای را که پشت RuntimeClass قرار دارند نصب و پیکربندی می‌کند. آن‌ها می‌توانند آن پیکربندی container runtime خاص را روی همه‌ی Nodeها یا شاید فقط روی برخی از آن‌ها راه‌اندازی کنند.</p>
   <p>برای اطلاعات بیشتر،‏ مستندات RuntimeClass را ببینید (فصل ۲).</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">کاربردهای رایج RuntimeClass</span></summary>
   <div class="deep"><b>توضیح تکمیلی: کاربردهای رایج RuntimeClass</b>
     <p>رایج‌ترین کاربرد RuntimeClass اجرای workloadهای غیرقابل‌اعتماد (untrusted) با یک runtime مبتنی بر sandboxing سبک‌وزن مانند <a href="https://gvisor.dev/">gVisor</a> یا <a href="https://katacontainers.io/">Kata Containers</a> است،‏ در کنار workloadهای معمولی که با <code>runc</code> استاندارد اجرا می‌شوند. یک RuntimeClass با <code>handler</code>ی که به gVisor اشاره می‌کند روی یک node pool جداگانه (که containerd آن با handler مربوط به gVisor پیکربندی شده) نصب می‌شود؛‏ سپس فقط Podهایی که <code>runtimeClassName</code> مربوطه را دارند به آن node pool،‏ schedule می‌شوند (این ترکیب معمولاً با taint/toleration یا nodeSelector روی همان node pool انجام می‌شود،‏ چون خود RuntimeClass به تنهایی Podها را به یک Node خاص محدود نمی‌کند مگر <code>scheduling.nodeSelector</code> در تعریف RuntimeClass تنظیم شود).</p>
   </div>
+  </details>
 
   <h3 id="ch3-b-security-context">security context در سطح Pod و container <small>(Pod and container level security context configuration)</small></h3>
   <p>field <code>Security context</code> در spec مربوط به Pod،‏ کنترل ریزدانه (granular) روی تنظیمات امنیتی برای Podها و containerها فراهم می‌کند.</p>
@@ -3766,9 +3848,6 @@ spec:
   <div class="warn"><b>هشدار</b><p>می‌توانید از <code>securityContext</code> مربوط به Pod برای فعال کردن <a href="https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/#privileged-containers">حالت privileged</a> در containerهای Linux هم استفاده کنید. حالت privileged بسیاری از سایر تنظیمات امنیتی موجود در <code>securityContext</code> را override می‌کند. از این تنظیم اجتناب کنید مگر اینکه نتوانید permissionهای معادل را با استفاده از سایر fieldهای <code>securityContext</code> اعطا کنید. می‌توانید containerهای Windows را هم به شکلی مشابه در حالت privileged اجرا کنید،‏ با تنظیم flag <code>windowsOptions.hostProcess</code> روی security context در سطح Pod. برای جزئیات و دستورالعمل،‏ به Create a Windows HostProcess Pod مراجعه کنید.</p></div>
   <p>برای اطلاعات بیشتر،‏ Configure a Security Context for a Pod or Container را ببینید (فصل ۱۴).</p>
 
-  <div class="deep"><b>توضیح تکمیلی: ترکیب سطح Pod و سطح container</b>
-    <p>وقتی هم <code>securityContext</code> در سطح Pod و هم در سطح container تنظیم شوند،‏ مقدار سطح container برای همان field روی همان container اولویت دارد (override می‌شود)؛‏ fieldهایی که فقط در سطح Pod معنا دارند (مانند <code>fsGroup</code>،‏ که مالکیت گروهی volumeها را کنترل می‌کند) در سطح container اصلاً وجود ندارند. یک الگوی رایج در production این است که <code>runAsNonRoot: true</code>،‏ <code>seccompProfile: RuntimeDefault</code> و <code>capabilities.drop: [ALL]</code> را در سطح Pod (یا حتی به صورت یکسان روی همه‌ی containerها) تنظیم کنید تا هیچ containerی به‌طور تصادفی از این محدودیت‌های پایه معاف نماند؛‏ این معادل چیزی است که Pod Security Standard از نوع Restricted الزام می‌کند (فصل ۱۴).</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: مشاهده‌ی اثر runAsUser و fsGroup</b>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f security-context-demo.yaml
 kubectl exec security-context-demo -- id
@@ -3777,6 +3856,13 @@ kubectl exec security-context-demo -- id
 </pre></div>
     <p>اگر این Pod یک volume هم داشت،‏ فایل‌های آن volume با group ID برابر 2000 (مقدار <code>fsGroup</code>) قابل نوشتن می‌بودند،‏ حتی اگر process با uid=1000 اجرا شود.</p>
   </div>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">ترکیب سطح Pod و سطح container</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: ترکیب سطح Pod و سطح container</b>
+    <p>وقتی هم <code>securityContext</code> در سطح Pod و هم در سطح container تنظیم شوند،‏ مقدار سطح container برای همان field روی همان container اولویت دارد (override می‌شود)؛‏ fieldهایی که فقط در سطح Pod معنا دارند (مانند <code>fsGroup</code>،‏ که مالکیت گروهی volumeها را کنترل می‌کند) در سطح container اصلاً وجود ندارند. یک الگوی رایج در production این است که <code>runAsNonRoot: true</code>،‏ <code>seccompProfile: RuntimeDefault</code> و <code>capabilities.drop: [ALL]</code> را در سطح Pod (یا حتی به صورت یکسان روی همه‌ی containerها) تنظیم کنید تا هیچ containerی به‌طور تصادفی از این محدودیت‌های پایه معاف نماند؛‏ این معادل چیزی است که Pod Security Standard از نوع Restricted الزام می‌کند (فصل ۱۴).</p>
+  </div>
+  </details>
 
   <h3 id="ch3-b-scheduling-influence">اثرگذاری بر تصمیم scheduling <small>(Influencing Pod scheduling decisions)</small></h3>
   <p>کوبرنتیز چندین سازوکار برای کنترل اینکه Podهای شما روی کدام Nodeها schedule می‌شوند فراهم می‌کند.</p>
@@ -3857,6 +3943,8 @@ spec:
 </pre></div>
   <p>برای اطلاعات بیشتر،‏ Assign Pods to Nodes را ببینید (فصل ۹).</p>
 
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">nodeSelector در برابر node affinity در برابر affinity/anti-affinity</span></summary>
   <div class="deep"><b>توضیح تکمیلی: nodeSelector در برابر node affinity در برابر affinity/anti-affinity</b>
     <div class="tbl"><table><thead><tr><th>مکانیزم</th><th>بیان‌پذیری</th><th>required/preferred</th><th>مبتنی بر</th></tr></thead><tbody>
       <tr><td><code>nodeSelector</code></td><td>فقط AND ساده روی label برابری</td><td>همیشه required (سخت‌گیرانه)</td><td>label مربوط به Node</td></tr>
@@ -3866,6 +3954,7 @@ spec:
     </tbody></table></div>
     <p>یک تفاوت مهم مفهومی: affinity/nodeSelector «جذب» است (Pod به سمت Node می‌رود)،‏ در حالی که taint/toleration «دفع» است (Node،‏ Podهای بدون toleration را دفع می‌کند). این دو معمولاً با هم ترکیب می‌شوند: مثلاً یک node pool با GPU را <code>taint</code> می‌زنید تا Podهای معمولی رویش نروند،‏ و همزمان روی Podهای نیازمند GPU هم <code>toleration</code> متناظر و هم <code>nodeAffinity</code> (برای اطمینان از اینکه واقعاً روی همان Nodeها می‌روند،‏ نه فقط مجاز به رفتن) قرار می‌دهید؛‏ چون toleration (اجازه‌ی Pod برای قرار گرفتن روی Node دارای taint) به تنهایی فقط اجازه می‌دهد،‏ مجبور نمی‌کند.</p>
   </div>
+  </details>
 
   <h3 id="ch3-b-pod-overhead">Pod overhead</h3>
   <p>Pod overhead به شما امکان می‌دهد منابعی را که زیرساخت (infrastructure) خود Pod،‏ علاوه بر requestها و limitهای container،‏ مصرف می‌کند به حساب بیاورید.</p>
@@ -3897,10 +3986,14 @@ spec:
         memory: "128Mi"
         cpu: "500m"
 </pre></div>
+  <p class="next">ادامه‌ی مطالعه: Pod Priority and Preemption ·‏ RuntimeClass ·‏ Configure a Security Context for a Pod or Container (فصل ۱۴) · Assign Pods to Nodes (فصل ۹) · Pod Overhead (فصل ۹)</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">چرا Pod overhead لازم است؟</span></summary>
   <div class="deep"><b>توضیح تکمیلی: چرا Pod overhead لازم است؟</b>
     <p>runtimeهای sandboxed مانند Kata Containers یا gVisor برای هر Pod یک VM سبک یا لایه‌ی sandbox اضافی اجرا می‌کنند که خودش CPU و memory مصرف می‌کند؛‏ این مصرف جدا از resource requestهای خود containerهاست. اگر scheduler این overhead را نادیده بگیرد،‏ ممکن است Node را بیش از ظرفیت واقعی‌اش overcommit کند. با تعریف <code>overhead.podFixed</code> روی RuntimeClass،‏ مقدار overhead به resource requestهای Pod برای تصمیم scheduling <b>اضافه</b> می‌شود (مثلاً در مثال بالا،‏ برای scheduling این Pod عملاً <code>64Mi + 2Gi</code> memory و <code>250m + 500m</code> CPU لحاظ می‌شود)،‏ هرچند مقدار نمایش‌داده‌شده در <code>kubectl describe pod</code> برای هر container همان requestهای تعریف‌شده در spec containerها باقی می‌ماند و overhead جداگانه در فیلد <code>spec.overhead</code> Pod دیده می‌شود (آن را RuntimeClass admission controller هنگام ساخت Pod پر می‌کند). همین مقدار در ResourceQuota و در اندازه‌ی cgroup سطح Pod هم حساب می‌شود.</p>
   </div>
-  <p class="next">ادامه‌ی مطالعه: Pod Priority and Preemption ·‏ RuntimeClass ·‏ Configure a Security Context for a Pod or Container (فصل ۱۴) · Assign Pods to Nodes (فصل ۹) · Pod Overhead (فصل ۹)</p>
+  </details>
 
   <h3 id="ch3-b-scheduling-group">scheduling group برای Pod <small>(Pod Scheduling Group)</small></h3>
   <p><span class="fs">وضعیت قابلیت: Kubernetes v1.37 [beta]</span> (feature gate <code>GenericWorkload</code>،‏ به صورت پیش‌فرض غیرفعال)</p>
@@ -3935,9 +4028,6 @@ spec:
   <p>اگر یک <code>Pod</code> به یک <code>PodGroup</code>ی ارجاع دهد که هنوز وجود ندارد،‏ آن <code>Pod</code> در وضعیت pending باقی می‌ماند. به طور مشابه،‏ اگر <code>PodGroup</code> مورد ارجاع یک <code>CompositePodGroup</code> والد (از طریق <code>spec.parentCompositePodGroupName</code>) مشخص کند که هنوز ساخته نشده،‏ scheduling شروع نمی‌شود و <code>Pod</code> تا زمانی که کل سلسله‌مراتب گروه در cluster وجود داشته باشد pending می‌ماند.</p>
   <p>scheduler به طور خودکار،‏ به‌محض اینکه همه‌ی منابع لازم از نوع <code>PodGroup</code> و <code>CompositePodGroup</code> وجود داشته باشند،‏ دوباره آن <code>Pod</code> را بررسی می‌کند.</p>
 
-  <div class="deep"><b>توضیح تکمیلی: gang scheduling چرا لازم است؟</b>
-    <p>در workloadهای توزیع‌شده‌ای مانند training مربوط به machine learning با MPI یا all-reduce،‏ یک job فقط وقتی مفید است که <b>همه‌ی</b> workerهایش هم‌زمان اجرا شوند؛‏ اگر فقط نیمی از workerها schedule شوند،‏ آن‌ها منتظر بقیه می‌مانند و منابع را بدون پیشرفت واقعی اشغال می‌کنند (این می‌تواند به deadlock منابع هم منجر شود: job A نیمی از Nodeها را می‌گیرد و منتظر نیمه‌ی دیگر می‌ماند که توسط job B اشغال شده که آن هم منتظر است).‏ PodGroup با policy از نوع <code>gang</code> این مشکل را حل می‌کند: scheduler یا همه‌ی <code>minCount</code> Pod گروه را با هم bind می‌کند یا هیچ‌کدام را،‏ و اگر منابع کافی نباشد آن‌ها را رها می‌کند تا جای دیگری فضا باز شود. این مفهوم پیش از این feature هم با ابزارهایی مانند Kueue یا Volcano (خارج از مستندات رسمی این صفحه) در اکوسیستم کوبرنتیز پیاده‌سازی می‌شد؛‏ <code>schedulingGroup</code> و <code>PodGroup</code> نسخه‌ی built-in و native این الگو در خود API هسته‌ی کوبرنتیز هستند.</p>
-  </div>
   <div class="lab"><b>آزمایش عملی: مشاهده‌ی Pod در حالت pending به دلیل PodGroup مفقود</b>
     <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f worker-pod.yaml
 kubectl get pod worker-0 -n some-ns
@@ -3954,6 +4044,13 @@ Events:
     <p>پس از ساخت PodGroup با نام <code>training-worker-0</code> در همان namespace (فصل ۴،‏ مبحث PodGroup API)،‏ scheduler دوباره این Pod را در نظر می‌گیرد و آن را طبق policy مربوطه schedule می‌کند.</p>
   </div>
   <p class="next">ادامه‌ی مطالعه: PodGroup API ·‏ CompositePodGroup API ·‏ PodGroup scheduling policies ·‏ gang scheduling</p>
+
+  <details class="more">
+  <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">gang scheduling چرا لازم است؟</span></summary>
+  <div class="deep"><b>توضیح تکمیلی: gang scheduling چرا لازم است؟</b>
+    <p>در workloadهای توزیع‌شده‌ای مانند training مربوط به machine learning با MPI یا all-reduce،‏ یک job فقط وقتی مفید است که <b>همه‌ی</b> workerهایش هم‌زمان اجرا شوند؛‏ اگر فقط نیمی از workerها schedule شوند،‏ آن‌ها منتظر بقیه می‌مانند و منابع را بدون پیشرفت واقعی اشغال می‌کنند (این می‌تواند به deadlock منابع هم منجر شود: job A نیمی از Nodeها را می‌گیرد و منتظر نیمه‌ی دیگر می‌ماند که توسط job B اشغال شده که آن هم منتظر است).‏ PodGroup با policy از نوع <code>gang</code> این مشکل را حل می‌کند: scheduler یا همه‌ی <code>minCount</code> Pod گروه را با هم bind می‌کند یا هیچ‌کدام را،‏ و اگر منابع کافی نباشد آن‌ها را رها می‌کند تا جای دیگری فضا باز شود. این مفهوم پیش از این feature هم با ابزارهایی مانند Kueue یا Volcano (خارج از مستندات رسمی این صفحه) در اکوسیستم کوبرنتیز پیاده‌سازی می‌شد؛‏ <code>schedulingGroup</code> و <code>PodGroup</code> نسخه‌ی built-in و native این الگو در خود API هسته‌ی کوبرنتیز هستند.</p>
+  </div>
+  </details>
 
   <h3 id="ch3-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
   <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>حالا هر Pod مربوط به API می‌داند کی زنده است،‏ کی آماده است و پیش و کنار برنامه چه باید اجرا شود:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>Pod قفل‌شده که Running می‌ماند و ترافیک می‌گیرد</td><td>جدا کردن readiness (مسیر <code>/ready</code>) از liveness (مسیر <code>/healthz</code> که از مسیر بحرانی رد می‌شود)</td><td>گام‌های ۲ و ۳</td></tr><tr><td>برنامه‌ی کندبالا که پیش از آماده شدن کشته می‌شود</td><td>مهلت جدا با startupProbe،‏ بدون initialDelaySeconds در liveness</td><td>گام ۴</td></tr><tr><td>API پیش از migration اجرا می‌شود</td><td>init container که تا پایان اجرا می‌شود و شکستش جلوی شروع برنامه را می‌گیرد</td><td>گام ۵</td></tr><tr><td>خواندن و فرستادن log بدون تغییر API</td><td>sidecar بومی با <code>restartPolicy: Always</code> در initContainers و volume مشترک</td><td>گام ۶</td></tr></tbody></table></div><p><b>فایل‌های شاپیفای تا این‌جا:</b> فایل <code>app.py</code> (نسخه‌ی 1.2) و <code>migrate.py</code> و <code>Dockerfile</code>،‏ و بخش spec مربوط به Pod در <code>shop-api.yaml</code> که حالا این شکل را دارد (بقیه‌ی فایل همان پایان فصل ۲ است):</p><div class="code"><div class="lbl"><span>shop-api.yaml (بخش spec مربوط به Pod،‏ پایان فصل ۳)</span><button type="button">کپی</button></div><pre class="yaml">    spec:
@@ -4026,8 +4123,8 @@ Events:
         emptyDir: {}
 </pre></div><p><b>هنوز حل نشده:</b> فعلاً migration شبیه‌سازی است و در هر Pod جداگانه اجرا می‌شود؛‏ پایگاه داده‌ی واقعی و گزارش شبانه نیامده‌اند؛‏ و frontend هم هنوز نداریم (فصل ۴). خود log هم فقط در خروجی sidecar است،‏ نه در سامانه‌ی مرکزی (فصل ۱۱).</p><p><b>هفته‌ی بعد:</b> بقیه‌ی شاپیفای به cluster می‌آید: PostgreSQL با StatefulSet و migration یک‌باره با Job و گزارش شبانه با CronJob و agent مربوط به log با DaemonSet.</p></div>
 
-  <div id="ch3-ex2" class="ex">
-    <div class="ex-h">تمرین‌های فصل ۳،‏ بخش دوم <small>۱۶ تمرین</small></div>
+  <details id="ch3-ex2" class="ex">
+    <summary class="ex-h">تمرین‌های فصل ۳،‏ بخش دوم <small>۱۶ تمرین</small></summary>
     <ol>
       <li><span class="lvl l1">مفهومی</span>چرا در spec یک Pod فیلدی برای تعیین مستقیم QoS class وجود ندارد؟ این class کجا ثبت می‌شود و کجا به کار می‌رود؟
         <details class="ans"><summary>پاسخ</summary>
@@ -4262,10 +4359,10 @@ kubectl debug -it prod-api-7f9c8-x2kq9 --image=busybox:1.28 \
         <details class="ans"><summary>پاسخ</summary><p><code>shareProcessNamespace: true</code> یک تصمیم طراحی دائمی و در زمان ساخت Pod است: همه‌ی containerهای آن Pod برای همیشه یک PID namespace مشترک دارند (با <code>/pause</code> به عنوان PID 1)،‏ که برای الگوهای همکار عمدی (مثل یک sidecar که سیگنال reload به process اصلی می‌فرستد) مناسب است،‏ اما امنیت آن را کاهش می‌دهد چون همه‌ی containerها می‌توانند processهای یکدیگر را (و آرگومان‌ها/environment variableها احتمالاً حساس آن‌ها را در <code>/proc</code>) ببینند. <code>kubectl debug --target</code> برعکس،‏ فقط یک ephemeral container موقت و فقط برای یک نشست troubleshooting را وارد PID namespace یک container هدف می‌کند،‏ بدون تغییر دائمی spec یا کاهش دائمی isolation بین containerهای اصلی. برای production معمولاً توصیه می‌شود <code>shareProcessNamespace</code> فقط جایی فعال شود که واقعاً یک الگوی طراحی نیاز دارد،‏ و برای debugging موردی از ephemeral container استفاده شود.</p></details></li>
 
     </ol>
-  </div>
+  </details>
 
-  <div id="ch3-ex3" class="ex iv">
-    <div class="ex-h">سؤال‌های مصاحبه‌ی فصل ۳ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></div>
+  <details id="ch3-ex3" class="ex iv">
+    <summary class="ex-h">سؤال‌های مصاحبه‌ی فصل ۳ <small>۱۵ سؤال · پاسخ کوتاه و دقیق،‏ همان‌طور که در جلسه‌ی مصاحبه باید گفت</small></summary>
     <ol>
       <li><span class="lvl l1">پایه</span>Pod چیست و چرا کوبرنتیز به‌جای container،‏ Pod را schedule می‌کند؟
         <details class="ans"><summary>پاسخ</summary>
@@ -4368,7 +4465,7 @@ kubectl get pod web-7d9c -o jsonpath='{.status.containerStatuses[0].lastState}'
         </details></li>
 
     </ol>
-  </div>
+  </details>
 
   <div class="recap" id="ch3-recap">
     <div class="recap-h">خلاصه‌ی فصل ۳ در یک نگاه <small>برای مرور سریع؛‏ جزئیات در متن فصل</small></div>

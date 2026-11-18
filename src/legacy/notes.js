@@ -307,6 +307,7 @@ export function initNotes(){
   function jump(id){
     var ms=marksOf(id);if(!ms.length) return;
     var el=ms[0],prev=null,stable=0,n=0,token={};jump.cur=token;
+    for(var d=el.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;
     (function step(){
       if(jump.cur!==token) return;
       var t=Math.round(el.getBoundingClientRect().top);

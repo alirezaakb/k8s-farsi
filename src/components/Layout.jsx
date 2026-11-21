@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import book, { SITE_NAME } from '../book.js';
 import ContentView from './ContentView.jsx';
 import { useColumns } from '../lib/layout.js';
-import { chapterTotal, fa, isRead, readCount, setSections, toggleRead, useProgress } from '../lib/progress.js';
+import { chapterDone, chapterTotal, fa, isRead, readCount, setSections, toggleRead, useProgress } from '../lib/progress.js';
 
 export function Footer() {
   return (
@@ -50,7 +50,9 @@ function ChapterNav({ current }) {
               <li className={here ? 'cur' : undefined}>
                 <Link to={'/' + c.id} aria-current={here ? 'page' : undefined}>
                   <span className="n">{c.n}</span><span>{c.title}</span>
-                  {readCount(c.id) > 0 && chapterTotal(c.id) > 0 && (
+                  {chapterDone(c) ? (
+                    <em className="prog done" role="img" aria-label="این فصل خوانده شد" title="همه‌ی درس‌های این فصل خوانده شد" />
+                  ) : readCount(c.id) > 0 && chapterTotal(c.id) > 0 && (
                     <em className="prog" title="بخش‌های خوانده‌شده">{fa(Math.min(100, Math.round((100 * readCount(c.id)) / chapterTotal(c.id))))}٪</em>
                   )}
                 </Link>

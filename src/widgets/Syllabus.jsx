@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import book from '../book.js';
-import { fa, isRead, lastPlace, toggleRead, useProgress } from '../lib/progress.js';
+import { chapterDone, fa, isRead, lastPlace, toggleRead, useProgress } from '../lib/progress.js';
 
 const hours = (min) => {
   const h = Math.floor(min / 60);
@@ -36,12 +36,14 @@ function Chapter({ c, open }) {
   const minutes = c.lessons.reduce((s, l) => s + l.min, 0);
   const blocks = c.exercises.length;
   return (
-    <details className="syl-ch" open={open}>
+    <details className={'syl-ch' + (chapterDone(c) ? ' done' : '')} open={open}>
       <summary>
         <span className="syl-n">{c.n}</span>
         <span className="syl-t">{c.title}</span>
         <span className="syl-m">{fa(total)} درس{blocks ? ` · ${fa(blocks)} بخش تمرین` : ''} · {hours(minutes)}</span>
-        <span className="syl-p" role="img" aria-label={`${fa(pct)} درصد خوانده شده`}><i style={{ width: pct + '%' }} /><em>{fa(pct)}٪</em></span>
+        {chapterDone(c)
+          ? <span className="syl-done" role="img" aria-label="این فصل خوانده شد" title="همه‌ی درس‌های این فصل خوانده شد" />
+          : <span className="syl-p" role="img" aria-label={`${fa(pct)} درصد خوانده شده`}><i style={{ width: pct + '%' }} /><em>{fa(pct)}٪</em></span>}
       </summary>
       <ol className="syl-list">
         {c.lessons.map((l, i) => (

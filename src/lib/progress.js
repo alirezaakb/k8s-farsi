@@ -25,6 +25,8 @@ export const readCount = (ch) => {
   if (!rec) return 0;
   return rec.lessons ? rec.lessons.filter((id) => rec.ids[id]).length : Object.keys(rec.ids || {}).length;
 };
+/** A chapter counts as read once every one of its lessons is ticked. */
+export const chapterDone = (c) => c.lessons.length > 0 && c.lessons.every((l) => isRead(c.id, l.id));
 export const chapterTotal = (ch) => data[ch]?.total || 0;
 export const lastPlace = () => last;
 

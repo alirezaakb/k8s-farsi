@@ -6,7 +6,7 @@ import notesUi from '../legacy/notes-ui.html?raw';
 import { editingOnThisDevice, editor, useEditor } from '../lib/editor.js';
 
 // ---- reading preferences (kept on <html> as data-* so the CSS can use them, and in localStorage)
-const DEF = { fs: '0', lh: 'normal', align: 'start', width: 'narrow', more: 'closed', exs: 'closed', focus: 'on' };
+const DEF = { fs: '0', lh: 'normal', align: 'justify', width: 'narrow', more: 'closed', exs: 'closed', focus: 'on' };
 const root = document.documentElement;
 const readPref = (k) => root.getAttribute('data-' + k) ?? DEF[k];
 
@@ -27,7 +27,7 @@ const FONT_SIZES = [
 const GROUPS = [
   { k: 'focus', legend: 'چیدمان صفحه', opts: [['on', 'تمرکز'], ['off', 'با فهرست کناری']] },
   { k: 'lh', legend: 'فاصله‌ی سطرها', opts: [['normal', 'عادی'], ['loose', 'باز']] },
-  { k: 'align', legend: 'تراز متن', opts: [['start', 'راست‌چین'], ['justify', 'تمام‌چین']] },
+  { k: 'align', legend: 'تراز متن', opts: [['justify', 'تمام‌چین'], ['start', 'راست‌چین']] },
   { k: 'width', legend: 'عرض ستون متن', opts: [['narrow', 'مطالعه'], ['wide', 'پهن']] },
   { k: 'more', legend: 'نکته‌های تکمیلی', opts: [['closed', 'بسته'], ['open', 'باز']] },
   { k: 'exs', legend: 'تمرین‌ها و سؤال‌های مصاحبه', opts: [['closed', 'بسته'], ['open', 'باز']] },

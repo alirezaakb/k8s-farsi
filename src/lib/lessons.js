@@ -4,7 +4,7 @@
 // (editing.js) unwraps them, so the text of content/chN.html is never changed by this.
 
 const isSpace = (n) => n.nodeType === 3 && !n.data.trim();
-const isHead = (n) => n.nodeType === 1 && n.matches('.ch-head, .ch-sub');
+const isHead = (n) => n.nodeType === 1 && n.matches('.ch-head, .ch-sub, details.refs');
 
 export const headingText = (h) => {
   const c = h.cloneNode(true);

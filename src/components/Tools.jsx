@@ -1,11 +1,12 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { SITE_NAME } from '../book.js';
+import { toggleDrawer, useColumns } from '../lib/layout.js';
 import notesUi from '../legacy/notes-ui.html?raw';
 import { editingOnThisDevice, editor, useEditor } from '../lib/editor.js';
 
 // ---- reading preferences (kept on <html> as data-* so the CSS can use them, and in localStorage)
-const DEF = { fs: '0', lh: 'normal', align: 'start', width: 'narrow', more: 'closed', exs: 'closed' };
+const DEF = { fs: '0', lh: 'normal', align: 'start', width: 'narrow', more: 'closed', exs: 'closed', focus: 'on' };
 const root = document.documentElement;
 const readPref = (k) => root.getAttribute('data-' + k) ?? DEF[k];
 
@@ -24,6 +25,7 @@ const FONT_SIZES = [
   ['2', 'بزرگ‌تر', '1.2rem'], ['3', 'خیلی بزرگ', '1.36rem'],
 ];
 const GROUPS = [
+  { k: 'focus', legend: 'چیدمان صفحه', opts: [['on', 'تمرکز'], ['off', 'با فهرست کناری']] },
   { k: 'lh', legend: 'فاصله‌ی سطرها', opts: [['normal', 'عادی'], ['loose', 'باز']] },
   { k: 'align', legend: 'تراز متن', opts: [['start', 'راست‌چین'], ['justify', 'تمام‌چین']] },
   { k: 'width', legend: 'عرض ستون متن', opts: [['narrow', 'مطالعه'], ['wide', 'پهن']] },
@@ -62,7 +64,7 @@ function ReadingSettings() {
 
   return (
     <>
-      <button type="button" className="tbtn" id="rs-btn" ref={btn} aria-expanded={open} aria-controls="rs-panel"
+      <button type="button" className="tbtn" id="rs-btn" ref={btn} aria-expanded={open} aria-controls="rs-panel" aria-label="تنظیمات مطالعه" title="تنظیمات مطالعه"
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 7V5h12v2M10 5v14M7 19h6M14 13v-1h6v1M17 12v7M15.5 19h3" /></svg>
         <span>تنظیمات مطالعه</span>
@@ -124,6 +126,19 @@ export const NotesUI = memo(function NotesUI() {
   return <div dangerouslySetInnerHTML={{ __html: notesUi }} />;
 });
 
+// opens the drawer with the chapter and lesson lists (when they are not in columns beside the text)
+function NavButton() {
+  const columns = useColumns();
+  const { pathname } = useLocation();
+  if (columns || pathname === '/') return null;
+  return (
+    <button type="button" className="tbtn" id="nav-btn" aria-haspopup="dialog" aria-label="فهرست فصل‌ها و درس‌ها" title="فهرست فصل‌ها و درس‌ها" onClick={toggleDrawer}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+      <span>فهرست</span>
+    </button>
+  );
+}
+
 // switches in-place text editing on and off (only on devices where it was enabled, see lib/editor.js)
 function EditButton() {
   const { active } = useEditor();
@@ -158,6 +173,7 @@ export function Tools() {
   return (
     <div className={'tools' + (away ? ' away' : '')} ref={bar} onFocus={() => setAway(false)}>
       <Link className="brand" to="/">{SITE_NAME}</Link>
+      <NavButton />
       <button type="button" className="tbtn" id="sr-btn" aria-haspopup="dialog" aria-label="جستجو در جزوه" title="جستجو در جزوه (Ctrl+K)"
         onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new Event('jozve:search')); }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>

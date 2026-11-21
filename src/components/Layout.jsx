@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import book, { SITE_NAME } from '../book.js';
 import ContentView from './ContentView.jsx';
+import { useColumns } from '../lib/layout.js';
 import { chapterTotal, fa, isRead, lastPlace, readCount, setSections, toggleRead, useProgress } from '../lib/progress.js';
 
 export function Footer() {
@@ -116,44 +117,30 @@ function Outline({ chapter, outline, currentId }) {
   );
 }
 
-function MobileToc({ current, chapter, outline, currentId }) {
+/** Side drawer with the chapter and lesson lists, opened by the "فهرست" button of the top bar. */
+function Drawer({ children }) {
+  const [open, setOpen] = useState(false);
+  const loc = useLocation();
+  useEffect(() => {
+    const toggle = () => setOpen((o) => !o);
+    window.addEventListener('jozve:nav', toggle);
+    return () => window.removeEventListener('jozve:nav', toggle);
+  }, []);
+  useEffect(() => { setOpen(false); }, [loc.pathname, loc.hash]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
   return (
-    <nav aria-label="فهرست فصل‌ها" className="toc-mobile-nav"><details className="toc-mobile">
-      <summary>فهرست فصل‌ها</summary>
-      <ol>
-        <li><Link to="/">صفحه‌ی اصلی جزوه</Link></li>
-        {book.chapters.map((c) => (
-          <WithPart key={c.id} part={c.part}>
-            <li className={c.id === current ? 'cur' : undefined}>
-              <Link to={'/' + c.id} aria-current={c.id === current ? 'page' : undefined}>{c.n}. {c.title}</Link>
-            </li>
-          </WithPart>
-        ))}
-        <li><Link to="/sources">منابع</Link></li>
-      </ol>
-    </details>
-    {chapter && outline.length > 0 && (
-      <details className="toc-mobile">
-        <summary>درس‌های این فصل</summary>
-        <OutlineSummary chapter={chapter} outline={outline} />
-        <SectionList chapter={chapter} outline={outline} currentId={currentId} />
-      </details>
-    )}
-    </nav>
-  );
-}
-
-function Crumbs({ chapter }) {
-  const part = chapter
-    ? book.chapters.slice(0, book.chapters.indexOf(chapter) + 1).reverse().find((c) => c.part)?.part
-    : null;
-  return (
-    <nav className="crumbs" aria-label="مسیر">
-      <Link to="/">{SITE_NAME}</Link><i>/</i>
-      {chapter
-        ? (<><span>{part}</span><i>/</i><span aria-current="page">فصل {chapter.n}</span></>)
-        : <span aria-current="page">منابع</span>}
-    </nav>
+    <div className="drawer-wrap" hidden={!open}>
+      <div className="drawer-back" onClick={() => setOpen(false)} />
+      <aside className="drawer" role="dialog" aria-modal="true" aria-label="فهرست فصل‌ها و درس‌ها">
+        <button type="button" className="drawer-close" onClick={() => setOpen(false)} aria-label="بستن">×</button>
+        {children}
+      </aside>
+    </div>
   );
 }
 
@@ -192,10 +179,11 @@ function LessonBar({ chapter, outline, currentId }) {
   );
 }
 
-/** A chapter or the sources page: breadcrumb, chapter list, one lesson at a time, and the chapter's lesson list. */
+/** A chapter or the sources page: one lesson at a time, with the lists in columns or in a drawer. */
 export function Shell({ page, chapter }) {
   const [outline, setOutline] = useState([]);
   const [currentId, setCurrentId] = useState(null);
+  const columns = useColumns();
   const onLoaded = useCallback((el, list) => {
     const items = list.map(({ id, text, min }) => ({ id, text, min }));
     setOutline(items);
@@ -212,17 +200,21 @@ export function Shell({ page, chapter }) {
 
   return (
     <>
-      <Crumbs chapter={chapter} />
-      <div className={chapter ? 'shell' : 'shell no-outline'}>
-        <ChapterNav current={page} />
+      <div className={columns ? (chapter ? 'shell' : 'shell no-outline') : 'shell solo'}>
+        {columns && <ChapterNav current={page} />}
         <main id="main" tabIndex={-1}>
-          <MobileToc current={page} chapter={chapter} outline={outline} currentId={currentId} />
           <ContentView page={page} onLoaded={onLoaded} onLesson={setCurrentId} />
           {chapter && <LessonBar chapter={chapter} outline={outline} currentId={currentId} />}
           {chapter && lastLesson && <Pager chapter={chapter} />}
         </main>
-        {chapter && <Outline chapter={chapter} outline={outline} currentId={currentId} />}
+        {columns && chapter && <Outline chapter={chapter} outline={outline} currentId={currentId} />}
       </div>
+      {!columns && (
+        <Drawer>
+          {chapter && <Outline chapter={chapter} outline={outline} currentId={currentId} />}
+          <ChapterNav current={page} />
+        </Drawer>
+      )}
       <Footer />
     </>
   );

@@ -371,3 +371,49 @@ body.editing .lesson{display:block}
 .outline li.cur .chk{outline:2px solid var(--accent-ink);outline-offset:1px}
 .lno{display:inline-block;min-width:1.6em;color:var(--ink-2);font-weight:400}
 .toc-mobile li.cur a{font-weight:800;color:var(--accent-ink)}
+
+/* ---- 18. a calm reading page ---------------------------------------------------------------- */
+.shell{margin-top:72px}
+.shell.solo{display:block;max-width:none}
+
+/* lists in a drawer instead of columns */
+.drawer-wrap{position:fixed;inset:0;z-index:90}
+.drawer-wrap[hidden]{display:none}
+.drawer-back{position:absolute;inset:0;background:rgba(8,16,20,.6)}
+.drawer{position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(440px,92vw);overflow:auto;background:var(--ground);color:var(--ink);padding:56px 20px 32px}
+.drawer .toc,.drawer .outline{position:static;max-height:none;overflow:visible;background:transparent;padding:0;margin:0 0 36px;align-self:auto}
+.drawer-close{position:absolute;top:10px;inset-inline-end:12px;width:40px;height:40px;border:0;background:var(--sunk);color:var(--ink);font:400 1.6rem/1 "Vazirmatn",sans-serif;cursor:pointer}
+.drawer-close:hover{background:var(--accent-soft)}
+
+/* lessons after the first: a thin header; the references belong to the chapter's first lesson */
+[data-first="0"] .ch-head{grid-template-columns:auto minmax(0,1fr);gap:2px 14px;align-items:center;padding:12px var(--margin);margin-bottom:8px}
+[data-first="0"] .ch-num{font-size:1.6rem;line-height:1}
+[data-first="0"] .ch-head h1{font-size:var(--step-body);line-height:1.5}
+[data-first="0"] .ch-head::after{content:var(--pos);grid-column:2;color:var(--field-ink-2);font-size:var(--step-small)}
+[data-first="0"] details.refs{display:none}
+details.refs{margin:0 0 20px}
+details.refs>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:10px 0;color:var(--ink-2);font-size:var(--step-small)}
+details.refs>summary::-webkit-details-marker{display:none}
+details.refs>summary::before{content:"+";font-size:1.3rem;line-height:1;font-weight:500;color:var(--accent-ink)}
+details.refs[open]>summary::before{content:"\2212"}
+details.refs>summary small{color:var(--ink-2)}
+details.refs .ch-sub{margin:0 0 8px}
+
+/* three looks for boxes: information (a bar), warning (amber field), practice (green field) */
+.note,.story,.story.solved,.deep,details.more .deep{background:none;padding:4px 22px}
+.note,.story{--bar:var(--accent)}
+.story.solved{--bar:var(--ex)}
+.deep,details.more .deep{--bar:var(--line)}
+details.more .deep{margin:0 12px 12px}
+
+/* a top bar of icons only: the name of each button is its tooltip */
+.tools .tbtn span:not(.nt-badge){display:none}
+.tools .tbtn{padding:8px 11px}
+.tbl td:first-child code,.tbl th:first-child code{white-space:nowrap;overflow-wrap:normal}
+
+/* focus mode: the top bar and the footer line up with the text column */
+html:not([data-focus="off"]){--col:52rem}
+html:not([data-focus="off"])[data-width="wide"]{--col:64rem}
+html:not([data-focus="off"]) .tools{padding-inline:max(var(--margin),calc((100vw - var(--col)) / 2))}
+html:not([data-focus="off"]) .site-foot{padding-inline:max(var(--margin),calc((100vw - var(--col)) / 2))}
+html:not([data-focus="off"]) #rs-panel{inset-inline-end:max(var(--margin),calc((100vw - var(--col)) / 2))}

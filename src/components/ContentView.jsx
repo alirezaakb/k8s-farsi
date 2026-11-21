@@ -7,7 +7,7 @@ import { editingBuiltIn, editor, useEditor } from '../lib/editor.js';
 import { clearDraft, resolveText, saveDraft } from '../lib/overrides.js';
 import { buildLessons, showLesson } from '../lib/lessons.js';
 import { initPlan } from '../lib/plan.js';
-import { setLast } from '../lib/progress.js';
+import { fa, setLast } from '../lib/progress.js';
 import { initReveal } from '../lib/reveal.js';
 import { scrollTop, settleTo } from '../lib/settle.js';
 import { initNotes } from '../legacy/notes.js';
@@ -17,7 +17,7 @@ import widgets from '../widgets/index.js';
 const FIXED = '.code .lbl, button, svg, img, input, figure .plate, [data-widget]';
 
 // the collapsible parts of a chapter: supplementary notes, exercises, answers
-const FOLDS = 'details.more, details.ex, details.ans';
+const FOLDS = 'details.more, details.ex, details.ans, details.refs';
 const openAll = (root, on = true) => root.querySelectorAll(FOLDS).forEach((d) => { d.open = on; });
 
 /** Reading settings "supplementary notes" and "exercises": open or close those parts for the whole page. */
@@ -118,6 +118,10 @@ export default function ContentView({ page, onLoaded, onLesson }) {
     if (list.length) {
       const id = target?.closest?.('.lesson')?.dataset.lesson || list[0].id;
       showLesson(root, id);
+      // the CSS shows the big chapter header and the references only on the first lesson
+      const at = list.findIndex((l) => l.id === id);
+      root.dataset.first = at === 0 ? '1' : '0';
+      root.style.setProperty('--pos', `"درس ${fa(at + 1)} از ${fa(list.length)} · حدود ${fa(list[at].min)} دقیقه"`);
       onLesson?.(id);
       setLast(page, id, list.find((l) => l.id === id)?.text || '');
     }

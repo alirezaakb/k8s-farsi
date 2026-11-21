@@ -119,3 +119,17 @@ for (const f of fs.readdirSync(CONTENT).filter((n) => /^ch\d+\.html$/.test(n))) 
   if (out !== raw) { fs.writeFileSync(p, canon(out)); titled++; }
 }
 console.log(`${titled} files got titles in their group summaries`);
+
+// 4. The chapter's reference links become one closed row: <details class="refs"> around the <p class="ch-sub">.
+let refs = 0;
+for (const f of fs.readdirSync(CONTENT).filter((n) => /^ch\d+\.html$/.test(n))) {
+  const p = path.join(CONTENT, f);
+  const raw = fs.readFileSync(p, 'utf8');
+  if (raw.includes('<details class="refs">')) continue;
+  const out = raw.replace(/<p class="ch-sub">([\s\S]*?)<\/p>/, (whole, inner) => {
+    const n = (inner.match(/<a /g) || []).length;
+    return n ? `<details class="refs"><summary>مراجع رسمی این فصل <small>(${fa(n)})</small></summary>${whole}</details>` : whole;
+  });
+  if (out !== raw) { fs.writeFileSync(p, canon(out)); refs++; }
+}
+console.log(`${refs} files: reference links folded`);

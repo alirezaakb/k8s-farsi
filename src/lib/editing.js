@@ -22,7 +22,7 @@ export function serializeContent(root, page) {
   const c = root.cloneNode(true);
   unwrapLessons(c); // the one-lesson-at-a-time wrappers exist only on screen
   c.querySelectorAll('mark[data-hl]').forEach((m) => m.replaceWith(...m.childNodes)); // highlights are not content
-  c.querySelectorAll('details.more,details.ex,details.ans').forEach((d) => d.removeAttribute('open')); // folds are opened by the reader, not part of the text
+  c.querySelectorAll('details.more,details.ex,details.ans,details.refs').forEach((d) => d.removeAttribute('open')); // folds are opened by the reader, not part of the text
   c.querySelectorAll('[contenteditable],[spellcheck]').forEach((e) => { e.removeAttribute('contenteditable'); e.removeAttribute('spellcheck'); });
   if (page === 'home') { // what plan.js changes on the page
     const boxes = c.querySelectorAll('#plan input[data-day]').length;

@@ -4,8 +4,6 @@ import book, { BASE } from '../book.js';
 import { unwrapLessons } from './lessons.js';
 
 const TOKEN_KEY = 'jozve-gh-token';
-const FA = '۰۱۲۳۴۵۶۷۸۹';
-const fa = (n) => String(n).replace(/[0-9]/g, (d) => FA[d]);
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Opposite of prepare() in content.js: put the plain `#id` links and `img/` paths back. */
@@ -24,14 +22,6 @@ export function serializeContent(root, page) {
   c.querySelectorAll('mark[data-hl]').forEach((m) => m.replaceWith(...m.childNodes)); // highlights are not content
   c.querySelectorAll('details.more,details.ex,details.ans,details.refs').forEach((d) => d.removeAttribute('open')); // folds are opened by the reader, not part of the text
   c.querySelectorAll('[contenteditable],[spellcheck]').forEach((e) => { e.removeAttribute('contenteditable'); e.removeAttribute('spellcheck'); });
-  if (page === 'home') { // what plan.js changes on the page
-    const boxes = c.querySelectorAll('#plan input[data-day]').length;
-    c.querySelector('#pl-fill')?.removeAttribute('style');
-    const count = c.querySelector('#pl-count');
-    if (count) count.textContent = fa(0) + ' از ' + fa(boxes) + ' روز';
-    c.querySelectorAll('.pl-day.done').forEach((e) => e.classList.remove('done'));
-    c.querySelectorAll('.pl-wdone').forEach((e) => { e.textContent = ''; });
-  }
   c.querySelectorAll('[data-widget]').forEach((e) => { e.textContent = ''; }); // components are rendered, not content
   c.normalize();
   const out = unprepare(c.innerHTML);

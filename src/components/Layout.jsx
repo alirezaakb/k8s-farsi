@@ -225,7 +225,7 @@ export function Home() {
   useEffect(() => {
     document.title = `${SITE_NAME}: از صفر تا production`;
     document.querySelector('meta[name="description"]')?.setAttribute(
-      'content', 'جزوه‌ی آموزشی فارسی کوبرنتیز از صفر تا production، بر پایه‌ی مستندات رسمی kubernetes.io: ' + book.stats.join('، '));
+      'content', 'جزوه‌ی آموزشی فارسی کوبرنتیز از صفر تا production، بر پایه‌ی مستندات رسمی kubernetes.io، با سرفصل و پیگیری پیشرفت.');
   }, []);
   return (
     <>

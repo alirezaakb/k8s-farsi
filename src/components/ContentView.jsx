@@ -6,7 +6,6 @@ import { loadPage, prepare } from '../lib/content.js';
 import { editingBuiltIn, editor, useEditor } from '../lib/editor.js';
 import { clearDraft, resolveText, saveDraft } from '../lib/overrides.js';
 import { buildLessons, showLesson } from '../lib/lessons.js';
-import { initPlan } from '../lib/plan.js';
 import { fa, setLast } from '../lib/progress.js';
 import { initReveal } from '../lib/reveal.js';
 import { scrollTop, settleTo } from '../lib/settle.js';
@@ -79,7 +78,6 @@ export default function ContentView({ page, onLoaded, onLesson }) {
     const root = ref.current;
     const undo = [];
     lessons.current = buildLessons(root);
-    if (page === 'home') undo.push(initPlan(root));
     undo.push(initReveal(root, page));
 
     const found = [];

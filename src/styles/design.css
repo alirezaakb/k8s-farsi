@@ -418,11 +418,7 @@ html:not([data-focus="off"]) body:has(.shell) .tools{padding-inline:max(var(--ma
 html:not([data-focus="off"]) body:has(.shell) .site-foot{padding-inline:max(var(--margin),calc((100vw - var(--col)) / 2))}
 html:not([data-focus="off"]) body:has(.shell) #rs-panel{inset-inline-end:max(var(--margin),calc((100vw - var(--col)) / 2))}
 
-/* ---- 19. course page: tabs, audience, prerequisites, syllabus, questions ----------------------- */
-.tabs{position:sticky;top:0;z-index:60;display:flex;gap:2px;overflow-x:auto;margin:0 calc(var(--margin) * -1);padding:0 var(--margin);background:var(--ground);scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tabs a{flex:none;padding:16px 16px 12px;border-bottom:4px solid transparent;color:var(--ink-2);font-weight:700;text-decoration:none;transition:color .15s,border-color .15s}
-.tabs a:hover{color:var(--ink);border-bottom-color:var(--accent)}
+/* ---- 19. course page: audience, prerequisites, syllabus, questions ----------------------- */
 
 .info{max-width:none;margin:0 calc(var(--margin) * -1);border:0;padding:clamp(72px,8vw,112px) max(var(--margin),calc((100vw - 1500px) / 2 + var(--margin)))}
 .info h2{font-size:var(--step-head);font-weight:900;line-height:1.3;margin:0 0 12px;color:var(--ink)}
@@ -487,23 +483,13 @@ details.syl-ch>summary:hover{background:var(--accent-soft)}
 }
 
 /* ---- 20. course page like an online course: short hero, numbers, syllabus beside "my progress" ---- */
-.cover.hero{display:block;min-height:0;padding:clamp(40px,7vw,88px) var(--margin);gap:0}
+.cover.hero{display:block;min-height:0;padding:clamp(28px,4vw,52px) var(--margin);gap:0}
 .hero-text{max-width:min(1500px,100%);margin-inline:auto;padding-inline:max(0px,calc((100vw - 1500px) / 2))}
-.hero-badge{display:inline-block;margin:0 0 18px;padding:6px 14px;background:rgba(255,255,255,.16);color:var(--field-ink);font-size:var(--step-small);font-weight:700}
-.cover.hero h1{font-size:clamp(2.4rem,1rem + 5vw,5.2rem);line-height:1.2;font-weight:900;margin:0 0 18px;max-width:18ch}
+.cover.hero h1{font-size:clamp(2rem,1rem + 3vw,3.6rem);line-height:1.25;font-weight:900;margin:0;max-width:none}
 .cover.hero h1 span{color:var(--field-ink-2)}
-.cover.hero .lead{max-width:52ch;margin:0 0 26px}
-.cover.hero .cta{margin:0 0 24px}
-.hero-chips{display:flex;flex-wrap:wrap;gap:8px 12px;margin:0;padding:0;list-style:none}
-.hero-chips li{margin:0;padding:6px 14px;background:rgba(255,255,255,.12);color:var(--field-ink);font-size:var(--step-small);max-width:none}
+.cover.hero .lead{max-width:60ch;margin:14px 0 0;text-align:start}
 .cover.hero{animation:none}
 
-.stats-strip{margin:0 calc(var(--margin) * -1);padding:36px max(var(--margin),calc((100vw - 1500px) / 2 + var(--margin)));background:var(--surface)}
-.stats-strip .meta{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:20px 24px;margin:0;padding:0;list-style:none}
-.stats-strip .meta li{display:flex;flex-direction:column;margin:0;padding:0;background:none;max-width:none}
-.stats-strip .meta b{font-size:clamp(1.8rem,1rem + 2vw,3rem);font-weight:900;line-height:1.1;color:var(--ink);white-space:nowrap}
-.stats-strip .meta span{color:var(--ink-2);font-size:var(--step-small);line-height:1.6}
-@media (max-width:820px){.stats-strip .meta{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
 .course{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:clamp(24px,4vw,64px);max-width:1500px;margin:0 auto;align-items:start}
 .course-main{min-width:0}
@@ -514,7 +500,6 @@ details.syl-ch>summary:hover{background:var(--accent-soft)}
 .course .about{display:block}
 .course .about h2,.course .about-text{grid-column:auto}
 .course .about-text{font-size:var(--step-body)}
-.course .tabs{margin:0;padding:0;top:0}
 .course #syllabus,.course #audience,.course #prereq,.course #faq{background:none}
 .course details.syl-ch,.course details.faq{background:var(--surface)}
 .course .syl-list li a:hover{background:var(--accent-soft)}
@@ -543,26 +528,6 @@ details.syl-ch>summary:hover{background:var(--accent-soft)}
 .mp-links{display:flex;gap:18px;margin:14px 0 0;max-width:none;font-size:var(--step-small)}
 .mp-links a{font-weight:700}
 
-/* hero: text beside the map of chapters */
-.cover.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center;max-width:none}
-.cover.hero .hero-text{margin:0;padding:0;max-width:none}
-@media (max-width:900px){.cover.hero{grid-template-columns:minmax(0,1fr)}}
-.cmap{padding:24px;background:rgba(255,255,255,.1)}
-.cm-cap{min-height:3.2em;margin:0 0 14px;max-width:none;color:var(--field-ink);font-weight:800;line-height:1.6}
-.cm-part{margin-bottom:16px}
-.cm-part:last-child{margin-bottom:0}
-.cm-part>p{margin:0 0 8px;max-width:none;color:var(--field-ink);font-size:var(--step-small);opacity:.85}
-.cm-part ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
-.cm-part li{margin:0;max-width:none}
-.cm-part a{position:relative;display:grid;place-items:center;width:52px;height:52px;overflow:hidden;background:rgba(255,255,255,.14);color:var(--field-ink);text-decoration:none;transition:background-color .15s}
-.cm-part a:hover,.cm-part a:focus-visible{background:rgba(255,255,255,.3)}
-.cm-part a i{position:absolute;inset-inline:0;bottom:0;background:rgba(255,255,255,.3)}
-.cm-part a b{position:relative;font-weight:900;font-size:1.1rem;line-height:1}
 .syl-sum{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0;padding:0;list-style:none;font-weight:700;max-width:none}
 .syl-sum li{margin:0;max-width:none}
 
-/* section tabs wrap on narrow screens instead of scrolling sideways */
-@media (max-width:900px){
-  .tabs,.course .tabs{position:static;flex-wrap:wrap;overflow:visible;margin:0;padding:0}
-  .tabs a{padding:12px 12px 10px}
-}

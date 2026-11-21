@@ -57,7 +57,6 @@ export default function MyProgress() {
       {lastChapter
         ? <Link className="mp-go" to={{ pathname: '/' + lastChapter.id, hash: '#' + last.id }}>ادامه: فصل {lastChapter.n}، {last.text}</Link>
         : <Link className="mp-go" to="/ch1">شروع از فصل ۱</Link>}
-      <p className="mp-links"><Link to={{ hash: '#plan' }}>برنامه‌ی ۴۹ روزه</Link><Link to={{ hash: '#pathway' }}>مسیر سریع</Link></p>
     </div>
   );
 }

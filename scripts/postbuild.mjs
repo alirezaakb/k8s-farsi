@@ -13,7 +13,7 @@ const book = readBook();
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 const pages = [
-  { route: '', file: 'home', title: `${book.title}: از صفر تا production`, desc: `جزوه‌ی آموزشی فارسی کوبرنتیز از صفر تا production، بر پایه‌ی مستندات رسمی kubernetes.io: ${book.stats.join('، ')}` },
+  { route: '', file: 'home', title: `${book.title}: از صفر تا production`, desc: `جزوه‌ی آموزشی فارسی کوبرنتیز از صفر تا production، بر پایه‌ی مستندات رسمی kubernetes.io، با سرفصل و پیگیری پیشرفت.` },
   ...book.chapters.map((c) => ({ route: c.id, file: c.id, title: `فصل ${c.n}: ${c.title} | ${book.title}`, desc: `فصل ${c.n}: ${c.title} — جزوه‌ی آموزشی فارسی کوبرنتیز`, search: `فصل ${c.n}: ${c.title}` })),
   { route: 'sources', file: 'sources', title: `منابع | ${book.title}`, desc: 'منابع و مراجع جزوه‌ی آموزشی فارسی کوبرنتیز', search: 'منابع' },
 ];

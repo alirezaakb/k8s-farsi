@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import book, { SITE_NAME } from '../book.js';
 import ContentView from './ContentView.jsx';
 import { useColumns } from '../lib/layout.js';
-import { chapterTotal, fa, isRead, lastPlace, readCount, setSections, toggleRead, useProgress } from '../lib/progress.js';
+import { chapterTotal, fa, isRead, readCount, setSections, toggleRead, useProgress } from '../lib/progress.js';
 
 export function Footer() {
   return (
@@ -221,19 +221,6 @@ export function Shell({ page, chapter }) {
   );
 }
 
-/** Link back to the section the reader was in last. */
-function ResumeBar() {
-  useProgress();
-  const l = lastPlace();
-  const c = l && book.chapters.find((x) => x.id === l.ch);
-  if (!c) return null;
-  return (
-    <div className="resume">
-      <Link to={{ pathname: '/' + c.id, hash: '#' + l.id }}>ادامه از جایی که بودید: فصل {c.n}، {l.text}</Link>
-    </div>
-  );
-}
-
 export function Home() {
   useEffect(() => {
     document.title = `${SITE_NAME}: از صفر تا production`;
@@ -242,7 +229,6 @@ export function Home() {
   }, []);
   return (
     <>
-      <ResumeBar />
       <div id="main" tabIndex={-1}><ContentView page="home" /></div>
       <Footer />
     </>

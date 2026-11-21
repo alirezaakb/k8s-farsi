@@ -1,17 +1,29 @@
-<header class="cover">
-  <h1><span class="l"><i>کوبرنتیز</i></span><span class="l"><i>از صفر تا production</i></span></h1>
-  <div class="cover-foot">
+<header class="cover hero">
+  <div class="hero-text">
+    <p class="hero-badge">بر پایه‌ی مستندات رسمی kubernetes.io · نسخه‌ی v1.37</p>
+    <h1>کوبرنتیز از صفر تا <span>production</span></h1>
     <p class="lead">جزوه‌ی آموزشی فارسی بر پایه‌ی مستندات رسمی kubernetes.io (نسخه‌ی v1.37): هفده فصل، یک داستان، از یک ماشین تا cluster عملیاتی.</p>
     <p class="cta"><a class="go" href="#ch1">شروع از فصل ۱</a><a href="#syllabus">سرفصل‌ها</a></p>
+    <ul class="hero-chips"><li>۴۹ روز با روزی حدود ۳ ساعت</li><li>مسیر سریع: ۲۷ روز</li><li>هر فصل: درس، آزمایش، تمرین و سؤال مصاحبه</li></ul>
   </div>
+  <div data-widget="ChapterMap"></div>
 </header>
 
-<nav class="tabs" aria-label="بخش‌های این صفحه"><a href="#about">معرفی</a><a href="#audience">مخاطبین</a><a href="#prereq">پیش‌نیازها</a><a href="#syllabus">سرفصل‌ها</a><a href="#plan">برنامه‌ی مطالعه</a><a href="#pathway">مسیر سریع</a><a href="#roadmap">نقشه‌ی راه</a><a href="#faq">پرسش‌ها</a></nav>
+<div class="stats-strip"><ul class="meta"><li><b>۱۷</b> <span>فصل با یک سناریوی واحد</span></li><li><b>۴۰۰۰+</b> <span>نمونه‌کد و دستور</span></li><li><b>۵۱۵</b> <span>تمرین با پاسخ</span></li><li><b>۲۴۰</b> <span>سؤال مصاحبه</span></li><li><b>۱۱۵</b> <span>شکل</span></li><li><b>۱</b> <span>پروژه‌ی پایانی</span></li></ul></div>
+
+<div class="course">
+<div class="course-main">
+<nav class="tabs" aria-label="بخش‌های این صفحه"><a href="#syllabus">سرفصل‌ها</a><a href="#about">معرفی</a><a href="#audience">مخاطبین</a><a href="#prereq">پیش‌نیازها</a><a href="#faq">پرسش‌ها</a><a href="#plan">برنامه‌ی مطالعه</a><a href="#pathway">مسیر سریع</a><a href="#roadmap">نقشه‌ی راه</a></nav>
+
+<section class="info syl-sec" id="syllabus" aria-labelledby="sy-h">
+  <h2 id="sy-h">سرفصل‌ها</h2>
+  <p class="info-lead">هر فصل چند درس دارد و بعدش تمرین‌ها و سؤال‌های مصاحبه. روی هر فصل بزنید تا درس‌ها را ببینید؛ با مربع کنار هر درس آن را «خوانده‌شده» کنید.</p>
+  <div data-widget="Syllabus"></div>
+</section>
 
 <section class="about" id="about" aria-labelledby="ab-h">
   <h2 id="ab-h">درباره‌ی این جزوه</h2>
   <p class="about-text">این جزوه یک مسیر آموزشی از ساده به پیچیده است و همه‌ی فصل‌ها یک داستان را دنبال می‌کنند: یک تیم کوچک و تازه در شرکت «شاپیفای» (Shopify) که فروشگاه نمونه‌اش را از یک server به کوبرنتیز می‌برد و هر فصل یکی از مشکل‌های آن را حل می‌کند. این روایت فرضی است و زیرساخت واقعی Shopify را توصیف نمی‌کند. بخش اول (فصل‌های ۱ تا ۸) روی یک ماشین با k3s پیش می‌رود: نصب و اولین آزمایش،‏ container و Pod،‏ workloadها،‏ شبکه،‏ پیکربندی،‏ storage و مدیریت اشیا. بخش دوم (فصل‌های ۹ تا ۱۱) cluster را چند Node می‌کند: scheduling،‏ مقیاس‌دهی خودکار،‏ پایش و عیب‌یابی. بخش سوم (فصل‌های ۱۲ تا ۱۶) با کوبرنتیز اصلی و kubeadm است: معماری،‏ راه‌اندازی production،‏ امنیت و RBAC،‏ گسترش کوبرنتیز و پروژه‌ی جامع. فصل ۱۷ پیوست و مرجع است. هر فصل پس از تطبیق با صفحه‌های متناظر مستندات v1.37 به زبانی ساده و روان نوشته شده و پیوند صفحه‌های مرجع در ابتدای آن آمده است. هر فصل آزمایش عملی،‏ تمرین با پاسخ و مجموعه‌ای از سؤال‌های رایج مصاحبه دارد.</p>
-  <ul class="meta"><li><b>۱۷</b> <span>فصل با یک سناریوی واحد</span></li><li><b>۴۰۰۰+</b> <span>نمونه‌کد و دستور</span></li><li><b>۵۱۵</b> <span>تمرین با پاسخ</span></li><li><b>۲۴۰</b> <span>سؤال مصاحبه</span></li><li><b>۱۱۵</b> <span>شکل</span></li><li><b>۱</b> <span>پروژه‌ی پایانی</span></li></ul>
 </section>
 
 <section class="info" id="audience" aria-labelledby="au-h">
@@ -59,11 +71,20 @@
   </div>
 </section>
 
-<section class="info syl-sec" id="syllabus" aria-labelledby="sy-h">
-  <h2 id="sy-h">سرفصل‌ها</h2>
-  <p class="info-lead">هر فصل چند درس دارد و بعدش تمرین‌ها و سؤال‌های مصاحبه. روی هر فصل بزنید تا درس‌ها را ببینید؛ با مربع کنار هر درس آن را «خوانده‌شده» کنید.</p>
-  <div data-widget="Syllabus"></div>
+<section class="info" id="faq" aria-labelledby="fq-h">
+  <h2 id="fq-h">پرسش‌های پرتکرار</h2>
+  <details class="faq"><summary>چقدر زمان لازم است؟</summary><p>کل جزوه، با آزمایش‌ها و تمرین‌ها، ۴۹ روز با روزی حدود ۳ ساعت است (حدود ۹ هفته). اگر وقت کم دارید، «مسیر سریع» حدود ۸۱ ساعت، یعنی ۲۷ روز، است.</p></details>
+  <details class="faq"><summary>برای آزمایش‌ها چه چیزی لازم دارم؟</summary><p>بخش اول یک ماشین با k3s، بخش دوم یک Node دوم، و بخش سوم چند ماشین برای kubeadm. اگر ماشین ندارید، فصل ۱۷ مسیر جایگزین با minikube را دارد.</p></details>
+  <details class="faq"><summary>جزوه بر پایه‌ی کدام نسخه‌ی کوبرنتیز است؟</summary><p>نسخه‌ی v1.37. متن ترجمه، خلاصه و بازنویسی آموزشی مستندات رسمی kubernetes.io است و منبع‌ها در صفحه‌ی «منابع» آمده‌اند.</p></details>
+  <details class="faq"><summary>فرق «برنامه‌ی مطالعه» و «مسیر سریع» چیست؟</summary><p>برنامه‌ی مطالعه همه‌ی جزوه را در ۴۹ روز می‌چیند. مسیر سریع فقط مهم‌ترین بخش‌ها را برای کار عملیاتی و مصاحبه نشان می‌دهد.</p></details>
+  <details class="faq"><summary>پیشرفت و یادداشت‌هایم کجا ذخیره می‌شود؟</summary><p>تیک درس‌ها و تمرین‌ها، هایلایت‌ها و یادداشت‌ها فقط در همین مرورگر ذخیره می‌شوند و با پاک‌کردن داده‌ی مرورگر از بین می‌روند. از پنل «یادداشت‌ها» می‌توانید از هایلایت‌ها و یادداشت‌ها پشتیبان JSON بگیرید؛ تیک‌ها در آن نیستند.</p></details>
+  <details class="faq"><summary>شاپیفای واقعی است؟</summary><p>نه. روایت فرضی است و زیرساخت واقعی Shopify را توصیف نمی‌کند؛ فقط یک سناریوی یکسان برای همه‌ی فصل‌هاست.</p></details>
 </section>
+</div>
+<aside class="course-side" aria-label="عملکرد من">
+  <div data-widget="MyProgress"></div>
+</aside>
+</div>
 
 <section class="plan" id="plan" aria-labelledby="pl-h">
   <div class="pl-head">
@@ -132,14 +153,4 @@
     </div>
     <p class="rm-app"><a href="#plan">برنامه‌ی روزانه‌ی مطالعه</a> و <a href="#pathway">مسیر سریع</a> درست زیر همین نقشه‌اند. <a href="#ch17">فصل ۱۷ (پیوست)</a> در تمام مسیر همراه شماست: مرجع kubectl،‏ JSONPath،‏ واژه‌نامه و مسیر جایگزین minikube.</p>
   </div>
-</section>
-
-<section class="info" id="faq" aria-labelledby="fq-h">
-  <h2 id="fq-h">پرسش‌های پرتکرار</h2>
-  <details class="faq"><summary>چقدر زمان لازم است؟</summary><p>کل جزوه، با آزمایش‌ها و تمرین‌ها، ۴۹ روز با روزی حدود ۳ ساعت است (حدود ۹ هفته). اگر وقت کم دارید، «مسیر سریع» حدود ۸۱ ساعت، یعنی ۲۷ روز، است.</p></details>
-  <details class="faq"><summary>برای آزمایش‌ها چه چیزی لازم دارم؟</summary><p>بخش اول یک ماشین با k3s، بخش دوم یک Node دوم، و بخش سوم چند ماشین برای kubeadm. اگر ماشین ندارید، فصل ۱۷ مسیر جایگزین با minikube را دارد.</p></details>
-  <details class="faq"><summary>جزوه بر پایه‌ی کدام نسخه‌ی کوبرنتیز است؟</summary><p>نسخه‌ی v1.37. متن ترجمه، خلاصه و بازنویسی آموزشی مستندات رسمی kubernetes.io است و منبع‌ها در صفحه‌ی «منابع» آمده‌اند.</p></details>
-  <details class="faq"><summary>فرق «برنامه‌ی مطالعه» و «مسیر سریع» چیست؟</summary><p>برنامه‌ی مطالعه همه‌ی جزوه را در ۴۹ روز می‌چیند. مسیر سریع فقط مهم‌ترین بخش‌ها را برای کار عملیاتی و مصاحبه نشان می‌دهد.</p></details>
-  <details class="faq"><summary>پیشرفت و یادداشت‌هایم کجا ذخیره می‌شود؟</summary><p>تیک درس‌ها و تمرین‌ها، هایلایت‌ها و یادداشت‌ها فقط در همین مرورگر ذخیره می‌شوند و با پاک‌کردن داده‌ی مرورگر از بین می‌روند. از پنل «یادداشت‌ها» می‌توانید از هایلایت‌ها و یادداشت‌ها پشتیبان JSON بگیرید؛ تیک‌ها در آن نیستند.</p></details>
-  <details class="faq"><summary>شاپیفای واقعی است؟</summary><p>نه. روایت فرضی است و زیرساخت واقعی Shopify را توصیف نمی‌کند؛ فقط یک سناریوی یکسان برای همه‌ی فصل‌هاست.</p></details>
 </section>

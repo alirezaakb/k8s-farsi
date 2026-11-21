@@ -80,9 +80,13 @@ export default function Syllabus() {
   return (
     <div className="syl" ref={box}>
       <div className="syl-top">
-        <p className="syl-sum">
-          {fa(book.chapters.length)} فصل · {fa(lessons)} درس · {fa(blocks)} بخش تمرین و مصاحبه · مسیر اصلی حدود {hours(minutes)} · {fa(done)} درس خوانده شد
-        </p>
+        <ul className="syl-sum">
+          <li>{fa(book.chapters.length)} فصل</li>
+          <li>{fa(lessons)} درس</li>
+          <li>{fa(blocks)} بخش تمرین و مصاحبه</li>
+          <li>مسیر اصلی حدود {hours(minutes)}</li>
+          <li>{fa(done)} درس خوانده شد</li>
+        </ul>
         <span className="syl-act">
           {lastChapter && (
             <Link className="syl-go" to={{ pathname: '/' + lastChapter.id, hash: '#' + last.id }}>ادامه: فصل {lastChapter.n}، {last.text}</Link>

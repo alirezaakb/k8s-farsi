@@ -2,42 +2,67 @@
   <h1><span class="l"><i>کوبرنتیز</i></span><span class="l"><i>از صفر تا production</i></span></h1>
   <div class="cover-foot">
     <p class="lead">جزوه‌ی آموزشی فارسی بر پایه‌ی مستندات رسمی kubernetes.io (نسخه‌ی v1.37): هفده فصل، یک داستان، از یک ماشین تا cluster عملیاتی.</p>
-    <p class="cta"><a class="go" href="#ch1">شروع از فصل ۱</a><a href="#roadmap">نقشه‌ی راه</a></p>
+    <p class="cta"><a class="go" href="#ch1">شروع از فصل ۱</a><a href="#syllabus">سرفصل‌ها</a></p>
   </div>
 </header>
 
-<section class="about" aria-labelledby="ab-h">
+<nav class="tabs" aria-label="بخش‌های این صفحه"><a href="#about">معرفی</a><a href="#audience">مخاطبین</a><a href="#prereq">پیش‌نیازها</a><a href="#syllabus">سرفصل‌ها</a><a href="#plan">برنامه‌ی مطالعه</a><a href="#pathway">مسیر سریع</a><a href="#roadmap">نقشه‌ی راه</a><a href="#faq">پرسش‌ها</a></nav>
+
+<section class="about" id="about" aria-labelledby="ab-h">
   <h2 id="ab-h">درباره‌ی این جزوه</h2>
   <p class="about-text">این جزوه یک مسیر آموزشی از ساده به پیچیده است و همه‌ی فصل‌ها یک داستان را دنبال می‌کنند: یک تیم کوچک و تازه در شرکت «شاپیفای» (Shopify) که فروشگاه نمونه‌اش را از یک server به کوبرنتیز می‌برد و هر فصل یکی از مشکل‌های آن را حل می‌کند. این روایت فرضی است و زیرساخت واقعی Shopify را توصیف نمی‌کند. بخش اول (فصل‌های ۱ تا ۸) روی یک ماشین با k3s پیش می‌رود: نصب و اولین آزمایش،‏ container و Pod،‏ workloadها،‏ شبکه،‏ پیکربندی،‏ storage و مدیریت اشیا. بخش دوم (فصل‌های ۹ تا ۱۱) cluster را چند Node می‌کند: scheduling،‏ مقیاس‌دهی خودکار،‏ پایش و عیب‌یابی. بخش سوم (فصل‌های ۱۲ تا ۱۶) با کوبرنتیز اصلی و kubeadm است: معماری،‏ راه‌اندازی production،‏ امنیت و RBAC،‏ گسترش کوبرنتیز و پروژه‌ی جامع. فصل ۱۷ پیوست و مرجع است. هر فصل پس از تطبیق با صفحه‌های متناظر مستندات v1.37 به زبانی ساده و روان نوشته شده و پیوند صفحه‌های مرجع در ابتدای آن آمده است. هر فصل آزمایش عملی،‏ تمرین با پاسخ و مجموعه‌ای از سؤال‌های رایج مصاحبه دارد.</p>
   <ul class="meta"><li><b>۱۷</b> <span>فصل با یک سناریوی واحد</span></li><li><b>۴۰۰۰+</b> <span>نمونه‌کد و دستور</span></li><li><b>۵۱۵</b> <span>تمرین با پاسخ</span></li><li><b>۲۴۰</b> <span>سؤال مصاحبه</span></li><li><b>۱۱۵</b> <span>شکل</span></li><li><b>۱</b> <span>پروژه‌ی پایانی</span></li></ul>
-  <p class="about-links"><a href="#roadmap">نقشه‌ی راه</a><a href="#plan">برنامه‌ی مطالعه</a><a href="#pathway">مسیر سریع</a></p>
 </section>
 
-<section class="roadmap" id="roadmap" aria-labelledby="rm-h">
-  <div class="rm-head">
-    <h2 id="rm-h">نقشه‌ی راه جزوه</h2>
-    <p>از یک server دستی تا cluster عملیاتی؛‏ هر فصل یک گام از این مسیر است و یک مشکل واقعی شاپیفای را حل می‌کند.</p>
-  </div>
-  <div class="rm-ends">
-    <div class="rm-end rm-start">
-      <span class="rm-tag">نقطه‌ی شروع</span>
-      <p class="rm-big">شاپیفای روی یک server،‏ با انتشار دستی</p>
-      <ul><li>هر انتشار یعنی قطعی و هر خرابی یعنی بیدار شدن نیمه‌شب</li><li>پیش‌نیاز شما: آشنایی مقدماتی با Linux و خط فرمان</li></ul>
+<section class="info" id="audience" aria-labelledby="au-h">
+  <h2 id="au-h">این جزوه برای چه کسی است؟</h2>
+  <div class="two-lists">
+    <div class="yes">
+      <h3>مناسب است برای</h3>
+      <ul>
+        <li>توسعه‌دهنده‌ای که می‌خواهد برنامه‌اش را روی کوبرنتیز اجرا کند و بداند زیر آن چه می‌گذرد.</li>
+        <li>مهندس DevOps یا SRE که کوبرنتیز را تازه شروع می‌کند و مسیری از یک ماشین تا cluster عملیاتی می‌خواهد.</li>
+        <li>کسی که برای مصاحبه‌ی کوبرنتیز آماده می‌شود: ۲۴۰ سؤال مصاحبه با پاسخ.</li>
+        <li>کسی که می‌خواهد مستندات رسمی را به فارسی و همراه با آزمایش دنبال کند.</li>
+      </ul>
     </div>
-    <div class="rm-arrow" aria-hidden="true"><svg viewBox="0 0 60 24"><path d="M58 12H6M16 3 5 12l11 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>۱۶ فصل</span></div>
-    <div class="rm-end rm-goal">
-      <span class="rm-tag">مقصد</span>
-      <p class="rm-big">شاپیفای روی cluster عملیاتی و امن</p>
-      <ul><li>دسترس‌پذیری بالا،‏ مقیاس خودکار،‏ پایش و کنترل دسترسی</li><li>توان شما: ساختن،‏ اداره و عیب‌یابی cluster و آمادگی برای مصاحبه</li></ul>
+    <div class="no">
+      <h3>مناسب نیست برای</h3>
+      <ul>
+        <li>کسی که با Linux و خط فرمان هیچ آشنایی ندارد؛ اول باید آن را یاد بگیرد.</li>
+        <li>کسی که آموزش یک سرویس cloud مدیریت‌شده را می‌خواهد؛ آزمایش‌ها روی k3s و kubeadm و minikube است.</li>
+        <li>کسی که فقط یک دوره‌ی نظری کوتاه می‌خواهد؛ جزوه عملی و حجیم است و ۴۹ روز با روزی حدود ۳ ساعت طول می‌کشد.</li>
+      </ul>
     </div>
   </div>
-  <ol class="rm-track"><li class="rm-stage p1"><div class="rm-sh"><span class="rm-part">بخش ۱</span><span class="rm-level">سطح پایه</span></div><h3 class="rm-title">یک ماشین با k3s</h3><p class="rm-env">محیط: یک VM و k3s تک‌Node</p><ol class="rm-stations"><li class="rm-st"><a class="rm-dot" href="#ch1" aria-label="فصل ۱">۱</a><div class="rm-txt"><a href="#ch1" class="rm-t">شروع و اولین cluster</a><span class="rm-g">اولین Deployment و Service؛‏ self-healing و انتشار بدون قطعی</span><span class="rm-days">روزهای ۱ و ۲</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch2" aria-label="فصل ۲">۲</a><div class="rm-txt"><a href="#ch2" class="rm-t">container و image</a><span class="rm-g">ساختن image مربوط به API و registry خصوصی</span><span class="rm-days">روزهای ۳ و ۴</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch3" aria-label="فصل ۳">۳</a><div class="rm-txt"><a href="#ch3" class="rm-t">Pod از درون</a><span class="rm-g">probe و init container و sidecar</span><span class="rm-days">روزهای ۵ تا ۷</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch4" aria-label="فصل ۴">۴</a><div class="rm-txt"><a href="#ch4" class="rm-t">workloadها</a><span class="rm-g">پایگاه داده با StatefulSet؛‏ Job و CronJob و DaemonSet</span><span class="rm-days">روزهای ۸ تا ۱۱</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch5" aria-label="فصل ۵">۵</a><div class="rm-txt"><a href="#ch5" class="rm-t">شبکه</a><span class="rm-g">دسترسی با نام shopify.local؛‏ ایزوله کردن پایگاه داده</span><span class="rm-days">روزهای ۱۲ تا ۱۴</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch6" aria-label="فصل ۶">۶</a><div class="rm-txt"><a href="#ch6" class="rm-t">پیکربندی و منابع</a><span class="rm-g">رمز بیرون از image؛‏ سقف مصرف منابع</span><span class="rm-days">روزهای ۱۵ تا ۱۸</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch7" aria-label="فصل ۷">۷</a><div class="rm-txt"><a href="#ch7" class="rm-t">storage</a><span class="rm-g">داده‌ای که با حذف Pod از بین نمی‌رود</span><span class="rm-days">روزهای ۱۹ تا ۲۱</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch8" aria-label="فصل ۸">۸</a><div class="rm-txt"><a href="#ch8" class="rm-t">اشیا و API</a><span class="rm-g">مدیریت فایل‌ها،‏ namespace و Kustomize</span><span class="rm-days">روزهای ۲۲ تا ۲۴</span></div></li></ol><p class="rm-mile">نقطه‌ی عطف: پروژه‌ی پایان بخش اول</p></li><li class="rm-stage p2"><div class="rm-sh"><span class="rm-part">بخش ۲</span><span class="rm-level">سطح متوسط</span></div><h3 class="rm-title">چند Node</h3><p class="rm-env">محیط: همان k3s با Node دوم</p><ol class="rm-stations"><li class="rm-st"><a class="rm-dot" href="#ch9" aria-label="فصل ۹">۹</a><div class="rm-txt"><a href="#ch9" class="rm-t">scheduling</a><span class="rm-g">جای درست هر Pod و خالی کردن امن Node</span><span class="rm-days">روزهای ۲۶ تا ۲۸</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch10" aria-label="فصل ۱۰">۱۰</a><div class="rm-txt"><a href="#ch10" class="rm-t">مقیاس خودکار</a><span class="rm-g">آمادگی برای ترافیک Black Friday</span><span class="rm-days">روزهای ۲۹ و ۳۰</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch11" aria-label="فصل ۱۱">۱۱</a><div class="rm-txt"><a href="#ch11" class="rm-t">پایش و عیب‌یابی</a><span class="rm-g">log مرکزی،‏ معیارها و audit</span><span class="rm-days">روزهای ۳۱ تا ۳۳</span></div></li></ol><p class="rm-mile">نقطه‌ی عطف: فروشگاهی که خودش را با بار تطبیق می‌دهد</p></li><li class="rm-stage p3"><div class="rm-sh"><span class="rm-part">بخش ۳</span><span class="rm-level">سطح پیشرفته</span></div><h3 class="rm-title">production با kubeadm</h3><p class="rm-env">محیط: cluster چند‌Nodeی با kubeadm</p><ol class="rm-stations"><li class="rm-st"><a class="rm-dot" href="#ch12" aria-label="فصل ۱۲">۱۲</a><div class="rm-txt"><a href="#ch12" class="rm-t">معماری cluster</a><span class="rm-g">دیدن جزءبه‌جزء control plane</span><span class="rm-days">روزهای ۳۵ و ۳۶</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch13" aria-label="فصل ۱۳">۱۳</a><div class="rm-txt"><a href="#ch13" class="rm-t">راه‌اندازی production</a><span class="rm-g">دسترس‌پذیری بالا،‏ backup از etcd و ارتقا</span><span class="rm-days">روزهای ۳۷ و ۳۸</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch14" aria-label="فصل ۱۴">۱۴</a><div class="rm-txt"><a href="#ch14" class="rm-t">امنیت</a><span class="rm-g">RBAC و ServiceAccount و Pod Security</span><span class="rm-days">روزهای ۳۹ تا ۴۲</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch15" aria-label="فصل ۱۵">۱۵</a><div class="rm-txt"><a href="#ch15" class="rm-t">گسترش کوبرنتیز</a><span class="rm-g">CRD و Operator و قانون‌های خودکار</span><span class="rm-days">روزهای ۴۳ تا ۴۵</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch16" aria-label="فصل ۱۶">۱۶</a><div class="rm-txt"><a href="#ch16" class="rm-t">پروژه‌ی جامع</a><span class="rm-g">تمرین کامل پیش از انتشار</span><span class="rm-days">روز ۴۶</span></div></li></ol><p class="rm-mile">نقطه‌ی عطف: شاپیفای در production</p></li></ol>
-  <div class="rm-foot">
-    <div class="rm-anatomy"><b>هر فصل از این مراحل می‌گذرد:</b>
-      <ol><li>ماجرا</li><li>درس</li><li>آزمایش شاپیفای</li><li>مرجع عمیق‌تر</li><li>تمرین و مصاحبه</li><li>خلاصه</li></ol>
+</section>
+
+<section class="info" id="prereq" aria-labelledby="pr-h">
+  <h2 id="pr-h">پیش‌نیازها</h2>
+  <div class="two-lists">
+    <div class="yes">
+      <h3>لازم است</h3>
+      <ul>
+        <li>آشنایی مقدماتی با Linux و خط فرمان: جابه‌جایی بین پوشه‌ها، ویرایش یک فایل متنی و اجرای دستور.</li>
+        <li>آشنایی کلی با شبکه: IP و port و DNS.</li>
+        <li>یک ماشین Linux یا VM برای آزمایش‌ها؛ بخش‌های بعدی چند ماشین می‌خواهند. اگر ماشین ندارید، فصل ۱۷ مسیر جایگزین با minikube را دارد.</li>
+      </ul>
     </div>
-    <p class="rm-app"><a href="#plan">برنامه‌ی روزانه‌ی مطالعه</a> و <a href="#pathway">مسیر سریع</a> درست زیر همین نقشه‌اند. <a href="#ch17">فصل ۱۷ (پیوست)</a> در تمام مسیر همراه شماست: مرجع kubectl،‏ JSONPath،‏ واژه‌نامه و مسیر جایگزین minikube.</p>
+    <div class="no">
+      <h3>لازم نیست</h3>
+      <ul>
+        <li>تجربه‌ی قبلی با کوبرنتیز.</li>
+        <li>تجربه‌ی Docker؛ فصل ۱ و ۲ container و image را توضیح می‌دهند.</li>
+        <li>سخت‌افزار گران؛ بخش اول با یک VM و k3s تک‌Node انجام می‌شود.</li>
+      </ul>
+    </div>
   </div>
+</section>
+
+<section class="info syl-sec" id="syllabus" aria-labelledby="sy-h">
+  <h2 id="sy-h">سرفصل‌ها</h2>
+  <p class="info-lead">هر فصل چند درس دارد و بعدش تمرین‌ها و سؤال‌های مصاحبه. روی هر فصل بزنید تا درس‌ها را ببینید؛ با مربع کنار هر درس آن را «خوانده‌شده» کنید.</p>
+  <div data-widget="Syllabus"></div>
 </section>
 
 <section class="plan" id="plan" aria-labelledby="pl-h">
@@ -80,4 +105,41 @@
       <div class="tbl pw-tbl"><table><tbody><tr class="pw-vi"><th scope="row"><a href="#ch1"><span class="pw-n">۱</span>شروع و اولین cluster با k3s</a></th><td>همه‌ی فصل را بخوانید. فقط «مرجع ابزار خط فرمان kubectl» را کنار بگذارید و هر وقت دستوری لازم شد سراغش بروید</td></tr><tr class="pw-gk"><th scope="row"><a href="#ch2"><span class="pw-n">۲</span>container و image</a></th><td>اگر با Docker کار کرده‌اید،‏ درس و آزمایش شاپیفای کافی است؛‏ از مرجع فقط به‌روزرسانی imageها و registry خصوصی. بخش‌های RuntimeClass و CRI اختیاری‌اند</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch3"><span class="pw-n">۳</span>Pod از درون</a></th><td>درس و آزمایش؛‏ از مرجع این بخش‌ها: چرخه‌ی عمر و conditionها،‏ probeها،‏ terminate شدن،‏ init container و sidecar،‏ و QoS. بخش‌های Downward API و ephemeral container اختیاری‌اند</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch4"><span class="pw-n">۴</span>workloadها</a></th><td>درس و آزمایش؛‏ از مرجع این بخش‌ها: Deployment (با rollout و rollback و وضعیت)،‏ سپس StatefulSet،‏ بعد DaemonSet،‏ و در پایان Job و CronJob. بخش ReplicationController و قابلیت‌های پیشرفته‌ی Job اختیاری‌اند</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch5"><span class="pw-n">۵</span>شبکه</a></th><td>درس و آزمایش؛‏ از مرجع این بخش‌ها: Service و انواع آن،‏ کار kube-proxy،‏ نام‌گذاری DNS،‏ بخش Ingress،‏ معرفی Gateway API و بخش NetworkPolicy. بخش‌های dual-stack و topology-aware routing و Windows اختیاری‌اند</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch6"><span class="pw-n">۶</span>پیکربندی و منابع</a></th><td>درس و آزمایش؛‏ از مرجع این بخش‌ها: ConfigMap و Secret،‏ سپس requests و limits،‏ و در پایان LimitRange و ResourceQuota. بخش resource managerها و Windows اختیاری‌اند</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch7"><span class="pw-n">۷</span>storage</a></th><td>درس و آزمایش؛‏ از مرجع این بخش‌ها: Volumeها (به‌ویژه emptyDir و hostPath و projected)،‏ سپس PV و PVC،‏ و در پایان StorageClass و dynamic provisioning. مفهوم snapshot و cloning را هم در حد آشنایی بدانید</td></tr><tr class="pw-gk"><th scope="row"><a href="#ch8"><span class="pw-n">۸</span>اشیا و API</a></th><td>درس و آزمایش؛‏ از مرجع این بخش‌ها: namespace،‏ سپس label و annotation،‏ بعد finalizer و owner،‏ و در پایان apply اعلانی و Kustomize. جزئیات OpenAPI و storage version اختیاری‌اند</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch9"><span class="pw-n">۹</span>scheduling</a></th><td>کارگاه Node دوم؛‏ از مرجع این بخش‌ها: nodeSelector و affinity،‏ سپس taint و toleration،‏ بعد topology spread،‏ و در پایان priority و eviction و PodDisruptionBudget و drain امن. بخش‌های scheduling framework و tuning اختیاری‌اند</td></tr><tr class="pw-gk"><th scope="row"><a href="#ch10"><span class="pw-n">۱۰</span>مقیاس خودکار</a></th><td>بخش HPA و آزمایش گام‌به‌گام آن را کامل بخوانید؛‏ بخش VPA و مقیاس خودکار Nodeها را در حد مفهوم</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch11"><span class="pw-n">۱۱</span>پایش و عیب‌یابی</a></th><td>کل بخش عیب‌یابی (Pod و Service و خود cluster) مهم‌ترین مهارت روزمره است؛‏ به‌اضافه‌ی معماری log و بخش audit. بخش‌های trace و log query اختیاری‌اند</td></tr><tr class="pw-gk"><th scope="row"><a href="#ch12"><span class="pw-n">۱۲</span>معماری cluster</a></th><td>برای مصاحبه مهم است: اجزای control plane و Node،‏ سازوکار heartbeat،‏ کار controllerها و Lease،‏ و در پایان self-healing و garbage collection. بخش‌های swap و mixed version proxy اختیاری‌اند</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch13"><span class="pw-n">۱۳</span>راه‌اندازی production</a></th><td>اگر خودتان cluster می‌سازید این بخش‌ها را بخوانید: انتخاب runtime،‏ نصب با kubeadm،‏ دسترس‌پذیری بالا،‏ certificateها،‏ version skew و عیب‌یابی kubeadm. اگر cluster مدیریت‌شده‌ی cloud دارید،‏ سبک‌تر بخوانید</td></tr><tr class="pw-vi"><th scope="row"><a href="#ch14"><span class="pw-n">۱۴</span>امنیت</a></th><td>این بخش‌ها: authentication و authorization،‏ سپس RBAC و ServiceAccount،‏ و در پایان admission و Pod Security Standards. راهنمای hardening و مهاجرت از ABAC اختیاری‌اند</td></tr><tr class="pw-gk"><th scope="row"><a href="#ch15"><span class="pw-n">۱۵</span>گسترش کوبرنتیز</a></th><td>مفهوم custom resource و CRD و الگوی Operator را بدانید؛‏ بخش webhook و ValidatingAdmissionPolicy را اگر روی پلتفرم کار می‌کنید</td></tr><tr class="pw-op"><th scope="row"><a href="#ch16"><span class="pw-n">۱۶</span>پروژه‌ی جامع</a></th><td>فقط اگر یک پروژه‌ی تمرینی اضافه می‌خواهید؛‏ پروژه‌ی پایان بخش اول و روزهای مرور بخش زیادی از آن را پوشش می‌دهند</td></tr><tr class="pw-op"><th scope="row"><a href="#ch17"><span class="pw-n">۱۷</span>پیوست</a></th><td>مرجع است،‏ نه درس؛‏ هر وقت دستوری یا واژه‌ای لازم شد سراغش بروید</td></tr></tbody></table></div>
     </div>
   </div>
+</section>
+
+<section class="roadmap" id="roadmap" aria-labelledby="rm-h">
+  <div class="rm-head">
+    <h2 id="rm-h">نقشه‌ی راه جزوه</h2>
+    <p>از یک server دستی تا cluster عملیاتی؛‏ هر فصل یک گام از این مسیر است و یک مشکل واقعی شاپیفای را حل می‌کند.</p>
+  </div>
+  <div class="rm-ends">
+    <div class="rm-end rm-start">
+      <span class="rm-tag">نقطه‌ی شروع</span>
+      <p class="rm-big">شاپیفای روی یک server،‏ با انتشار دستی</p>
+      <ul><li>هر انتشار یعنی قطعی و هر خرابی یعنی بیدار شدن نیمه‌شب</li><li>پیش‌نیاز شما: آشنایی مقدماتی با Linux و خط فرمان</li></ul>
+    </div>
+    <div class="rm-arrow" aria-hidden="true"><svg viewBox="0 0 60 24"><path d="M58 12H6M16 3 5 12l11 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg><span>۱۶ فصل</span></div>
+    <div class="rm-end rm-goal">
+      <span class="rm-tag">مقصد</span>
+      <p class="rm-big">شاپیفای روی cluster عملیاتی و امن</p>
+      <ul><li>دسترس‌پذیری بالا،‏ مقیاس خودکار،‏ پایش و کنترل دسترسی</li><li>توان شما: ساختن،‏ اداره و عیب‌یابی cluster و آمادگی برای مصاحبه</li></ul>
+    </div>
+  </div>
+  <ol class="rm-track"><li class="rm-stage p1"><div class="rm-sh"><span class="rm-part">بخش ۱</span><span class="rm-level">سطح پایه</span></div><h3 class="rm-title">یک ماشین با k3s</h3><p class="rm-env">محیط: یک VM و k3s تک‌Node</p><ol class="rm-stations"><li class="rm-st"><a class="rm-dot" href="#ch1" aria-label="فصل ۱">۱</a><div class="rm-txt"><a href="#ch1" class="rm-t">شروع و اولین cluster</a><span class="rm-g">اولین Deployment و Service؛‏ self-healing و انتشار بدون قطعی</span><span class="rm-days">روزهای ۱ و ۲</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch2" aria-label="فصل ۲">۲</a><div class="rm-txt"><a href="#ch2" class="rm-t">container و image</a><span class="rm-g">ساختن image مربوط به API و registry خصوصی</span><span class="rm-days">روزهای ۳ و ۴</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch3" aria-label="فصل ۳">۳</a><div class="rm-txt"><a href="#ch3" class="rm-t">Pod از درون</a><span class="rm-g">probe و init container و sidecar</span><span class="rm-days">روزهای ۵ تا ۷</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch4" aria-label="فصل ۴">۴</a><div class="rm-txt"><a href="#ch4" class="rm-t">workloadها</a><span class="rm-g">پایگاه داده با StatefulSet؛‏ Job و CronJob و DaemonSet</span><span class="rm-days">روزهای ۸ تا ۱۱</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch5" aria-label="فصل ۵">۵</a><div class="rm-txt"><a href="#ch5" class="rm-t">شبکه</a><span class="rm-g">دسترسی با نام shopify.local؛‏ ایزوله کردن پایگاه داده</span><span class="rm-days">روزهای ۱۲ تا ۱۴</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch6" aria-label="فصل ۶">۶</a><div class="rm-txt"><a href="#ch6" class="rm-t">پیکربندی و منابع</a><span class="rm-g">رمز بیرون از image؛‏ سقف مصرف منابع</span><span class="rm-days">روزهای ۱۵ تا ۱۸</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch7" aria-label="فصل ۷">۷</a><div class="rm-txt"><a href="#ch7" class="rm-t">storage</a><span class="rm-g">داده‌ای که با حذف Pod از بین نمی‌رود</span><span class="rm-days">روزهای ۱۹ تا ۲۱</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch8" aria-label="فصل ۸">۸</a><div class="rm-txt"><a href="#ch8" class="rm-t">اشیا و API</a><span class="rm-g">مدیریت فایل‌ها،‏ namespace و Kustomize</span><span class="rm-days">روزهای ۲۲ تا ۲۴</span></div></li></ol><p class="rm-mile">نقطه‌ی عطف: پروژه‌ی پایان بخش اول</p></li><li class="rm-stage p2"><div class="rm-sh"><span class="rm-part">بخش ۲</span><span class="rm-level">سطح متوسط</span></div><h3 class="rm-title">چند Node</h3><p class="rm-env">محیط: همان k3s با Node دوم</p><ol class="rm-stations"><li class="rm-st"><a class="rm-dot" href="#ch9" aria-label="فصل ۹">۹</a><div class="rm-txt"><a href="#ch9" class="rm-t">scheduling</a><span class="rm-g">جای درست هر Pod و خالی کردن امن Node</span><span class="rm-days">روزهای ۲۶ تا ۲۸</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch10" aria-label="فصل ۱۰">۱۰</a><div class="rm-txt"><a href="#ch10" class="rm-t">مقیاس خودکار</a><span class="rm-g">آمادگی برای ترافیک Black Friday</span><span class="rm-days">روزهای ۲۹ و ۳۰</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch11" aria-label="فصل ۱۱">۱۱</a><div class="rm-txt"><a href="#ch11" class="rm-t">پایش و عیب‌یابی</a><span class="rm-g">log مرکزی،‏ معیارها و audit</span><span class="rm-days">روزهای ۳۱ تا ۳۳</span></div></li></ol><p class="rm-mile">نقطه‌ی عطف: فروشگاهی که خودش را با بار تطبیق می‌دهد</p></li><li class="rm-stage p3"><div class="rm-sh"><span class="rm-part">بخش ۳</span><span class="rm-level">سطح پیشرفته</span></div><h3 class="rm-title">production با kubeadm</h3><p class="rm-env">محیط: cluster چند‌Nodeی با kubeadm</p><ol class="rm-stations"><li class="rm-st"><a class="rm-dot" href="#ch12" aria-label="فصل ۱۲">۱۲</a><div class="rm-txt"><a href="#ch12" class="rm-t">معماری cluster</a><span class="rm-g">دیدن جزءبه‌جزء control plane</span><span class="rm-days">روزهای ۳۵ و ۳۶</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch13" aria-label="فصل ۱۳">۱۳</a><div class="rm-txt"><a href="#ch13" class="rm-t">راه‌اندازی production</a><span class="rm-g">دسترس‌پذیری بالا،‏ backup از etcd و ارتقا</span><span class="rm-days">روزهای ۳۷ و ۳۸</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch14" aria-label="فصل ۱۴">۱۴</a><div class="rm-txt"><a href="#ch14" class="rm-t">امنیت</a><span class="rm-g">RBAC و ServiceAccount و Pod Security</span><span class="rm-days">روزهای ۳۹ تا ۴۲</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch15" aria-label="فصل ۱۵">۱۵</a><div class="rm-txt"><a href="#ch15" class="rm-t">گسترش کوبرنتیز</a><span class="rm-g">CRD و Operator و قانون‌های خودکار</span><span class="rm-days">روزهای ۴۳ تا ۴۵</span></div></li><li class="rm-st"><a class="rm-dot" href="#ch16" aria-label="فصل ۱۶">۱۶</a><div class="rm-txt"><a href="#ch16" class="rm-t">پروژه‌ی جامع</a><span class="rm-g">تمرین کامل پیش از انتشار</span><span class="rm-days">روز ۴۶</span></div></li></ol><p class="rm-mile">نقطه‌ی عطف: شاپیفای در production</p></li></ol>
+  <div class="rm-foot">
+    <div class="rm-anatomy"><b>هر فصل از این مراحل می‌گذرد:</b>
+      <ol><li>ماجرا</li><li>درس</li><li>آزمایش شاپیفای</li><li>مرجع عمیق‌تر</li><li>تمرین و مصاحبه</li><li>خلاصه</li></ol>
+    </div>
+    <p class="rm-app"><a href="#plan">برنامه‌ی روزانه‌ی مطالعه</a> و <a href="#pathway">مسیر سریع</a> درست زیر همین نقشه‌اند. <a href="#ch17">فصل ۱۷ (پیوست)</a> در تمام مسیر همراه شماست: مرجع kubectl،‏ JSONPath،‏ واژه‌نامه و مسیر جایگزین minikube.</p>
+  </div>
+</section>
+
+<section class="info" id="faq" aria-labelledby="fq-h">
+  <h2 id="fq-h">پرسش‌های پرتکرار</h2>
+  <details class="faq"><summary>چقدر زمان لازم است؟</summary><p>کل جزوه، با آزمایش‌ها و تمرین‌ها، ۴۹ روز با روزی حدود ۳ ساعت است (حدود ۹ هفته). اگر وقت کم دارید، «مسیر سریع» حدود ۸۱ ساعت، یعنی ۲۷ روز، است.</p></details>
+  <details class="faq"><summary>برای آزمایش‌ها چه چیزی لازم دارم؟</summary><p>بخش اول یک ماشین با k3s، بخش دوم یک Node دوم، و بخش سوم چند ماشین برای kubeadm. اگر ماشین ندارید، فصل ۱۷ مسیر جایگزین با minikube را دارد.</p></details>
+  <details class="faq"><summary>جزوه بر پایه‌ی کدام نسخه‌ی کوبرنتیز است؟</summary><p>نسخه‌ی v1.37. متن ترجمه، خلاصه و بازنویسی آموزشی مستندات رسمی kubernetes.io است و منبع‌ها در صفحه‌ی «منابع» آمده‌اند.</p></details>
+  <details class="faq"><summary>فرق «برنامه‌ی مطالعه» و «مسیر سریع» چیست؟</summary><p>برنامه‌ی مطالعه همه‌ی جزوه را در ۴۹ روز می‌چیند. مسیر سریع فقط مهم‌ترین بخش‌ها را برای کار عملیاتی و مصاحبه نشان می‌دهد.</p></details>
+  <details class="faq"><summary>پیشرفت و یادداشت‌هایم کجا ذخیره می‌شود؟</summary><p>تیک درس‌ها و تمرین‌ها، هایلایت‌ها و یادداشت‌ها فقط در همین مرورگر ذخیره می‌شوند و با پاک‌کردن داده‌ی مرورگر از بین می‌روند. از پنل «یادداشت‌ها» می‌توانید از هایلایت‌ها و یادداشت‌ها پشتیبان JSON بگیرید؛ تیک‌ها در آن نیستند.</p></details>
+  <details class="faq"><summary>شاپیفای واقعی است؟</summary><p>نه. روایت فرضی است و زیرساخت واقعی Shopify را توصیف نمی‌کند؛ فقط یک سناریوی یکسان برای همه‌ی فصل‌هاست.</p></details>
 </section>

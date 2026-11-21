@@ -5,5 +5,6 @@
 // Add the component here under the same name and it is rendered in that place
 // (see ContentView.jsx).
 import SelfHealing from './SelfHealing.jsx';
+import Syllabus from './Syllabus.jsx';
 
-export default { SelfHealing };
+export default { SelfHealing, Syllabus };

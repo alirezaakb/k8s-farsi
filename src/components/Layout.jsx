@@ -185,9 +185,10 @@ export function Shell({ page, chapter }) {
   const [currentId, setCurrentId] = useState(null);
   const columns = useColumns();
   const onLoaded = useCallback((el, list) => {
-    const items = list.map(({ id, text, min }) => ({ id, text, min }));
+    const known = Object.fromEntries((chapter?.lessons || []).map((l) => [l.id, l.min]));
+    const items = list.map(({ id, text, min }) => ({ id, text, min: known[id] ?? min }));
     setOutline(items);
-    if (chapter && items.length) setSections(chapter.id, items.map((o) => o.id));
+    if (chapter && items.length) setSections(chapter.id, items.map((o) => o.id), (chapter.exercises || []).map((e) => e.id));
   }, [chapter]);
 
   useEffect(() => {

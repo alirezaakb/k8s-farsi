@@ -19,17 +19,24 @@ const changed = () => { version++; subs.forEach((f) => f()); };
 export const useProgress = () => useSyncExternalStore((f) => { subs.add(f); return () => subs.delete(f); }, () => version);
 
 export const isRead = (ch, id) => !!data[ch]?.ids?.[id];
-export const readCount = (ch) => Object.keys(data[ch]?.ids || {}).length;
+// lessons that are marked (exercises can be marked too, but are not counted in the chapter's percentage)
+export const readCount = (ch) => {
+  const rec = data[ch];
+  if (!rec) return 0;
+  return rec.lessons ? rec.lessons.filter((id) => rec.ids[id]).length : Object.keys(rec.ids || {}).length;
+};
 export const chapterTotal = (ch) => data[ch]?.total || 0;
 export const lastPlace = () => last;
 
-/** Remember how many sections the chapter has and drop marks for sections that no longer exist. */
-export function setSections(ch, ids) {
+/** Remember the lessons of the chapter (and its exercise blocks) and drop marks for ones that no longer exist. */
+export function setSections(ch, ids, extra = []) {
   const rec = data[ch] || { ids: {} };
   const keep = {};
-  ids.forEach((id) => { if (rec.ids[id]) keep[id] = 1; });
-  if (rec.total === ids.length && Object.keys(keep).length === Object.keys(rec.ids).length) return;
-  data = { ...data, [ch]: { total: ids.length, ids: keep } };
+  [...ids, ...extra].forEach((id) => { if (rec.ids[id]) keep[id] = 1; });
+  const same = rec.total === ids.length && rec.lessons && rec.lessons.length === ids.length && rec.lessons.every((x, i) => x === ids[i])
+    && Object.keys(keep).length === Object.keys(rec.ids).length;
+  if (same) return;
+  data = { ...data, [ch]: { total: ids.length, lessons: ids, ids: keep } };
   save(READ, data);
   changed();
 }

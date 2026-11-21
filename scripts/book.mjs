@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { chapterLessons } from './syllabus.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CONTENT = path.join(ROOT, 'content');
@@ -24,7 +25,8 @@ export function readBook() {
     const n = (html.match(/<span class="ch-num">([^<]*)<\/span>/) || [])[1]?.trim() ?? String(i + 1);
     const h2 = html.match(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/);
     pageIds[id] = idsOf(html);
-    return { id, n, title: h2 ? text(h2[1]) : id, part: meta.parts[id] || null };
+    const { lessons, exercises } = chapterLessons(html);
+    return { id, n, title: h2 ? text(h2[1]) : id, part: meta.parts[id] || null, lessons, exercises };
   });
   pageIds.home = idsOf(read('home.html'));
   pageIds.sources = idsOf(read('sources.html'));

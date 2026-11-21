@@ -3,6 +3,7 @@
 // The wrappers only exist in the rendered page: the chapter header stays visible, and serializeContent()
 // (editing.js) unwraps them, so the text of content/chN.html is never changed by this.
 
+export const INTRO_TITLE = 'آغاز فصل: ماجرا و هدف';
 const isSpace = (n) => n.nodeType === 3 && !n.data.trim();
 const isHead = (n) => n.nodeType === 1 && n.matches('.ch-head, .ch-sub, details.refs');
 
@@ -42,7 +43,7 @@ export function buildLessons(root) {
   while (i < kids.length && (isSpace(kids[i]) || isHead(kids[i]))) i++;
 
   const groups = [];
-  let cur = { id: sec.id, title: 'آغاز فصل', nodes: [] };
+  let cur = { id: sec.id, title: INTRO_TITLE, nodes: [] };
   for (; i < kids.length; i++) {
     const n = kids[i];
     if (n.nodeType === 1 && n.tagName === 'H3' && n.id) {

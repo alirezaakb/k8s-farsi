@@ -1,7 +1,7 @@
 // Entrance for the parts of a page as they scroll into view: heading, text, then figures, staggered.
 // Uses the Web Animations API, so the page's HTML is never touched (the in-place editor saves it as is).
 const HOME = '.about h2,.about-text,.about .meta li,.about-links,.rm-head,.rm-end,.rm-stage,.rm-foot,.pl-head,.pl-stats div,.pl-alt,.pl-prog,.pl-week,.pw-bar,.pw-side,.pw-main';
-const CHAPTER = '.ch-num,.ch-head h1,.ch-sub,main h3,figure,.story,.note,.warn,.lab,.deep,.ex,.recap,.src-title,.foot li';
+const CHAPTER = '.ch-num,.ch-head h1,.ch-sub,main h3,figure,.story,.note,.warn,.lab,.deep,.ex,.recap,.src-title,.foot li,.lesson > :nth-child(-n+6),.lessonbar > *';
 
 export function initReveal(root, page) {
   if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};

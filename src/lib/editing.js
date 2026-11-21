@@ -1,6 +1,7 @@
 // Loaded only when someone edits: turns the edited page back into the text of its content/ file,
 // and saves that file to GitHub with the user's own token.
 import book, { BASE } from '../book.js';
+import { unwrapLessons } from './lessons.js';
 
 const TOKEN_KEY = 'jozve-gh-token';
 const FA = '۰۱۲۳۴۵۶۷۸۹';
@@ -19,6 +20,7 @@ export function unprepare(html) {
 /** The text of the page's content file, from what is on screen. */
 export function serializeContent(root, page) {
   const c = root.cloneNode(true);
+  unwrapLessons(c); // the one-lesson-at-a-time wrappers exist only on screen
   c.querySelectorAll('mark[data-hl]').forEach((m) => m.replaceWith(...m.childNodes)); // highlights are not content
   c.querySelectorAll('details.more,details.ex,details.ans').forEach((d) => d.removeAttribute('open')); // folds are opened by the reader, not part of the text
   c.querySelectorAll('[contenteditable],[spellcheck]').forEach((e) => { e.removeAttribute('contenteditable'); e.removeAttribute('spellcheck'); });

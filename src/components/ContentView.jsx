@@ -5,7 +5,9 @@ import { BASE } from '../book.js';
 import { loadPage, prepare } from '../lib/content.js';
 import { editingBuiltIn, editor, useEditor } from '../lib/editor.js';
 import { clearDraft, resolveText, saveDraft } from '../lib/overrides.js';
+import { buildLessons, showLesson } from '../lib/lessons.js';
 import { initPlan } from '../lib/plan.js';
+import { setLast } from '../lib/progress.js';
 import { initReveal } from '../lib/reveal.js';
 import { scrollTop, settleTo } from '../lib/settle.js';
 import { initNotes } from '../legacy/notes.js';
@@ -45,13 +47,14 @@ function setEditable(root, on) {
  * highlights are re-applied, `data-widget` placeholders become React components,
  * and (when editing is on for this device) the text can be edited in place.
  */
-export default function ContentView({ page, onLoaded }) {
+export default function ContentView({ page, onLoaded, onLesson }) {
   const [html, setHtml] = useState(null);
   const [failed, setFailed] = useState(false);
   const [slots, setSlots] = useState([]);
   const [reloadKey, setReloadKey] = useState(0);
   const ref = useRef(null);
   const notes = useRef(null);
+  const lessons = useRef([]); // the lessons of this chapter; only one is shown at a time
   const base = useRef({ raw: '', bundle: '' }); // hashes: text the edits are relative to / text the site was built with
   const editing = useRef(null); // the editing code, loaded on first use
   const location = useLocation();
@@ -75,6 +78,7 @@ export default function ContentView({ page, onLoaded }) {
     if (html === null) return undefined;
     const root = ref.current;
     const undo = [];
+    lessons.current = buildLessons(root);
     if (page === 'home') undo.push(initPlan(root));
     undo.push(initReveal(root, page));
 
@@ -97,18 +101,29 @@ export default function ContentView({ page, onLoaded }) {
     window.addEventListener('jozve:prefs', onPrefs);
     window.addEventListener('beforeprint', beforePrint);
     undo.push(() => { window.removeEventListener('jozve:prefs', onPrefs); window.removeEventListener('beforeprint', beforePrint); });
-    onLoaded?.(root);
+    onLoaded?.(root, lessons.current);
     return () => undo.forEach((f) => f());
   }, [html, page, onLoaded]);
 
   useEffect(() => {
     if (html === null) return undefined;
+    const root = ref.current;
     const hl = /^#hl=(.+)$/.exec(location.hash);
-    if (hl) { notes.current?.jump(decodeURIComponent(hl[1])); return undefined; }
-    if (location.hash.length > 1) {
-      const el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-      if (el) { openAncestors(el); return settleTo(el); }
+    let target = null;
+    if (hl) target = root.querySelector(`mark[data-hl="${decodeURIComponent(hl[1]).replace(/"/g, '')}"]`);
+    else if (location.hash.length > 1) target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+
+    // a chapter shows one lesson: the one the address points into, else the first
+    const list = lessons.current;
+    if (list.length) {
+      const id = target?.closest?.('.lesson')?.dataset.lesson || list[0].id;
+      showLesson(root, id);
+      onLesson?.(id);
+      setLast(page, id, list.find((l) => l.id === id)?.text || '');
     }
+
+    if (hl) { requestAnimationFrame(() => notes.current?.jump(decodeURIComponent(hl[1]))); return undefined; }
+    if (target) { openAncestors(target); return settleTo(target); }
     scrollTop();
     return undefined;
   }, [html, location.key, location.hash]);

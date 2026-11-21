@@ -299,7 +299,7 @@ export function initNotes(){
     var t=e.target.closest('[data-a]');if(!t||t.disabled) return;
     var li=t.closest('.nt-i'),id=li&&li.getAttribute('data-id'),it=byId(id),a=t.getAttribute('data-a');
     if(!it) return;
-    if(a==='go'){if(it.lost)return;closePanel();if(document.getElementById(it.ch))jump(id);else if(CH[it.ch])window.jozveGo(CH[it.ch].h+'#hl='+encodeURIComponent(id));}
+    if(a==='go'){if(it.lost)return;closePanel();if(CH[it.ch])window.jozveGo(CH[it.ch].h+'#hl='+encodeURIComponent(id));else if(document.getElementById(it.ch))jump(id);}
     else if(a==='note'){openNote(it);}
     else if(a==='del'){remove(id);}
   });

@@ -340,3 +340,34 @@ details.ex:not([open]){margin-bottom:8px}
 details.more>summary .m-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;color:var(--ink-2);font-size:var(--step-small)}
 .toc-mobile li a{flex:1;min-width:0}
 .toc-mobile li a small{display:block;color:var(--ink-2);font-size:var(--step-small)}
+
+/* ---- 17. one lesson at a time -------------------------------------------------------------- */
+.lesson{display:none}
+.lesson.current{display:block;animation:lesson-in .3s ease-out}
+@keyframes lesson-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+body.editing .lesson{display:block}
+@media print{.lesson{display:block!important;animation:none}}
+@media (prefers-reduced-motion: reduce){.lesson.current{animation:none}}
+
+.lessonbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:40px 0 24px}
+.lb-pos{grid-column:1/-1;margin:0;color:var(--ink-2);font-size:var(--step-small)}
+.lb-tick{grid-column:1/-1;display:flex;align-items:center;gap:14px;width:100%;padding:18px 22px;border:0;border-radius:0;
+  background:var(--sunk);color:var(--ink);font:800 var(--step-body) "Vazirmatn",Tahoma,sans-serif;cursor:pointer;text-align:start;
+  transition:background-color .15s,color .15s}
+.lb-tick i{flex:none;width:26px;height:26px;background:var(--ground);position:relative}
+.lb-tick:hover{background:var(--accent-soft)}
+.lb-tick[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.lb-tick[aria-pressed="true"] i{background:var(--on-accent)}
+.lb-tick[aria-pressed="true"] i::after{content:"\2713";position:absolute;inset:0;display:grid;place-items:center;color:var(--accent);font-size:1.1rem;font-weight:900;line-height:1}
+.lessonbar a{display:grid;gap:2px;padding:16px 20px;background:var(--surface);color:var(--ink);text-decoration:none;min-width:0;transition:background-color .15s}
+.lessonbar a:hover{background:var(--accent-soft)}
+.lessonbar a small{color:var(--ink-2);font-size:var(--step-small)}
+.lessonbar a span{font-weight:800;line-height:1.6;overflow-wrap:anywhere}
+.lb-next{text-align:end;grid-column:2}
+.lb-prev{grid-column:1}
+.lb-gap{display:block}
+@media (max-width:600px){.lessonbar{grid-template-columns:1fr}.lb-next,.lb-prev{grid-column:1}}
+.outline li.cur a{background:var(--accent-soft);color:var(--accent-ink);font-weight:800}
+.outline li.cur .chk{outline:2px solid var(--accent-ink);outline-offset:1px}
+.lno{display:inline-block;min-width:1.6em;color:var(--ink-2);font-weight:400}
+.toc-mobile li.cur a{font-weight:800;color:var(--accent-ink)}

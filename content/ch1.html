@@ -3,15 +3,15 @@
   <details class="refs"><summary>مراجع رسمی این فصل <small>(۱۳)</small></summary><p class="ch-sub">مرجع: <a href="https://kubernetes.io/docs/concepts/">concepts</a> · <a href="https://kubernetes.io/docs/concepts/overview/">concepts/overview</a> · <a href="https://kubernetes.io/docs/concepts/overview/components/">concepts/overview/components</a> · <a href="https://kubernetes.io/docs/concepts/overview/kubectl/">concepts/overview/kubectl</a> · <a href="https://kubernetes.io/docs/reference/kubectl/">reference/kubectl</a> · <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/">tutorials/kubernetes-basics</a> · <a href="https://kubernetes.io/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/">create-cluster/cluster-intro</a> · <a href="https://kubernetes.io/docs/concepts/architecture/self-healing/">architecture/self-healing</a> · <a href="https://docs.k3s.io/quick-start">docs.k3s.io/quick-start</a> · <a href="https://docs.k3s.io/installation/requirements">requirements</a> · <a href="https://docs.k3s.io/installation/packaged-components">packaged-components</a> · <a href="https://docs.k3s.io/installation/private-registry">private-registry</a> · <a href="https://docs.k3s.io/installation/airgap">airgap</a></p></details>
 
   <div class="story">
-    <b>شب حراج پاییزه</b>
-    <p>در این داستان فرضی،‏ تیمی سه‌نفره در شاپیفای یک فروشگاه آزمایشی راه انداخته است. سارا backend را می‌نویسد،‏ امید روی frontend کار می‌کند و شما مسئول زیرساخت هستید. رابط فروشگاه،‏ API،‏ پایگاه داده و گزارش شبانه روی یک server با <code>docker compose</code> اجرا می‌شوند.</p>
+    <b>ساعت ۲:۱۰ بامداد،‏ API فروشگاه از کار افتاد</b>
+    <p>در فروشگاه آزمایشی شاپیفای،‏ سارا روی API و امید روی رابط فروشگاه کار می‌کنند. شما مسئول زیرساخت هستید. رابط فروشگاه،‏ API،‏ پایگاه داده و گزارش شبانه تا شب حراج روی یک سرور با <code>docker compose</code> اجرا می‌شوند.</p>
     <p>در ساعت اول حراج،‏ ترافیک شش برابر می‌شود. تیم در بررسی حادثه سه مشکل را پیدا می‌کند.</p>
     <ol>
       <li><b>افزایش ظرفیت دستی بود.</b> سارا دو container (محیط اجرای جداگانه) برای API بالا آورد و تنظیمات nginx را عوض کرد تا درخواست‌ها به آن‌ها هم برسند.</li>
       <li><b>بازیابی خودکار نبود.</b> ساعت ۲:۱۰ بامداد فرایند API به‌دلیل کمبود حافظه از کار افتاد و دوباره اجرا نشد. تیم تا ساعت ۸ صبح و پیام مشتری‌ها از مشکل باخبر نشد.</li>
       <li><b>انتشار نسخه‌ی جدید قطعی داشت.</b> به‌روزرسانی پنج دقیقه فروشگاه را از دسترس خارج کرد. نسخه‌ی جدید خطا داشت و پیدا کردن و اجرای نسخه‌ی سالم قبلی نیم ساعت طول کشید.</li>
     </ol>
-    <p>در آزمایش این فصل،‏ nginx را به‌جای API روی k3s اجرا می‌کنید. برای آن سه replica (نمونه‌ی همسان از برنامه)،‏ یک نشانی ثابت و روشی برای انتشار تدریجی و برگشت به نسخه‌ی قبل در نظر می‌گیرید.</p>
+    <p>در آزمایش این فصل،‏ nginx نقش API فروشگاه را دارد. سه replica از آن اجرا می‌کنید و بعد رفتار برنامه را هنگام بالا رفتن بار،‏ خرابی و انتشار نسخه‌ی تازه می‌بینید.</p>
   </div>
   <div class="note">
     <b>هدف و پیش‌نیاز</b>
@@ -23,15 +23,15 @@
     <ol>
       <li><a href="#ch1-concepts">ایده‌ی اصلی کوبرنتیز</a> را با مثال شب حراج یاد بگیرید.</li>
       <li><a href="#ch1-prepare-vm">ماشین را آماده کنید</a>،‏ k3s را نصب کنید و <a href="#ch1-first-pod">اولین Pod</a> را اجرا کنید.</li>
-      <li><a href="#ch1-before-lab">چهار شیء آزمایش</a> را بشناسید و چهار بخش آزمایش شاپیفای را به‌ترتیب انجام دهید.</li>
+      <li><a href="#ch1-before-lab">چهار شیء آزمایش</a> را بشناسید و <a href="#ch1-lab-deploy">آزمایش شاپیفای</a> را شروع کنید. در پایان هر بخش،‏ یک نشانه را در خروجی دستورها بررسی می‌کنید.</li>
       <li>با <a href="#ch1-troubleshooting">عیب‌یابی</a> و <a href="#ch1-solved">جمع‌بندی و تمرین‌ها</a> دانسته‌هایتان را محک بزنید.</li>
     </ol>
     <p><a href="#ch1-going-back-in-time">پیشینه‌ی deployment</a> و <a href="#ch1-kubectl-ref">مرجع kubectl</a> را می‌توانید هنگام نیاز بخوانید.</p>
   </div>
 
-  <h3 id="ch1-concepts">از خواسته‌ی شما تا اجرای برنامه <small>(Concepts)</small></h3>
-  <p>فرض کنید برای تحمل ترافیک حراج،‏ سه replica از API لازم دارید. در کوبرنتیز این خواسته را ثبت می‌کنید. به آن <b>desired state</b> (وضعیت مطلوب) می‌گوییم. اگر در حال حاضر فقط دو replica وجود داشته باشد،‏ کوبرنتیز اختلاف را می‌بیند و برای ساختن replica سوم اقدام می‌کند.</p>
-  <p>به این فرایندِ پیوسته‌ی بررسی وضعیت و جبران اختلاف،‏ <b>reconciliation</b> می‌گوییم. در آزمایش فصل،‏ خودتان یک Pod را حذف می‌کنید تا نتیجه‌ی همین فرایند را ببینید.</p>
+  <h3 id="ch1-concepts">اگر از سه replica یکی کم شود،‏ چه اتفاقی می‌افتد؟ <small>(Concepts)</small></h3>
+  <p>برای شب حراج در فایل پیکربندی می‌نویسید <code>replicas: 3</code>. این مقدار بخشی از <b>desired state</b> یا وضعیت مطلوب است. حتی اگر یکی از Podهای برنامه حذف شود،‏ عدد سه در فایل و در مشخصات Deployment باقی می‌ماند.</p>
+  <p>وقتی ReplicaSet controller می‌بیند فقط دو Pod باقی مانده‌اند،‏ برای ساختن سومی اقدام می‌کند. به بررسی مداوم وضعیت و اقدام برای جبران اختلاف <b>reconciliation</b> می‌گوییم. در بخش سوم آزمایش،‏ این اتفاق را در خروجی <code>kubectl get pods -w</code> می‌بینید.</p>
 
   <details class="more">
   <summary>نکته‌های تکمیلی این بخش <small>(۱)</small> <span class="m-t">«مدل انتزاعی» یعنی چه؟</span></summary>
@@ -41,8 +41,9 @@
   </div>
   </details>
 
-  <h3 id="ch1-overview">کوبرنتیز چیست؟ <small>(Overview)</small></h3>
-  <p>کوبرنتیز پلتفرمی متن‌باز برای مدیریت workloadها (برنامه‌ها یا کارهایی که اجرا می‌کنید) و سرویس‌های مبتنی بر container است. می‌توانید مشخص کنید چه برنامه‌ای،‏ با چه تعداد replica و در چه شرایطی اجرا شود. به این روش <b>پیکربندی اعلانی</b> (declarative configuration) می‌گوییم. کوبرنتیز برای رسیدن به وضعیتی که اعلام کرده‌اید،‏ کارهایی مثل انتخاب ماشین و جایگزینی Podها را خودکار می‌کند.</p>
+  <h3 id="ch1-overview">یک فایل چطور جای چند دستور دستی را می‌گیرد؟ <small>(Overview)</small></h3>
+  <p>دفعه‌ی قبل سارا تعداد containerها را دستی بالا برد و تنظیمات nginx را هم تغییر داد. این بار در پیکربندی مشخص می‌کند چه برنامه‌ای اجرا شود و چند replica داشته باشد. به این شیوه <b>پیکربندی اعلانی</b> (declarative configuration) می‌گوییم.</p>
+  <p>کوبرنتیز ابزار متن‌بازی برای مدیریت برنامه‌ها و کارهای مبتنی بر container است. پس از ثبت پیکربندی،‏ کارهایی مثل انتخاب محل اجرا و جایگزینی Podها را بر اساس همان مشخصات انجام می‌دهد.</p>
   <p>رابط استاندارد کوبرنتیز به انتقال پیکربندی بین محیط‌ها کمک می‌کند. می‌توانید قابلیت‌هایی مثل شبکه یا storage را هم متناسب با محیط انتخاب کنید.</p>
   <p>نام کوبرنتیز یونانی است و به معنای «سکان‌دار» یا «ناخدا» (helmsman / pilot) است. کوتاه‌نوشت <b>K8s</b> هم از شمردن هشت حرفِ بین «K» و «s» ساخته شده است. گوگل این پروژه را در سال ۲۰۱۴ متن‌باز کرد. کوبرنتیز حاصل ترکیب بیش از ۱۵ سال تجربه‌ی گوگل در اجرای سرویس‌های عملیاتی در مقیاس بزرگ (با سامانه‌ی داخلی‌ای به نام Borg) با بهترین ایده‌ها و روش‌های جامعه‌ی متن‌باز است.</p>
 
@@ -59,8 +60,8 @@
   </div>
   </details>
 
-  <h3 id="ch1-going-back-in-time">پیشینه‌ی تکمیلی | از سرور فیزیکی تا container <small>(Historical context)</small></h3>
-  <p>هنگام اجرای چند برنامه روی یک ماشین،‏ هر برنامه چقدر از منابع و محیط اجرای خودش را در اختیار دارد؟ تفاوت اجرای مستقیم روی سرور،‏ اجرای برنامه در VM و اجرای آن در container را از همین زاویه دنبال کنید.</p>
+  <h3 id="ch1-going-back-in-time">پیشینه‌ی تکمیلی | برنامه روی سرور،‏ VM یا container؟ <small>(Historical context)</small></h3>
+  <p>اگر API فروشگاه و گزارش شبانه روی یک ماشین باشند،‏ مصرف بالای گزارش چطور روی API اثر می‌گذارد؟ هنگام مقایسه‌ی سه شیوه‌ی اجرا دنبال دو نشانه بگردید. هر برنامه چقدر از محیطش را جدا در اختیار دارد و برای این جداسازی چه منابعی مصرف می‌شود؟</p>
   <figure><div class="plate"><img loading="lazy" decoding="async" src="img/8a5f3b4d3b.svg" alt="سیر تحول روش‌های deployment"></div><figcaption><b>شکل ۱-۱.</b> سیر تحول deployment: از traditional deployment (برنامه‌ها مستقیم روی سیستم‌عامل یک server فیزیکی)،‏ به virtualized deployment (هر VM سیستم‌عامل خودش را روی Hypervisor دارد)،‏ و سپس container deployment (containerها سیستم‌عامل host را مشترک استفاده می‌کنند و container runtime آن‌ها را اجرا می‌کند). منبع: <span class="en">concepts/overview</span></figcaption></figure>
 
   <h4>دوره‌ی traditional deployment <small>(Traditional deployment)</small></h4>
@@ -99,8 +100,8 @@
   </div>
   </details>
 
-  <h3 id="ch1-why-kubernetes">چرا به کوبرنتیز نیاز داریم و چه کارهایی می‌کند؟ <small>(Why you need Kubernetes)</small></h3>
-  <p>اجرای یک container برای شروع کافی است. وقتی مشتری‌ها به سرویس وابسته‌اند،‏ باید بتوانید ظرفیت را تغییر دهید،‏ بعد از خرابی برنامه را بازیابی کنید و نسخه‌ی جدید را با کمترین اختلال منتشر کنید. کوبرنتیز برای هرکدام سازوکاری دارد. این فصل هر سه را روی نمونه‌ی فروشگاه آزمایش می‌کند.</p>
+  <h3 id="ch1-why-kubernetes">کوبرنتیز چطور به سه مشکل شب حراج پاسخ می‌دهد؟ <small>(Why you need Kubernetes)</small></h3>
+  <p>سه لحظه از شب حراج را به خاطر بیاورید. وقتی درخواست‌ها زیاد شد،‏ تیم باید ظرفیت را بالا می‌برد. وقتی API از کار افتاد،‏ باید برنامه بازیابی می‌شد. وقتی نسخه‌ی تازه خطا داد،‏ باید نسخه‌ی سالم دوباره در دسترس قرار می‌گرفت. مثال‌های این درس نشان می‌دهند برای هر لحظه سراغ کدام سازوکار می‌روید.</p>
 
   <h4>service discovery و توزیع بار <small>(Service discovery and load balancing)</small></h4>
   <p>در آزمایش فصل،‏ <b>Service</b> برای API فروشگاه نام و IP ثابتی فراهم می‌کند. وقتی یک Pod (واحد اجرای یک یا چند container) جایگزین شود،‏ برنامه‌های دیگر همچنان با همان نام درخواست می‌فرستند. Service درخواست‌ها را به Podهای آماده می‌رساند.</p>
@@ -194,9 +195,9 @@ kubectl autoscale deployment/shop-api --min=3 --max=12 --cpu=70% -n prod
   </div>
   </details>
 
-  <h3 id="ch1-not">کوبرنتیز چه چیزی نیست؟ <small>(What Kubernetes is not)</small></h3>
-  <p>کوبرنتیز ابزارهایی برای اجرای برنامه،‏ تغییر ظرفیت و توزیع ترافیک فراهم می‌کند. برای ساختن یک پلتفرم کامل،‏ تیم شما ابزارهای دیگری هم انتخاب می‌کند. برای مثال،‏ ابزار ساخت image و سامانه‌ی پایش را می‌توان متناسب با نیاز تیم به کوبرنتیز وصل کرد.</p>
-  <p>تقسیم کار بین کوبرنتیز و تیم زیرساخت را در این مثال‌ها ببینید.</p>
+  <h3 id="ch1-not">بعد از نصب کوبرنتیز چه کارهایی به عهده‌ی تیم می‌ماند؟ <small>(What Kubernetes is not)</small></h3>
+  <p>سارا کد API را تغییر داده و تیم می‌خواهد بعد از انتشار،‏ خطاهای خرید را ببیند. برای این کار هنوز باید ابزار ساخت image و سامانه‌ی پایش انتخاب کند. کوبرنتیز می‌تواند image آماده را اجرا کند و در انتشار و توزیع ترافیک کمک کند.</p>
+  <p>در هر مثال،‏ مشخص کنید کوبرنتیز چه کاری انجام می‌دهد و تیم چه چیزی باید فراهم کند.</p>
   <ul>
     <li><b>نوع برنامه‌ها را محدود نمی‌کند.</b> می‌توانید برنامه‌های stateless،‏ برنامه‌های stateful و کارهای پردازش داده را روی آن اجرا کنید. هر برنامه به پیکربندی متناسب با نیازش احتیاج دارد.</li>
     <li><b>کد منبع را deploy نمی‌کند و برنامه‌ی شما را build نمی‌کند.</b> فرایندهای CI/CD (یکپارچه‌سازی،‏ تحویل و deployment پیوسته) به فرهنگ و سلیقه‌ی سازمان و نیازهای فنی بستگی دارند و کوبرنتیز در آن‌ها دخالت نمی‌کند.</li>
@@ -225,8 +226,8 @@ kubectl autoscale deployment/shop-api --min=3 --max=12 --cpu=70% -n prod
   </div>
   </details>
 
-  <h3 id="ch1-mental-model">کوبرنتیز در یک تصویر <small>(Mental model)</small></h3>
-  <div class="note"><b>هدف این بخش</b><p>پیش از تایپ اولین دستور،‏ بدانیم اصلاً با چه چیزی کار می‌کنیم.</p><p><b>در پایان این بخش می‌توانید:</b></p><ul><li>بگویید کوبرنتیز چه کاری برای شما انجام می‌دهد.</li><li>هشت واژه‌ی پایه را از هم تشخیص دهید.</li></ul></div>
+  <h3 id="ch1-mental-model">از ثبت درخواست تا اجرای container <small>(Mental model)</small></h3>
+  <p>در شکل این درس،‏ مسیر یک درخواست را با سه سؤال دنبال کنید. درخواست کجا ثبت می‌شود؟ کدام جزء Node را انتخاب می‌کند؟ چه کسی container را روی آن Node راه می‌اندازد؟</p>
   <p>فرض کنید برنامه‌ی وب‌تان در یک <b>image</b> (بسته‌ی آماده‌ی اجرای برنامه) قرار دارد. می‌خواهید سه replica از آن اجرا شود و برنامه از نشانی <code>web</code> در دسترس باشد. این خواسته با <code>kubectl</code> به API server می‌رسد. در شکل زیر،‏ مسیر درخواست را تا اجرای container دنبال کنید.</p>
   <figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 330" width="100%" style="max-width:770px;height:auto" role="img" aria-label="مسیر یک دستور از kubectl تا container"><defs><marker id="f0a-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker></defs><rect x="560" y="30" width="170" height="60" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="645.0" y="56.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">شما</text><text x="645.0" y="76.0" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="12" fill="#4a5672" text-anchor="middle">kubectl apply</text><rect x="330" y="30" width="180" height="60" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="420.0" y="56.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">API server</text><text x="420.0" y="76.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">درِ ورودی cluster</text><rect x="330" y="150" width="180" height="60" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="420.0" y="176.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">پایگاه داده‌ی cluster</text><text x="420.0" y="196.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">etcd یا SQLite</text><rect x="80" y="30" width="200" height="60" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="180.0" y="56.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">controllerها و scheduler</text><text x="180.0" y="76.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">مقایسه‌ی «خواسته» و «واقعیت»</text><rect x="80" y="150" width="200" height="60" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="180.0" y="176.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">kubelet روی Node</text><text x="180.0" y="196.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">دستور به containerd</text><rect x="80" y="250" width="200" height="50" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="180.0" y="271.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="14" font-weight="700" fill="#16213a" text-anchor="middle">container در حال اجرا</text><text x="180.0" y="291.0" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">Pod</text><line x1="560" y1="60" x2="512" y2="60" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f0a-a)"></line><line x1="420" y1="92" x2="420" y2="148" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f0a-a)"></line><line x1="330" y1="60" x2="282" y2="60" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f0a-a)"></line><line x1="180" y1="92" x2="180" y2="148" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f0a-a)"></line><line x1="180" y1="212" x2="180" y2="248" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f0a-a)"></line><line x1="282" y1="165" x2="340" y2="94" stroke="#4a5672" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#f0a-a)"></line><text x="536" y="50" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">۱</text><text x="432" y="125" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="start">۲</text><text x="306" y="50" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="middle">۳</text><text x="192" y="125" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="start">۴</text><text x="192" y="235" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="start">۵</text><text x="322" y="140" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="start">۶</text><rect x="40" y="10" width="710" height="306" rx="14" fill="none" stroke="#c9d3e6" stroke-width="1.2" stroke-dasharray="6 5"></rect><text x="740" y="304" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="start">در k3s همه‌ی این‌ها در یک برنامه‌ی واحد به نام k3s هستند</text></svg></div><figcaption><b>شکل ۱-۲.</b> <span style="flex:1 1 0;min-width:0">سفر یک دستور: (۱) شما با kubectl خواسته‌تان را به API server می‌فرستید؛‏ (۲) خواسته ذخیره می‌شود؛‏ (۳) controllerها و scheduler تغییر را می‌بینند و تصمیم می‌گیرند؛‏ (۴) kubelet روی Node انتخاب‌شده کار را تحویل می‌گیرد؛‏ (۵) containerd کار اجرای container را انجام می‌دهد؛‏ (۶) kubelet وضعیت واقعی را گزارش می‌دهد و چرخه ادامه دارد.</span></figcaption></figure>
   <p>اگر هنگام خواندن درس‌ها اصطلاحی را فراموش کردید،‏ به این جدول برگردید.</p>
@@ -234,8 +235,10 @@ kubectl autoscale deployment/shop-api --min=3 --max=12 --cpu=70% -n prod
   <div class="deep"><b>همه‌چیز «شیء» است</b><p>هر چیزی که در کوبرنتیز می‌سازید (Pod و Deployment و Service و …) یک شیء (object) است: رکوردی که در پایگاه داده‌ی cluster ذخیره می‌شود و desired state شما را توصیف می‌کند. کوبرنتیز این شیءها را می‌خواند و برایشان کار انجام می‌دهد. پس کار اصلی شما در کوبرنتیز «نوشتن شیء درست» است،‏ نه «اجرای دستور درست». این ایده در آزمایش شاپیفای در همین فصل کاملاً روشن می‌شود.</p></div>
   <div class="note"><b>چرا k3s؟</b><p>k3s توزیعی سبک از کوبرنتیز است که اجزای اصلی را در یک فایل اجرایی بسته‌بندی می‌کند. می‌توانید آن را روی یک ماشین Linux نصب کنید و با همان Kubernetes API،‏ دستورهای <code>kubectl</code> و فایل‌های YAML استاندارد تمرین کنید. انتخاب k3s به شما اجازه می‌دهد آزمایش‌های فصل را با یک VM شروع کنید.</p></div>
 
-  <h3 id="ch1-prepare-vm">آماده‌سازی ماشین <small>(Prepare a VM)</small></h3>
-  <div class="note"><b>هدف این بخش</b><p>یک ماشین لینوکسی تمیز برای نصب k3s آماده کنیم.</p><p><b>در پایان این بخش می‌توانید:</b></p><ul><li>یک VM با منابع کافی بسازید.</li><li>بدانید k3s به چه portهایی نیاز دارد.</li></ul></div>
+  <details class="ex"><summary class="ex-h">از حافظه بگویید | چه کسی Node را انتخاب می‌کند و چه کسی container را اجرا می‌کند؟</summary><p>scheduler برای Pod یک Node انتخاب می‌کند. kubelet روی همان Node با کمک container runtime،‏ container را راه می‌اندازد.</p></details>
+
+  <h3 id="ch1-prepare-vm">ماشین آزمایشگاه را آماده کنید <small>(Prepare a VM)</small></h3>
+  <p>در این درس یک ماشین Linux برای آزمایش‌ها آماده می‌کنید. وقتی توانستید داخل آن دستور اجرا کنید و IP آن را پیدا کردید،‏ برای نصب k3s آماده‌اید.</p>
   <p>k3s روی Linux اجرا می‌شود. توصیه‌ی این جزوه یک VM با <b>Ubuntu Server 24.04</b> است. حداقل رسمی برای Node اصلی (server) ۲ هسته‌ی CPU و ۲ گیگابایت RAM است؛‏ برای تمرین راحت‌تر <b>۲ CPU و ۴ گیگابایت RAM و ۲۰ گیگابایت disk</b> بگذارید. روی Windows می‌توانید از Hyper-V یا VirtualBox و روی macOS از Multipass یا UTM استفاده کنید. اگر Multipass نصب دارید،‏ ساختن VM یک دستور است:</p>
   <div class="code"><div class="lbl"><span>روی کامپیوتر خودتان (اختیاری،‏ با Multipass)</span><button type="button">کپی</button></div><pre class="sh">multipass launch 24.04 --name k3s-lab --cpus 2 --memory 4G --disk 20G
 multipass shell k3s-lab
@@ -248,8 +251,8 @@ hostname -I
 </pre></div>
   <div class="note"><b>دسترسی شبکه در آزمایشگاه</b><p>دستورهای این فصل را داخل همان VM اجرا کنید. با این روش لازم نیست API server را برای دسترسی از بیرون VM باز کنید. اگر فایروال VM فعال است یا بعداً Node دوم اضافه می‌کنید،‏ تنظیمات شبکه را بر اساس <a href="https://docs.k3s.io/installation/requirements#networking">نیازمندی‌های شبکه‌ی k3s</a> انجام دهید.</p></div>
   <div class="lab"><b>چک‌لیست پایان بخش</b><ul><li>یک VM لینوکسی با دست‌کم ۲ CPU و ۲ گیگابایت RAM دارید.</li><li>IP آن را می‌دانید.</li></ul></div>
-  <h3 id="ch1-install-k3s">نصب k3s <small>(Install k3s)</small></h3>
-  <div class="note"><b>هدف این بخش</b><p>k3s را روی یک Node نصب کنید و با <code>kubectl</code> به cluster وصل شوید.</p><p><b>در پایان این بخش می‌توانید:</b></p><ul><li>k3s را نصب کنید و سالم بودنش را بررسی کنید.</li><li>بدون <code>sudo</code> با <code>kubectl</code> کار کنید.</li></ul></div>
+  <h3 id="ch1-install-k3s">k3s را نصب کنید و وضعیت Ready را ببینید <small>(Install k3s)</small></h3>
+  <p>پایان این درس را با دو نشانه تشخیص دهید. سرویس k3s در حال اجراست و <code>kubectl get nodes</code> بدون <code>sudo</code> یک Node با وضعیت <code>Ready</code> نشان می‌دهد.</p>
   <p><b>گام ۱.</b> دستور زیر را داخل VM اجرا کنید. متغیر <code>INSTALL_K3S_VERSION</code> نسخه‌ی نصب را مشخص می‌کند تا محیط آزمایش با نمونه‌های فصل هماهنگ باشد. این دستور از <a href="https://github.com/k3s-io/k3s/releases/tag/v1.37.0%2Bk3s1">انتشار رسمی k3s برای v1.37.0+k3s1</a> استفاده می‌کند.</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.37.0+k3s1" sh -
 </pre></div>
@@ -308,8 +311,8 @@ source ~/.bashrc
   <p>در نصب تک‌Node این فصل،‏ k3s وضعیت cluster را در SQLite نگه می‌دارد. برای آشنایی با اجزای cluster به فصل ۱۲ بروید.</p></div>
   <details id="ch1-ex1" class="ex"><summary class="ex-h">امتحان کنید <small>2 تمرین</small></summary><ol><li><span class="lvl l1">عملی</span>فایل <code>~/.kube/config</code> را باز کنید (<code>cat</code>). آدرس API server کجاست و روی چه portی است؟<details class="ans"><summary>پاسخ</summary><p>در فیلد <code>server</code> مقدار <code>https://127.0.0.1:6443</code> را می‌بینید؛‏ یعنی API server روی همین ماشین و port ۶۴۴۳ گوش می‌دهد. اگر بخواهید از لپ‌تاپ خودتان به cluster وصل شوید،‏ این فایل را کپی و <code>‎127.0.0.1‎</code> را با IP ماشین عوض می‌کنید (فصل ۱۳،‏ بخش kubeconfig).</p></details></li><li><span class="lvl l1">مفهومی</span>چرا فایل kubeconfig را با <code>chmod 600</code> محدود کردیم؟<details class="ans"><summary>پاسخ</summary><p>چون این فایل certificate مدیر cluster را دارد؛‏ هر کسی آن را داشته باشد اختیار کامل cluster را دارد. مثل رمز عبور root با آن رفتار کنید.</p></details></li></ol></details>
   <div class="lab"><b>چک‌لیست پایان بخش</b><ul><li><code>kubectl get nodes</code> بدون <code>sudo</code> یک Node در وضعیت Ready نشان می‌دهد.</li><li>می‌دانید kubeconfig چیست و کجاست.</li></ul></div>
-  <h3 id="ch1-explore">گشتی در cluster <small>(Explore the cluster)</small></h3>
-  <div class="note"><b>هدف این بخش</b><p>بررسی کنید کدام اجزای k3s بلافاصله بعد از نصب اجرا می‌شوند.</p><p><b>در پایان این بخش می‌توانید:</b></p><ul><li>با <code>get</code> و <code>-o wide</code> و <code>-A</code> کار کنید.</li><li>اجزای سیستمی k3s را بشناسید.</li></ul></div>
+  <h3 id="ch1-explore">در cluster تازه چه چیزی از قبل اجرا می‌شود؟ <small>(Explore the cluster)</small></h3>
+  <p>هنوز Pod فروشگاه را نساخته‌اید،‏ اما cluster خالی نیست. بعد از دیدن Node،‏ در فهرست Podها دنبال <code>coredns</code> بگردید و ببینید در کدام namespace اجرا شده است.</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get nodes -o wide
 </pre></div>
   <div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME      STATUS   ROLES           AGE   VERSION        INTERNAL-IP    OS-IMAGE             CONTAINER-RUNTIME
@@ -347,8 +350,8 @@ sudo /usr/local/bin/k3s-agent-uninstall.sh    # on agent nodes
   </div>
   </details>
 
-  <h3 id="ch1-create-cluster">cluster چیست؟ <small>(What is a Kubernetes cluster)</small></h3>
-  <p>یک cluster مجموعه‌ای از اجزای مدیریتی و ماشین‌های تحت مدیریت آن‌هاست. در آزمایش فصل اول،‏ هر دو نقش روی یک VM قرار دارند. در یک محیط چندماشینه،‏ کوبرنتیز می‌تواند محل اجرا را از بین Nodeهای سازگار انتخاب کند. دسترس‌پذیری بالا به چیدمان و تعداد اجزای cluster بستگی دارد.</p>
+  <h3 id="ch1-create-cluster">یک VM چطور می‌تواند یک cluster باشد؟ <small>(What is a Kubernetes cluster)</small></h3>
+  <p>در خروجی درس قبل فقط یک Node دیدید. در آزمایشگاه،‏ همان VM هم اجزای مدیریتی را اجرا می‌کند و هم میزبان Podهای برنامه است. در cluster بزرگ‌تر می‌توانید این دو نقش را میان چند ماشین تقسیم کنید.</p>
   <ul>
     <li><b>control plane</b> درخواست‌ها را دریافت می‌کند،‏ وضعیت cluster را نگه می‌دارد و درباره‌ی محل اجرای Podها تصمیم می‌گیرد.</li>
     <li><b>Node</b> ماشین فیزیکی یا مجازی است که Podها روی آن اجرا می‌شوند.</li>
@@ -362,7 +365,7 @@ sudo /usr/local/bin/k3s-agent-uninstall.sh    # on agent nodes
   <p>برای آزمایش‌های این جزوه از k3s روی Linux استفاده می‌کنید. اگر بخواهید cluster را روی رایانه‌ی شخصی راه بیندازید،‏ minikube هم یکی از گزینه‌های یادگیری است. این ابزار روی Linux،‏ macOS و Windows کار می‌کند و دستورهایی مثل <code>start</code>،‏ <code>stop</code>،‏ <code>status</code> و <code>delete</code> دارد. راه‌اندازی آن در فصل ۱۷ آمده است.</p>
 
   <div class="lab"><b>آزمایش عملی: cluster خودتان را بشناسید</b>
-    <p>روی cluster k3s که در بخش «نصب k3s» ساختید اجرا کنید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get nodes -o wide
+    <p>روی cluster آزمایشگاه که در درس <a href="#ch1-install-k3s">نصب k3s</a> ساختید،‏ دستور زیر را اجرا کنید.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get nodes -o wide
 kubectl cluster-info
 </pre></div><div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">NAME      STATUS   ROLES           AGE   VERSION        INTERNAL-IP    OS-IMAGE             CONTAINER-RUNTIME
 k3s-lab   Ready    control-plane   2h    v1.37.0+k3s1   192.168.64.5   Ubuntu 24.04.3 LTS   containerd://2.x.x-k3s1
@@ -381,8 +384,8 @@ CoreDNS is running at https://127.0.0.1:6443/api/v1/namespaces/kube-system/servi
   </div>
   </details>
 
-  <h3 id="ch1-components">اجزای کوبرنتیز <small>(Kubernetes Components)</small></h3>
-  <p>برای شروع،‏ سه نقش را از هم تشخیص دهید. API server درخواست‌ها و وضعیت را در اختیار اجزا می‌گذارد. scheduler برای هر Pod یک Node مناسب انتخاب می‌کند. kubelet روی همان Node با کمک container runtime برنامه را اجرا و وضعیتش را گزارش می‌کند.</p>
+  <h3 id="ch1-components">چه جزئی Pod را می‌سازد،‏ کدام آن را اجرا می‌کند؟ <small>(Kubernetes Components)</small></h3>
+  <p>فرض کنید ReplicaSet controller یک Pod تازه ساخته و برنامه‌ی آن هنوز اجرا نشده است. API server وضعیت Pod را در اختیار بقیه‌ی اجزا می‌گذارد. scheduler یک Node انتخاب می‌کند و kubelet روی همان Node با کمک runtime،‏ container را راه می‌اندازد. نقش هر جزء را در جدول با همین مسیر تطبیق دهید.</p>
   <figure><div class="plate"><img loading="lazy" decoding="async" src="img/4a1777280b.svg" alt="اجزای کوبرنتیز"></div><figcaption><b>شکل ۱-۴.</b> اجزای یک cluster کوبرنتیز: اجزای control plane (kube-apiserver،‏ etcd،‏ kube-scheduler،‏ kube-controller-manager،‏ cloud-controller-manager) و اجزای هر Node (kubelet،‏ kube-proxy و container runtime). منبع: <span class="en">concepts/overview/components</span></figcaption></figure>
 
   <h4>اجزای اصلی</h4>
@@ -417,7 +420,7 @@ local-path-provisioner-5b8d4f9c7-h7k2m    1/1     Running     0          2h
 metrics-server-7f6c9d8b4-x9p3l            1/1     Running     0          2h
 svclb-traefik-3f1a2b7c-8vd5n              2/2     Running     0          2h
 traefik-7c5d8b9f6d-lm4tq                  1/1     Running     0          2h
-</pre></div><p>در این فهرست نه kube-apiserver هست،‏ نه etcd،‏ نه scheduler و نه kube-proxy. در k3s همه‌ی این اجزا،‏ به‌اضافه‌ی kubelet،‏ داخل <b>یک process</b> به نام k3s اجرا می‌شوند (بخش «کوبرنتیز در یک تصویر»). آنچه در فهرست می‌بینید addonهاست: برای DNS جزء <code>coredns</code>،‏ برای Ingress جزء <code>traefik</code>،‏ برای storage جزء <code>local-path-provisioner</code>،‏ برای معیارهای مصرف <code>metrics-server</code>،‏ و برای ServiceLB هم <code>svclb</code>. خود k3s یک سرویس systemd است:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">sudo systemctl status k3s --no-pager | head -3
+</pre></div><p>در این خروجی،‏ Podهای addonها را می‌بینید. در نصب تک‌Node این فصل،‏ API server،‏ scheduler و kubelet در فرایند k3s اجرا می‌شوند و SQLite داده‌های cluster را نگه می‌دارد. شکل درس <a href="#ch1-mental-model">از ثبت درخواست تا اجرای container</a> مسیر ارتباط این اجزا را نشان می‌دهد. چند نمونه از addonها را در خروجی پیدا کنید. برای DNS جزء <code>coredns</code>،‏ برای Ingress جزء <code>traefik</code>،‏ برای storage جزء <code>local-path-provisioner</code>،‏ برای معیارهای مصرف <code>metrics-server</code>،‏ و برای ServiceLB هم <code>svclb</code>. خود k3s یک سرویس systemd است:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">sudo systemctl status k3s --no-pager | head -3
 </pre></div><div class="code"><div class="lbl"><span>خروجی</span><button type="button">کپی</button></div><pre class="out">● k3s.service - Lightweight Kubernetes
      Loaded: loaded (/etc/systemd/system/k3s.service; enabled; preset: enabled)
      Active: active (running) since Fri 2026-09-25 09:12:40 UTC; 2h ago
@@ -463,8 +466,8 @@ traefik-7c5d8b9f6d-lm4tq                  1/1     Running     0          2h
   </div>
   </details>
 
-  <h3 id="ch1-first-pod">اولین Pod <small>(Your first Pod)</small></h3>
-  <div class="note"><b>هدف این بخش</b><p>یک container را در کوبرنتیز اجرا کنیم و چهار دستور اصلی عیب‌یابی را یاد بگیریم.</p><p><b>در پایان این بخش می‌توانید:</b></p><ul><li>یک Pod بسازید و وضعیتش را دنبال کنید.</li><li>با <code>describe</code> و <code>logs</code> و <code>exec</code> داخل آن را ببینید.</li><li>بفهمید چرا در کار واقعی Pod را مستقیم نمی‌سازیم.</li></ul></div>
+  <h3 id="ch1-first-pod">اولین Pod را اجرا کنید و نتیجه را ببینید <small>(Your first Pod)</small></h3>
+  <p>یک Pod برای nginx می‌سازید،‏ ببینید چطور آماده می‌شود و به صفحه‌ی وب آن درخواست بفرستید. بعد از حذف Pod دوباره فهرست را بخوانید. آیا نام <code>web</code> برمی‌گردد؟ در آزمایش شاپیفای همین سؤال را برای Pod زیر نظر Deployment تکرار می‌کنید.</p>
   <p><b>گام ۱.</b> یک Pod با image وب‌سرور nginx بسازید و ساخته شدنش را زنده تماشا کنید (<code>-w</code> یعنی watch؛‏ با Ctrl+C خارج شوید):</p>
   <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run web --image=nginx:1.27
 kubectl get pods -w
@@ -524,8 +527,8 @@ No resources found in default namespace.
   <div class="note"><b>نتیجه‌ی آزمایش</b><p>برای Pod به نام <code>web</code> controller تعیین نکردید. با حذف آن،‏ اجرای برنامه متوقف می‌شود. در آزمایش شاپیفای یک Pod از Deployment را هم حذف می‌کنید و رفتار این دو را مقایسه می‌کنید.</p></div>
   <details id="ch1-ex3" class="ex"><summary class="ex-h">امتحان کنید <small>1 تمرین</small></summary><ol><li><span class="lvl l1">عملی</span>یک Pod با image نادرست بسازید: <code>kubectl run bad --image=nginx:9.99</code>. وضعیتش چیست و علت را از کجا پیدا می‌کنید؟<details class="ans"><summary>پاسخ</summary><p>وضعیت ابتدا <code>ErrImagePull</code> و بعد <code>ImagePullBackOff</code> می‌شود؛‏ یعنی kubelet نمی‌تواند image را بگیرد و با فاصله‌ی زمانی بیشتر دوباره تلاش می‌کند. در Events خروجی <code>kubectl describe pod bad</code> پیامی مثل <code>not found</code> می‌بینید. در پایان <code>kubectl delete pod bad</code>. بخش «عیب‌یابی» در همین فصل همین روش را کامل می‌کند.</p></details></li></ol></details>
   <div class="lab"><b>چک‌لیست پایان بخش</b><ul><li>با <code>kubectl run</code> یک Pod می‌سازید.</li><li>می‌دانید Events در <code>describe</code> مهم‌ترین جای عیب‌یابی است.</li><li>می‌دانید Pod حذف‌شده خودبه‌خود برنمی‌گردد.</li></ul></div>
-  <h3 id="ch1-before-lab">چهار شیء پایه برای اجرای API <small>(Pod, ReplicaSet, Deployment, Service)</small></h3>
-  <p>در آزمایش بعدی دو فایل YAML می‌نویسید. در فایل Deployment،‏ image و تعداد Podها را مشخص می‌کنید. در فایل Service،‏ یک نشانی ثابت برای دسترسی به آن Podها تعریف می‌کنید. جدول نشان می‌دهد هر یک از چهار شیء چه نقشی دارد.</p>
+  <h3 id="ch1-before-lab">برای اجرای سه replica به چه اشیایی نیاز داریم؟ <small>(Pod, ReplicaSet, Deployment, Service)</small></h3>
+  <p>فروشگاه سه Pod می‌خواهد و مشتری‌ها باید یک نشانی ثابت داشته باشند. در آزمایش،‏ شما Deployment و Service را تعریف می‌کنید. Deployment از راه ReplicaSet تعداد Podها را حفظ می‌کند. Service از راه labelها مقصدهای درخواست را پیدا می‌کند.</p>
   <div class="tbl"><table><thead><tr><th>شیء</th><th>مسئولیت</th><th>جواب کدام مشکل شب حراج؟</th></tr></thead><tbody><tr><td>Pod</td><td>اجرای container برنامه روی یک Node؛‏ یک IP دارد</td><td>—</td></tr><tr><td>ReplicaSet</td><td>نگه‌داشتن تعداد ثابتی Pod از یک قالب</td><td>از کار افتادن API ساعت ۲ بامداد</td></tr><tr><td>Deployment</td><td>اعلام image و تعداد،‏ و انتشار تدریجی نسخه‌ها</td><td>قطعی هنگام انتشار و برگشت کند</td></tr><tr><td>Service</td><td>نشانی ثابت و پخش ترافیک بین Podها</td><td>ویرایش دستی nginx برای هر container تازه</td></tr></tbody></table></div>
   <h4>شیء Pod: کوچک‌ترین واحد اجرا</h4><p>هر Pod یک یا چند container دارد که روی یک Node اجرا می‌شوند و از IP همان Pod استفاده می‌کنند. اگر Pod حذف شود،‏ controller می‌تواند یک Pod تازه جایش بسازد. این جایگزین در آزمایش ما نام تازه‌ای دارد و ممکن است IP آن هم تغییر کند. جزئیات Pod در فصل ۳ آمده است.</p>
   <h4>شیء ReplicaSet: نگهبان تعداد</h4><p>ReplicaSet تعداد مشخصی Pod را از روی یک قالب نگه می‌دارد. اگر تعداد کمتر از مقدار تعیین‌شده باشد،‏ controller یک Pod می‌سازد. اگر بیشتر باشد،‏ Podهای اضافه را حذف می‌کند. در این آزمایش،‏ Deployment خودش ReplicaSet را می‌سازد.</p>
@@ -544,10 +547,12 @@ No resources found in default namespace.
   <div class="note"><b>خواندن YAML در سه قاعده</b><ul><li><b>تورفتگی</b> ساختار را می‌سازد: هر سطح دو فاصله (space) جلوتر است. از Tab استفاده نکنید.</li><li><b>کلید و مقدار</b> با «:» و یک فاصله نوشته می‌شوند؛‏ مثل <code>replicas: 3</code> که تعداد را تعیین می‌کند.</li><li><b>خط تیره</b> یعنی یک عضو فهرست؛‏ مثلاً <code>- name: web</code> اولین container در فهرست containerهاست.</li></ul><p>لازم نیست فیلدها را حفظ کنید. هر فیلدی را با دستور explain از خود cluster بپرسید؛‏ مثلاً برای strategy:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl explain deployment.spec.strategy
 </pre></div><p>عددهایی مثل <code>‎(1)‎</code> که کنار خط‌های YAML این فصل آمده،‏ comment هستند و کوبرنتیز آن‌ها را نادیده می‌گیرد؛‏ فقط برای ارجاع به جدول توضیح زیر هر فایل‌اند.</p></div>
 
-  <h3 id="ch1-lab-deploy">آزمایش ۱ از ۴ | اجرای API و ساخت Service</h3>
+  <details class="ex"><summary class="ex-h">پیش‌بینی کنید | اگر IP یکی از Podها عوض شود،‏ مشتری درخواست بعدی را کجا می‌فرستد؟</summary><p>به همان نام Service. Service مقصدهای آماده‌ای را دنبال می‌کند که با selector آن جور باشند.</p></details>
+
+  <h3 id="ch1-lab-deploy">آزمایش ۱ از ۴ | اجرای سه replica با یک نشانی ثابت</h3>
   <div class="lab">
-    <p>در چهار درس بعد،‏ برنامه‌ی نمونه را اجرا می‌کنید و رفتار آن را هنگام تغییر ظرفیت،‏ خرابی و انتشار بررسی می‌کنید. همه‌ی گام‌ها در همان VM و cluster فصل اول انجام می‌شوند. در خروجی‌های نمونه،‏ نام Pod و IP با محیط شما فرق می‌کند.</p>
-    <p>در پایان این درس،‏ سه Pod آماده دارید و از یک Pod آزمایشی می‌توانید با نام <code>shop-api</code> به وب‌سرور درخواست بفرستید.</p>
+    <p>برنامه‌ی نمونه را در همان VM فصل اول اجرا کنید. نام Pod و IP در خروجی‌ها ممکن است با نمونه فرق کند. هنگام خواندن دو فایل YAML،‏ دنبال چیزی بگردید که Podها و Service را به هم وصل می‌کند.</p>
+    <p>آزمایش را با دو مشاهده تمام کنید. Deployment سه Pod آماده دارد و یک Pod کمکی می‌تواند با نام <code>shop-api</code> پاسخ nginx را بگیرد.</p>
     <h4 class="step">گام ۰: یک namespace برای شاپیفای</h4><p>ابتدا در VM پوشه‌ی <code>~/shopify</code> را بسازید. فایل‌های آزمایش را در همین پوشه نگه می‌دارید. سپس namespace به نام <code>shopify</code> را بسازید و آن را در context فعلیِ <code>kubectl</code> به‌عنوان namespace پیش‌فرض انتخاب کنید. خط آخر باید <code>namespace: shopify</code> را نشان دهد.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">mkdir -p ~/shopify &amp;&amp; cd ~/shopify
 kubectl create namespace shopify
 kubectl config set-context --current --namespace=shopify
@@ -614,13 +619,14 @@ shop-api-x7k2p   IPv4          80      10.42.0.20,10.42.0.21,10.42.0.22   5s
 &lt;html&gt;
 &lt;head&gt;
 &lt;title&gt;Welcome to nginx!&lt;/title&gt;
-</pre></div><p>در این دستور،‏ <code>--rm</code> یعنی Pod پس از پایان کار حذف شود و <code>-it</code> یعنی خروجی را همین‌جا ببینید. نام <code>shop-api</code> را CoreDNS به IP مربوط به Service تبدیل کرد و قواعد شبکه‌ی Node درخواست را به یکی از سه Pod رساندند. frontend شاپیفای هم در آینده API را دقیقاً با همین نام صدا می‌زند و هیچ‌وقت IP هیچ Podی را نمی‌داند.</p>
+</pre></div><p><code>--rm</code> باعث می‌شود پس از پایان کار،‏ Pod کمکی حذف شود. با <code>-it</code> خروجی را در همین ترمینال می‌بینید.</p>
+  <p>در درخواست <code>http://shop-api</code> فقط نام Service را نوشتید. CoreDNS آن را به IP مربوط به Service تبدیل کرد و درخواست به یکی از Podهای آماده رسید. بعداً frontend فروشگاه هم از همین نام استفاده می‌کند.</p>
     <p><b>پیش از ادامه.</b> اگر صفحه‌ی nginx را از راه <code>shop-api</code> دریافت کردید و سه Pod آماده‌اند،‏ به بخش دوم آزمایش بروید.</p>
   </div>
 
-  <h3 id="ch1-lab-health-scale">آزمایش ۲ از ۴ | آمادگی Pod و تغییر ظرفیت</h3>
+  <h3 id="ch1-lab-health-scale">آزمایش ۲ از ۴ | سنجش آمادگی و افزایش ظرفیت</h3>
   <div class="lab">
-    <p>دو فایل درس قبل را نگه دارید و تغییرهای این درس را در <code>shop-api.yaml</code> انجام دهید. در پایان،‏ با <code>get</code> بررسی کنید که تعداد Podهای آماده با مقدار <code>replicas</code> در فایل یکی باشد.</p>
+    <p>شب حراج باید ظرفیت API را بالا می‌بردیم. قبل از زیادکردن تعداد Podها،‏ به کوبرنتیز می‌گویید چطور آمادگی یک Pod را بسنجد. بعد تعداد replicaها را تغییر می‌دهید و ستون <code>READY</code> را دنبال می‌کنید.</p>
     <h4 class="step">گام ۳ | بررسی سلامت و آمادگی Pod</h4><p>هر Pod در وضعیت Running لزوماً آماده‌ی جواب دادن نیست؛‏ برنامه ممکن است هنوز در حال راه‌اندازی باشد یا گیر کرده باشد. در فایل <code>shop-api.yaml</code> بخش containers را این‌طور کامل کنید:</p><div class="code"><div class="lbl"><span>shop-api.yaml (گام ۳،‏ فقط بخش containers)</span><button type="button">کپی</button></div><pre class="yaml">      containers:
       - name: web
         image: nginx:1.26
@@ -735,12 +741,12 @@ kubectl get deploy shop-api
 NAME       READY   UP-TO-DATE   AVAILABLE   AGE
 shop-api   3/3     3            3           15m
 </pre></div><p>با اعمال دوباره‌ی فایل،‏ تعداد replicaها به ۳ برمی‌گردد. دستور <code>scale</code> فقط وضعیت Deployment در cluster را تغییر داده بود. برای تغییر ماندگار،‏ مقدار <code>replicas</code> را در فایل عوض کنید و فایل را اعمال کنید. مقیاس‌دهی خودکار را در فصل ۱۰ می‌خوانید.</p>
-    <p><b>پیش از ادامه.</b> پس از apply دوباره،‏ منتظر بمانید تا Deployment سه Pod آماده داشته باشد. بعد آزمایش خرابی را شروع کنید.</p>
+    <p><b>پیش از ادامه.</b> پس از اعمال دوباره‌ی فایل،‏ منتظر بمانید تا Deployment به سه Pod آماده برگردد. چه چیزی تعیین کرد تعداد نهایی دوباره سه باشد؟</p>
   </div>
 
-  <h3 id="ch1-lab-recovery">آزمایش ۳ از ۴ | بازیابی Pod و container</h3>
+  <h3 id="ch1-lab-recovery">آزمایش ۳ از ۴ | ساخت Pod تازه یا راه‌اندازی دوباره‌ی container</h3>
   <div class="lab">
-    <p>دو آزمایش انجام می‌دهید. یک بار خود Pod را حذف می‌کنید و یک بار فرایند container را متوقف می‌کنید. در هر گام،‏ نام Pod و مقدار <code>RESTARTS</code> را با قبل مقایسه کنید.</p>
+    <p>در آزمایش اول،‏ خود Pod را حذف می‌کنید. در آزمایش دوم،‏ فرایند nginx را در یکی از Podها متوقف می‌کنید. قبل از اجرای هر دستور حدس بزنید چه تغییری می‌بینید. دو نشانه را کنار هم یادداشت کنید: نام Pod و مقدار <code>RESTARTS</code>.</p>
     <h4 class="step">گام ۶ | مشاهده‌ی جایگزینی Pod</h4><p>پیش از حذف Pod،‏ در ترمینال اول تغییرات را زیر نظر بگیرید. از این خروجی نام یک Pod آماده را یادداشت کنید.</p>
     <div class="code"><div class="lbl"><span>ترمینال اول در VM</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -n shopify -l app=shop-api -w
 </pre></div>
@@ -759,12 +765,12 @@ kubectl get pod -n shopify POD_NAME
 shop-api-6b7f9c8d4d-8hvzn   1/1     Running   1 (4s ago)   3m
 </pre></div><p>دستور <code>exec</code> فرمان <code>kill 1</code> را داخل container اجرا می‌کند و به فرایند اصلی nginx سیگنال پایان می‌فرستد. kubelet با توجه به <code>restartPolicy: Always</code> دوباره container را اجرا می‌کند.</p>
   <p>نام و IP همان Pod ثابت می‌ماند و شمارنده‌ی <code>RESTARTS</code> یک واحد زیاد می‌شود. این خروجی نشان می‌دهد که container در همان Pod دوباره راه افتاده است.</p>
-    <p><b>پیش از ادامه.</b> در حذف Pod باید یک نام تازه ببینید. در توقف container،‏ نام Pod همان می‌ماند و <code>RESTARTS</code> بیشتر می‌شود.</p>
+    <p><b>پیش از ادامه.</b> خروجی را با حدس اولتان مقایسه کنید. اگر نام عوض شد،‏ یک Pod جدید ساخته شده است. اگر نام ثابت ماند و <code>RESTARTS</code> بالا رفت،‏ kubelet همان container را دوباره اجرا کرده است.</p>
   </div>
 
-  <h3 id="ch1-lab-rollout">آزمایش ۴ از ۴ | انتشار نسخه‌ی جدید و rollback</h3>
+  <h3 id="ch1-lab-rollout">آزمایش ۴ از ۴ | انتشار نسخه‌ی تازه زیر بار</h3>
   <div class="lab">
-    <p>در این درس از یک Pod کمکی به Service درخواست‌های پیوسته می‌فرستید. با خروجی آن،‏ دسترس‌پذیری برنامه را در یک انتشار موفق و سپس در انتشار یک image ناموجود بررسی می‌کنید.</p>
+    <p>از دید مشتری،‏ موفقیت انتشار یعنی درخواستش هنوز جواب بگیرد. با یک Pod کمکی پیوسته به Service درخواست می‌فرستید. یک بار نسخه‌ی سالم و بار دوم image ناموجود را امتحان کنید. در هر بار هم نتیجه‌ی <code>rollout status</code> را ببینید و هم جواب درخواست‌ها را در log بخوانید.</p>
     <h4 class="step">گام ۸ | بررسی دسترس‌پذیری در rolling update</h4><p>در ترمینال دوم یک Pod کمکی بسازید که پیوسته به <code>shop-api</code> درخواست بفرستد. این Pod بعد از هر تلاش نیم ثانیه صبر می‌کند.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl run load --image=busybox:1.37 --restart=Never -- sh -c \
   'while true; do if wget -qO- -T 2 http://shop-api &gt;/dev/null; then echo ok; else echo FAIL; fi; sleep 0.5; done' 
 </pre></div><p>صبر کنید تا <code>kubectl logs load</code> چند خط <code>ok</code> نشان دهد. سپس در فایل <code>shop-api.yaml</code> خط image را به <code>nginx:1.27</code> تغییر دهید و فایل را اعمال کنید.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f shop-api.yaml
@@ -805,8 +811,8 @@ deployment "shop-api" successfully rolled out
 </pre></div>
   </div>
 
-  <h3 id="ch1-troubleshooting">عیب‌یابی سه وضعیت رایج Pod <small>(Troubleshooting)</small></h3>
-  <div class="note"><b>هدف این بخش</b><p>برای هر مشکل،‏ یک روش ثابت داشته باشیم به‌جای حدس زدن.</p><p><b>در پایان این بخش می‌توانید:</b></p><ul><li>سه وضعیت ImagePullBackOff و CrashLoopBackOff و Pending را تشخیص دهید.</li><li>روش «get و describe و logs» را به کار ببرید.</li></ul></div>
+  <h3 id="ch1-troubleshooting">وقتی Pod آماده نیست،‏ از کجا شروع کنیم؟ <small>(Troubleshooting)</small></h3>
+  <p>دو Pod آماده نشده‌اند. یکی هنوز شروع نشده و دیگری اجرا شده ولی مدام متوقف می‌شود. برای هرکدام بپرسید مشکل تا کجای مسیر پیش رفته است. این سؤال مشخص می‌کند اول Events را بخوانید یا log برنامه را.</p>
   <ol>
     <li>با <code>kubectl get pods</code> نام Pod و وضعیتش را پیدا کنید.</li>
     <li>با <code>kubectl describe pod NAME</code> بخش <b>Events</b> را بخوانید. <code>NAME</code> نام Pod است.</li>
@@ -854,8 +860,10 @@ kubectl describe pod greedy | tail -3
 </pre></div>
   <div class="deep"><b>چرا «BackOff»؟</b><p><code>BackOff</code> یعنی کوبرنتیز برای تلاش بعدی کمی بیشتر صبر می‌کند. علت را در Events یا log پیدا و رفع کنید تا تلاش بعدی بتواند موفق شود. روش‌های عیب‌یابی بیشتر در فصل ۱۱ آمده‌اند.</p></div>
   <div class="lab"><b>چک‌لیست پایان بخش</b><ul><li>سه وضعیت رایج را از روی خروجی <code>get</code> تشخیص می‌دهید.</li><li>برای هر کدام می‌دانید اول کجا را ببینید.</li></ul></div>
-  <h3 id="ch1-kubectl">ابزار خط فرمان kubectl <small>(The kubectl command-line tool)</small></h3>
-  <p><code>kubectl</code> (تلفظ رایج: «کیوب‌کنترل» یا «کیوب‌سی‌تی‌ال») ابزار اصلی خط فرمان برای کار با cluster کوبرنتیز است. این ابزار از طریق API کوبرنتیز با control plane cluster ارتباط برقرار می‌کند.</p>
+  <details class="ex"><summary class="ex-h">تمرین کوتاه | برای Pod با ImagePullBackOff اول Events یا log برنامه؟</summary><p>اول Events را با <code>kubectl describe pod NAME</code> ببینید. سرنخ این وضعیت در تلاش برای دریافت image است و container هنوز شروع نشده است.</p></details>
+
+  <h3 id="ch1-kubectl">kubectl دستور را به کدام cluster می‌فرستد؟ <small>(The kubectl command-line tool)</small></h3>
+  <p>فرض کنید یک cluster آزمایشی و یک cluster عملیاتی دارید. دستور <code>kubectl get pods</code> در هر دو یکسان است. kubeconfig و context فعال تعیین می‌کنند <code>kubectl</code> درخواست را به کجا و با چه هویتی بفرستد.</p>
   <p><code>kubectl</code> برای پیدا کردن cluster و اطلاعات ورود،‏ به‌طور پیش‌فرض دنبال فایلی به نام <code>config</code> در پوشه‌ی <code>$HOME/.kube</code> می‌گردد. به این فایل «kubeconfig» می‌گویند. اگر بخواهید از فایل دیگری استفاده کنید،‏ یا environment variable <code>KUBECONFIG</code> را تنظیم کنید یا از flag <code>--kubeconfig</code> استفاده کنید.</p>
 
   <h4>نقش kubectl</h4>
@@ -975,8 +983,8 @@ WARNING: version difference between client (1.37) and server (1.35) exceeds the 
   </div>
   </details>
 
-  <h3 id="ch1-kubectl-ref">مرجع اختیاری | دستورهای kubectl <small>(Command line tool reference)</small></h3>
-  <div class="note"><b>برای مراجعه هنگام نیاز</b><p>برای فهمیدن شکل کلی دستورها،‏ از «نحو دستور» شروع کنید. برای پیدا کردن یک فرمان پرکاربرد،‏ بخش «مثال: عملیات رایج» را ببینید. اگر آزمایش را تمام کرده‌اید و دنبال مرور نتیجه هستید،‏ به <a href="#ch1-solved">جمع‌بندی شاپیفای</a> بروید.</p></div>
+  <h3 id="ch1-kubectl-ref">مرجع اختیاری | دستور kubectl را چطور بخوانیم؟ <small>(Command line tool reference)</small></h3>
+  <div class="note"><b>برای مراجعه هنگام نیاز</b><p>اگر دستور <code>kubectl describe pod web</code> را بفهمید،‏ خواندن دستورهای دیگر هم آسان‌تر می‌شود. فعل <code>describe</code> کاری را که می‌خواهید انجام دهید مشخص می‌کند،‏ <code>pod</code> نوع منبع است و <code>web</code> نام آن. گزینه‌هایی مثل <code>-n</code> به دستور اطلاعات بیشتری می‌دهند. اگر آزمایش را تمام کرده‌اید و دنبال مرور نتیجه هستید،‏ به <a href="#ch1-solved">جمع‌بندی شاپیفای</a> بروید.</p></div>
   <p>در راهنمای رسمی <code>kubectl</code> می‌توانید گزینه‌ها و زیردستورهای هر فرمان را پیدا کنید. فصل ۱۷ هم خلاصه‌ای برای مراجعه‌ی سریع دارد. اگر با Docker کار کرده‌اید،‏ راهنمای «kubectl for Docker Users» فرمان‌های متناظر را نشان می‌دهد.</p>
 
   <h4>نحو دستور <small>(Syntax)</small></h4>
@@ -1472,8 +1480,11 @@ kubectl get pods -A --field-selector=spec.nodeName="$1" -o wide
   </div>
   </details>
 
-  <h3 id="ch1-solved">جمع‌بندی و تمرین | حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
-  <p>پیش از مرور جدول،‏ از روی خروجی آزمایش خودتان توضیح دهید چه زمانی نام Pod تغییر کرد و چه زمانی فقط <code>RESTARTS</code> بالا رفت. سپس بگویید Service چطور با وجود این تغییرها همان نشانی را حفظ کرد.</p>
+  <h3 id="ch1-solved">جمع‌بندی | شب حراج را از حافظه مرور کنید <small>(Wrap-up)</small></h3>
+  <p>برای هر مشکل شب حراج،‏ یک راه‌حل و یک مشاهده از آزمایش به یاد بیاورید. اول به سؤال پاسخ دهید و بعد پاسخ نمونه را باز کنید.</p>
+  <details class="ex"><summary class="ex-h">بازیابی | چه چیزی در خروجی ثابت می‌کند یک Pod تازه ساخته شده است؟</summary><p>نام تازه‌ای در خروجی <code>get pods</code> می‌بینید. در راه‌اندازی دوباره‌ی container،‏ همان نام Pod باقی می‌ماند و <code>RESTARTS</code> بالا می‌رود.</p></details>
+  <details class="ex"><summary class="ex-h">ظرفیت | وقتی تعداد Podها از سه به پنج رسید،‏ چرا درخواست‌ها به همان shop-api رفتند؟</summary><p><code>shop-api</code> نام Service است. نام Service ثابت ماند و مقصدهای آماده بر اساس selector به‌روز شدند.</p></details>
+  <details class="ex"><summary class="ex-h">انتشار | image تازه پیدا نشد. از کجا می‌فهمید برنامه هنوز پاسخ می‌دهد؟</summary><p><code>rollout status</code> پیشرفت انتشار را نشان می‌دهد. برای دیدن اینکه درخواست‌ها هنوز پاسخ می‌گیرند،‏ log مربوط به Pod کمکی را بررسی کنید.</p></details>
   <div class="story solved"><b>پاسخ آزمایش به مشکلات شب حراج</b><p>رفتار برنامه را در هر گام با مشکلی که تیم در شب حراج دید مقایسه کنید.</p><div class="tbl"><table><thead><tr><th>مشکل شب حراج</th><th>راه‌حل در کوبرنتیز</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>از کار افتادن API ساعت ۲ بامداد</td><td>kubelet دوباره container را اجرا کرد و ReplicaSet controller برای Pod حذف‌شده جایگزین ساخت</td><td>گام‌های ۶ و ۷</td></tr><tr><td>افزودن دستی container و ویرایش nginx</td><td>تعداد را با <code>replicas</code> تعیین کردید. Service با selector،‏ Podهای تازه را هم پیدا کرد.</td><td>گام‌های ۲ و ۵</td></tr><tr><td>پنج دقیقه قطعی هنگام انتشار</td><td>انتشار با rolling update و readiness probe و تنظیم <code>maxUnavailable: 0</code></td><td>گام‌های ۳،‏ ۴ و ۸</td></tr><tr><td>نیم ساعت برای برگشت</td><td>با <code>rollout undo</code> به قالب قبلی Pod برگشتید</td><td>گام ۹</td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> ساختن API واقعی به‌جای nginx (فصل ۲)؛‏ مسیرهای سلامت و خاموش شدن تمیز (فصل ۳)؛‏ پایگاه داده و migration و گزارش شبانه (فصل ۴)؛‏ دسترسی مشتری‌ها با نام دامنه (فصل ۵)؛‏ تنظیمات و رمزها بیرون از image (فصل ۶)؛‏ داده‌ی ماندگار (فصل ۷).</p><p><b>هفته‌ی بعد:</b> سارا API فروشگاه را به یک image تبدیل می‌کند و می‌فهمد چرا «روی سیستم من کار می‌کرد» دیگر بهانه نیست.</p></div>
   <h4>مسیر جزوه: هر فصل،‏ یک مشکل شاپیفای</h4><div class="tbl"><table><thead><tr><th>فصل</th><th>مشکل تیم</th><th>موضوع</th></tr></thead><tbody><tr><td><a href="#ch2">۲</a></td><td>API واقعی در image؛‏ registry خصوصی و tag</td><td>container و image</td></tr><tr><td><a href="#ch3">۳</a></td><td>Pod در وضعیت Running ولی بی‌جواب؛‏ migration</td><td>Pod و probe</td></tr><tr><td><a href="#ch4">۴</a></td><td>آوردن frontend و پایگاه داده و گزارش شبانه</td><td>workloadها</td></tr><tr><td><a href="#ch5">۵</a></td><td>دسترسی مشتری با دامنه؛‏ ایزوله کردن پایگاه داده</td><td>شبکه و Ingress</td></tr><tr><td><a href="#ch6">۶</a></td><td>رمز داخل image؛‏ Podی که همه‌ی CPU را می‌گیرد</td><td>پیکربندی و منابع</td></tr><tr><td><a href="#ch7">۷</a></td><td>پاک شدن سفارش‌ها با restart</td><td>storage</td></tr><tr><td><a href="#ch8">۸</a></td><td>بیست فایل YAML و دو محیط</td><td>مدیریت اشیا و API</td></tr><tr><td><a href="#ch9">۹</a></td><td>چند Node و جای درست هر Pod</td><td>scheduling</td></tr><tr><td><a href="#ch10">۱۰</a></td><td>ترافیک Black Friday</td><td>autoscaling</td></tr><tr><td><a href="#ch11">۱۱</a></td><td>کندی شبانه و log از دست‌رفته</td><td>پایش و عیب‌یابی</td></tr><tr><td><a href="#ch12">۱۲</a></td><td>خود cluster جواب نمی‌دهد</td><td>معماری (kubeadm)</td></tr><tr><td><a href="#ch13">۱۳</a></td><td>ساختن cluster production</td><td>راه‌اندازی با kubeadm</td></tr><tr><td><a href="#ch14">۱۴</a></td><td>حذف namespace مربوط به production</td><td>امنیت و RBAC</td></tr><tr><td><a href="#ch15">۱۵</a></td><td>قانون‌های تیم به شکل خودکار</td><td>گسترش کوبرنتیز</td></tr><tr><td><a href="#ch16">۱۶</a></td><td>تمرین کامل پیش از انتشار</td><td>پروژه‌ی جامع</td></tr></tbody></table></div><p>فصل‌های ۱ تا ۸ (بخش اول) روی یک ماشین با k3s پیش می‌روند و فصل‌های ۹ تا ۱۱ (بخش دوم) روی همان k3s با چند Node. از فصل ۱۲ (بخش سوم) برای دیدن اجزای جداگانه‌ی control plane به cluster ساخته‌شده با kubeadm نیاز دارید. فصل ۱۷ پیوست و مرجع است.</p>
 
@@ -1505,7 +1516,7 @@ kubectl get pods -A --field-selector=spec.nodeName="$1" -o wide
           <p>نکته برای ۳: اگر برای چنین برنامه‌ای liveness probe با <code>initialDelaySeconds</code> کم تعریف شود،‏ kubelet ممکن است container را قبل از پایان گرم‌شدن بکشد و Pod در حلقه‌ی راه‌اندازی مجدد گیر کند؛‏ راه‌حل startup probe است (فصل ۳). نکته برای ۴: جایگزینی فوری نیست. اول Node controller باید ببیند kubelet دیگر گزارش سلامت نمی‌فرستد و Node را NotReady/Unknown کند و روی آن taint از نوع <code>node.kubernetes.io/unreachable</code> بگذارد. Podها به‌طور پیش‌فرض ۳۰۰ ثانیه این taint را تحمل می‌کنند (<code>tolerationSeconds: 300</code>) و بعد evict می‌شوند؛‏ یعنی در عمل حدود ۵ دقیقه طول می‌کشد تا Pod جایگزین ساخته شود. همچنین فقط Podهایی که یک controller (مثل Deployment) دارند جایگزین می‌شوند؛‏ Pod بدون controller برای همیشه از دست می‌رود.</p>
         </details></li>
 
-      <li><span class="lvl l1">مفهومی</span>مدیر فنی شرکت می‌پرسد: «ما کوبرنتیز نصب کردیم؛‏ پس چرا هنوز باید برای CI/CD،‏ database و پایش ابزار جدا انتخاب کنیم؟ مگر کوبرنتیز پلتفرم نیست؟» بر اساس بخش «کوبرنتیز چه چیزی نیست» پاسخ دهید و بگویید این طراحی چه مزیتی دارد.
+      <li><span class="lvl l1">مفهومی</span>مدیر فنی شرکت می‌پرسد: «ما کوبرنتیز نصب کردیم؛‏ پس چرا هنوز باید برای CI/CD،‏ database و پایش ابزار جدا انتخاب کنیم؟ مگر کوبرنتیز پلتفرم نیست؟» راهنمای پاسخ،‏ درس <a href="#ch1-not">بعد از نصب کوبرنتیز چه کارهایی به عهده‌ی تیم می‌ماند؟</a> است. بگویید این تقسیم مسئولیت چه مزیتی دارد.
         <details class="ans"><summary>پاسخ</summary>
           <p>طبق مستندات،‏ کوبرنتیز «یک PaaS سنتی و همه‌چیز در یک بسته نیست». در سطح container کار می‌کند و قابلیت‌های عمومی مثل deployment،‏ مقیاس‌دهی و توزیع بار را می‌دهد،‏ اما: کد منبع را build و deploy نمی‌کند (CI/CD به فرهنگ و نیازهای سازمان بستگی دارد)؛‏ سرویس‌های سطح برنامه مثل میان‌افزار،‏ Spark،‏ MySQL،‏ cache و Ceph را به‌صورت داخلی ندارد (این‌ها می‌توانند روی کوبرنتیز اجرا شوند)؛‏ و راه‌حل log،‏ پایش و هشدار را تحمیل نمی‌کند.</p>
           <p>مزیت: کوبرنتیز «آجرهای سازنده برای ساختن پلتفرم‌های توسعه» است و «هرجا مهم باشد،‏ حق انتخاب را به کاربر می‌سپارد». شرکت می‌تواند ابزارهایی را که تیم‌ها از قبل بلدند (مثلاً GitLab CI یا Prometheus) نگه دارد و به یک فروشنده وابسته نشود. هزینه‌اش این است که تیم پلتفرم باید این اجزا را انتخاب،‏ یکپارچه و نگهداری کند؛‏ یعنی کوبرنتیز «پایه‌ی» پلتفرم است،‏ نه کل آن.</p>
@@ -1524,7 +1535,7 @@ kubectl get pods -A --field-selector=spec.nodeName="$1" -o wide
           <p>اختلاف مجاز «یک نسخه‌ی minor بالاتر یا پایین‌تر» است؛‏ پس v1.36 با v1.35،‏ v1.36 و v1.37 پشتیبانی می‌شود و v1.34 و v1.38 خارج از محدوده‌اند (شاید کار کنند،‏ اما رفتارشان تضمینی ندارد). دلیلش: kubectl با API server ارتباط برقرار می‌کند و APIها بین نسخه‌ها تغییر می‌کنند (فیلدهای جدید،‏ نسخه‌های جدید API،‏ حذف نسخه‌های منسوخ).‏ client خیلی جدید ممکن است فیلد یا رفتاری را فرض کند که server هنوز ندارد،‏ و client خیلی قدیمی ممکن است نسخه‌ای از API را بفرستد که حذف شده. <code>kubectl version</code> هم در صورت خروج از این محدوده هشدار می‌دهد.</p>
         </details></li>
 
-      <li><span class="lvl l2">عملی</span>روی cluster k3s با دستور نشان دهید هر جزء جدول «اجزای کوبرنتیز» کجا اجرا می‌شود. کدام‌ها Pod هستند و مالکشان چیست،‏ کدام‌ها اصلاً Pod نیستند؟ اگر static Pod وجود داشت،‏ از روی چه چیزی تشخیصش می‌دادید؟
+      <li><span class="lvl l2">عملی</span>روی cluster k3s با دستور نشان دهید هر جزء جدول <a href="#ch1-components">اجزای کوبرنتیز</a> کجا اجرا می‌شود. کدام‌ها Pod هستند و مالکشان چیست،‏ کدام‌ها اصلاً Pod نیستند؟ اگر static Pod وجود داشت،‏ از روی چه چیزی تشخیصش می‌دادید؟
         <details class="ans"><summary>پاسخ</summary>
           <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -n kube-system -o custom-columns='NAME:.metadata.name,OWNER:.metadata.ownerReferences[0].kind'
 ps -eo pid,args | grep -m1 '[k]3s server'
@@ -1660,7 +1671,7 @@ checkout-api   10.244.1.9:8080,10.244.2.4:8080,10.244.2.7:8080 + 3 more...   6h
           <p><b>رفع:</b> تعریف <code>resources.requests.memory</code> و <code>cpu</code> در Pod template این Job،‏ تا scheduler بتواند درست چیدمان کند و وقتی ظرفیت یک Node پر شد،‏ Pod بعدی را جای دیگری بگذارد. برای جلوگیری از تکرار: تعریف LimitRange (برای requests پیش‌فرض) و ResourceQuota در namespace (فصل ۶)،‏ و اگر پخش صریح لازم است،‏ <code>topologySpreadConstraints</code> یا <code>podAntiAffinity</code> (فصل ۹). درس این حادثه: «بهترین استفاده از منابع» به اطلاعات درستی که کاربر می‌دهد وابسته است،‏ نه به حدس scheduler.</p>
         </details></li>
 
-      <li><span class="lvl l3">سناریوی عملیاتی</span>یک تیم SRE تصمیم گرفته به‌جای VM جداگانه برای هر ریزسرویس (۴۰ سرویس،‏ هر کدام روی ۲ VM اختصاصی) به کوبرنتیز مهاجرت کند. مدیر مالی می‌پرسد این کار دقیقاً چه صرفه‌جویی‌ای دارد و کدام مفهوم مستندات آن را توضیح می‌دهد؟ یک ریسک این مهاجرت را هم که در بخش «کوبرنتیز چه چیزی نیست» اشاره شده نام ببرید.
+      <li><span class="lvl l3">سناریوی عملیاتی</span>یک تیم SRE تصمیم گرفته به‌جای VM جداگانه برای هر ریزسرویس (۴۰ سرویس،‏ هر کدام روی ۲ VM اختصاصی) به کوبرنتیز مهاجرت کند. مدیر مالی می‌پرسد این کار دقیقاً چه صرفه‌جویی‌ای دارد و کدام مفهوم مستندات آن را توضیح می‌دهد؟ با توجه به <a href="#ch1-not">تقسیم مسئولیت بین تیم و کوبرنتیز</a>،‏ یک ریسک این مهاجرت را هم توضیح دهید.
         <details class="ans"><summary>پاسخ</summary>
           <p><b>صرفه‌جویی:</b> همان‌طور که در بخش پیشینه دیدید،‏ هر VM یک سیستم‌عامل جداگانه دارد. ۴۰ سرویس × ۲ VM یعنی ۸۰ سیستم‌عامل کامل که هر کدام memory و CPU بیکار مصرف می‌کنند و باید جداگانه به‌روز شوند. containerها «سبک» هستند و host kernel را مشترک استفاده می‌کنند؛‏ روی کوبرنتیز همین ۴۰ سرویس به شکل Podهای متعدد روی تعداد کمتری Node مشترک قرار می‌گیرند و scheduler با «چیدمان خودکار بهینه» فضای خالی هر Node را برای Podهای دیگر استفاده می‌کند. نتیجه: تراکم بیشتر و هزینه‌ی زیرساخت کمتر برای همان workload (مزیت «بهره‌وری از منابع» در فهرست مستندات).</p>
           <p><b>ریسک:</b> کوبرنتیز «یک PaaS همه‌چیزدار نیست»؛‏ CI/CD ندارد و راه‌حل log و پایش و هشدار را تحمیل نمی‌کند. پس مهاجرت به تنهایی لایه‌های عملیاتی را فراهم نمی‌کند؛‏ تیم باید این لایه‌ها را طراحی کند،‏ وگرنه صرفه‌جویی زیرساخت با هزینه‌ی پیچیدگی عملیاتی جدید (از جمله نگهداری خود cluster؛‏ فصل ۱۲ و ۱۳) خنثی می‌شود.</p>
@@ -1846,7 +1857,7 @@ error: unable to drain node "worker-2" due to error: [cannot delete DaemonSet-ma
       <div class="recap-card"><div class="recap-t">۵. کوبرنتیز چه چیزی نیست؟</div><ul><li>یک PaaS همه‌چیز در یک بسته نیست؛‏ اجزای پیش‌فرض اختیاری و pluggable هستند.</li><li>محدودیتی در نوع برنامه ندارد (stateless،‏ stateful،‏ پردازش داده).</li><li>کار build و CI/CD را انجام نمی‌دهد؛‏ middleware،‏ database و cache داخلی ندارد؛‏ راه‌حل log و monitoring را تحمیل نمی‌کند؛‏ زبان پیکربندی (مثل Jsonnet) را اجباری نمی‌کند؛‏ ماشین‌ها را self-heal نمی‌کند.</li><li><b>سازوکار هماهنگی:</b> حلقه‌های کنترلی مستقل،‏ وضعیت فعلی را بررسی می‌کنند و برای رسیدن به وضعیت مطلوب اقدام می‌کنند.</li><li>آنچه تیم باید خودش بیاورد: CI/CD (مثلاً Argo CD)،‏ database مدیریت‌شده یا Operator،‏ ابزار observability (مثل Prometheus و Loki)،‏ Helm یا Kustomize،‏ و ابزار مدیریت ماشین.</li></ul></div>
       <div class="recap-card"><div class="recap-t">۶. نقشه‌ی ذهنی</div><ul><li><b>ایده:</b> شما desired state را اعلام می‌کنید و کوبرنتیز با reconciliation مدام واقعیت را به آن نزدیک می‌کند.</li></ul><p>مسیر یک دستور: ۱. ارسال با kubectl به API server؛‏ ۲. ذخیره در پایگاه داده‌ی cluster؛‏ ۳. تصمیم controllerها و scheduler؛‏ ۴. تحویل به kubelet روی Node؛‏ ۵. اجرای container با containerd؛‏ ۶. گزارش وضعیت.</p><ul><li><b>k3s:</b> همه‌ی اجزای کوبرنتیز در یک فایل اجرایی؛‏ API استاندارد؛‏ پایگاه داده‌ی تک‌Node از نوع SQLite.</li></ul></div>
       <div class="recap-card"><div class="recap-t">۷. نصب و اتصال</div><ul><li><b>نیاز:</b> سیستم‌عامل Linux با دست‌کم ۲ CPU و ۲ گیگابایت RAM (برای تمرین ۴ گیگابایت).</li><li><b>نصب:</b> اسکریپت <code>get.k3s.io</code> با نسخه‌ی ثابت در <code>INSTALL_K3S_VERSION</code>؛‏ سرویس systemd به نام k3s.</li><li><b>kubeconfig:</b> فایل <code>/etc/rancher/k3s/k3s.yaml</code> (فقط root)؛‏ کپی در <code>~/.kube/config</code> با مجوز ۶۰۰ و تنظیم KUBECONFIG. <span class="trap">دام:</span> این فایل کلید مدیر cluster است.</li><li><b>شبکه‌ی محدود:</b> نصب air-gap با فایل <code>k3s</code> و بسته‌ی imageها و <code>INSTALL_K3S_SKIP_DOWNLOAD=true</code>؛‏ mirror در <code>registries.yaml</code> و ری‌استارت k3s.</li><li><b>اجزای همراه:</b> شامل coredns و traefik و ServiceLB و local-path-provisioner و metrics-server.</li></ul></div>
-      <div class="recap-card"><div class="recap-t">۸. cluster</div><ul><li><b>cluster:</b> شامل control plane (مغز: تصمیم و نگهداری وضعیت) و Nodeها (بازوها: VM یا ماشین فیزیکی با kubelet و container runtime).</li><li><b>اصل مهم:</b> برنامه نباید به host خاص گره بخورد؛‏ وابستگی به فایل محلی یا IP ثابت،‏ self-healing را خراب می‌کند.</li><li><b>محیط یادگیری:</b> یک cluster تک‌Node با k3s (بخش «نصب k3s») که همان Node هم control plane است و هم worker؛‏ API server روی <code>https://127.0.0.1:6443</code>. مسیر جایگزین minikube در پیوست (فصل ۱۷).</li><li><b>production:</b> سه Node برای control plane در سه zone تا etcd به quorum برسد،‏ به‌اضافه‌ی چند worker.</li></ul></div>
+      <div class="recap-card"><div class="recap-t">۸. cluster</div><ul><li><b>cluster:</b> شامل control plane (مغز: تصمیم و نگهداری وضعیت) و Nodeها (بازوها: VM یا ماشین فیزیکی با kubelet و container runtime).</li><li><b>اصل مهم:</b> برنامه نباید به host خاص گره بخورد؛‏ وابستگی به فایل محلی یا IP ثابت،‏ self-healing را خراب می‌کند.</li><li><b>محیط یادگیری:</b> یک cluster تک‌Node با k3s (درس <a href="#ch1-install-k3s">نصب k3s</a>) که همان Node هم control plane است و هم worker؛‏ API server روی <code>https://127.0.0.1:6443</code>. مسیر جایگزین minikube در پیوست (فصل ۱۷).</li><li><b>production:</b> سه Node برای control plane در سه zone تا etcd به quorum برسد،‏ به‌اضافه‌ی چند worker.</li></ul></div>
       <div class="recap-card"><div class="recap-t">۹. اجزای cluster</div><div class="tbl"><table class="mini"><thead><tr><th>جزء</th><th>کار</th><th>نکته</th></tr></thead><tbody><tr><td>kube-apiserver</td><td>درِ ورودی و API روی HTTP</td><td>تنها جزئی که با etcd کار می‌کند</td></tr><tr><td>etcd</td><td>پایگاه key-value سازگار و HA</td><td>حافظه‌ی cluster</td></tr><tr><td>kube-scheduler</td><td>انتخاب Node برای Pod بدون Node</td><td>از کار افتادنش فقط Podهای جدید را Pending نگه می‌دارد</td></tr><tr><td>kube-controller-manager</td><td>اجرای controllerها</td><td>مثل Deployment و Node controller</td></tr><tr><td>cloud-controller-manager</td><td>یکپارچگی با cloud provider</td><td>اختیاری؛‏ در on-prem و minikube نیست</td></tr><tr><td>kubelet</td><td>سالم و در حال اجرا نگه داشتن Podها</td><td>سرویس سیستم‌عامل (systemd)،‏ نه Pod</td></tr><tr><td>kube-proxy</td><td>قوانین شبکه‌ی Service</td><td>اختیاری (Cilium جایگزینش می‌شود)؛‏ DaemonSet؛‏ حالت IPVS از v1.35 منسوخ</td></tr><tr><td>container runtime</td><td>اجرای واقعی container</td><td>containerd،‏ CRI-O</td></tr></tbody></table></div><ul><li><b>Addonها:</b> سرویس DNS (CoreDNS،‏ عملاً لازم برای service discovery)،‏ Dashboard،‏ پایش منابع container و log مرکزی (بدون آن،‏ log مربوط به Pod حذف‌شده از دست می‌رود).</li><li><b>یادسپاری:</b> اجزای control plane پنج‌تاست (API،‏ etcd،‏ scheduler،‏ controller-manager،‏ cloud-controller)؛‏ اجزای Node سه‌تا (kubelet،‏ kube-proxy،‏ runtime).</li><li><b>چیدمان:</b> در k3s همه‌ی اجزای control plane داخل یک process هستند؛‏ در kubeadm به شکل static Pod با پسوند نام Node اجرا می‌شوند. در cluster مدیریت‌شده (EKS،‏ GKE،‏ AKS) control plane دیده نمی‌شود. در kubeadm،‏ etcd یا stacked است یا external.</li></ul></div>
       <div class="recap-card"><div class="recap-t">۱۰. سفر یک <code>kubectl apply</code></div><ol><li>درخواست HTTP به kube-apiserver می‌رسد و به ترتیب authentication،‏ authorization،‏ admission و validation را می‌گذراند و در etcd ذخیره می‌شود.</li><li>سپس Deployment controller یک ReplicaSet می‌سازد و ReplicaSet controller سه Pod بدون <code>nodeName</code> (Pending).</li><li>بعد scheduler برای هر Pod یک Node انتخاب می‌کند و binding را در apiserver ثبت می‌کند.</li><li>آنگاه kubelet آن Node از طریق CRI،‏ image را می‌گیرد،‏ container را اجرا می‌کند،‏ probeها را اجرا و وضعیت را گزارش می‌کند.</li><li>EndpointSlice controller وضعیت آمادگی Podهای انتخاب‌شده را ثبت می‌کند و kube-proxy قواعد شبکه‌ی Service را به‌روز می‌کند.</li></ol><p><span class="trap">دام:</span> اجزا مستقیماً به هم دستور نمی‌دهند؛‏ همه با watch از apiserver می‌خوانند و نتیجه را همان‌جا می‌نویسند. استثنا: apiserver برای <code>logs</code>،‏ <code>exec</code> و <code>port-forward</code> مستقیماً به kubelet وصل می‌شود.</p></div>
       <div class="recap-card"><div class="recap-t">۱۱. اولین Pod و چهار دستور اصلی</div><ul><li><b>دستورها:</b> فرمان <code>get</code> برای فهرست؛‏ <code>describe</code> برای جزئیات و Events؛‏ <code>logs</code> برای خروجی برنامه؛‏ <code>exec</code> برای اجرای دستور داخل container.</li><li><b>دسترسی موقت:</b> با <code>kubectl port-forward</code>.</li><li><span class="trap">دام:</span> Pod حذف‌شده برنمی‌گردد؛‏ در کار واقعی Pod را مستقیم نمی‌سازیم.</li></ul></div>

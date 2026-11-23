@@ -2,18 +2,21 @@
   <div class="ch-head"><span class="ch-num">۴</span><h1>مدیریت workload:‏ Deployment و StatefulSet و DaemonSet و Job و CronJob</h1></div>
   <details class="refs"><summary>مراجع رسمی این فصل <small>(۱۲)</small></summary><p class="ch-sub">مرجع: <a href="https://kubernetes.io/docs/concepts/workloads/">workloads</a> · <a href="https://kubernetes.io/docs/concepts/workloads/management/">workloads/management</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/">workloads/controllers</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">controllers/deployment</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/">controllers/replicaset</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">controllers/statefulset</a> · <a href="https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/">run-replicated-stateful-application</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/">controllers/daemonset</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">controllers/job</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/">controllers/cron-jobs</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/">controllers/ttlafterfinished</a> · <a href="https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller/">controllers/replicationcontroller</a></p></details>
 
-  <div class="story"><b>ماجرای این فصل: بقیه‌ی فروشگاه به cluster می‌آید</b><p>تا پایان فصل ۳،‏ API فروشگاه روی cluster (مجموعه‌ی Nodeهایی که با هم توسط control plane مدیریت می‌شوند) اجرا می‌شد،‏ اما فهرست محصولات هنوز داخل خود کد بود و migration فقط شبیه‌سازی بود. حالا نوبت بقیه‌ی فروشگاه است و هر بخش رفتار متفاوتی می‌خواهد:</p><div class="tbl"><table><thead><tr><th>بخش شاپیفای</th><th>رفتار لازم</th><th>controller مناسب</th></tr></thead><tbody><tr><td>API و frontend</td><td>چند replica یکسان و بی‌حالت؛‏ انتشار بدون قطعی</td><td>Deployment</td></tr><tr><td>پایگاه داده‌ی PostgreSQL</td><td>نام و نشانی ثابت؛‏ هر replica داده‌ی خودش را دارد</td><td>StatefulSet</td></tr><tr><td>migration پایگاه داده</td><td>پیش از انتشار،‏ یک بار اجرا شود و تمام</td><td>Job</td></tr><tr><td>گزارش فروش شبانه</td><td>هر شب ساعت ۲ به وقت تهران</td><td>CronJob</td></tr><tr><td>agent جمع‌آوری log</td><td>دقیقاً یک Pod روی هر Node</td><td>DaemonSet</td></tr></tbody></table></div><p>در همان هفته دو اتفاق هم افتاد: یک انتشار API به خاطر اشتباه تایپی در tag مربوط به image ده دقیقه گیر کرد و چون <code>kubectl apply</code> بدون خطا تمام شده بود،‏ کسی متوجه نشد؛‏ و migration که در فصل ۳ داخل هر Pod اجرا می‌شد،‏ با سه replica سه بار هم‌زمان اجرا شد و دو اجرا با خطای قفل جدول شکست خوردند.</p><p><b>راه‌حل را در این بخش‌ها می‌سازید:</b></p><ul><li><a href="#ch4-lesson">درس: یک controller برای هر رفتار</a></li><li><a href="#ch4-lab-s2">گام ۲: PostgreSQL با StatefulSet</a></li><li><a href="#ch4-lab-s3">گام ۳: rolloutی که گیر می‌کند و progressDeadlineSeconds</a></li><li><a href="#ch4-lab-s4">گام ۴: migration یک‌باره با Job</a></li><li><a href="#ch4-lab-s6">گام‌های ۶ و ۷: CronJob و DaemonSet</a></li><li><a href="#ch4-solved">حل مسئله‌ی شاپیفای</a></li></ul></div>
+  <div class="story"><b>ماجرای این فصل: بقیه‌ی فروشگاه به cluster می‌آید</b><p>در فصل ۳ اگر یکی از نسخه‌های API از کار می‌افتاد، یاد گرفتید وضعیت همان Pod را بخوانید. حالا یک گام عقب‌تر بروید. اگر Pod پایگاه داده حذف شود، نسخه‌ی بعدی باید چه چیزی را حفظ کند؟ اگر برنامه‌ی گزارش فروش با موفقیت تمام شود، چه کسی باید فردا دوباره آن را اجرا کند؟ برای هر ردیف جدول، اول رفتار لازم را بخوانید و بعد نام کنترلر را حدس بزنید.</p><div class="tbl"><table><thead><tr><th>بخش شاپیفای</th><th>رفتار لازم</th><th>controller مناسب</th></tr></thead><tbody><tr><td>API و frontend</td><td>چند replica یکسان و بی‌حالت؛‏ انتشار بدون قطعی</td><td>Deployment</td></tr><tr><td>پایگاه داده‌ی PostgreSQL</td><td>نام و نشانی ثابت؛‏ هر replica داده‌ی خودش را دارد</td><td>StatefulSet</td></tr><tr><td>migration پایگاه داده</td><td>پیش از انتشار،‏ یک بار اجرا شود و تمام</td><td>Job</td></tr><tr><td>گزارش فروش شبانه</td><td>هر شب ساعت ۲ به وقت تهران</td><td>CronJob</td></tr><tr><td>agent جمع‌آوری log</td><td>دقیقاً یک Pod روی هر Node</td><td>DaemonSet</td></tr></tbody></table></div><p>سارا نسخه‌ی تازه‌ی API را منتشر می‌کند. دستور <code>kubectl apply</code> موفق است، اما چند دقیقه بعد مشتری‌ها هنوز پاسخ نسخه‌ی قبلی را می‌گیرند. نسخه‌ی تازه به جدول سفارش‌ها نیاز دارد و آن جدول هنوز ساخته نشده است. اگر هر سه نسخه‌ی API بخواهند هم‌زمان جدول را بسازند، چطور می‌فهمیم این کار چه وقت و با چه نتیجه‌ای تمام شده؟ این دو مسئله را در گام‌های ۳ و ۴ دنبال می‌کنید.</p><p><b>راه‌حل را در این بخش‌ها می‌سازید:</b></p><ul><li><a href="#ch4-lesson">درس: یک controller برای هر رفتار</a></li><li><a href="#ch4-lab-s2">گام ۲: PostgreSQL با StatefulSet</a></li><li><a href="#ch4-lab-s3">گام ۳: rolloutی که گیر می‌کند و progressDeadlineSeconds</a></li><li><a href="#ch4-lab-s4">گام ۴: migration یک‌باره با Job</a></li><li><a href="#ch4-lab-s6">گام‌های ۶ و ۷: CronJob و DaemonSet</a></li><li><a href="#ch4-solved">حل مسئله‌ی شاپیفای</a></li></ul></div>
 
   <div class="note"><b>هدف این فصل</b><p>در پایان این فصل می‌توانید:</p><ul><li>برای هر بخش برنامه controller درست را انتخاب کنید و دلیلش را بگویید؛‏</li><li>زنجیره‌ی Deployment و ReplicaSet و Pod را بخوانید و تاریخچه‌ی rollout را مدیریت کنید؛‏</li><li>گیر کردن یک rollout را با progressDeadlineSeconds و conditionها تشخیص دهید؛‏</li><li>یک پایگاه داده را با StatefulSet و headless Service اجرا کنید و بدانید هویت پایدار چه چیزی را تضمین می‌کند و چه چیزی را نه؛‏</li><li>کار یک‌باره را با Job و کار زمان‌بندی‌شده را با CronJob اجرا کنید و شکستشان را بخوانید؛‏</li><li>با DaemonSet روی هر Node دقیقاً یک Pod داشته باشید.</li></ul><p><b>پیش‌نیاز:</b> وضعیت پایان فصل ۳: Deployment به نام <code>shop-api</code> با image نسخه‌ی 1.2 و probeها و sidecar؛‏ Secret به نام <code>regcred</code> و registry خصوصی روی <code>localhost:5000</code> و پوشه‌ی <code>~/shopify</code>.</p></div>
 
-  <div class="deep"><b>نقشه‌ی این فصل</b><p>مثل فصل‌های قبل: اول درس،‏ بعد آزمایش گام‌به‌گام روی شاپیفای،‏ و در پایان متن کامل مستندات به‌عنوان مرجع. این فصل بلندترین فصل بخش اول است؛‏ آزمایش را می‌توانید در دو نشست انجام دهید (گام‌های ۰ تا ۴ و ۵ تا ۸).</p><div class="tbl"><table><thead><tr><th>بخش</th><th>چه چیزی به دست می‌آورید</th></tr></thead><tbody><tr><td>درس</td><td>چرا Pod را مستقیم نمی‌سازیم؛‏ نگاه نزدیک به Deployment؛‏ سپس StatefulSet و DaemonSet و Job و CronJob</td></tr><tr><td>آزمایش شاپیفای (۹ گام)</td><td>API نسخه‌ی 1.3 با PostgreSQL واقعی،‏ migration با Job،‏ گزارش شبانه،‏ agent مربوط به log و frontend</td></tr><tr><td>مرجع عمیق‌تر</td><td>متن کامل مستندات workloadها،‏ از Deployment تا ReplicationController</td></tr><tr><td>حل مسئله،‏ تمرین‌ها،‏ سؤال‌های مصاحبه و خلاصه</td><td>جمع‌بندی و سنجش خودتان</td></tr></tbody></table></div></div>
+  <div class="deep"><b>نقشه‌ی این فصل</b><p>مسیر عملی از چهار درس تشکیل شده است. می‌توانید پس از اجرای migration در گام ۴ مکث کنید و نشست دوم را از آزمایش پایگاه داده شروع کنید. بعد از گام ۸ به <a href="#ch4-solved">جمع‌بندی و تمرین‌ها</a> بروید. بخش‌های مرجع را می‌توانید بر اساس پرسشی که هنگام کار برایتان پیش می‌آید بخوانید.</p><div class="tbl"><table><thead><tr><th>بخش</th><th>چه چیزی به دست می‌آورید</th></tr></thead><tbody><tr><td>درس</td><td>چرا Pod را مستقیم نمی‌سازیم؛‏ نگاه نزدیک به Deployment؛‏ سپس StatefulSet و DaemonSet و Job و CronJob</td></tr><tr><td>آزمایش شاپیفای (۹ گام)</td><td>API نسخه‌ی 1.3 با PostgreSQL واقعی،‏ migration با Job،‏ گزارش شبانه،‏ agent مربوط به log و frontend</td></tr><tr><td>مرجع عمیق‌تر</td><td>متن کامل مستندات workloadها،‏ از Deployment تا ReplicationController</td></tr><tr><td>حل مسئله،‏ تمرین‌ها،‏ سؤال‌های مصاحبه و خلاصه</td><td>جمع‌بندی و سنجش خودتان</td></tr></tbody></table></div></div>
 
   <h3 id="ch4-lesson">درس: یک controller برای هر رفتار</h3>
-  <p>در فصل ۱ دیدیم Deployment وقتی Podی را از دست بدهد،‏ جایش را پر می‌کند. در این فصل همین ایده را برای همه‌ی بخش‌های شاپیفای به کار می‌بریم. هر workload resource (نوع شیئی که برای اجرای برنامه تعریف شده است) یک controller دارد که رفتار خاصی را تضمین می‌کند.</p><h4>۱. چرا Pod را مستقیم نمی‌سازیم؟</h4><p>هر Pod یک بار روی یک Node قرار می‌گیرد و اگر آن Node از کار بیفتد یا Pod حذف شود،‏ هیچ‌کس آن را دوباره نمی‌سازد. برای همین Pod را به یک controller می‌سپاریم. هر controller یک control loop (حلقه‌ای که مدام وضعیت واقعی را با وضعیت خواسته‌شده مقایسه و اصلاح می‌کند) است و Podها را از روی Pod template (Pod template داخل spec مربوط به controller) می‌سازد. هر Pod ساخته‌شده یک owner reference (اشاره به شیء مالک در metadata) دارد تا معلوم باشد مال کیست:</p><div class="tbl"><table><thead><tr><th>controller</th><th>چه چیزی را تضمین می‌کند</th><th>در شاپیفای</th></tr></thead><tbody><tr><td>Deployment (از راه ReplicaSet)</td><td>تعداد ثابتی Pod هم‌شکل و قابل جایگزینی؛‏ انتشار تدریجی و برگشت</td><td>API و frontend</td></tr><tr><td>StatefulSet</td><td>Podهایی با نام و DNS پایدار و ترتیب مشخص؛‏ هر کدام storage خودش</td><td>PostgreSQL</td></tr><tr><td>DaemonSet</td><td>یک Pod روی هر Node مناسب؛‏ با آمدن Node تازه،‏ Pod تازه</td><td>agent مربوط به log</td></tr><tr><td>Job</td><td>اجرای یک کار تا پایان موفق،‏ با تلاش دوباره در صورت شکست</td><td>migration</td></tr><tr><td>CronJob</td><td>ساختن Job در زمان‌های مشخص</td><td>گزارش شبانه</td></tr></tbody></table></div><figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 296" width="100%" style="max-width:770px;height:auto" role="img" aria-label="شاپیفای پس از فصل ۴: شش workload و controller هر کدام"><defs><marker id="f4m-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker></defs><rect x="646" y="14" width="118" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="705.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">Deployment</text><text x="705.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-api</text><line x1="705.0" y1="68" x2="705.0" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="660" y="94" width="90" height="28" rx="7" fill="#ffffff" stroke="#326ce5" stroke-width="1.1" stroke-dasharray="4 3"></rect><text x="705.0" y="113" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#16213a" text-anchor="middle">ReplicaSet</text><line x1="705.0" y1="122" x2="705.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="654" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="705.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-api-…</text><rect x="654" y="182" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="705.0" y="199" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-api-…</text><rect x="654" y="216" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="705.0" y="233" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-api-…</text><rect x="518" y="14" width="118" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="577.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">Deployment</text><text x="577.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-web</text><line x1="577.0" y1="68" x2="577.0" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="532" y="94" width="90" height="28" rx="7" fill="#ffffff" stroke="#326ce5" stroke-width="1.1" stroke-dasharray="4 3"></rect><text x="577.0" y="113" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#16213a" text-anchor="middle">ReplicaSet</text><line x1="577.0" y1="122" x2="577.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="526" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="577.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-web-…</text><rect x="526" y="182" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="577.0" y="199" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-web-…</text><rect x="390" y="14" width="118" height="54" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="449.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">StatefulSet</text><text x="449.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">postgres</text><line x1="449.0" y1="68" x2="449.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="398" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="449.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">postgres-0</text><rect x="262" y="14" width="118" height="54" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="321.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">Job</text><text x="321.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-migrate</text><line x1="321.0" y1="68" x2="321.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="270" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1" stroke-dasharray="4 3"></rect><text x="321.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-migrate-…</text><rect x="134" y="14" width="118" height="54" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="193.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">CronJob</text><text x="193.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-report</text><line x1="193.0" y1="68" x2="193.0" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="148" y="94" width="90" height="28" rx="7" fill="#ffffff" stroke="#b83227" stroke-width="1.1" stroke-dasharray="4 3"></rect><text x="193.0" y="113" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="11" fill="#16213a" text-anchor="middle">Job هر شب</text><line x1="193.0" y1="122" x2="193.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="142" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1" stroke-dasharray="4 3"></rect><text x="193.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">…</text><rect x="6" y="14" width="118" height="54" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="65.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">DaemonSet</text><text x="65.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">log-agent</text><line x1="65.0" y1="68" x2="65.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="14" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="65.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">log-agent-…</text><line x1="6" y1="262" x2="764" y2="262" stroke="#c9d3e6" stroke-width="1.2"></line><text x="764" y="284" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="start">همه‌ی Podها فعلاً روی یک Node؛ کادر خط‌چین یعنی Podی که کارش را تمام می‌کند و می‌رود</text></svg></div><figcaption><b>شکل ۴-۱.</b> <span style="flex:1 1 0;min-width:0">شاپیفای در پایان این فصل. هر ستون یک workload است: بالای ستون controller و نام آن،‏ و پایین Podهایی که ساخته است. در هر Deployment یک ReplicaSet واسطه است و Podهایی هم‌شکل و بی‌نام‌ونشان می‌سازد؛‏ StatefulSet یک Pod با نام ثابت <code>postgres-0</code> دارد؛‏ Job و CronJob (که هر شب یک Job تازه می‌سازد) Podهایی می‌سازند که کارشان تمام می‌شود؛‏ و DaemonSet روی هر Node یک Pod دارد.</span></figcaption></figure><h4>۲. Deployment از نزدیک</h4><p>هر Deployment کار نگه‌داشتن Podها را به ReplicaSet می‌سپارد و خودش فقط rollout را مدیریت می‌کند. هر بار که <b>Pod template</b> عوض شود (مثلاً image یا env یا probe)،‏ یک ReplicaSet تازه ساخته می‌شود؛‏ تغییر replicas به‌تنهایی ReplicaSet تازه نمی‌سازد. نام هر ReplicaSet پسوندی از hash مربوط به template دارد و همین مقدار با label به نام <code>pod-template-hash</code> روی Podهایش هم هست؛‏ برای همین Podهای دو نسخه با هم قاطی نمی‌شوند.</p><div class="tbl"><table><thead><tr><th>مفهوم</th><th>یعنی چه</th><th>پیش‌فرض</th></tr></thead><tbody><tr><td>revision</td><td>هر ReplicaSet یک revision از Deployment است؛‏ برگشت یعنی بزرگ کردن دوباره‌ی ReplicaSet قدیمی</td><td>تعداد ReplicaSetهای قدیمی نگه‌داشته‌شده (revisionHistoryLimit) برابر ۱۰</td></tr><tr><td>strategy</td><td>نوع RollingUpdate همه‌ی Podها را تدریجی عوض می‌کند؛‏ نوع Recreate اول همه را حذف و بعد نسخه‌ی تازه را می‌سازد</td><td>RollingUpdate با maxSurge و maxUnavailable برابر ۲۵٪</td></tr><tr><td>minReadySeconds</td><td>Pod تازه چند ثانیه باید Ready بماند تا available حساب شود</td><td>صفر</td></tr><tr><td>progressDeadlineSeconds</td><td>اگر rollout این مدت هیچ پیشرفتی نکند،‏ condition به نام Progressing با دلیل ProgressDeadlineExceeded برابر False می‌شود</td><td>۶۰۰ ثانیه</td></tr></tbody></table></div><p>برای خواندن تاریخچه،‏ دستور <code>kubectl rollout history</code> و برای جزئیات یک revision گزینه‌ی <code>--revision=N</code> را به کار ببرید. ستون CHANGE-CAUSE از annotation به نام <code>kubernetes.io/change-cause</code> روی خود Deployment کپی می‌شود. برگشت به revision قبلی با <code>kubectl rollout undo</code> و به یک revision خاص با گزینه‌ی <code>--to-revision=N</code> انجام می‌شود.</p><div class="warn"><b>کوبرنتیز rollout گیرکرده را درست نمی‌کند</b><p>پس از گذشتن progressDeadlineSeconds،‏ کوبرنتیز فقط condition را عوض می‌کند و به تلاش ادامه می‌دهد؛‏ نه خودکار برمی‌گردد و نه Podی را حذف می‌کند. تصمیم با شماست یا با ابزار انتشاری که این condition را می‌خواند. دستور <code>kubectl rollout status</code> در این حالت با کد خطا خارج می‌شود و برای همین در CI به کار می‌آید.</p></div><h4>۳. StatefulSet: هویت پایدار</h4><p>هر Pod در Deployment قابل جایگزینی است: نام تصادفی،‏ IP تازه،‏ و هیچ‌کدام بر دیگری برتری ندارد. پایگاه داده این‌طور نیست؛‏ هر replica باید نام ثابتی داشته باشد تا بقیه پیدایش کنند،‏ و داده‌ی هر replica باید همراه خودش بماند. StatefulSet سه چیز را تضمین می‌کند:</p><ol><li><b>نام ثابت با شماره‌ی ترتیبی:</b> نام Podها به شکل <code>postgres-0</code> و <code>postgres-1</code> و … است و Pod جایگزین همان نام را می‌گیرد.</li><li><b>DNS پایدار:</b> با یک headless Service (Serviceی با <code>clusterIP: None</code> که به‌جای یک IP مجازی،‏ IP خود Podها را برمی‌گرداند) هر Pod نام DNS خودش را دارد،‏ مثل <code>postgres-0.postgres</code>. نام این Service در فیلد <code>serviceName</code> مربوط به StatefulSet می‌آید.</li><li><b>storage اختصاصی:</b> با <code>volumeClaimTemplates</code> هر Pod یک PersistentVolumeClaim (درخواست فضای ذخیره‌سازی) با نام ثابت می‌گیرد که با حذف Pod پاک نمی‌شود و به Pod جایگزین وصل می‌شود. این را در فصل ۷ اضافه می‌کنیم.</li></ol><p>ترتیب هم مهم است: با سیاست پیش‌فرض یعنی OrderedReady،‏ همه‌ی Podها به ترتیب شماره ساخته می‌شوند و هر کدام فقط وقتی ساخته می‌شود که قبلی Ready باشد؛‏ حذف و به‌روزرسانی از بزرگ‌ترین شماره شروع می‌شود. اگر ترتیب لازم نیست،‏ سیاست Parallel را انتخاب کنید.</p><div class="warn"><b>هویت پایدار یعنی داده‌ی پایدار نیست</b><p>StatefulSet بدون volumeClaimTemplates فقط نام و DNS را ثابت نگه می‌دارد. داده‌ای که داخل خود container نوشته شود،‏ با هر restart مربوط به container (process ایزوله‌شده‌ای که برنامه را همراه وابستگی‌هایش اجرا می‌کند) یا حذف Pod از بین می‌رود؛‏ این را در گام ۵ آزمایش با چشم خودتان می‌بینید.</p></div><h4>۴. DaemonSet: یکی روی هر Node</h4><p>بعضی برنامه‌ها به Node تعلق دارند،‏ نه به برنامه‌ی دیگری؛‏ مثل agent جمع‌آوری log و agent مربوط به monitoring و plugin شبکه. DaemonSet روی هر Node مناسب دقیقاً یک Pod اجرا می‌کند؛‏ با اضافه شدن Node تازه خودش Pod می‌سازد و وقتی Nodeی حذف شود،‏ Pod روی آن هم حذف می‌شود. با <code>nodeSelector</code> می‌توانید آن را به بعضی Nodeها محدود کنید. DaemonSet چند toleration (اجازه‌ی قرار گرفتن روی Nodeی که taint دارد) را خودکار به Podهایش اضافه می‌کند،‏ مثلاً برای Nodeی که هنوز Ready نیست؛‏ برای اجرا روی Nodeهای مربوط به control plane که taint دارند،‏ toleration را خودتان اضافه می‌کنید.</p><h4>۵. Job و CronJob: کار تا پایان</h4><p>Deployment و StatefulSet و DaemonSet برنامه‌هایی را اجرا می‌کنند که هرگز تمام نمی‌شوند. Job برعکس است: Pod می‌سازد تا کاری <b>با موفقیت تمام شود</b>. برای همین restartPolicy در Pod مربوط به Job فقط Never یا OnFailure می‌تواند باشد.</p><div class="tbl"><table><thead><tr><th>فیلد Job</th><th>کار آن</th><th>پیش‌فرض</th></tr></thead><tbody><tr><td>completions و parallelism</td><td>چند اجرای موفق لازم است و چند Pod هم‌زمان اجرا شوند</td><td>هر دو یک</td></tr><tr><td>backoffLimit</td><td>پس از چند شکست،‏ Job شکست‌خورده اعلام شود؛‏ فاصله‌ی تلاش‌ها ۱۰ و ۲۰ و ۴۰ ثانیه و … تا سقف ۶ دقیقه</td><td>۶</td></tr><tr><td>activeDeadlineSeconds</td><td>سقف کل زمان Job؛‏ پس از آن همه‌ی Podهایش متوقف می‌شوند</td><td>بی‌سقف</td></tr><tr><td>ttlSecondsAfterFinished</td><td>چند ثانیه پس از پایان،‏ خود Job و Podهایش خودکار حذف شوند</td><td>حذف نمی‌شود</td></tr></tbody></table></div><p>هر CronJob در زمان‌های مشخص از روی <code>jobTemplate</code> یک Job می‌سازد. زمان‌بندی همان قالب پنج‌بخشی cron است: دقیقه،‏ ساعت،‏ روز ماه،‏ ماه و روز هفته؛‏ مثلاً <code>‎0 2 * * *‎</code> یعنی هر روز ساعت ۲ بامداد. سه فیلد دیگر رفتارش را تعیین می‌کنند:</p><ul><li><b>timeZone:</b> منطقه‌ی زمانی زمان‌بندی،‏ مثل <code>Asia/Tehran</code> (پایدار از v1.27). بدون آن،‏ منطقه‌ی زمانی kube-controller-manager به کار می‌رود که معمولاً UTC است.</li><li><b>concurrencyPolicy:</b> اگر اجرای قبلی هنوز تمام نشده باشد چه شود؛‏ Allow (پیش‌فرض،‏ هر دو اجرا شوند)،‏ Forbid (اجرای تازه انجام نشود) یا Replace (اجرای قبلی متوقف و تازه اجرا شود).</li><li><b>startingDeadlineSeconds:</b> اگر اجرایی به‌موقع شروع نشد (مثلاً controller در دسترس نبود)،‏ تا چند ثانیه بعد هنوز اجرایش مجاز است.</li></ul><div class="warn"><b>دو دام رایج</b><ul><li><b>تغییرناپذیری Job:‏</b> Pod template در Job پس از ساخت عوض نمی‌شود و Jobی که تمام شده با apply دوباره اجرا نمی‌شود. برای اجرای دوباره،‏ Job را حذف و از نو بسازید یا نام تازه بدهید.</li><li><b>اجرای دوباره:</b> کوبرنتیز تضمین نمی‌کند Job یا CronJob دقیقاً یک بار اجرا شود؛‏ در شرایط نادر ممکن است دو بار اجرا یا یک اجرا جا بیفتد. کار Job باید idempotent (اجرای چندباره‌اش همان نتیجه‌ی یک بار را دارد) باشد.</li></ul></div>
+  <p>فرض کنید API فروشگاه و برنامه‌ی گزارش شبانه هر دو همین حالا متوقف شوند. برای API انتظار دارید یک نسخه جایش را بگیرد. برای گزارش ابتدا باید بدانید آیا نتیجه ثبت شده است. انتخاب کنترلر از همین پرسش شروع می‌شود. پس از توقف Pod، چه اتفاقی باید بیفتد؟</p><h4>۱. چرا Pod را مستقیم نمی‌سازیم؟</h4><p>یک Pod مستقل روی یک Node اجرا می‌شود. اگر آن را حذف کنید، خود Pod نمی‌تواند جایگزینی برای خودش بسازد. با تعریف یک کنترلر، می‌گویید چه وضعیتی می‌خواهید. کنترلر وضعیت فعلی را بررسی می‌کند و در صورت نیاز از روی <code>template</code> یک Pod می‌سازد. برای پیدا کردن سازنده‌ی Pod به <code>metadata.ownerReferences</code> نگاه کنید. در گام صفر همین مسیر را برای API دنبال می‌کنید.</p><div class="tbl"><table><thead><tr><th>controller</th><th>چه چیزی را تضمین می‌کند</th><th>در شاپیفای</th></tr></thead><tbody><tr><td>Deployment (از راه ReplicaSet)</td><td>تلاش برای حفظ تعداد درخواستی از Podهای هم‌شکل، با امکان انتشار تدریجی و بازگشت</td><td>API و frontend</td></tr><tr><td>StatefulSet</td><td>نام و ترتیب مشخص برای هر Pod، با امکان تخصیص فضای ذخیره‌سازی پایدار به هر نسخه</td><td>PostgreSQL</td></tr><tr><td>DaemonSet</td><td>یک Pod روی هر Node مناسب؛‏ با آمدن Node تازه،‏ Pod تازه</td><td>agent مربوط به log</td></tr><tr><td>Job</td><td>اجرای یک کار تا پایان موفق،‏ با تلاش دوباره در صورت شکست</td><td>migration</td></tr><tr><td>CronJob</td><td>ساختن Job در زمان‌های مشخص</td><td>گزارش شبانه</td></tr></tbody></table></div><figure><div class="plate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 296" width="100%" style="max-width:770px;height:auto" role="img" aria-label="شاپیفای پس از فصل ۴: شش workload و controller هر کدام"><defs><marker id="f4m-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4a5672"></path></marker></defs><rect x="646" y="14" width="118" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="705.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">Deployment</text><text x="705.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-api</text><line x1="705.0" y1="68" x2="705.0" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="660" y="94" width="90" height="28" rx="7" fill="#ffffff" stroke="#326ce5" stroke-width="1.1" stroke-dasharray="4 3"></rect><text x="705.0" y="113" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#16213a" text-anchor="middle">ReplicaSet</text><line x1="705.0" y1="122" x2="705.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="654" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="705.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-api-…</text><rect x="654" y="182" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="705.0" y="199" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-api-…</text><rect x="654" y="216" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="705.0" y="233" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-api-…</text><rect x="518" y="14" width="118" height="54" rx="10" fill="#e3ecfd" stroke="#326ce5" stroke-width="1.4"></rect><text x="577.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">Deployment</text><text x="577.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-web</text><line x1="577.0" y1="68" x2="577.0" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="532" y="94" width="90" height="28" rx="7" fill="#ffffff" stroke="#326ce5" stroke-width="1.1" stroke-dasharray="4 3"></rect><text x="577.0" y="113" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#16213a" text-anchor="middle">ReplicaSet</text><line x1="577.0" y1="122" x2="577.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="526" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="577.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-web-…</text><rect x="526" y="182" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="577.0" y="199" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-web-…</text><rect x="390" y="14" width="118" height="54" rx="10" fill="#e1f4f0" stroke="#12806f" stroke-width="1.4"></rect><text x="449.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">StatefulSet</text><text x="449.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">postgres</text><line x1="449.0" y1="68" x2="449.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="398" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="449.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">postgres-0</text><rect x="262" y="14" width="118" height="54" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="321.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">Job</text><text x="321.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-migrate</text><line x1="321.0" y1="68" x2="321.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="270" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1" stroke-dasharray="4 3"></rect><text x="321.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">shop-migrate-…</text><rect x="134" y="14" width="118" height="54" rx="10" fill="#fbe5e3" stroke="#b83227" stroke-width="1.4"></rect><text x="193.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">CronJob</text><text x="193.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">shop-report</text><line x1="193.0" y1="68" x2="193.0" y2="92" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="148" y="94" width="90" height="28" rx="7" fill="#ffffff" stroke="#b83227" stroke-width="1.1" stroke-dasharray="4 3"></rect><text x="193.0" y="113" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="11" fill="#16213a" text-anchor="middle">Job هر شب</text><line x1="193.0" y1="122" x2="193.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="142" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1" stroke-dasharray="4 3"></rect><text x="193.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">…</text><rect x="6" y="14" width="118" height="54" rx="10" fill="#fdf0dc" stroke="#b26b00" stroke-width="1.4"></rect><text x="65.0" y="37" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="13" font-weight="700" fill="#16213a" text-anchor="middle">DaemonSet</text><text x="65.0" y="56" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="11" fill="#4a5672" text-anchor="middle">log-agent</text><line x1="65.0" y1="68" x2="65.0" y2="146" stroke="#4a5672" stroke-width="1.6" marker-end="url(#f4m-a)"></line><rect x="14" y="148" width="102" height="26" rx="6" fill="#ffffff" stroke="#4a5672" stroke-width="1"></rect><text x="65.0" y="165" font-family="'JetBrains Mono', Consolas, monospace" direction="ltr" font-size="10.5" fill="#16213a" text-anchor="middle">log-agent-…</text><line x1="6" y1="262" x2="764" y2="262" stroke="#c9d3e6" stroke-width="1.2"></line><text x="764" y="284" font-family="Vazirmatn, Tahoma, sans-serif" direction="rtl" font-size="12" fill="#4a5672" text-anchor="start">همه‌ی Podها فعلاً روی یک Node؛ کادر خط‌چین یعنی Podی که کارش را تمام می‌کند و می‌رود</text></svg></div><figcaption><b>شکل ۴-۱.</b> <span style="flex:1 1 0;min-width:0">شاپیفای در پایان این فصل. هر ستون یک workload است: بالای ستون controller و نام آن،‏ و پایین Podهایی که ساخته است. در هر Deployment یک ReplicaSet واسطه است و Podهایی هم‌شکل و بی‌نام‌ونشان می‌سازد؛‏ StatefulSet یک Pod با نام ثابت <code>postgres-0</code> دارد؛‏ Job و CronJob (که هر شب یک Job تازه می‌سازد) Podهایی می‌سازند که کارشان تمام می‌شود؛‏ و DaemonSet روی هر Node یک Pod دارد.</span></figcaption></figure><h4>۲. Deployment از نزدیک</h4><p>وقتی image یا probe را در <code>spec.template</code> عوض می‌کنید، الگوی اجرای برنامه تغییر می‌کند. Deployment برای الگوی تازه یک ReplicaSet می‌سازد یا اگر همان الگو را از قبل داشته باشد، از ReplicaSet قبلی استفاده می‌کند. اگر فقط <code>replicas</code> را عوض کنید، همان ReplicaSet تعداد Podها را تنظیم می‌کند. برچسب <code>pod-template-hash</code> کمک می‌کند Podهای هر الگو را پیدا کنید.</p><div class="tbl"><table><thead><tr><th>مفهوم</th><th>یعنی چه</th><th>پیش‌فرض</th></tr></thead><tbody><tr><td>revision</td><td>هر ReplicaSet یک revision از Deployment است؛‏ برگشت یعنی بزرگ کردن دوباره‌ی ReplicaSet قدیمی</td><td>تعداد ReplicaSetهای قدیمی نگه‌داشته‌شده (revisionHistoryLimit) برابر ۱۰</td></tr><tr><td>strategy</td><td>نوع RollingUpdate همه‌ی Podها را تدریجی عوض می‌کند؛‏ نوع Recreate اول همه را حذف و بعد نسخه‌ی تازه را می‌سازد</td><td>RollingUpdate با maxSurge و maxUnavailable برابر ۲۵٪</td></tr><tr><td>minReadySeconds</td><td>Pod تازه چند ثانیه باید Ready بماند تا available حساب شود</td><td>صفر</td></tr><tr><td>progressDeadlineSeconds</td><td>اگر rollout این مدت هیچ پیشرفتی نکند،‏ condition به نام Progressing با دلیل ProgressDeadlineExceeded برابر False می‌شود</td><td>۶۰۰ ثانیه</td></tr></tbody></table></div><p>ابتدا <code>kubectl rollout history</code> را بخوانید. گزینه‌ی <code>--revision=N</code> الگوی یک نسخه‌ی مشخص را نشان می‌دهد. ستون <code>CHANGE-CAUSE</code> از توضیحی می‌آید که با کلید <code>kubernetes.io/change-cause</code> روی Deployment می‌نویسید. برای بازگشت به نسخه‌ی پیشین از <code>kubectl rollout undo</code> و برای انتخاب نسخه از <code>--to-revision=N</code> استفاده کنید.</p><div class="warn"><b>کوبرنتیز rollout گیرکرده را درست نمی‌کند</b><p>اگر انتشار بیش از مهلت تعیین‌شده پیشرفتی نداشته باشد، دلیل <code>ProgressDeadlineExceeded</code> در وضعیت Deployment ثبت می‌شود. کنترلر همچنان وضعیت را پیگیری می‌کند و <code>kubectl rollout status</code> با کد خطا خارج می‌شود. سامانه‌ی انتشار می‌تواند از همین کد برای اعلام شکست استفاده کند. پس از آن تیم می‌تواند علت را رفع کند یا به نسخه‌ی قبلی برگردد.</p></div><h4>۳. StatefulSet: هویت پایدار</h4><p>اگر یکی از نسخه‌های API با Pod تازه‌ای عوض شود، مشتری همچنان همان Service را صدا می‌زند. اما در یک پایگاه داده با چند عضو، اعضا باید بتوانند یکدیگر را با نامی مشخص پیدا کنند و هر عضو به فضای داده‌ی خودش دسترسی داشته باشد. برای دیدن نقش StatefulSet سه چیز را جدا دنبال کنید.</p><ol><li><b>نام ثابت با شماره‌ی ترتیبی:</b> نام Podها به شکل <code>postgres-0</code> و <code>postgres-1</code> و … است و Pod جایگزین همان نام را می‌گیرد.</li><li><b>DNS پایدار:</b> با یک headless Service (Serviceی با <code>clusterIP: None</code> که به‌جای یک IP مجازی،‏ IP خود Podها را برمی‌گرداند) هر Pod نام DNS خودش را دارد،‏ مثل <code>postgres-0.postgres</code>. نام این Service در فیلد <code>serviceName</code> مربوط به StatefulSet می‌آید.</li><li><b>storage اختصاصی:</b> با <code>volumeClaimTemplates</code> هر Pod یک PersistentVolumeClaim (درخواست فضای ذخیره‌سازی) با نام ثابت می‌گیرد که با حذف Pod پاک نمی‌شود و به Pod جایگزین وصل می‌شود. این را در فصل ۷ اضافه می‌کنیم.</li></ol><p>سیاست پیش‌فرض <code>OrderedReady</code> را روی دو نسخه تصور کنید. ابتدا Pod شماره‌ی صفر ساخته می‌شود. پس از آماده شدن آن، نوبت شماره‌ی یک است. هنگام کم کردن تعداد نسخه‌ها، شماره‌های بزرگ‌تر زودتر حذف می‌شوند. <code>Parallel</code> انتظار بین اعضا را هنگام افزایش و کاهش تعداد برمی‌دارد. ترتیب انتشار نسخه‌ی تازه را راهبرد به‌روزرسانی تعیین می‌کند.</p><div class="warn"><b>هویت پایدار یعنی داده‌ی پایدار نیست</b><p>وقتی Pod جایگزین می‌شود، نام پایدار کمک می‌کند دوباره به آن وصل شوید. برای ماندن جدول‌های PostgreSQL باید فایل‌هایش روی فضای ذخیره‌سازی پایدار نوشته شوند. در گام ۵ با مقایسه‌ی نام Pod، شناسه‌ی آن و فهرست جدول‌ها این دو موضوع را جدا می‌آزمایید.</p></div><h4>۴. DaemonSet: یکی روی هر Node</h4><p>گردآورنده‌ی لاگ باید روی ماشینی اجرا شود که فایل‌های گزارش آنجاست. DaemonSet به ازای هر Node واجد شرایط یک Pod می‌سازد. با اضافه شدن یک ماشین مناسب، گردآورنده‌ی آن هم ساخته می‌شود. برای محدود کردن ماشین‌ها از <code>nodeSelector</code> استفاده کنید. اگر Node دارای taint است، tolerationهای Pod را هم بررسی کنید. DaemonSet بعضی از آن‌ها را خودکار اضافه می‌کند.</p><h4>۵. Job و CronJob: کار تا پایان</h4><p>برای API می‌پرسید «چند نسخه همین حالا آماده‌اند؟» برای migration می‌پرسید «آیا جدول‌ها با موفقیت ساخته شدند؟» Job پاسخ پرسش دوم را ثبت می‌کند. به همین دلیل برای Pod آن یکی از دو سیاست <code>Never</code> یا <code>OnFailure</code> را انتخاب می‌کنید.</p><div class="tbl"><table><thead><tr><th>فیلد Job</th><th>کار آن</th><th>پیش‌فرض</th></tr></thead><tbody><tr><td>completions و parallelism</td><td>چند اجرای موفق لازم است و چند Pod هم‌زمان اجرا شوند</td><td>هر دو یک</td></tr><tr><td>backoffLimit</td><td>پس از چند شکست،‏ Job شکست‌خورده اعلام شود؛‏ فاصله‌ی تلاش‌ها ۱۰ و ۲۰ و ۴۰ ثانیه و … تا سقف ۶ دقیقه</td><td>۶</td></tr><tr><td>activeDeadlineSeconds</td><td>سقف کل زمان Job؛‏ پس از آن همه‌ی Podهایش متوقف می‌شوند</td><td>بی‌سقف</td></tr><tr><td>ttlSecondsAfterFinished</td><td>چند ثانیه پس از پایان،‏ خود Job و Podهایش خودکار حذف شوند</td><td>حذف نمی‌شود</td></tr></tbody></table></div><p>هر CronJob در زمان‌های مشخص از روی <code>jobTemplate</code> یک Job می‌سازد. زمان‌بندی همان قالب پنج‌بخشی cron است: دقیقه،‏ ساعت،‏ روز ماه،‏ ماه و روز هفته؛‏ مثلاً <code>‎0 2 * * *‎</code> یعنی هر روز ساعت ۲ بامداد. سه فیلد دیگر رفتارش را تعیین می‌کنند:</p><ul><li><b>timeZone:</b> منطقه‌ی زمانی زمان‌بندی،‏ مثل <code>Asia/Tehran</code> (پایدار از v1.27). بدون آن،‏ منطقه‌ی زمانی kube-controller-manager به کار می‌رود که معمولاً UTC است.</li><li><b>concurrencyPolicy:</b> اگر اجرای قبلی هنوز تمام نشده باشد چه شود؛‏ Allow (پیش‌فرض،‏ هر دو اجرا شوند)،‏ Forbid (اجرای تازه انجام نشود) یا Replace (اجرای قبلی متوقف و تازه اجرا شود).</li><li><b>startingDeadlineSeconds:</b> اگر اجرایی به‌موقع شروع نشد (مثلاً controller در دسترس نبود)،‏ تا چند ثانیه بعد هنوز اجرایش مجاز است.</li></ul><div class="warn"><b>دو دام رایج</b><ul><li><b>تغییرناپذیری Job:‏</b> Pod template در Job پس از ساخت عوض نمی‌شود و Jobی که تمام شده با apply دوباره اجرا نمی‌شود. برای اجرای دوباره،‏ Job را حذف و از نو بسازید یا نام تازه بدهید.</li><li><b>اجرای دوباره:</b> کوبرنتیز تضمین نمی‌کند Job یا CronJob دقیقاً یک بار اجرا شود؛‏ در شرایط نادر ممکن است دو بار اجرا یا یک اجرا جا بیفتد. کار Job باید idempotent (اجرای چندباره‌اش همان نتیجه‌ی یک بار را دارد) باشد.</li></ul></div>
 
   <h3 id="ch4-lab">آزمایش شاپیفای: شش workload در عمل <small>(Shopify lab)</small></h3>
   <div class="lab"><b>آزمایش عملی شاپیفای: API نسخه‌ی 1.3 و بقیه‌ی فروشگاه</b>
-    <p>این آزمایش ادامه‌ی فصل ۳ است؛‏ همان cluster k3s و namespace به نام <code>shopify</code>،‏ همان registry خصوصی و همان پوشه‌ی <code>~/shopify</code>. هر فایل YAML تازه را در همین پوشه بسازید. نام Podها،‏ hashها و زمان‌ها در محیط شما فرق دارند.</p><h4 class="step" id="ch4-lab-s0">گام ۰: زنجیره‌ی مالکیت و تاریخچه‌ی API</h4><p>پیش از هر تغییری ببینید پشت API چه اشیایی هست:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get deployment,replicaset -l app=shop-api
+    <p>روی ماشین آزمایش فصل ۳ از پوشه‌ی <code>~/shopify</code> شروع کنید. در همان فضای نام باید Deployment به نام <code>shop-api</code> سه نسخه‌ی آماده داشته باشد و Secret به نام <code>regcred</code> موجود باشد. دستورهای زیر را در همان ترمینال اجرا کنید و فایل‌های تازه را در همین پوشه بسازید. نام Podها و شماره‌ی نسخه‌ها در خروجی شما ممکن است متفاوت باشند.</p><h4 class="step" id="ch4-lab-s0">گام ۰: زنجیره‌ی مالکیت و تاریخچه‌ی API</h4><p>پیش از هر تغییری ببینید پشت API چه اشیایی هست:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">cd ~/shopify
+kubectl config set-context --current --namespace=shopify
+kubectl get deployment/shop-api secret/regcred
+kubectl get deployment,replicaset -l app=shop-api
 POD=$(kubectl get pod -l app=shop-api -o name | head -1)
 kubectl get $POD -o jsonpath='{.metadata.ownerReferences[0].kind}/{.metadata.ownerReferences[0].name}{"\n"}{.metadata.labels.pod-template-hash}{"\n"}'
 </pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
@@ -26,8 +29,8 @@ replicaset.apps/shop-api-8c6f4d9b7e   3         3         3       1d
 ...
 ReplicaSet/shop-api-8c6f4d9b7e
 8c6f4d9b7e
-</pre></div><p>فقط یک ReplicaSet عدد غیرصفر دارد؛‏ بقیه revisionهای قدیمی‌اند که برای برگشت نگه داشته شده‌اند (تا ۱۰ عدد). مالک Pod همان ReplicaSet فعال است و مقدار label به نام <code>pod-template-hash</code> همان پسوند نام آن است. تاریخچه را ببینید و برای revision فعلی توضیح بنویسید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl rollout history deployment/shop-api
-kubectl annotate deployment/shop-api kubernetes.io/change-cause="api 1.2: probes, init container, sidecar"
+</pre></div><p>در پایان انتشار، تنها ReplicaSet فعال Pod دارد. نام مالک Pod را با نام ReplicaSet دارای سه نسخه‌ی آماده مقایسه کنید. مقدار <code>pod-template-hash</code> در انتهای همان نام دیده می‌شود. حالا یک توضیح کوتاه برای revision فعلی ثبت کنید تا در تاریخچه معلوم باشد این نسخه چه تغییری داشته است.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl rollout history deployment/shop-api
+kubectl annotate --overwrite deployment/shop-api kubernetes.io/change-cause="api 1.2: probes, init container, sidecar"
 kubectl rollout history deployment/shop-api | tail -2
 </pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">deployment.apps/shop-api
 REVISION  CHANGE-CAUSE
@@ -37,12 +40,12 @@ REVISION  CHANGE-CAUSE
 deployment.apps/shop-api annotated
 13        &lt;none&gt;
 14        api 1.2: probes, init container, sidecar
-</pre></div><p>ستون CHANGE-CAUSE تا حالا خالی بود و revisionها فقط شماره داشتند. controller مربوط به Deployment این annotation (داده‌ی توصیفی کلید-مقدار که برای انتخاب اشیا به کار نمی‌رود) را روی ReplicaSet فعال کپی کرد. از این به بعد هر تغییر را با همین annotation داخل خود فایل می‌نویسیم تا تاریخچه خوانا باشد. شماره‌ی revisionها در محیط شما بسته به تعداد تغییرهای فصل‌های قبل فرق دارد.</p><h4 class="step" id="ch4-lab-s1">گام ۱: جزئیات یک revision</h4><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl rollout history deployment/shop-api --revision=14 | head -12
+</pre></div><p>ستون CHANGE-CAUSE تا حالا خالی بود و revisionها فقط شماره داشتند. controller مربوط به Deployment این annotation (داده‌ی توصیفی کلید-مقدار که برای انتخاب اشیا به کار نمی‌رود) را روی ReplicaSet فعال کپی کرد. از این به بعد هر تغییر را با همین annotation داخل خود فایل می‌نویسیم تا تاریخچه خوانا باشد. شماره‌ی revisionها در محیط شما بسته به تعداد تغییرهای فصل‌های قبل فرق دارد.</p><h4 class="step" id="ch4-lab-s1">گام ۱: جزئیات یک revision</h4><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">REVISION=$(kubectl get deployment shop-api -o jsonpath='{.metadata.annotations.deployment\.kubernetes\.io/revision}')
+kubectl rollout history deployment/shop-api --revision="$REVISION"
 </pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">deployment.apps/shop-api with revision #14
 Pod Template:
   Labels:	app=shop-api
 	pod-template-hash=8c6f4d9b7e
-  Annotations:	kubernetes.io/change-cause: api 1.2: probes, init container, sidecar
   Init Containers:
    migrate:
     Image:	localhost:5000/shopify/api:1.2@sha256:7a3d9e1c…
@@ -50,7 +53,10 @@ Pod Template:
   Containers:
    web:
     Image:	localhost:5000/shopify/api:1.2@sha256:7a3d9e1c…
-</pre></div><p>هر revision کل Pod template را نگه می‌دارد؛‏ یعنی image (بسته‌ی فقط‌خواندنی شامل برنامه و وابستگی‌هایش که container از آن ساخته می‌شود) و containerها و env و probeها. برگشت با <code>kubectl rollout undo deployment/shop-api --to-revision=N</code> یعنی Deployment دوباره همین template را به کار ببرد. پیش از هر برگشت به revision قدیمی،‏ همین دستور را بزنید تا بدانید به کجا برمی‌گردید.</p><h4 class="step" id="ch4-lab-s2">گام ۲: PostgreSQL با StatefulSet</h4><p>فایل <code>postgres.yaml</code> را بسازید. دو شیء دارد که با <code>‎---‎</code> از هم جدا شده‌اند: headless Service و StatefulSet.</p><div class="code"><div class="lbl"><span>postgres.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
+</pre></div><p>در خروجی revision فعلی، نام کانتینرها و image نسخه‌ی 1.2 را پیدا کنید. هر revision الگوی Pod، از جمله متغیرهای محیطی و probeها را ثبت می‌کند. هنگام استفاده از <code>kubectl rollout undo</code> همین الگو دوباره به کار می‌افتد. داده‌های پایگاه داده تاریخچه‌ی جداگانه‌ای دارند.</p><details class="ans"><summary>اگر فقط تعداد نسخه‌های API را زیاد کنید، کدام بخش از تاریخچه عوض می‌شود؟</summary><p>تعداد Podهای ReplicaSet فعال بیشتر می‌شود. شماره‌ی revision مربوط به الگوی Pod است و با تغییر تعداد نسخه‌ها ثابت می‌ماند.</p></details></div>
+
+  <h3 id="ch4-lab-database">پایگاه داده چگونه آماده‌ی انتشار می‌شود؟</h3>
+  <div class="lab"><h4 class="step" id="ch4-lab-s2">گام ۲: PostgreSQL با StatefulSet</h4><p>پیش از ساختن پایگاه داده، دو نام را در فایل <code>postgres.yaml</code> پیدا کنید. <code>metadata.name</code> در Service و <code>serviceName</code> در StatefulSet باید به هم برسند. کمی بعد می‌بینید API چطور از همین نام برای پیدا کردن پایگاه داده استفاده می‌کند.</p><div class="code"><div class="lbl"><span>postgres.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: Service
 metadata:
   name: postgres
@@ -103,7 +109,7 @@ NAME         READY   STATUS              RESTARTS   AGE
 postgres-0   0/1     ContainerCreating   0          1s
 postgres-0   0/1     Running             0          14s
 postgres-0   1/1     Running             0          21s
-</pre></div><p>نام Pod تصادفی نیست: نام StatefulSet و شماره‌ی ۰. با <code>Ctrl+C</code> بیرون بیایید و نام کامل Pod و پایگاه داده را بسنجید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get statefulset,service postgres
+</pre></div><p>نام Pod تصادفی نیست: نام StatefulSet و شماره‌ی ۰. با <code>Ctrl+C</code> بیرون بیایید و نام کامل Pod و پایگاه داده را بسنجید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get statefulset/postgres service/postgres
 kubectl exec postgres-0 -- hostname -f
 kubectl exec postgres-0 -- psql -U shop -d shop -tAc 'SHOW server_version_num'
 kubectl exec deploy/shop-api -c web -- python -c "import socket; print(socket.gethostbyname('postgres-0.postgres'))"
@@ -115,7 +121,7 @@ service/postgres   ClusterIP   None         &lt;none&gt;        5432/TCP   40s
 postgres-0.postgres.shopify.svc.cluster.local
 170006
 10.42.0.71
-</pre></div><p>چهار نکته در این خروجی:</p><ul><li>مقدار ستون CLUSTER-IP برابر None است؛‏ این Service نشانی مجازی ندارد.</li><li>نام کامل Pod از چهار بخش ساخته شده است: نام Pod،‏ نام Service،‏ نام namespace و در پایان <code>svc.cluster.local</code>.</li><li>از داخل API،‏ همان نام کوتاه <code>postgres-0.postgres</code> به IP خود Pod می‌رسد.</li><li>عدد 170006 یعنی PostgreSQL نسخه‌ی 17.6. ابزار psql داخل Pod بدون رمز وصل شد،‏ چون image رسمی اتصال‌های محلی را بدون رمز می‌پذیرد؛‏ اتصال از شبکه رمز می‌خواهد.</li></ul><h4 class="step" id="ch4-lab-s3">گام ۳: API نسخه‌ی 1.3 و rolloutی که گیر می‌کند</h4><p>سارا API را به پایگاه داده وصل کرده است. همه‌ی کد پایگاه داده در فایل تازه‌ی <code>db.py</code> است:</p><div class="code"><div class="lbl"><span>db.py</span><button type="button">کپی</button></div><pre class="sh">import os
+</pre></div><p>چهار نکته در این خروجی:</p><ul><li>مقدار ستون CLUSTER-IP برابر None است؛‏ این Service نشانی مجازی ندارد.</li><li>نام کامل Pod از چهار بخش ساخته شده است: نام Pod،‏ نام Service،‏ نام namespace و در پایان <code>svc.cluster.local</code>.</li><li>از داخل API،‏ همان نام کوتاه <code>postgres-0.postgres</code> به IP خود Pod می‌رسد.</li><li>عدد 170006 یعنی PostgreSQL نسخه‌ی 17.6. ابزار psql داخل Pod بدون رمز وصل شد،‏ چون image رسمی اتصال‌های محلی را بدون رمز می‌پذیرد؛‏ اتصال از شبکه رمز می‌خواهد.</li></ul><h4 class="step" id="ch4-lab-s3">گام ۳: API نسخه‌ی 1.3 و rolloutی که گیر می‌کند</h4><p>در نسخه‌ی 1.3، درخواست فهرست کالاها به PostgreSQL می‌رسد. مسیر را از این فایل دنبال کنید. <code>db.py</code> اتصال را باز می‌کند و نسخه‌ی فعلی ساختار جدول‌ها را می‌خواند. اگر هنوز جدولی ساخته نشده باشد، مقدار صفر برمی‌گرداند.</p><div class="code"><div class="lbl"><span>db.py</span><button type="button">کپی</button></div><pre class="sh">import os
 
 import psycopg
 
@@ -138,7 +144,7 @@ def schema_version(conn):
     if conn.execute("SELECT to_regclass('schema_version')").fetchone()[0] is None:
         return 0
     return conn.execute("SELECT coalesce(max(version), 0) FROM schema_version").fetchone()[0]
-</pre></div><div class="tbl"><table class="codeparts"><thead><tr><th>بخش کد</th><th>کار آن</th></tr></thead><tbody><tr><td>دیکشنری <code>DB</code></td><td>نشانی و مشخصات اتصال. هر مقدار از environment variable خوانده می‌شود و اگر نبود،‏ مقدار پیش‌فرض داخل کد به کار می‌رود؛‏ یعنی رمز پایگاه داده داخل کد و در نتیجه داخل image است. این دقیقاً مشکل فصل ۶ است.</td></tr><tr><td>نام پیش‌فرض <code>postgres</code></td><td>همان نام headless Service گام ۲. چون API در همان namespace است،‏ نام کوتاه کافی است.</td></tr><tr><td>ثابت <code>SCHEMA_VERSION</code></td><td>نسخه‌ی schema که این نسخه از کد لازم دارد. کد و migration با هم منتشر می‌شوند.</td></tr><tr><td>تابع <code>schema_version</code></td><td>بزرگ‌ترین نسخه‌ی ثبت‌شده در جدول <code>schema_version</code>؛‏ اگر این جدول هنوز نیست،‏ صفر.</td></tr></tbody></table></div><p>فایل <code>migrate.py</code> حالا migration واقعی است:</p><div class="code"><div class="lbl"><span>migrate.py</span><button type="button">کپی</button></div><pre class="sh">import sys
+</pre></div><div class="tbl"><table class="codeparts"><thead><tr><th>بخش کد</th><th>کار آن</th></tr></thead><tbody><tr><td>دیکشنری <code>DB</code></td><td>نشانی و مشخصات اتصال. هر مقدار از environment variable خوانده می‌شود و اگر نبود،‏ مقدار پیش‌فرض داخل کد به کار می‌رود؛‏ یعنی رمز پایگاه داده داخل کد و در نتیجه داخل image است. این دقیقاً مشکل فصل ۶ است.</td></tr><tr><td>نام پیش‌فرض <code>postgres</code></td><td>همان نام headless Service گام ۲. چون API در همان namespace است،‏ نام کوتاه کافی است.</td></tr><tr><td>ثابت <code>SCHEMA_VERSION</code></td><td>نسخه‌ی schema که این نسخه از کد لازم دارد. کد و migration با هم منتشر می‌شوند.</td></tr><tr><td>تابع <code>schema_version</code></td><td>بزرگ‌ترین نسخه‌ی ثبت‌شده در جدول <code>schema_version</code>؛‏ اگر این جدول هنوز نیست،‏ صفر.</td></tr></tbody></table></div><p>در <code>migrate.py</code> دو تغییر ثبت می‌کنید. اول جدول کالاها و سپس جدول سفارش‌ها ساخته می‌شود. هنگام خواندن حلقه ببینید اگر برنامه پس از تغییر اول متوقف شود، اجرای بعد از کدام شماره ادامه می‌دهد.</p><div class="code"><div class="lbl"><span>migrate.py</span><button type="button">کپی</button></div><pre class="sh">import sys
 
 import psycopg
 
@@ -180,66 +186,239 @@ with conn:
                          (version, name))
         print(f"applying {version:03d}_{name} ... done", flush=True)
     print(f"schema is at version {schema_version(conn):03d}", flush=True)
-</pre></div><div class="tbl"><table class="codeparts"><thead><tr><th>بخش کد</th><th>کار آن</th></tr></thead><tbody><tr><td>فهرست <code>MIGRATIONS</code></td><td>هر migration یک شماره و نام و متن SQL دارد: اولی جدول محصولات را می‌سازد و سه محصول قبلی را در آن می‌گذارد،‏ دومی جدول سفارش‌ها را.</td></tr><tr><td>خروج با کد ۱</td><td>اگر اتصال شکست بخورد،‏ برنامه با کد غیرصفر خارج می‌شود. Job همین کد را شکست می‌داند و دوباره تلاش می‌کند.</td></tr><tr><td>قفل advisory</td><td>دستور <code>pg_advisory_lock</code> یک قفل سطح پایگاه داده می‌گیرد: اگر دو migration هم‌زمان اجرا شوند،‏ دومی منتظر می‌ماند تا اولی تمام شود. همان مشکل سه اجرای هم‌زمان فصل ۳.</td></tr><tr><td>پرش از اجراشده‌ها</td><td>هر migration که قبلاً اجرا شده،‏ دوباره اجرا نمی‌شود؛‏ پس اجرای چندباره‌ی کل برنامه بی‌خطر (idempotent) است.</td></tr><tr><td>بلوک transaction</td><td>هر migration و ثبت شماره‌اش با هم انجام می‌شوند یا هیچ‌کدام.</td></tr></tbody></table></div><p>و <code>report.py</code> برای گزارش شبانه (گام ۶):</p><div class="code"><div class="lbl"><span>report.py</span><button type="button">کپی</button></div><pre class="sh">import datetime
+</pre></div><div class="tbl"><table class="codeparts"><thead><tr><th>بخش کد</th><th>کار آن</th></tr></thead><tbody><tr><td>فهرست <code>MIGRATIONS</code></td><td>هر migration یک شماره و نام و متن SQL دارد: اولی جدول محصولات را می‌سازد و سه محصول قبلی را در آن می‌گذارد،‏ دومی جدول سفارش‌ها را.</td></tr><tr><td>خروج با کد ۱</td><td>اگر اتصال شکست بخورد،‏ برنامه با کد غیرصفر خارج می‌شود. Job همین کد را شکست می‌داند و دوباره تلاش می‌کند.</td></tr><tr><td>قفل advisory</td><td>دستور <code>pg_advisory_lock</code> یک قفل سطح پایگاه داده می‌گیرد: اگر دو migration هم‌زمان اجرا شوند،‏ دومی منتظر می‌ماند تا اولی تمام شود. همان مشکل سه اجرای هم‌زمان فصل ۳.</td></tr><tr><td>پرش از اجراشده‌ها</td><td>هر migration که قبلاً اجرا شده،‏ دوباره اجرا نمی‌شود؛‏ پس اجرای چندباره‌ی کل برنامه بی‌خطر (idempotent) است.</td></tr><tr><td>بلوک transaction</td><td>هر migration و ثبت شماره‌اش با هم انجام می‌شوند یا هیچ‌کدام.</td></tr></tbody></table></div><p>فایل <code>report.py</code> را هم کنار <code>db.py</code> بسازید. هر ردیف جدول سفارش‌ها تعداد و شناسه‌ی کالا را دارد. برای به دست آوردن مبلغ، گزارش قیمت کالا را از جدول محصولات می‌خواند و آن را در تعداد ضرب می‌کند. این همان محاسبه‌ای است که در گام ۶ با یک سفارش آزمایشی بررسی می‌کنید.</p><div class="code"><div class="lbl"><span>report.py</span><button type="button">کپی</button></div><pre class="sh">import datetime
 
 from db import connect
 
 with connect() as conn:
     orders, total = conn.execute("""
-        SELECT count(*), coalesce(sum(o.qty * p.price), 0)
+        SELECT count(*), coalesce(sum(o.qty::bigint * p.price), 0)
         FROM orders o JOIN products p ON p.id = o.product_id
         WHERE o.created_at &gt;= now() - interval '1 day'""").fetchone()
 print(f"sales report {datetime.date.today()}: {orders} orders, "
       f"total {total} toman", flush=True)
-</pre></div><p>در <code>app.py</code> نسخه‌ی 1.3،‏ فهرست ثابت محصولات حذف شده و این بخش‌ها عوض شده‌اند:</p><div class="code"><div class="lbl"><span>app.py (نسخه‌ی 1.3،‏ بخش‌های تغییرکرده)</span><button type="button">کپی</button></div><pre class="sh">def schema_ready():
+</pre></div><p>فایل <code>app.py</code> فصل قبل را با نسخه‌ی زیر جایگزین کنید. برای بار اول فقط سه مسیر را دنبال کنید. <code>/ready</code> نسخه‌ی جدول‌ها را می‌سنجد، <code>/api/products</code> از جدول کالاها می‌خواند و <code>/api/orders</code> سفارش را ثبت می‌کند. اگر پایگاه داده قطع شود، انتظار دارید کدام مسیر هنوز پاسخ موفق بدهد؟</p><div class="code"><div class="lbl"><span>app.py (نسخه‌ی کامل 1.3)</span><button type="button">کپی</button></div><pre class="sh">import json
+import os
+import signal
+import socket
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import psycopg
+
+import db
+
+VERSION = os.environ.get("APP_VERSION", "1.3")
+PORT = int(os.environ.get("PORT", "8080"))
+STARTUP_DELAY = float(os.environ.get("STARTUP_DELAY", "3"))
+ACCESS_LOG = os.environ.get("ACCESS_LOG", "")              # empty: stdout only
+LOCK = threading.Lock()          # the "critical path" every request passes
+STATE = {"maintenance": False}
+
+
+def schema_ready():
     try:
         with db.connect() as conn:
             return db.schema_version(conn) &gt;= db.SCHEMA_VERSION
     except psycopg.Error:
-        return False             # database down or unreachable: not ready
+        return False
 
-...
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path, _, query = self.path.partition("?")
+        if path.startswith("/admin/") and self.client_address[0] not in ("127.0.0.1", "::1"):
+            self.reply(403, {"error": "local lab controls only"})
+            return
+        if path == "/admin/freeze":
+            LOCK.acquire()       # never released: simulates a deadlock
+            self.reply(200, {"status": "frozen"})
+            return
+        if path == "/admin/maintenance":
+            STATE["maintenance"] = query == "on=1"
+            self.reply(200, {"maintenance": STATE["maintenance"]})
+            return
+        with LOCK:               # blocks forever once the app is frozen
+            pass
+        if path == "/healthz":
+            self.reply(200, {"status": "ok"})
+        elif path == "/ready":
+            ok = schema_ready() and not STATE["maintenance"]
+            self.reply(200 if ok else 503, {"ready": ok})
         elif path == "/api/products":
             try:
                 with db.connect() as conn:
-                    rows = conn.execute(
-                        "SELECT id, name, price FROM products ORDER BY id").fetchall()
+                    rows = conn.execute("SELECT id, name, price FROM products ORDER BY id").fetchall()
             except psycopg.Error:
                 self.reply(503, {"error": "database unavailable"})
                 return
-            ...
+            products = [{"id": i, "name": name, "price": price} for i, name, price in rows]
+            self.reply(200, {"version": VERSION, "pod": socket.gethostname(), "products": products})
+        elif path == "/api/slow":
+            time.sleep(5)
+            self.reply(200, {"status": "done"})
+        else:
+            self.reply(404, {"error": "not found"})
 
-    def do_POST(self):           # POST /api/orders  {"product_id": 1, "qty": 2}
-        ...
-</pre></div><div class="tbl"><table class="codeparts"><thead><tr><th>بخش کد</th><th>کار آن</th></tr></thead><tbody><tr><td>تابع <code>schema_ready</code></td><td>حالا آمادگی یعنی پایگاه داده در دسترس باشد و schema دست‌کم نسخه‌ی لازم را داشته باشد. فایل نشانه‌ی فصل ۳ دیگر لازم نیست.</td></tr><tr><td>مسیر <code>/api/products</code></td><td>محصولات از پایگاه داده خوانده می‌شوند؛‏ اگر پایگاه داده در دسترس نباشد،‏ کد ۵۰۳.</td></tr><tr><td>متد <code>do_POST</code></td><td>ثبت سفارش در مسیر <code>/api/orders</code>؛‏ سفارش نامعتبر (محصول ناموجود یا تعداد صفر) کد ۴۰۰ می‌گیرد.</td></tr><tr><td>مسیر <code>/healthz</code></td><td>تغییری نکرده و به پایگاه داده وابسته نیست؛‏ همان درس فصل ۳ درباره‌ی liveness.</td></tr></tbody></table></div><p>در Dockerfile دو خط عوض می‌شود:</p><div class="code"><div class="lbl"><span>Dockerfile (تغییر)</span><button type="button">کپی</button></div><pre class="sh">RUN pip install --no-cache-dir "psycopg[binary]==3.3.6"   # (1)
-COPY app.py db.py migrate.py report.py ./                  # (2)
+    def do_POST(self):
+        if self.path != "/api/orders":
+            self.reply(404, {"error": "not found"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 &lt; length &lt;= 4096:
+                raise ValueError
+            order = json.loads(self.rfile.read(length))
+            if not isinstance(order, dict):
+                raise ValueError
+            product_id, qty = order.get("product_id"), order.get("qty")
+            if any(type(n) is not int or not 1 &lt;= n &lt;= 2147483647 for n in (product_id, qty)):
+                raise ValueError
+        except (ValueError, UnicodeError):
+            self.reply(400, {"error": "expected positive integer product_id and qty"})
+            return
+        try:
+            with db.connect() as conn:
+                order_id = conn.execute(
+                    "INSERT INTO orders (product_id, qty) VALUES (%s, %s) RETURNING id",
+                    (product_id, qty),
+                ).fetchone()[0]
+        except psycopg.errors.ForeignKeyViolation:
+            self.reply(400, {"error": "unknown product"})
+            return
+        except psycopg.Error:
+            self.reply(503, {"error": "database unavailable"})
+            return
+        self.reply(201, {"order": order_id})
+
+    def reply(self, code, body):
+        data = json.dumps(body).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def log_message(self, fmt, *args):
+        line = f"{self.address_string()} {fmt % args}"
+        print(line, flush=True)
+        if ACCESS_LOG:
+            with open(ACCESS_LOG, "a") as f:
+                f.write(line + "\n")
+
+
+def stop(signum, frame):
+    print("SIGTERM received: finishing in-flight requests", flush=True)
+    threading.Thread(target=server.shutdown).start()
+
+
+print(f"shop-api {VERSION}: warming up for {STARTUP_DELAY:g}s", flush=True)
+time.sleep(STARTUP_DELAY)
+server = ThreadingHTTPServer(("", PORT), Handler)
+server.daemon_threads = False  # let in-flight requests finish on shutdown
+signal.signal(signal.SIGTERM, stop)
+print(f"shop-api {VERSION} listening on :{PORT}", flush=True)
+server.serve_forever()
+server.server_close()  # waits for in-flight requests
+print("bye", flush=True)
+</pre></div><div class="tbl"><table class="codeparts"><thead><tr><th>بخش کد</th><th>کار آن</th></tr></thead><tbody><tr><td>تابع <code>schema_ready</code></td><td>حالا آمادگی یعنی پایگاه داده در دسترس باشد و schema دست‌کم نسخه‌ی لازم را داشته باشد. فایل نشانه‌ی فصل ۳ دیگر لازم نیست.</td></tr><tr><td>مسیر <code>/api/products</code></td><td>محصولات از پایگاه داده خوانده می‌شوند؛‏ اگر پایگاه داده در دسترس نباشد،‏ کد ۵۰۳.</td></tr><tr><td>متد <code>do_POST</code></td><td>ثبت سفارش در مسیر <code>/api/orders</code>؛‏ سفارش نامعتبر (محصول ناموجود یا تعداد صفر) کد ۴۰۰ می‌گیرد.</td></tr><tr><td>مسیر <code>/healthz</code></td><td>تغییری نکرده و به پایگاه داده وابسته نیست؛‏ همان درس فصل ۳ درباره‌ی liveness.</td></tr></tbody></table></div><p>در Dockerfile فصل قبل، خط <code>COPY app.py migrate.py ./</code> را با دو خط زیر جایگزین کنید. نصب درایور پایگاه داده پیش از کپی فایل‌ها و پیش از خط <code>USER</code> انجام می‌شود.</p><div class="code"><div class="lbl"><span>Dockerfile (تغییر)</span><button type="button">کپی</button></div><pre class="sh"># (1)
+RUN pip install --no-cache-dir "psycopg[binary]==3.3.6"
+# (2)
+COPY app.py db.py migrate.py report.py ./
 </pre></div><div class="tbl"><table class="lines"><thead><tr><th>خط</th><th>یعنی چه؟</th></tr></thead><tbody><tr><td>(1)</td><td>نصب driver مربوط به PostgreSQL با نسخه‌ی دقیق. این خط <b>پیش از</b> COPY آمده تا لایه‌اش با هر تغییر کد از نو ساخته نشود و build سریع بماند.</td></tr><tr><td>(2)</td><td>هر چهار فایل در image؛‏ API و migration و گزارش از یک image اجرا می‌شوند.</td></tr></tbody></table></div><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">docker build --build-arg VERSION=1.3 -t localhost:5000/shopify/api:1.3 .
 docker push localhost:5000/shopify/api:1.3
-</pre></div><div class="code"><div class="lbl"><span>سطر آخر خروجی</span><button type="button">کپی</button></div><pre class="out">1.3: digest: sha256:fc7377af18727462b90e8118a278dcba66692e0e558d99796efb41924af2f620 size: 2203
-</pre></div><p>حالا <code>shop-api.yaml</code> را این‌طور تغییر دهید:</p><div class="code"><div class="lbl"><span>shop-api.yaml (بخش‌های تغییرکرده)</span><button type="button">کپی</button></div><pre class="yaml">metadata:
+</pre></div><div class="code"><div class="lbl"><span>الگوی سطر آخر خروجی</span><button type="button">کپی</button></div><pre class="out">1.3: digest: sha256:DIGEST_1_3 size: 2203
+</pre></div><p>مقدار کامل بعد از <code>digest:</code> را از خروجی push خودتان بردارید. در این فایل و فایل‌های Job و CronJob، <code>sha256:DIGEST_1_3</code> را با همان مقدار جایگزین کنید. فایل کامل زیر را با نسخه‌ی فصل ۳ مقایسه کنید. sidecar و فضای گزارش‌ها هنوز لازم‌اند، اما آماده‌سازی جدول‌ها به Job منتقل شده است.</p><div class="code"><div class="lbl"><span>shop-api.yaml (Deployment و Service)</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: shop-api
   annotations:
-    kubernetes.io/change-cause: "api 1.3: PostgreSQL"   # (1)
+    kubernetes.io/change-cause: "api 1.3: PostgreSQL"  # (1)
+  labels:
+    app: shop-api
 spec:
+  progressDeadlineSeconds: 120  # (2)
   replicas: 3
-  progressDeadlineSeconds: 120      # (2)
-  ...
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: shop-api
+  template:
+    metadata:
+      labels:
+        app: shop-api
     spec:
-      ...
-      initContainers:               # (3)
+      securityContext:
+        fsGroup: 10001
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+      - name: regcred
+      initContainers:  # (3)
       - name: log-shipper
-        ...
+        image: busybox:1.37
+        restartPolicy: Always
+        command: ["tail", "-F", "/var/log/shop/access.log"]
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/shop
       containers:
       - name: web
-        image: localhost:5000/shopify/api:1.3@sha256:fc7377af…   # (4)
-        env:                        # (5)
+        image: localhost:5000/shopify/api:1.3@sha256:DIGEST_1_3  # (4)
+        ports:
+        - name: http
+          containerPort: 8080
+        env:  # (5)
         - name: ACCESS_LOG
           value: /var/log/shop/access.log
-        ...
-      volumes:                      # (6)
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            sleep:
+              seconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/shop
+      volumes:  # (6)
       - name: logs
         emptyDir: {}
-</pre></div><div class="tbl"><table class="lines"><thead><tr><th>خط</th><th>یعنی چه؟</th></tr></thead><tbody><tr><td>(1)</td><td>توضیح این rollout؛‏ در ستون CHANGE-CAUSE تاریخچه دیده می‌شود.</td></tr><tr><td>(2)</td><td>اگر rollout ۱۲۰ ثانیه پیشرفت نکند،‏ گیر کرده اعلام شود. پیش‌فرض ۶۰۰ ثانیه است؛‏ برای آزمایش کوتاهش کرده‌ایم.</td></tr><tr><td>(3)</td><td>container به نام migrate از initContainers حذف شده و فقط sidecar به نام log-shipper مانده است. migration از این به بعد کار Job است (گام ۴).</td></tr><tr><td>(4)</td><td>image نسخه‌ی 1.3 با digest کامل از خروجی push (این‌جا کوتاه نوشته شده است).</td></tr><tr><td>(5)</td><td>متغیر MIGRATION_MARKER حذف شده؛‏ فقط ACCESS_LOG برای sidecar مانده است.</td></tr><tr><td>(6)</td><td>volume به نام data هم حذف شده،‏ همراه با volumeMount آن در container به نام web.</td></tr></tbody></table></div><p>عمداً migration را هنوز اجرا نکرده‌ایم تا ببینیم انتشار بدون آن چه می‌شود:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f shop-api.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-api
+spec:
+  selector:
+    app: shop-api
+  ports:
+  - port: 80
+    targetPort: http
+</pre></div><div class="tbl"><table class="lines"><thead><tr><th>خط</th><th>یعنی چه؟</th></tr></thead><tbody><tr><td>(1)</td><td>توضیح این rollout؛‏ در ستون CHANGE-CAUSE تاریخچه دیده می‌شود.</td></tr><tr><td>(2)</td><td>اگر rollout ۱۲۰ ثانیه پیشرفت نکند،‏ گیر کرده اعلام شود. پیش‌فرض ۶۰۰ ثانیه است؛‏ برای آزمایش کوتاهش کرده‌ایم.</td></tr><tr><td>(3)</td><td>container به نام migrate از initContainers حذف شده و فقط sidecar به نام log-shipper مانده است. migration از این به بعد کار Job است (گام ۴).</td></tr><tr><td>(4)</td><td>image نسخه‌ی 1.3 با digest کامل از خروجی push (جای digest در نمونه مشخص شده است).</td></tr><tr><td>(5)</td><td>متغیر MIGRATION_MARKER حذف شده؛‏ فقط ACCESS_LOG برای sidecar مانده است.</td></tr><tr><td>(6)</td><td>volume به نام data هم حذف شده،‏ همراه با volumeMount آن در container به نام web.</td></tr></tbody></table></div><p>پیش از ساختن جدول‌ها، فایل API را اعمال کنید. دستور اول نشان می‌دهد تعریف جدید پذیرفته شده است. دستور دوم منتظر نتیجه‌ی انتشار می‌ماند. اینجا خروج با خطا پس از حدود دو دقیقه بخشی از آزمایش است. نام Pod تازه‌ای را که <code>1/2</code> نشان می‌دهد یادداشت کنید و برای بررسی رویدادها همان نام را وارد کنید.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f shop-api.yaml
 kubectl rollout status deployment/shop-api; echo "exit code: $?"
 </pre></div><div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">deployment.apps/shop-api configured
 Waiting for deployment "shop-api" rollout to finish: 1 out of 3 new replicas have been updated...
@@ -247,7 +426,8 @@ error: deployment "shop-api" exceeded its progress deadline
 exit code: 1
 </pre></div><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get pods -l app=shop-api
 kubectl describe deployment shop-api | grep -A4 '^Conditions'
-kubectl describe pod shop-api-7f4b9d6c8e-p3x7m | grep -m1 'Readiness probe failed'
+read -r -p "New Pod name (1/2): " NEW_POD
+kubectl describe pod "$NEW_POD" | grep -m1 'Readiness probe failed'
 </pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">NAME                        READY   STATUS    RESTARTS   AGE
 shop-api-7f4b9d6c8e-p3x7m   1/2     Running   0          2m5s
 shop-api-8c6f4d9b7e-q5n2v   2/2     Running   0          1d
@@ -259,7 +439,10 @@ Conditions:
   Available      True    MinimumReplicasAvailable
   Progressing    False   ProgressDeadlineExceeded
   Warning  Unhealthy  4s (x26 over 2m4s)  kubelet  Readiness probe failed: HTTP probe failed with statuscode: 503
-</pre></div><p><b>چه اتفاقی افتاد؟</b> Pod تازه (با <code>maxSurge: 1</code> از فصل ۱) ساخته شد،‏ اما readiness آن ۵۰۳ برمی‌گرداند: پایگاه داده هست،‏ ولی جدول‌ها هنوز ساخته نشده‌اند. ستون READY برابر <code>‎1/2‎</code> است؛‏ sidecar آماده است و web نه. چون <code>maxUnavailable: 0</code> است،‏ هیچ Pod قدیمی حذف نشد و فروشگاه با نسخه‌ی 1.2 کار می‌کند. پس از ۱۲۰ ثانیه بی‌پیشرفتی،‏ condition به نام Progressing با دلیل ProgressDeadlineExceeded برابر False شد و rollout status با کد ۱ خارج شد. همین کد خروج است که در CI انتشار را شکست‌خورده اعلام می‌کند. همان انتشار ده‌دقیقه‌ای که کسی متوجهش نشد،‏ حالا دو دقیقه‌ای و با خطای روشن خبر می‌دهد. RESTARTS صفر است: liveness به پایگاه داده وابسته نیست.</p><h4 class="step" id="ch4-lab-s4">گام ۴: migration یک‌باره با Job</h4><p>فایل <code>shop-migrate.yaml</code>:</p><div class="code"><div class="lbl"><span>shop-migrate.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: batch/v1
+</pre></div><p>سه ستون را کنار هم بخوانید. <code>READY=1/2</code> برای Pod تازه یعنی sidecar آماده است و API هنوز از <code>/ready</code> پاسخ ۵۰۳ می‌دهد. در این آزمایش PostgreSQL در دسترس است، اما جدول‌های نسخه‌ی 1.3 هنوز ساخته نشده‌اند. <code>RESTARTS=0</code> نشان می‌دهد فرایند سالم مانده است.</p><p>در سطح Deployment، <code>Available=True</code> را سه نسخه‌ی قدیمی تأمین کرده‌اند. <code>maxSurge: 1</code> به کنترلر اجازه داده یک Pod تازه بسازد و <code>maxUnavailable: 0</code> نسخه‌های آماده را تا آماده شدن جایگزین نگه می‌دارد. پس از ۱۲۰ ثانیه بی‌پیشرفتی، <code>Progressing=False</code> دلیل توقف را ثبت می‌کند. یک tag اشتباه هم ممکن است انتشار را متوقف کند. در آن حالت رویداد Pod از خطای دریافت image خبر می‌دهد. اینجا نشانه‌ی ما پاسخ ۵۰۳ از برنامه‌ی در حال اجراست.</p><details class="ans"><summary>چطور ممکن است Deployment در دسترس باشد و هم‌زمان انتشار آن پیش نرود؟</summary><p>نسخه‌های قبلی هنوز آماده‌اند. برای دیدن علت توقف نسخه‌ی تازه، وضعیت Progressing را کنار READY و رویدادهای Pod تازه بخوانید.</p></details></div>
+
+  <h3 id="ch4-lab-migration">چگونه یک انتشار متوقف‌شده را به پایان برسانیم؟</h3>
+  <div class="lab"><h4 class="step" id="ch4-lab-s4">گام ۴: migration یک‌باره با Job</h4><p>در فایل <code>shop-migrate.yaml</code> همان image نسخه‌ی 1.3 را با digest واقعی گام قبل قرار دهید. این بار دستور آغاز کانتینر <code>python migrate.py</code> است. پیش از اجرا حدس بزنید اولین نشانه‌ی موفقیت را در وضعیت Job می‌بینید یا در آماده شدن هر سه نسخه‌ی API.</p><div class="code"><div class="lbl"><span>shop-migrate.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: batch/v1
 kind: Job
 metadata:
   name: shop-migrate
@@ -274,11 +457,12 @@ spec:
       - name: regcred
       containers:
       - name: migrate
-        image: localhost:5000/shopify/api:1.3@sha256:fc7377af18727462b90e8118a278dcba66692e0e558d99796efb41924af2f620
+        image: localhost:5000/shopify/api:1.3@sha256:DIGEST_1_3
         command: ["python", "migrate.py"]   # (5)
 </pre></div><div class="tbl"><table class="lines"><thead><tr><th>خط</th><th>یعنی چه؟</th></tr></thead><tbody><tr><td>(1)</td><td>پس از ۳ شکست (یک اجرا و دو تلاش دوباره)،‏ Job شکست‌خورده اعلام شود. پیش‌فرض ۶ است.</td></tr><tr><td>(2)</td><td>کل Job حداکثر ۵ دقیقه؛‏ migration گیرکرده تا ابد اجرا نمی‌ماند.</td></tr><tr><td>(3)</td><td>ده دقیقه پس از پایان،‏ Job و Podهایش خودکار حذف شوند تا Jobهای کهنه جمع نشوند.</td></tr><tr><td>(4)</td><td>در شکست،‏ container دوباره اجرا نشود؛‏ Job یک Pod تازه می‌سازد و Pod شکست‌خورده با logش باقی می‌ماند تا بررسی کنید.</td></tr><tr><td>(5)</td><td>همان image مربوط به API با دستور دیگر. Pod template در Job به selector و label نیاز ندارد؛‏ Job خودش label یکتا می‌گذارد.</td></tr></tbody></table></div><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f shop-migrate.yaml
 kubectl wait --for=condition=complete job/shop-migrate --timeout=120s
 kubectl logs job/shop-migrate
+kubectl wait --for=condition=Progressing deployment/shop-api --timeout=120s
 kubectl rollout status deployment/shop-api
 </pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">job.batch/shop-migrate created
 job.batch/shop-migrate condition met
@@ -290,7 +474,7 @@ schema is at version 002
 Waiting for deployment "shop-api" rollout to finish: 2 out of 3 new replicas have been updated...
 ...
 deployment "shop-api" successfully rolled out
-</pre></div><p><b>چه اتفاقی افتاد؟</b> Job یک Pod ساخت،‏ migration اجرا شد و Pod با کد صفر تمام شد. چند ثانیه بعد readiness مربوط به Pod گیرکرده موفق شد و Deployment <b>خودش</b> rollout را ادامه داد؛‏ پس از گذشتن مهلت هم controller به تلاش ادامه داده بود. condition به نام Progressing هم دوباره True شد. حالا فروشگاه واقعاً از پایگاه داده می‌خواند:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get job shop-migrate
+</pre></div><p>در گزارش migration به دو عدد نگاه کنید. <code>000</code> یعنی هنوز نسخه‌ای از جدول‌ها ثبت نشده بود و <code>002</code> یعنی هر دو تغییر ثبت شدند. پس از آن، بررسی آمادگی API موفق می‌شود و کنترلر می‌تواند انتشار متوقف‌شده را ادامه دهد. اکنون یک درخواست به Service بفرستید. در پاسخ باید هم نسخه‌ی <code>1.3</code> و هم کالای سوم، <code>Desk lamp</code>، را ببینید.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get job shop-migrate
 kubectl get pods -l batch.kubernetes.io/job-name=shop-migrate
 kubectl run client --rm -i --restart=Never --image=busybox:1.37 -- wget -qO- http://shop-api/api/products
 </pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">NAME           STATUS     COMPLETIONS   DURATION   AGE
@@ -302,10 +486,10 @@ shop-migrate-x2k9p   0/1     Completed   0          1m
     -e 's/command: \["python", "migrate.py"\]/&amp;\n        env: [{name: DB_PASSWORD, value: wrong}]/' \
     shop-migrate.yaml &gt; shop-migrate-bad.yaml
 kubectl apply -f shop-migrate-bad.yaml
-sleep 60
+kubectl wait --for=condition=Failed job/shop-migrate-bad --timeout=330s
 kubectl get job shop-migrate-bad
 kubectl get pods -l batch.kubernetes.io/job-name=shop-migrate-bad
-kubectl logs shop-migrate-bad-7xk2p | tail -1
+kubectl logs -l batch.kubernetes.io/job-name=shop-migrate-bad --prefix --tail=1
 kubectl describe job shop-migrate-bad | tail -1
 </pre></div><div class="code"><div class="lbl"><span>خروجی (خلاصه‌شده)</span><button type="button">کپی</button></div><pre class="out">NAME               STATUS   COMPLETIONS   DURATION   AGE
 shop-migrate-bad   Failed   0/1           60s        60s
@@ -315,8 +499,8 @@ shop-migrate-bad-q4n8d   0/1     Error    0          47s
 shop-migrate-bad-z9w5c   0/1     Error    0          25s
 ERROR: connection failed: connection to server at "10.42.0.71", port 5432 failed: FATAL:  password authentication failed for user "shop"
   Warning  BackoffLimitExceeded  2s    job-controller  Job has reached the specified backoff limit
-</pre></div><p><b>چه اتفاقی افتاد؟</b> هر Pod با کد ۱ خارج شد و Job با فاصله‌ی فزاینده (حدود ۱۰ و بعد ۲۰ ثانیه) Pod تازه ساخت. پس از سومین شکست،‏ یعنی بیش از <code>backoffLimit: 2</code>،‏ وضعیت Job به Failed رسید. چون <code>restartPolicy: Never</code> است،‏ هر سه Pod با logشان مانده‌اند و علت شکست روشن است. با OnFailure همان container دوباره اجرا می‌شد و Podها پس از شکست Job حذف می‌شدند. این Job را پاک کنید:</p><div class="code"><div class="lbl"><span>پاک‌سازی</span><button type="button">کپی</button></div><pre class="sh">kubectl delete -f shop-migrate-bad.yaml &amp;&amp; rm shop-migrate-bad.yaml
-</pre></div><h4 class="step" id="ch4-lab-s5">گام ۵: هویت پایدار،‏ داده‌ی ناپایدار</h4><p>حالا ببینید StatefulSet چه چیزی را تضمین <b>نمی‌کند</b>. اول جدول‌ها و uid (شناسه‌ی یکتای هر شیء) مربوط به Pod پایگاه داده را ببینید و بعد Pod را حذف کنید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl exec postgres-0 -- psql -U shop -d shop -c '\dt'
+</pre></div><p>در خروجی سه Pod با نام‌های متفاوت و <code>RESTARTS=0</code> می‌بینید. هر کدام یک بار با رمز نادرست تلاش کرده است. گزارش Pod علت خطا را نشان می‌دهد و رویداد <code>BackoffLimitExceeded</code> می‌گوید چرا Job تلاش بیشتری نکرده است. با <code>OnFailure</code> ممکن است تلاش بعدی در همان Pod و با اجرای دوباره‌ی کانتینر انجام شود. پس از خواندن گزارش‌ها، Job آزمایشی ناموفق را پاک کنید.</p><div class="code"><div class="lbl"><span>پاک‌سازی</span><button type="button">کپی</button></div><pre class="sh">kubectl delete -f shop-migrate-bad.yaml &amp;&amp; rm shop-migrate-bad.yaml
+</pre></div><h4 class="step" id="ch4-lab-s5">گام ۵: هویت پایدار،‏ داده‌ی ناپایدار</h4><p>در این گام Pod آزمایشی پایگاه داده را عمداً حذف می‌کنید. پایگاه داده‌ی این تمرین فضای ذخیره‌سازی پایدار ندارد و جدول‌های داخل آن از دست می‌روند. ابتدا نام Pod، شناسه‌ی یکتای آن (<code>uid</code>) و فهرست جدول‌ها را یادداشت کنید. پیش‌بینی کنید کدام‌یک بعد از ساخت Pod جایگزین مثل قبل خواهد بود.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl exec postgres-0 -- psql -U shop -d shop -c '\dt'
 kubectl get pod postgres-0 -o jsonpath='{.metadata.uid}{"\n"}'
 kubectl delete pod postgres-0
 </pre></div><div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">            List of relations
@@ -329,7 +513,8 @@ kubectl delete pod postgres-0
 
 3f6d0b2e-8c41-4a7e-9d15-2b7c6e0f9a83
 pod "postgres-0" deleted from shopify namespace
-</pre></div><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl wait --for=condition=Ready pod/postgres-0 --timeout=60s
+</pre></div><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl wait --for=create pod/postgres-0 --timeout=120s
+kubectl wait --for=condition=Ready pod/postgres-0 --timeout=120s
 kubectl get pod postgres-0 -o jsonpath='{.metadata.uid}{"\n"}'
 kubectl exec postgres-0 -- psql -U shop -d shop -c '\dt'
 kubectl get pods -l app=shop-api
@@ -340,9 +525,10 @@ NAME                        READY   STATUS    RESTARTS   AGE
 shop-api-7f4b9d6c8e-9hq4w   1/2     Running   0          8m
 shop-api-7f4b9d6c8e-kx5r2   1/2     Running   0          8m
 shop-api-7f4b9d6c8e-p3x7m   1/2     Running   0          12m
-</pre></div><p><b>چه اتفاقی افتاد؟</b> StatefulSet دقیقاً به قولش عمل کرد: Pod تازه با <b>همان نام</b> <code>postgres-0</code> و همان نام DNS ساخته شد و API بدون هیچ تغییری دوباره به آن وصل می‌شود. اما uid متفاوت نشان می‌دهد این یک Pod کاملاً تازه است،‏ و چون داده داخل container بود،‏ <b>همه‌ی جدول‌ها از بین رفتند</b>. readiness مربوط به هر سه Pod مربوط به API شکست خورد و فروشگاه از دسترس خارج شد. شمارنده‌ی restart صفر ماند (liveness مستقل است) و به‌محض درست شدن پایگاه داده برمی‌گردند. در production همین اتفاق یعنی از دست رفتن سفارش‌ها؛‏ جوابش volumeClaimTemplates است که در فصل ۷ اضافه می‌کنیم.</p><p>فعلاً schema را دوباره بسازید. Job تمام‌شده با apply دوباره اجرا نمی‌شود؛‏ اگر هنوز ده دقیقه‌ی ttlSecondsAfterFinished نگذشته،‏ <code>kubectl apply</code> فقط <code>unchanged</code> می‌گوید. پس اول آن را حذف کنید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete job shop-migrate --ignore-not-found
+</pre></div><p>نام <code>postgres-0</code> برگشته، اما UID عوض شده است. پس به Pod تازه‌ای با همان نام وصل شده‌اید. خروجی <code>Did not find any relations</code> نشان می‌دهد پایگاه داده‌ی این تمرین جدول‌های قبلی را ندارد. پس از چند بررسی ناموفق، نسخه‌های API هم ناآماده می‌شوند. اگر عدد <code>1/2</code> را هنوز نمی‌بینید، چند لحظه بعد دوباره وضعیت را بخوانید. برای نگه‌داری داده‌ها در فصل ۷ فضای پایدار اضافه می‌کنید.</p><p>فعلاً schema را دوباره بسازید. Job تمام‌شده با apply دوباره اجرا نمی‌شود؛‏ اگر هنوز ده دقیقه‌ی ttlSecondsAfterFinished نگذشته،‏ <code>kubectl apply</code> فقط <code>unchanged</code> می‌گوید. پس اول آن را حذف کنید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl delete job shop-migrate --ignore-not-found
 kubectl apply -f shop-migrate.yaml
 kubectl wait --for=condition=complete job/shop-migrate --timeout=120s
+kubectl wait --for=condition=Ready pod -l app=shop-api --timeout=120s
 kubectl get pods -l app=shop-api
 </pre></div><div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">job.batch "shop-migrate" deleted from shopify namespace
 job.batch/shop-migrate created
@@ -351,7 +537,10 @@ NAME                        READY   STATUS    RESTARTS   AGE
 shop-api-7f4b9d6c8e-9hq4w   2/2     Running   0          9m
 shop-api-7f4b9d6c8e-kx5r2   2/2     Running   0          9m
 shop-api-7f4b9d6c8e-p3x7m   2/2     Running   0          13m
-</pre></div><div class="deep"><b>readiness وابسته به پایگاه داده: خوب یا بد؟</b><p>در این گام همه‌ی Podهای مربوط به API هم‌زمان unready شدند و Service هیچ مقصدی نداشت؛‏ client به‌جای پیام خطای روشن،‏ خطای اتصال گرفت. بعضی تیم‌ها ترجیح می‌دهند readiness فقط توان خود Pod را بسنجد و وقتی پایگاه داده در دسترس نیست،‏ خود برنامه کد ۵۰۳ با پیام روشن برگرداند. هر دو رویکرد رایج است و به نیاز برنامه بستگی دارد؛‏ آن‌چه قطعاً غلط است،‏ گذاشتن این وابستگی در liveness است،‏ چون همه‌ی Podها پشت‌سرهم restart می‌شوند و بار پایگاه داده بیشتر می‌شود.</p></div><div class="note"><b>ترفند Job با نام یکتا</b><p>در کار واقعی معمولاً نام Job را با نسخه یا شناسه‌ی انتشار یکتا می‌کنند،‏ مثلاً <code>shop-migrate-1-3</code>،‏ یا در metadata به‌جای name از <code>generateName</code> با دستور <code>kubectl create</code> استفاده می‌کنند. این‌طور هر انتشار Job خودش را دارد و مشکل «unchanged» پیش نمی‌آید.</p></div><h4 class="step" id="ch4-lab-s6">گام ۶: گزارش شبانه با CronJob</h4><p>فایل <code>shop-report.yaml</code>:</p><div class="code"><div class="lbl"><span>shop-report.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: batch/v1
+</pre></div><div class="deep"><b>readiness وابسته به پایگاه داده: خوب یا بد؟</b><p>در این گام همه‌ی Podهای مربوط به API هم‌زمان unready شدند و Service هیچ مقصدی نداشت؛‏ client به‌جای پیام خطای روشن،‏ خطای اتصال گرفت. بعضی تیم‌ها ترجیح می‌دهند readiness فقط توان خود Pod را بسنجد و وقتی پایگاه داده در دسترس نیست،‏ خود برنامه کد ۵۰۳ با پیام روشن برگرداند. هر دو رویکرد رایج است و به نیاز برنامه بستگی دارد؛‏ آن‌چه قطعاً غلط است،‏ گذاشتن این وابستگی در liveness است،‏ چون همه‌ی Podها پشت‌سرهم restart می‌شوند و بار پایگاه داده بیشتر می‌شود.</p></div><div class="note"><b>ترفند Job با نام یکتا</b><p>در کار واقعی معمولاً نام Job را با نسخه یا شناسه‌ی انتشار یکتا می‌کنند،‏ مثلاً <code>shop-migrate-1-3</code>،‏ یا در metadata به‌جای name از <code>generateName</code> با دستور <code>kubectl create</code> استفاده می‌کنند. این‌طور هر انتشار Job خودش را دارد و مشکل «unchanged» پیش نمی‌آید.</p></div><details class="ans"><summary>پس از حذف postgres-0، کدام نشانه می‌گوید Pod قبلی جایگزین شده است؟</summary><p>نام و نشانی DNS مثل قبل‌اند، اما UID فرق کرده است. فهرست جدول‌ها را جداگانه بررسی کردید تا ببینید داده هم باقی مانده است یا نه.</p></details></div>
+
+  <h3 id="ch4-lab-operations">گزارش هر شب و گردآوری لاگ روی هر Node</h3>
+  <div class="lab"><h4 class="step" id="ch4-lab-s6">گام ۶: گزارش شبانه با CronJob</h4><p>فایل <code>shop-report.yaml</code> را با digest واقعی نسخه‌ی 1.3 بسازید. از بیرون به داخل بخوانید. برنامه‌ی زمانی در <code>spec.schedule</code> است، تنظیمات هر اجرا در <code>jobTemplate</code> می‌آید و دستور <code>python report.py</code> داخل کانتینر اجرا می‌شود.</p><div class="code"><div class="lbl"><span>shop-report.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: shop-report
@@ -372,12 +561,12 @@ spec:
           - name: regcred
           containers:
           - name: report
-            image: localhost:5000/shopify/api:1.3@sha256:fc7377af18727462b90e8118a278dcba66692e0e558d99796efb41924af2f620
+            image: localhost:5000/shopify/api:1.3@sha256:DIGEST_1_3
             command: ["python", "report.py"]
-</pre></div><div class="tbl"><table class="lines"><thead><tr><th>خط</th><th>یعنی چه؟</th></tr></thead><tbody><tr><td>(1)</td><td>دقیقه‌ی ۰،‏ ساعت ۲،‏ هر روز ماه،‏ هر ماه،‏ هر روز هفته.</td></tr><tr><td>(2)</td><td>ساعت ۲ به وقت تهران،‏ نه UTC. بدون این خط،‏ گزارش ساعت ۲ به وقت UTC یعنی پنج و نیم صبح به وقت تهران اجرا می‌شد.</td></tr><tr><td>(3)</td><td>اگر گزارش دیشب هنوز تمام نشده،‏ گزارش تازه شروع نشود؛‏ دو گزارش هم‌زمان پایگاه داده را بی‌دلیل سنگین می‌کنند.</td></tr><tr><td>(4)</td><td>اگر در زمان مقرر اجرا ممکن نبود،‏ تا ۱۰ دقیقه بعد هنوز اجرا شود و پس از آن آن نوبت رد شود.</td></tr><tr><td>(5)</td><td>سه Job موفق آخر و یک Job ناموفق آخر برای خواندن log نگه داشته شوند (همان مقدارهای پیش‌فرض،‏ صریح نوشته شده‌اند).</td></tr><tr><td>(6)</td><td>قالب Jobی که هر شب ساخته می‌شود؛‏ درست همان ساختار spec مربوط به Job در گام ۴.</td></tr></tbody></table></div><p>برای این‌که گزارش چیزی برای شمردن داشته باشد،‏ یک سفارش ثبت کنید. بعد به‌جای صبر تا ساعت ۲،‏ یک Job دستی از روی همین CronJob بسازید:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f shop-report.yaml
+</pre></div><div class="tbl"><table class="lines"><thead><tr><th>خط</th><th>یعنی چه؟</th></tr></thead><tbody><tr><td>(1)</td><td>دقیقه‌ی ۰،‏ ساعت ۲،‏ هر روز ماه،‏ هر ماه،‏ هر روز هفته.</td></tr><tr><td>(2)</td><td>ساعت ۲ به وقت تهران،‏ نه UTC. اگر این فیلد را حذف کنید، کنترلر زمان‌بندی را با منطقه‌ی زمانی خودش تفسیر می‌کند.</td></tr><tr><td>(3)</td><td>اگر گزارش دیشب هنوز تمام نشده،‏ گزارش تازه شروع نشود؛‏ دو گزارش هم‌زمان پایگاه داده را بی‌دلیل سنگین می‌کنند.</td></tr><tr><td>(4)</td><td>اگر در زمان مقرر اجرا ممکن نبود،‏ تا ۱۰ دقیقه بعد هنوز اجرا شود و پس از آن آن نوبت رد شود.</td></tr><tr><td>(5)</td><td>سه Job موفق آخر و یک Job ناموفق آخر برای خواندن log نگه داشته شوند (همان مقدارهای پیش‌فرض،‏ صریح نوشته شده‌اند).</td></tr><tr><td>(6)</td><td>قالب Jobی که هر شب ساخته می‌شود؛‏ درست همان ساختار spec مربوط به Job در گام ۴.</td></tr></tbody></table></div><p>قبل از اجرای دستورها، جمع فروش را روی کاغذ حساب کنید. یک سفارش شامل دو عدد از کالای شماره‌ی یک ثبت می‌کنید. سپس از روی الگوی CronJob یک Job دستی می‌سازید تا همین حالا نتیجه را با پیش‌بینی خودتان مقایسه کنید.</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f shop-report.yaml
 kubectl get cronjob shop-report
-kubectl run client --rm -i --restart=Never --image=curlimages/curl:8.16.0 -- \
-  curl -s -d '{"product_id": 1, "qty": 2}' http://shop-api/api/orders
+kubectl run client --rm -i --restart=Never --image=curlimages/curl:8.16.0 --command -- \
+  curl -fsS -H "Content-Type: application/json" -d '{"product_id": 1, "qty": 2}' http://shop-api/api/orders
 kubectl create job --from=cronjob/shop-report report-test
 kubectl wait --for=condition=complete job/report-test --timeout=60s
 kubectl logs job/report-test
@@ -388,7 +577,7 @@ shop-report   0 2 * * *   Asia/Tehran   False     0        &lt;none&gt;         
 job.batch/report-test created
 job.batch/report-test condition met
 sales report 2026-09-27: 1 orders, total 360000 toman
-</pre></div><p>ستون LAST SCHEDULE خالی است چون هنوز ساعت ۲ نرسیده است. دستور <code>kubectl create job --from=cronjob/…</code> از روی jobTemplate یک Job معمولی می‌سازد؛‏ بهترین راه برای آزمودن CronJob پیش از اولین اجرای واقعی. فردا صبح با <code>kubectl get jobs</code> یک Job با نامی مثل <code>shop-report-29842470</code> می‌بینید؛‏ عدد پسوند زمان اجرای برنامه‌ریزی‌شده به دقیقه است. Job آزمایشی را پاک کنید:</p><div class="code"><div class="lbl"><span>پاک‌سازی</span><button type="button">کپی</button></div><pre class="sh">kubectl delete job report-test
+</pre></div><p>در یک پایگاه تازه، سفارش دو عدد از کالای ۱۸۰٬۰۰۰ تومانی باید در گزارش یک سفارش با جمع ۳۶۰٬۰۰۰ تومان بسازد. اگر قبلاً سفارش دیگری ثبت کرده باشید، نتیجه فرق می‌کند. این گزارش سفارش‌های ۲۴ ساعت اخیر را می‌شمارد. دستور <code>kubectl create job --from</code> برنامه‌ی گزارش را همین حالا می‌آزماید. اولین اجرای زمان‌بندی‌شده را بعداً در <code>LAST SCHEDULE</code> می‌بینید. حالا Job آزمایشی را پاک کنید.</p><div class="code"><div class="lbl"><span>پاک‌سازی</span><button type="button">کپی</button></div><pre class="sh">kubectl delete job report-test
 </pre></div><h4 class="step" id="ch4-lab-s7">گام ۷: agent مربوط به log با DaemonSet</h4><p>agent واقعی (مثل Fluent Bit در فصل ۱۱) log همه‌ی Podهای یک Node را از پوشه‌ی <code>/var/log/pods</code> روی خود Node می‌خواند. این‌جا agent ساده‌ای می‌سازیم که فقط همان پوشه را می‌شمارد تا ساختار DaemonSet دیده شود. فایل <code>log-agent.yaml</code>:</p><div class="code"><div class="lbl"><span>log-agent.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -427,6 +616,7 @@ spec:
           path: /var/log/pods
           type: Directory
 </pre></div><div class="tbl"><table class="lines"><thead><tr><th>خط</th><th>یعنی چه؟</th></tr></thead><tbody><tr><td>(1)</td><td>دستور shell در command و متن اسکریپت در args آمده است. علامت <code>‎|‎</code> در YAML یعنی متن چندخطی با همان شکستن خط‌ها؛‏ اسکریپت هر ۳۰ ثانیه یک خط گزارش می‌نویسد.</td></tr><tr><td>(2)</td><td>نام Nodeی که Pod رویش اجرا می‌شود،‏ از خود spec مربوط به Pod (Downward API،‏ فصل ۳). در DaemonSet این نام مهم است،‏ چون هر Pod به یک Node تعلق دارد.</td></tr><tr><td>(3)</td><td>فقط خواندنی؛‏ agent مربوط به log نباید چیزی روی Node بنویسد یا پاک کند.</td></tr><tr><td>(4)</td><td>volume از نوع hostPath یک پوشه از خود Node را به container می‌دهد. <code>type: Directory</code> یعنی اگر پوشه نبود،‏ Pod اجرا نشود. hostPath دسترسی به Node می‌دهد و فقط برای agentهای سیستمی مناسب است،‏ نه برنامه‌های معمولی.</td></tr></tbody></table></div><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl apply -f log-agent.yaml
+kubectl rollout status daemonset/log-agent
 kubectl get daemonset log-agent
 kubectl get pods -l app=log-agent -o wide
 kubectl logs daemonset/log-agent
@@ -436,7 +626,8 @@ log-agent   1         1         1       1            1           &lt;none&gt;   
 NAME              READY   STATUS    RESTARTS   AGE   IP           NODE      NOMINATED NODE   READINESS GATES
 log-agent-q8r4t   1/1     Running   0          8s    10.42.0.83   k3s-lab   &lt;none&gt;           &lt;none&gt;
 06:41:02 k3s-lab: 19 pod log dirs
-</pre></div><p>در DaemonSet فیلد replicas وجود ندارد؛‏ تعداد را تعداد Nodeها تعیین می‌کند. ستون DESIRED برابر ۱ است چون cluster ما یک Node دارد. در فصل ۹ که Node دوم به k3s اضافه می‌شود،‏ بدون هیچ تغییری در این فایل DESIRED به ۲ می‌رسد. Node مربوط به k3s در حالت پیش‌فرض taint ندارد؛‏ در clusterهایی که Nodeهای مربوط به control plane با taint از کار عادی جدا شده‌اند،‏ برای اجرا روی آن‌ها toleration لازم است (بخش DaemonSet در مرجع).</p><h4 class="step" id="ch4-lab-s8">گام ۸: frontend و نمای کلی</h4><p>frontend شاپیفای فعلاً یک صفحه‌ی ثابت است؛‏ یک Deployment ساده با nginx کافی است. این بار از دستور مستقیم استفاده می‌کنیم؛‏ در فصل ۸ فایلش را می‌سازیم و در فصل ۵ از بیرون cluster در دسترسش می‌گذاریم:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment shop-web --image=nginx:1.27 --replicas=2
+</pre></div><p>در کلاستر تک‌گرهی آزمایش، <code>DESIRED=1</code> است. مقدار ستون <code>NODE</code> را با نام ماشین در سطر گزارش مقایسه کنید. وقتی در فصل ۹ یک Node واجد شرایط اضافه شود، کنترلر روی آن هم یک گردآورنده می‌سازد. اگر تعداد کمتر از انتظار بود، برچسب‌ها و taintهای Node را با تنظیمات DaemonSet تطبیق دهید.</p><h4 class="step" id="ch4-lab-s8">گام ۸: frontend و نمای کلی</h4><p>frontend شاپیفای فعلاً یک صفحه‌ی ثابت است؛‏ یک Deployment ساده با nginx کافی است. این بار از دستور مستقیم استفاده می‌کنیم؛‏ در فصل ۸ فایلش را می‌سازیم و در فصل ۵ از بیرون cluster در دسترسش می‌گذاریم:</p><div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl create deployment shop-web --image=nginx:1.27 --replicas=2
+kubectl rollout status deployment/shop-web
 kubectl get deployments,statefulsets,daemonsets,cronjobs,jobs
 </pre></div><div class="code"><div class="lbl"><span>خروجی نمونه</span><button type="button">کپی</button></div><pre class="out">deployment.apps/shop-web created
 NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
@@ -454,13 +645,13 @@ cronjob.batch/shop-report   0 2 * * *   Asia/Tehran   False     0        &lt;non
 
 NAME                     STATUS     COMPLETIONS   DURATION   AGE
 job.batch/shop-migrate   Complete   1/1           6s         8m
-</pre></div><p>این همان شکل ۴-۱ است،‏ این بار از زبان خود cluster: دو Deployment،‏ یک StatefulSet،‏ یک DaemonSet،‏ یک CronJob و Job مربوط به migration. ستون‌های هر نوع با هم فرق دارند،‏ چون هر controller چیز متفاوتی را تضمین می‌کند؛‏ در Deployment تعداد Pod آماده،‏ در DaemonSet تعداد Node،‏ در CronJob زمان‌بندی و در Job تعداد اجرای موفق. Job مربوط به migration هم کمی بعد با ttlSecondsAfterFinished خودکار پاک می‌شود.</p>
+</pre></div><p>این خروجی را با شکل ۴-۱ مقایسه کنید. برای API و وب تعداد نسخه‌های آماده را بخوانید. برای گردآورنده‌ی لاگ، تعداد Nodeهای واجد شرایط را ببینید. برای گزارش شبانه، ساعت و منطقه‌ی زمانی را بررسی کنید. ممکن است Job مربوط به migration پس از مهلت ده‌دقیقه‌ای از فهرست پاک شده باشد. برای فصل ۵ همین محیط و فایل‌های <code>~/shopify</code> را نگه دارید.</p><details class="ans"><summary>اگر همین الان Job آزمایشی گزارش را پاک کنید، فردا ساعت دو چه اتفاقی می‌افتد؟</summary><p>CronJob هنوز برنامه‌ی زمانی و الگوی ساخت Job را دارد. حذف اجرای آزمایشی، زمان‌بندی فردا را تغییر نمی‌دهد.</p></details><p>برای مرور نتیجه‌ها به <a href="#ch4-solved">جمع‌بندی و تمرین‌های فصل</a> بروید.</p>
   </div>
 
   <div class="deep"><b>از این‌جا به بعد: مرجع عمیق‌تر</b><p>بخش‌های بعدی متن کامل مستندات workloadهاست. لازم نیست پشت‌سرهم بخوانید؛‏ هر وقت سؤالی پیش آمد،‏ به بخش مربوط برگردید:</p><div class="tbl"><table><thead><tr><th>اگر می‌خواهید بدانید…</th><th>به این بخش بروید</th></tr></thead><tbody><tr><td>workload و controller چیست</td><td><a href="#ch4-a-workloads">workloadها</a> و <a href="#ch4-a-controllers">مدیریت workloadها با controllerها</a></td></tr><tr><td>label و annotation و scale و به‌روزرسانی با kubectl (گام ۰)</td><td><a href="#ch4-a-management">مدیریت عملی workloadها</a></td></tr><tr><td>تاریخچه و برگشت (گام‌های ۰ و ۱)</td><td><a href="#ch4-a-deploy-rollback">rollback کردن Deployment</a></td></tr><tr><td>گیر کردن rollout و conditionها (گام ۳)</td><td><a href="#ch4-a-deploy-status">وضعیت Deployment</a> و <a href="#ch4-a-deploy-spec">نوشتن spec برای Deployment</a></td></tr><tr><td>ReplicaSet و adoption</td><td><a href="#ch4-a-replicaset">ReplicaSet</a></td></tr><tr><td>ترتیب و partition و PVC در StatefulSet (گام‌های ۲ و ۵)</td><td><a href="#ch4-a-statefulset">StatefulSet</a> و <a href="#ch4-a-statefulset-mysql">MySQL تکرارشده</a></td></tr><tr><td>DaemonSet و taint (گام ۷)</td><td><a href="#ch4-b-daemonset">DaemonSet</a> و <a href="#ch4-b-ds-scheduling">schedule شدن Podهای DaemonSet</a></td></tr><tr><td>شکست Job و backoff (گام ۴)</td><td><a href="#ch4-b-job">Job</a> و <a href="#ch4-b-job-failures">رسیدگی به شکست</a></td></tr><tr><td>CronJob و time zone (گام ۶)</td><td><a href="#ch4-b-cronjob">CronJob</a> و <a href="#ch4-b-cronjob-limitations">محدودیت‌های CronJob</a></td></tr><tr><td>حذف خودکار Jobها (گام‌های ۴ و ۵)</td><td><a href="#ch4-b-ttl">پاک‌سازی خودکار Jobها با TTL</a></td></tr></tbody></table></div></div>
 
-  <h3 id="ch4-a-workloads">workloadها <small>(Workloads)</small></h3>
-  <p>یک workload برنامه‌ای است که روی کوبرنتیز اجرا می‌شود. چه workload شما یک component تنها باشد و چه از چند component تشکیل شده باشد که با هم کار می‌کنند،‏ در کوبرنتیز آن را داخل مجموعه‌ای از <b>Pod</b>ها اجرا می‌کنید. در کوبرنتیز،‏ یک Pod نماینده‌ی مجموعه‌ای از یک یا چند container در حال اجرا روی cluster شماست.</p>
+  <h3 id="ch4-a-workloads">چه چیزی را در کوبرنتیز اجرا می‌کنیم؟ <small>(Workloads)</small></h3>
+  <p>در فروشگاه، API به درخواست مشتری پاسخ می‌دهد و برنامه‌ی گزارش فروش شبانه پس از محاسبه‌ی مبلغ سفارش‌ها تمام می‌شود. هر دو یک <b>workload</b> هستند، یعنی کاری که روی کلاستر اجرا می‌کنیم. هر دو در Pod اجرا می‌شوند، اما روش نگه‌داری و اجرای دوباره‌ی آن‌ها فرق دارد.</p>
   <p>Podهای کوبرنتیز یک lifecycle تعریف‌شده دارند (فصل ۳). برای مثال،‏ وقتی یک Pod در cluster شما در حال اجراست،‏ یک خطای بحرانی روی Nodeی که آن Pod روی آن اجرا می‌شود به این معناست که همه‌ی Podهای آن Node از کار می‌افتند. کوبرنتیز این سطح از failure را <b>نهایی</b> در نظر می‌گیرد: برای بازیابی باید یک Pod جدید بسازید،‏ حتی اگر آن Node بعداً دوباره سالم شود.</p>
   <p>با این حال،‏ برای این‌که کار بسیار ساده‌تر شود،‏ لازم نیست هر Pod را مستقیماً مدیریت کنید. به‌جای آن می‌توانید از <b>workload resource</b>ها استفاده کنید که مجموعه‌ای از Podها را از طرف شما مدیریت می‌کنند. این resourceها controllerهایی را پیکربندی می‌کنند که مطمئن می‌شوند تعداد درستی از Podهای درست در حال اجراست تا با stateی که مشخص کرده‌اید مطابقت داشته باشد.</p>
   <p>کوبرنتیز چند workload resource داخلی (built-in) فراهم می‌کند:</p>
@@ -489,8 +680,8 @@ job.batch/shop-migrate   Complete   1/1           6s         8m
   <div class="deep"><b>توضیح تکمیلی: gang scheduling در training توزیع‌شده</b><p>مثال: یک training توزیع‌شده با ۸ worker که هر کدام یک GPU می‌خواهد. اگر scheduler فقط ۶ تا از آن‌ها را جا بدهد،‏ آن ۶ Pod بیکار منتظر ۲ Pod دیگر می‌مانند و ۶ GPU را قفل می‌کنند. gang scheduling (schedule کردن همه‌ی Podهای یک گروه با هم،‏ یا هیچ‌کدام) تضمین می‌کند یا هر ۸ Pod با هم placement شوند یا هیچ‌کدام. جزئیات در فصل ۹ (Scheduling) آمده است.</p></div>
   </details>
 
-  <h3 id="ch4-a-controllers">مدیریت workloadها با controllerها <small>(Workload Management)</small></h3>
-  <p>کوبرنتیز چند API داخلی برای مدیریت declarative workloadهای شما و componentهای آن workloadها فراهم می‌کند.</p>
+  <h3 id="ch4-a-controllers">کنترلر چگونه وضعیت دلخواه را حفظ می‌کند؟ <small>(Workload Management)</small></h3>
+  <p>فرض کنید گفته‌اید «سه نسخه‌ی API می‌خواهم» و یکی از Podها حذف می‌شود. کنترلر تعداد فعلی را با تعداد درخواستی مقایسه می‌کند و برای جبران کمبود اقدام می‌کند. در مدیریت اعلانی، شما نتیجه‌ی دلخواه را در تعریف منبع می‌نویسید و پیگیری آن را به کنترلر می‌سپارید.</p>
   <p>در نهایت،‏ برنامه‌های شما به‌صورت container داخل Podها اجرا می‌شوند؛‏ اما مدیریت تک‌تک Podها زحمت زیادی دارد. برای مثال،‏ اگر یک Pod از کار بیفتد،‏ احتمالاً می‌خواهید یک Pod جدید برای جایگزینی آن اجرا کنید. کوبرنتیز می‌تواند این کار را برای شما انجام دهد.</p>
   <p>شما با استفاده از Kubernetes API یک workload object می‌سازید که سطح انتزاع بالاتری از Pod را نمایندگی می‌کند،‏ و سپس control plane به‌طور خودکار objectهای Pod را از طرف شما،‏ بر اساس specification همان workload object که تعریف کرده‌اید،‏ مدیریت می‌کند.</p>
   <p>APIهای داخلی برای مدیریت workloadها عبارت‌اند از:</p>
@@ -505,8 +696,8 @@ job.batch/shop-migrate   Complete   1/1           6s         8m
   <div class="deep"><b>توضیح تکمیلی: controller و reconciliation</b><p>هر کدام از این APIها یک controller در <code>kube-controller-manager</code> دارد (deployment-controller،‏ replicaset-controller،‏ statefulset-controller و ...) که یک control loop اجرا می‌کند: desired state (وضعیتی که شما اعلام کرده‌اید و controller باید به آن برسد) را از <code>.spec</code> می‌خواند،‏ current state را (Podهای موجود) مشاهده می‌کند و اختلاف را با ساختن یا حذف Pod برطرف می‌کند (reconciliation). به همین دلیل وقتی یک Pod از یک Deployment را پاک می‌کنید،‏ چند ثانیه بعد یک Pod جدید ظاهر می‌شود: این همان self-healing (یا auto healing) است. سلسله‌مراتب مالکیت با <code>ownerReferences</code> (ارجاع هر شیء وابسته به مالکش) ثبت می‌شود: <code>Deployment → ReplicaSet → Pod</code> و <code>StatefulSet → Pod</code> (فصل ۱۲،‏ garbage collection).</p></div>
   </details>
 
-  <h3 id="ch4-a-management">مدیریت عملی workloadها <small>(Managing Workloads)</small></h3>
-  <p>برنامه‌تان را deploy کرده‌اید و آن را از طریق یک Service در دسترس قرار داده‌اید. حالا چه؟ کوبرنتیز تعدادی ابزار برای کمک به مدیریت deployment برنامه‌تان فراهم می‌کند،‏ از جمله scaling و به‌روزرسانی.</p>
+  <h3 id="ch4-a-management">مدیریت چند منبع با kubectl <small>(Managing Workloads)</small></h3>
+  <p>API فروشگاه دو تعریف مرتبط دارد. Deployment نسخه‌های برنامه را اجرا می‌کند و Service درخواست‌ها را به آن‌ها می‌رساند. در این درس می‌بینید چطور چند منبع را با هم اعمال کنید، با برچسب پیدایشان کنید و تعداد نسخه‌های برنامه را تغییر دهید.</p>
 
   <h4>سازمان‌دهی پیکربندی resourceها <small>(Organizing resource configurations)</small></h4>
   <p>بسیاری از برنامه‌ها نیاز دارند چند resource ساخته شود،‏ مثلاً یک Deployment همراه با یک Service. مدیریت چند resource را می‌توان با گروه‌بندی آن‌ها در یک فایل (جداشده با <code>‎---‎</code> در YAML) ساده کرد. برای مثال:</p>
@@ -703,7 +894,7 @@ image: gb-frontend:v4
    app: guestbook
    tier: frontend
 </pre></div>
-  <p>می‌توانید تعداد replicaهای releaseهای stable و canary (انتشار نسخه‌ی تازه برای بخش کوچکی از ترافیک پیش از انتشار کامل) را تنظیم کنید تا نسبتی از ترافیک واقعی production که هر release دریافت می‌کند را تعیین کنید (در این مثال،‏ 3:1). وقتی مطمئن شدید،‏ می‌توانید track پایدار را به release جدید برنامه به‌روزرسانی کنید و canary را حذف کنید. برای دیدن جزئیات،‏ tutorial «Deploy a Release Using a Canary Deployment» را دنبال کنید.</p>
+  <p>در مثال سه‌به‌یک، از هر چهار Pod آماده، سه Pod نسخه‌ی پایدار و یکی نسخه‌ی آزمایشی را اجرا می‌کند. در اتصال‌های متعدد انتظار می‌رود نسخه‌ی آزمایشی سهم کوچک‌تری از ترافیک بگیرد. سهم دقیق درخواست‌ها به توزیع اتصال‌ها هم بستگی دارد. پس از بررسی نتیجه می‌توانید نسخه‌ی پایدار را به‌روز و Deployment آزمایشی را حذف کنید.</p>
   <h4>به‌روزرسانی annotationها <small>(Updating annotations)</small></h4>
   <p>گاهی می‌خواهید annotationهایی به resourceها پیوست کنید. annotationها metadata دلخواه و غیرشناسایی‌کننده‌اند که توسط clientهای API مثل ابزارها یا libraryها بازیابی می‌شوند. این کار را می‌توان با <code>kubectl annotate</code> انجام داد. برای مثال:</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl annotate pods my-nginx-v4-9gw19 description='my frontend running nginx'
@@ -785,13 +976,13 @@ fi
   <div class="deep"><b>توضیح تکمیلی: چرا selector دو Deployment نباید با هم overlap داشته باشد؟</b><p>selector هر Deployment باید <code>track</code> را هم شامل شود (<code>app=guestbook,tier=frontend,track=stable</code> در برابر <code>track=canary</code>)؛‏ وگرنه دو Deployment Podهای یکدیگر را «مال خود» می‌دانند و با هم دعوا می‌کنند (بخش Selector را ببینید). اما selector سرویس عمداً <code>track</code> را ندارد تا هر دو گروه را پوشش دهد. توجه کنید که تقسیم ترافیک بر اساس تعداد endpointهاست،‏ پس نسبت 3:1 تقریبی است و به load balancing kube-proxy بستگی دارد؛‏ برای درصدهای دقیق (مثلاً 1%) معمولاً از Ingress/Gateway API یا service mesh با وزن‌دهی استفاده می‌شود (خارج از مستندات رسمی؛‏ فصل ۵).</p></div>
   </details>
 
-  <h3 id="ch4-a-deployment">Deployment</h3>
-  <p>یک <i>Deployment</i> به‌روزرسانی‌های declarative برای Podها و ReplicaSetها فراهم می‌کند.</p>
-  <p>شما یک <i>desired state</i> را در یک Deployment توصیف می‌کنید،‏ و Deployment controller وضعیت واقعی (actual state) را با نرخی کنترل‌شده به desired state تغییر می‌دهد. می‌توانید Deploymentها را طوری تعریف کنید که ReplicaSetهای جدید بسازند،‏ یا Deploymentهای موجود را حذف کنید و همه‌ی resourceهایشان را با Deploymentهای جدید adopt (تصاحب شیء بی‌مالک توسط controller) کنید.</p>
+  <h3 id="ch4-a-deployment">انتشار نسخه‌ی تازه با Deployment</h3>
+  <p>می‌خواهید سه نسخه‌ی سالم از API در دسترس باشند و نسخه‌ی 1.3 به‌تدریج جای 1.2 را بگیرد. در <b>Deployment</b> تعداد نسخه‌ها و الگوی Pod را ثبت می‌کنید. کنترلر انتشار را از طریق ReplicaSetها پیش می‌برد.</p>
+  <p>در یک انتشار معمولی، کنترلر از روی الگوی تازه نسخه می‌سازد و به‌تدریج تعداد نسخه‌های قدیمی را کم می‌کند. در سناریوهای پیشرفته‌تر می‌توان مالکیت منابع موجود را هم منتقل کرد. برای این کار باید برچسب‌ها، انتخابگر و مالک فعلی هر منبع را بررسی کنید.</p>
   <div class="note"><b>نکته</b><p>ReplicaSetهایی را که مالک‌شان یک Deployment است مدیریت نکنید. اگر use case شما در ادامه پوشش داده نشده،‏ بهتر است یک issue در repository اصلی کوبرنتیز باز کنید.</p></div>
 
-  <h3 id="ch4-a-deploy-usecase">موارد کاربرد <small>(Use Case)</small></h3>
-  <p>use caseهای معمول Deploymentها این‌ها هستند:</p>
+  <h3 id="ch4-a-deploy-usecase">چه کارهایی را به Deployment می‌سپاریم؟ <small>(Use Case)</small></h3>
+  <p>تصمیم‌های معمول یک انتشار را دنبال کنید. اولین نسخه را چطور اجرا می‌کنید؟ اگر نسخه‌ی تازه پاسخ نداد، چطور به الگوی قبلی برمی‌گردید؟ فهرست زیر نشان می‌دهد Deployment در هر مرحله چه کمکی می‌کند.</p>
   <ul>
     <li><b>ساختن یک Deployment برای rollout یک ReplicaSet.</b> ReplicaSet در پس‌زمینه Podها را می‌سازد. وضعیت rollout را بررسی کنید تا ببینید موفق می‌شود یا نه.</li>
     <li><b>اعلام state جدید Podها</b> با به‌روزرسانی PodTemplateSpec در Deployment. یک ReplicaSet جدید ساخته می‌شود،‏ و Deployment به‌تدریج آن را scale up می‌کند در حالی که ReplicaSet قدیمی را scale down می‌کند،‏ و این تضمین می‌کند Podها با نرخ کنترل‌شده جایگزین شوند. هر ReplicaSet جدید revision مربوط به Deployment را به‌روزرسانی می‌کند.</li>
@@ -802,8 +993,8 @@ fi
     <li><b>پاک کردن ReplicaSetهای قدیمی‌تر</b> که دیگر لازمشان ندارید.</li>
   </ul>
 
-  <h3 id="ch4-a-deploy-create">ساختن Deployment <small>(Creating a Deployment)</small></h3>
-  <p>مثال زیر یک Deployment است. این Deployment یک ReplicaSet می‌سازد تا سه Pod از <code>nginx</code> را بالا بیاورد:</p>
+  <h3 id="ch4-a-deploy-create">از فایل Deployment تا سه Pod آماده <small>(Creating a Deployment)</small></h3>
+  <p>در فایل زیر ابتدا <code>replicas</code> را پیدا کنید و سپس نام image را در <code>template</code> بخوانید. پیش از اجرا می‌توانید از همین دو مقدار پیش‌بینی کنید که ReplicaSet چند Pod می‌سازد و درون هر کدام چه اجرا می‌شود.</p>
 <div class="code"><div class="lbl"><span>controllers/nginx-deployment.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -917,9 +1108,9 @@ nginx-deployment-75675f5897   map[app:nginx pod-template-hash:75675f5897]
   <p>از آن‌جا که hash از روی template محاسبه می‌شود،‏ اگر template را به نسخه‌ی قبلی برگردانید (rollback)،‏ Deployment همان ReplicaSet قدیمی را دوباره scale up می‌کند به‌جای این‌که ReplicaSet تازه بسازد.</p></div>
   </details>
 
-  <h3 id="ch4-a-deploy-update">به‌روزرسانی Deployment <small>(Updating a Deployment)</small></h3>
+  <h3 id="ch4-a-deploy-update">دیدن انتشار تدریجی در خروجی kubectl <small>(Updating a Deployment)</small></h3>
   <div class="note"><b>نکته</b><p>rollout یک Deployment اگر و فقط اگر Pod template آن (یعنی <code>.spec.template</code>) تغییر کند آغاز می‌شود؛‏ برای مثال اگر labelها یا container imageهای template به‌روزرسانی شوند. به‌روزرسانی‌های دیگر،‏ مثل scaling کردن Deployment،‏ rollout را آغاز نمی‌کنند.</p></div>
-  <p>مراحل زیر را برای به‌روزرسانی Deployment دنبال کنید:</p>
+  <p>وقتی image را عوض می‌کنید، نسخه‌ی قبلی و تازه مدتی کنار هم اجرا می‌شوند. بعد از هر دستور، تعداد Podهای آماده‌ی هر ReplicaSet را بخوانید تا ببینید چه زمانی نسخه‌ی تازه جای قبلی را می‌گیرد.</p>
   <ol>
     <li>بیایید Podهای nginx را به‌روزرسانی کنیم تا به‌جای image <code>nginx:1.14.2</code> از image <code>nginx:1.16.1</code> استفاده کنند.
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.16.1
@@ -1051,8 +1242,8 @@ Pod Template:
   <p>دو حالت افراطی: <code>maxSurge: 0</code> برای clusterهایی که ظرفیت اضافه ندارند (resource quota سخت یا Nodeهای پر) — rollout با کم کردن ظرفیت انجام می‌شود. <code>maxUnavailable: 0</code> برای سرویس‌هایی که حتی یک Pod کمتر را تحمل نمی‌کنند — ولی به ظرفیت اضافه برای Podهای surge نیاز دارد. هر دو نمی‌توانند هم‌زمان 0 باشند،‏ چون rollout هیچ راهی برای پیشرفت نخواهد داشت.</p></div>
   </details>
 
-  <h3 id="ch4-a-deploy-rollback">rollback کردن Deployment <small>(Rolling Back a Deployment)</small></h3>
-  <p>گاهی ممکن است بخواهید یک Deployment را rollback کنید؛‏ برای مثال وقتی Deployment پایدار نیست،‏ مثلاً crash loop دارد. به‌طور پیش‌فرض،‏ کل تاریخچه‌ی rollout مربوط به Deployment در سیستم نگه داشته می‌شود تا هر وقت خواستید rollback کنید (می‌توانید این را با تغییر revision history limit عوض کنید).</p>
+  <h3 id="ch4-a-deploy-rollback">بازگشت به یک نسخه‌ی قبلی <small>(Rolling Back a Deployment)</small></h3>
+  <p>نسخه‌ی تازه‌ی API مدام از کار می‌افتد و باید الگوی قبلی را دوباره اجرا کنید. ابتدا تاریخچه را بخوانید و شماره‌ی revision مناسب را پیدا کنید. امکان بازگشت به ReplicaSetهای قدیمی‌ای بستگی دارد که Deployment طبق <code>revisionHistoryLimit</code> نگه داشته است.</p>
   <div class="note"><b>نکته</b><p>revision یک Deployment وقتی ساخته می‌شود که rollout آن Deployment آغاز شود. یعنی revision جدید اگر و فقط اگر Pod template مربوط به Deployment (<code>.spec.template</code>) تغییر کند ساخته می‌شود،‏ برای مثال اگر labelها یا container imageهای template را به‌روزرسانی کنید. به‌روزرسانی‌های دیگر،‏ مثل scaling کردن Deployment،‏ revision جدیدی نمی‌سازند،‏ تا scaling دستی یا خودکار هم‌زمان ممکن باشد. این یعنی وقتی به یک revision قبلی rollback می‌کنید،‏ فقط بخش Pod template مربوط به Deployment rollback می‌شود.</p></div>
   <ul>
     <li>فرض کنید هنگام به‌روزرسانی Deployment یک اشتباه تایپی کرده‌اید و نام image را به‌جای <code>nginx:1.16.1</code>،‏ <code>nginx:1.161</code> نوشته‌اید:
@@ -1236,13 +1427,13 @@ Events:
   <div class="deep"><b>توضیح تکمیلی: rollback یعنی «rollout رو به جلو» با template قدیمی</b><p>به annotation <code>deployment.kubernetes.io/revision=4</code> دقت کنید: rollback به revision 2 یک revision <b>جدید</b> (4) می‌سازد و revision 2 از فهرست history ناپدید می‌شود (چون همان ReplicaSet دوباره فعال شده است). یعنی rollback چیزی جز کپی کردن <code>.spec.template</code> از ReplicaSet قدیمی به Deployment نیست،‏ و سپس یک rolling update عادی با همان maxSurge/maxUnavailable انجام می‌شود. نکته‌ی مهم در GitOps (خارج از مستندات رسمی): اگر manifest در Git همچنان image خراب را دارد،‏ <code>kubectl rollout undo</code> در sync بعدی ابزار GitOps بازنویسی می‌شود؛‏ rollback واقعی باید با revert در Git انجام شود.</p></div>
   </details>
 
-  <h3 id="ch4-a-deploy-scale">scale کردن Deployment <small>(Scaling a Deployment)</small></h3>
-  <p>می‌توانید با دستور زیر یک Deployment را scale کنید:</p>
+  <h3 id="ch4-a-deploy-scale">تغییر تعداد نسخه‌های برنامه <small>(Scaling a Deployment)</small></h3>
+  <p>ترافیک فروشگاه بیشتر شده و می‌خواهید نسخه‌های بیشتری از همان API اجرا شوند. بعد از دستور زیر، تعداد Podها و شماره‌ی revision را با قبل مقایسه کنید. تغییر تعداد نسخه‌ها الگوی Pod را عوض نمی‌کند.</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl scale deployment/nginx-deployment --replicas=10
 </pre></div>
 <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">deployment.apps/nginx-deployment scaled
 </pre></div>
-  <p>با فرض این‌که horizontal Pod autoscaling در cluster شما فعال باشد،‏ می‌توانید یک autoscaler برای Deployment تنظیم کنید و حداقل و حداکثر تعداد Podهایی را که می‌خواهید اجرا کنید،‏ بر اساس CPU utilization مربوط به Podهای موجود،‏ انتخاب کنید.</p>
+  <p>اگر مقیاس‌دهی خودکار افقی در کلاستر فعال باشد، می‌توانید برای Deployment حد پایین و بالای تعداد Podها و هدف مصرف CPU را مشخص کنید. سپس autoscaler تعداد نسخه‌ها را در همین بازه تنظیم می‌کند.</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl autoscale deployment/nginx-deployment --min=10 --max=15 --cpu-percent=80%
 </pre></div>
 <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">deployment.apps/nginx-deployment scaled
@@ -1290,8 +1481,8 @@ nginx-deployment-618515232    11        11        11        7m
   <div class="deep"><b>توضیح تکمیلی: حساب proportional scaling</b><p>قبل از scale: قدیمی 8 + جدید 5 = 13 = 10 + maxSurge(3). قدیمی 8 است چون 10 − maxUnavailable(2) = 8. وقتی replicas به 15 می‌رسد،‏ maxSurge هم (عدد مطلق 3) ثابت است،‏ پس سقف کل 18 می‌شود؛‏ یعنی 5 Pod اضافه. سهم هر ReplicaSet تقریباً متناسب با اندازه‌اش است: 8/13×5 ≈ 3.08 ← 3 برای قدیمی و 5/13×5 ≈ 1.9 ← 2 برای جدید. نتیجه: 11 و 7،‏ مجموع 18 = CURRENT. چرا این رفتار امن است؟ اگر هر 5 Pod به ReplicaSet جدید (که هیچ Pod سالمی ندارد) داده می‌شد،‏ autoscaler فکر می‌کرد ظرفیت را افزایش داده،‏ در حالی که هیچ ظرفیت واقعی اضافه نشده بود.</p></div>
   </details>
 
-  <h3 id="ch4-a-deploy-pause">pause و resume کردن rollout <small>(Pausing and Resuming a rollout of a Deployment)</small></h3>
-  <p>وقتی یک Deployment را به‌روزرسانی می‌کنید،‏ یا قصد دارید این کار را بکنید،‏ می‌توانید rolloutهای آن Deployment را پیش از آغاز یک یا چند به‌روزرسانی pause کنید. وقتی آماده‌ی اعمال آن تغییرات بودید،‏ rolloutهای Deployment را resume می‌کنید. این رویکرد به شما اجازه می‌دهد بین pause و resume چند اصلاح اعمال کنید بدون این‌که rolloutهای غیرضروری آغاز شوند.</p>
+  <h3 id="ch4-a-deploy-pause">جمع کردن چند تغییر در یک انتشار <small>(Pausing and Resuming a rollout of a Deployment)</small></h3>
+  <p>فرض کنید باید هم image برنامه و هم درخواست حافظه را تغییر دهید. با <code>rollout pause</code> انتشار را موقتاً نگه دارید، هر دو تغییر را در الگو ثبت کنید و با <code>rollout resume</code> آن‌ها را در یک انتشار به جریان بیندازید.</p>
   <ul>
     <li>برای مثال،‏ با یک Deployment که ساخته شده است،‏ جزئیات Deployment را بگیرید:
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl get deploy
@@ -1372,8 +1563,8 @@ nginx-3926361531   3         3         3         28s
   <div class="deep"><b>توضیح تکمیلی: pause در عمل</b><p>بدون pause،‏ سه دستور پشت‌سرهم (<code>set image</code>،‏ <code>set resources</code>،‏ <code>set env</code>) سه ReplicaSet و سه revision می‌سازند و Podها بی‌دلیل دو بار جایگزین می‌شوند (rollover). با pause،‏ هر سه تغییر در یک revision و یک rolling update اعمال می‌شوند. توجه کنید که scaling در حالت pause همچنان کار می‌کند (با proportional scaling)،‏ چون scaling به template ربطی ندارد.</p></div>
   </details>
 
-  <h3 id="ch4-a-deploy-status">وضعیت Deployment <small>(Deployment status)</small></h3>
-  <p>یک Deployment در طول lifecycle خود وارد stateهای مختلفی می‌شود. ممکن است هنگام rollout یک ReplicaSet جدید <b>progressing</b> باشد،‏ ممکن است <b>complete</b> باشد،‏ یا ممکن است در پیشرفت <b>fail</b> شود.</p>
+  <h3 id="ch4-a-deploy-status">از کجا بفهمیم انتشار پیش می‌رود؟ <small>(Deployment status)</small></h3>
+  <p>در آزمایش فروشگاه دیدید که سه نسخه‌ی قدیمی حاضر بودند، اما انتشار نسخه‌ی تازه متوقف شده بود. برای خواندن وضعیت Deployment، دو پرسش را جدا دنبال کنید. چند نسخه الان در دسترس‌اند؟ ساخت و آماده شدن نسخه‌های تازه چه پیشرفتی داشته است؟</p>
 
   <h4>پیشرفت Deployment <small>(Progressing Deployment)</small></h4>
   <p>کوبرنتیز یک Deployment را وقتی <i>progressing</i> علامت می‌زند که یکی از کارهای زیر انجام شود:</p>
@@ -1527,14 +1718,14 @@ error: deployment "nginx" exceeded its progress deadline
   <p>(خارج از مستندات رسمی) در Prometheus با kube-state-metrics معمولاً از متریک <code>kube_deployment_status_condition{condition="Progressing",status="false"}</code> برای alert استفاده می‌شود.</p></div>
   </details>
 
-  <h3 id="ch4-a-deploy-cleanup">سیاست پاک‌سازی <small>(Clean up Policy)</small></h3>
-  <p>می‌توانید فیلد <code>.spec.revisionHistoryLimit</code> را در یک Deployment تنظیم کنید تا مشخص کنید چند ReplicaSet قدیمی از این Deployment را می‌خواهید نگه دارید. بقیه در پس‌زمینه garbage-collect می‌شوند. به‌طور پیش‌فرض این مقدار 10 است.</p>
+  <h3 id="ch4-a-deploy-cleanup">چند نسخه‌ی قبلی برای بازگشت می‌ماند؟ <small>(Clean up Policy)</small></h3>
+  <p>پس از چند انتشار، ReplicaSetهایی با صفر Pod می‌بینید. الگوی هر کدام امکان بازگشت به همان نسخه را می‌دهد. فیلد <code>spec.revisionHistoryLimit</code> تعیین می‌کند چند ReplicaSet قدیمی نگه داشته شود. مقدار پیش‌فرض ده است.</p>
   <div class="note"><b>نکته</b><p>تنظیم صریح این فیلد روی 0 باعث پاک شدن کل تاریخچه‌ی Deployment می‌شود و در نتیجه آن Deployment قادر به rollback نخواهد بود.</p></div>
   <p>پاک‌سازی فقط <b>پس از</b> این‌که Deployment به state کامل (complete) برسد شروع می‌شود. اگر <code>.spec.revisionHistoryLimit</code> را 0 تنظیم کنید،‏ هر rollout همچنان پیش از این‌که کوبرنتیز ReplicaSet قدیمی را حذف کند،‏ باعث ساخت یک ReplicaSet جدید می‌شود.</p>
   <p>حتی با یک revision history limit غیرصفر،‏ ممکن است ReplicaSetهای بیشتری از حدی که پیکربندی کرده‌اید داشته باشید. برای مثال،‏ اگر Podها crash loop داشته باشند و در طول زمان چند rolling update آغاز شده باشد،‏ ممکن است ReplicaSetهای بیشتری از <code>.spec.revisionHistoryLimit</code> داشته باشید،‏ چون Deployment هرگز به state کامل نمی‌رسد.</p>
 
-  <h3 id="ch4-a-deploy-canary">canary deployment</h3>
-  <p>اگر می‌خواهید releaseها را برای زیرمجموعه‌ای از کاربران یا serverها با استفاده از Deployment rollout کنید،‏ می‌توانید چند Deployment بسازید،‏ یکی برای هر release،‏ با پیروی از الگوی canary که در بخش Managing Workloads (بالاتر در همین فصل) توضیح داده شد. برای دیدن جزئیات،‏ tutorial «Deploy a Release Using a Canary Deployment» را دنبال کنید.</p>
+  <h3 id="ch4-a-deploy-canary">آزمودن نسخه‌ی تازه با بخشی از ترافیک</h3>
+  <p>برای انتشار آزمایشی یا <b>canary</b>، نسخه‌ی پایدار و نسخه‌ی تازه را در دو Deployment جدا اجرا کنید. مثال زیر را از روی برچسب‌ها بخوانید. کدام برچسب دو نسخه را از هم جدا می‌کند و Service با کدام برچسب هر دو را برای دریافت درخواست پیدا می‌کند؟</p>
   <div class="lab"><b>آزمایش عملی: canary با دو Deployment پشت یک Service</b>
 <div class="code"><div class="lbl"><span>canary-demo.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: v1
 kind: Service
@@ -1590,8 +1781,8 @@ kubectl run curl --image=curlimages/curl --rm -it --restart=Never -- \
 </pre></div>
   <p>ارتقا: <code>kubectl set image</code> یا تغییر <code>args</code> در <code>web-stable</code> به v2،‏ سپس <code>kubectl delete deployment web-canary</code>. rollback سریع canary: <code>kubectl scale deployment web-canary --replicas=0</code>.</p></div>
 
-  <h3 id="ch4-a-deploy-spec">نوشتن spec برای Deployment <small>(Writing a Deployment Spec)</small></h3>
-  <p>مثل همه‌ی configهای دیگر کوبرنتیز،‏ یک Deployment به فیلدهای <code>.apiVersion</code>،‏ <code>.kind</code> و <code>.metadata</code> نیاز دارد. برای اطلاعات عمومی درباره‌ی کار با فایل‌های config،‏ مستندات deploying applications،‏ configuring containers و using kubectl to manage resources را ببینید (فصل ۸).</p>
+  <h3 id="ch4-a-deploy-spec">خواندن فیلدهای Deployment <small>(Writing a Deployment Spec)</small></h3>
+  <p>از بالای فایل شروع کنید. <code>apiVersion</code> و <code>kind</code> نوع منبع را مشخص می‌کنند، <code>metadata</code> نام آن را می‌دهد و <code>spec</code> وضعیت دلخواه را توصیف می‌کند. هنگام مرور نمونه، تعداد نسخه‌ها، الگوی Pod و روش انتشار را در همین بخش پیدا کنید. نوشتن و نگه‌داری فایل‌های پیکربندی را در فصل ۸ دنبال می‌کنید.</p>
   <p>وقتی control plane برای یک Deployment Podهای جدید می‌سازد،‏ <code>.metadata.name</code> مربوط به Deployment بخشی از پایه‌ی نام‌گذاری آن Podهاست. نام یک Deployment باید یک مقدار معتبر DNS subdomain باشد،‏ اما این می‌تواند برای hostname مربوط به Podها نتایج غیرمنتظره‌ای ایجاد کند. برای بهترین سازگاری،‏ نام باید از قواعد سخت‌گیرانه‌تر DNS label پیروی کند.</p>
   <p>یک Deployment همچنین به یک بخش <code>.spec</code> نیاز دارد.</p>
 
@@ -1751,11 +1942,11 @@ spec:
   </tbody></table></div></div>
   </details>
 
-  <h3 id="ch4-a-replicaset">ReplicaSet</h3>
-  <p>هدف یک ReplicaSet نگه‌داشتن یک مجموعه‌ی پایدار از Podهای replica است که در هر لحظه در حال اجرا هستند. به همین دلیل،‏ معمولاً برای تضمین availability یک تعداد مشخص از Podهای یکسان استفاده می‌شود.</p>
+  <h3 id="ch4-a-replicaset">چه کسی Pod جایگزین را می‌سازد؟</h3>
+  <p>در گام صفر مالک مستقیم Pod فروشگاه یک ReplicaSet بود. وظیفه‌ی آن حفظ تعداد درخواستی از Podهای هم‌شکل است. وقتی Deployment نسخه‌ی تازه‌ای منتشر می‌کند، می‌توانید ReplicaSet قدیمی و تازه را کنار هم ببینید و سهم هر یک را بشمارید.</p>
 
   <h4>سازوکار ReplicaSet <small>(How a ReplicaSet works)</small></h4>
-  <p>یک ReplicaSet با فیلدهایی تعریف می‌شود،‏ از جمله یک selector که مشخص می‌کند چگونه Podهایی که می‌تواند acquire کند را شناسایی کند،‏ تعداد replicas که نشان می‌دهد چند Pod باید نگه‌داری شود،‏ و یک pod template که داده‌ی Podهای جدیدی را که برای رسیدن به تعداد replicas مورد نیاز است مشخص می‌کند. یک ReplicaSet سپس با ساختن و حذف Podها به‌اندازه‌ی نیاز،‏ هدف خود را برآورده می‌کند تا به تعداد مطلوب برسد. وقتی یک ReplicaSet نیاز به ساخت Podهای جدید داشته باشد،‏ از pod template خود استفاده می‌کند.</p>
+  <p>برای خواندن تعریف ReplicaSet، سه فیلد را کنار هم بگذارید. <code>selector</code> مشخص می‌کند کدام Podها انتخاب می‌شوند، <code>replicas</code> تعداد دلخواه را می‌دهد و <code>template</code> الگوی ساخت Pod تازه است. کنترلر با مقایسه‌ی تعداد فعلی و دلخواه، Pod می‌سازد یا حذف می‌کند.</p>
   <p>یک ReplicaSet از طریق فیلد <code>metadata.ownerReferences</code> مربوط به Podها به آن‌ها لینک می‌شود؛‏ این فیلد مشخص می‌کند object فعلی متعلق به کدام resource است. همه‌ی Podهایی که یک ReplicaSet acquire کرده،‏ اطلاعات شناسایی ReplicaSet مالک خود را در فیلد ownerReferences دارند. از طریق همین لینک است که ReplicaSet از state Podهایی که نگه‌داری می‌کند آگاه می‌شود و بر اساس آن برنامه‌ریزی می‌کند.</p>
   <p>یک ReplicaSet با استفاده از selector خود،‏ Podهای جدید برای acquire کردن را شناسایی می‌کند. اگر Podی وجود داشته باشد که OwnerReference نداشته باشد یا OwnerReference آن یک controller نباشد و با selector یک ReplicaSet match شود،‏ بلافاصله توسط آن ReplicaSet acquire می‌شود.</p>
 
@@ -2038,9 +2229,9 @@ spec:
   <div class="deep"><b>توضیح تکمیلی: ReplicaSet در عمل</b><p>ReplicaSet امروز عملاً همیشه به‌صورت غیرمستقیم و از طریق Deployment استفاده می‌شود. وقتی <code>kubectl get rs</code> را روی clusterی اجرا می‌کنید که با Deploymentها ساخته شده،‏ نام‌هایی مثل <code>nginx-deployment-66b6c48dd5</code> می‌بینید که Deployment آن‌ها را ساخته است. شناخت مستقیم ReplicaSet برای درک درست rolling update،‏ rollback و troubleshooting Deployment ضروری است،‏ حتی اگر خودتان manifest ReplicaSet ننویسید.</p></div>
   </details>
 
-  <h3 id="ch4-a-statefulset">StatefulSet</h3>
-  <p>StatefulSet یک workload API object است که برای مدیریت برنامه‌های stateful استفاده می‌شود.</p>
-  <p>StatefulSet مسئول deployment و scaling یک مجموعه از Podها است،‏ <b>و تضمین‌هایی درباره‌ی ordering و uniqueness</b> این Podها فراهم می‌کند.</p>
+  <h3 id="ch4-a-statefulset">هویت پایدار هر نسخه با StatefulSet</h3>
+  <p>وقتی Pod پایگاه داده حذف شد، نسخه‌ی بعدی با همان نام <code>postgres-0</code> برگشت. StatefulSet به هر نسخه یک شماره و هویت مشخص می‌دهد. برای بررسی دوام داده یک سؤال جدا لازم است. فایل‌های پایگاه داده روی چه فضایی نوشته می‌شوند؟</p>
+  <p>در خروجی یک StatefulSet، به پسوند عددی نام‌ها توجه کنید. این شماره حتی پس از جایگزینی Pod باقی می‌ماند و در ترتیب ساخت یا حذف اعضا هم به کار می‌رود.</p>
   <p>مثل یک Deployment،‏ یک StatefulSet Podهایی را مدیریت می‌کند که بر اساس یک container spec یکسان هستند. برخلاف Deployment،‏ یک StatefulSet یک sticky identity را برای هر یک از Podهای خود حفظ می‌کند. این Podها از یک spec یکسان ساخته می‌شوند،‏ اما قابل جایگزینی با یکدیگر نیستند: هر کدام یک شناسه‌ی پایدار (persistent identifier) دارد که در طول هر بار rescheduling حفظ می‌کند.</p>
   <p>اگر بخواهید از storage volumeها برای فراهم کردن persistence برای workload خود استفاده کنید،‏ می‌توانید از یک StatefulSet به‌عنوان بخشی از راه‌حل استفاده کنید. هرچند Podهای تکی در یک StatefulSet مستعد خرابی هستند،‏ شناسه‌های پایدار Pod تطبیق volumeهای موجود با Podهای جدیدی که جایگزین Podهای خراب می‌شوند را آسان‌تر می‌کند.</p>
 
@@ -2360,8 +2551,8 @@ spec:
   </tbody></table></div></div>
   </details>
 
-  <h3 id="ch4-a-statefulset-mysql">مثال کاربردی: MySQL تکرارشده با StatefulSet <small>(Run a Replicated Stateful Application)</small></h3>
-  <p>این بخش مفاهیم کلیدی task رسمی «Run a Replicated Stateful Application» را با یک مثال کامل نشان می‌دهد: یک MySQL database replicated با یک primary و چند replica،‏ با replication ناهمگام و row-based. این پیکربندی برای production نیست (تنظیمات MySQL روی مقادیر پیش‌فرض insecure باقی می‌مانند)؛‏ هدف نشان دادن الگوهای کلی اجرای برنامه‌های stateful روی کوبرنتیز است.</p>
+  <h3 id="ch4-a-statefulset-mysql">یک MySQL اصلی و چند نسخه‌ی خواندنی <small>(Run a Replicated Stateful Application)</small></h3>
+  <p>در این مثال، MySQL اصلی تغییرها را ثبت می‌کند و نسخه‌های خواندنی با کمی تأخیر تغییر ردیف‌ها را دریافت می‌کنند. StatefulSet برای هر عضو نام و فضای ذخیره‌سازی مخصوص آن را فراهم می‌کند. هنگام خواندن فایل‌ها ببینید تکثیر داده را کدام بخش از خود MySQL راه می‌اندازد. تنظیمات ساده‌ی این مثال برای محیط آموزشی است.</p>
   <div class="note"><b>نکته</b><p>این یک پیکربندی production نیست. تنظیمات MySQL روی مقادیر پیش‌فرض insecure باقی می‌مانند تا تمرکز روی الگوهای کلی اجرای برنامه‌های stateful در کوبرنتیز باشد.</p></div>
 
   <h4>deploy کردن MySQL با ConfigMap و Serviceها و StatefulSet <small>(Deploy MySQL)</small></h4>
@@ -2755,8 +2946,8 @@ kubectl get events -A --field-selector reason=Evicted
   </ol>
   </details>
 <!-- chapter 7 part b -->
-<h3 id="ch4-b-daemonset">DaemonSet</h3>
-<p>یک <b>DaemonSet</b> تضمین می‌کند که همه‌ی Nodeها (یا بعضی از آن‌ها) یک کپی از یک Pod را اجرا کنند. وقتی Nodeهای جدید به cluster اضافه می‌شوند،‏ Podها هم روی آن‌ها اضافه می‌شوند. وقتی Nodeها از cluster حذف می‌شوند،‏ آن Podها با garbage collection (پاک‌سازی خودکار اشیای بی‌مالک یا بی‌استفاده) پاک می‌شوند. حذف کردن یک DaemonSet،‏ Podهایی را که ساخته است پاک می‌کند.</p>
+<h3 id="ch4-b-daemonset">یک گردآورنده‌ی گزارش روی هر Node</h3>
+<p>اگر کلاستر یک Node تازه بگیرد، گزارش برنامه‌های آن ماشین را چه کسی می‌خواند؟ <b>DaemonSet</b> برای هر Node واجد شرایط یک Pod می‌سازد و با تغییر مجموعه‌ی Nodeها، Podها را با آن هماهنگ می‌کند. با حذف خود DaemonSet، به‌طور معمول Podهای زیرمجموعه‌اش هم حذف می‌شوند.</p>
 <p>چند کاربرد رایج DaemonSet:</p>
 <ul>
   <li>اجرای یک daemon برای storage در سطح cluster روی هر Node (مثلاً اجزای Ceph یا GlusterFS)؛‏</li>
@@ -2772,9 +2963,9 @@ kubectl get events -A --field-selector reason=Evicted
 </div>
   </details>
 
-<h3 id="ch4-b-ds-spec">نوشتن spec برای DaemonSet <small>(Writing a DaemonSet Spec)</small></h3>
+<h3 id="ch4-b-ds-spec">خواندن فایل DaemonSet <small>(Writing a DaemonSet Spec)</small></h3>
 <h4>ساختن DaemonSet <small>(Create a DaemonSet)</small></h4>
-<p>می‌توانید یک DaemonSet را در یک فایل YAML توصیف کنید. برای مثال،‏ فایل <code>daemonset.yaml</code> زیر یک DaemonSet را توصیف می‌کند که Docker image مربوط به fluentd-elasticsearch را اجرا می‌کند:</p>
+<p>این فایل، گردآورنده‌ی گزارش fluentd را روی Nodeهای واجد شرایط اجرا می‌کند. ابتدا برچسب انتخاب‌شده در <code>selector</code> را در الگوی Pod پیدا کنید. بعد سراغ مسیر گزارش‌ها بروید تا ببینید کانتینر داده را از کجای Node می‌خواند.</p>
 <div class="code"><div class="lbl"><span>controllers/daemonset.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -2933,8 +3124,8 @@ kubectl get pods -l app=ssd-agent   # Pod is Terminating
 </div>
   </details>
 
-<h3 id="ch4-b-ds-scheduling">schedule شدن Podهای DaemonSet <small>(How Daemon Pods are scheduled)</small></h3>
-<p>یک DaemonSet را می‌توان برای اطمینان از این‌که همه‌ی Nodeهای واجد شرایط (eligible) یک کپی از یک Pod را اجرا کنند استفاده کرد. DaemonSet controller برای هر Node واجد شرایط یک Pod می‌سازد و فیلد <code>spec.affinity.nodeAffinity</code> آن Pod را طوری اضافه می‌کند که با host هدف مطابقت کند. پس از ساخته شدن Pod،‏ معمولاً default scheduler کار را به دست می‌گیرد و Pod را با تنظیم فیلد <code>.spec.nodeName</code> به host هدف bind می‌کند. اگر Pod جدید روی Node جا نشود،‏ default scheduler ممکن است بر اساس priority آن Pod جدید،‏ بعضی از Podهای موجود را preempt (evict) کند.</p>
+<h3 id="ch4-b-ds-scheduling">کدام Node برای DaemonSet انتخاب می‌شود؟ <small>(How Daemon Pods are scheduled)</small></h3>
+<p>کنترلر DaemonSet برای هر Node واجد شرایط یک Pod می‌سازد و با <code>nodeAffinity</code> همان ماشین را هدف می‌گیرد. سپس زمان‌بند Pod را روی آن Node قرار می‌دهد و نام ماشین در <code>spec.nodeName</code> ثبت می‌شود. اگر جا کم باشد، اولویت Pod می‌تواند در تصمیم زمان‌بند برای کنار زدن کارهای کم‌اولویت‌تر اثر بگذارد.</p>
 <div class="note"><b>نکته</b><p>اگر مهم است که Pod مربوط به DaemonSet روی هر Node اجرا شود،‏ اغلب مطلوب است که <code>.spec.template.spec.priorityClassName</code> مربوط به DaemonSet را روی یک PriorityClass (شیئی که اولویت Podها را تعیین می‌کند) با priority بالاتر تنظیم کنید تا مطمئن شوید این eviction رخ می‌دهد.</p></div>
 <p>کاربر می‌تواند با تنظیم فیلد <code>.spec.template.spec.schedulerName</code> در DaemonSet،‏ scheduler دیگری برای Podهای DaemonSet مشخص کند.</p>
 <p>node affinity اصلی که در فیلد <code>.spec.template.spec.affinity.nodeAffinity</code> مشخص شده (اگر مشخص شده باشد) توسط DaemonSet controller در ارزیابی Nodeهای واجد شرایط در نظر گرفته می‌شود،‏ ولی روی Pod ساخته‌شده با node affinityی جایگزین می‌شود که با نام Node واجد شرایط مطابقت دارد.</p>
@@ -2986,8 +3177,8 @@ kubectl get pods -l app=ssd-agent   # Pod is Terminating
 </div>
   </details>
 
-<h3 id="ch4-b-ds-communicating">ارتباط با Podهای DaemonSet <small>(Communicating with Daemon Pods)</small></h3>
-<p>چند الگوی ممکن برای ارتباط با Podهای یک DaemonSet:</p>
+<h3 id="ch4-b-ds-communicating">چطور به برنامه‌ی روی هر Node وصل شویم؟ <small>(Communicating with Daemon Pods)</small></h3>
+<p>برای انتخاب روش ارتباط، جهت درخواست را مشخص کنید. آیا گردآورنده خودش گزارش را به سامانه‌ی مرکزی می‌فرستد؟ یا برنامه‌ی دیگری باید به گردآورنده‌ی یک Node مشخص وصل شود؟ الگوهای زیر برای این دو نیاز متفاوت‌اند.</p>
 <ul>
   <li><b>Push</b>:‏ Podهای DaemonSet طوری پیکربندی شده‌اند که به‌روزرسانی‌ها را به یک service دیگر،‏ مثل یک پایگاه داده‌ی آماری (stats database)،‏ بفرستند. آن‌ها client ندارند.</li>
   <li><b>NodeIP and Known Port</b>:‏ Podهای DaemonSet می‌توانند از یک <code>hostPort</code> استفاده کنند،‏ تا از طریق IP Nodeها قابل دسترسی باشند. clientها به نحوی فهرست IP Nodeها را می‌دانند و port را طبق قرارداد (convention) می‌شناسند.</li>
@@ -3018,9 +3209,9 @@ spec:
 </div>
   </details>
 
-<h3 id="ch4-b-ds-updating">به‌روزرسانی DaemonSet <small>(Updating a DaemonSet)</small></h3>
-<p>اگر labelهای Nodeها تغییر کنند،‏ DaemonSet بلافاصله Pod را به Nodeهایی که تازه match شده‌اند اضافه می‌کند و Pod را از Nodeهایی که دیگر match نمی‌شوند حذف می‌کند.</p>
-<p>می‌توانید Podهایی را که یک DaemonSet می‌سازد تغییر دهید. اما Podها اجازه‌ی به‌روزرسانی همه‌ی فیلدها را نمی‌دهند. همچنین DaemonSet controller دفعه‌ی بعد که یک Node (حتی با همان نام) ساخته شود از template اصلی استفاده خواهد کرد.</p>
+<h3 id="ch4-b-ds-updating">تغییر Nodeها و به‌روزرسانی DaemonSet <small>(Updating a DaemonSet)</small></h3>
+<p>فرض کنید گردآورنده فقط روی Nodeهایی اجرا می‌شود که برچسب معینی دارند. با اضافه شدن آن برچسب، Node میزبان تازه‌ای برای Pod می‌شود. با برداشتن برچسب، کنترلر Pod خودش را از آن Node حذف می‌کند.</p>
+<p>برای تغییر پایدار نسخه‌ی گردآورنده، الگوی Pod را در خود DaemonSet ویرایش کنید. بسیاری از فیلدهای یک Pod در حال اجرا قابل تغییر نیستند. وقتی کنترلر Pod تازه‌ای بسازد، دوباره از الگوی ثبت‌شده در DaemonSet استفاده می‌کند.</p>
 <p>می‌توانید یک DaemonSet را حذف کنید. اگر با <code>kubectl</code> گزینه‌ی <code>--cascade=orphan</code> را مشخص کنید،‏ Podها روی Nodeها باقی می‌مانند. اگر بعداً یک DaemonSet جدید با همان selector بسازید،‏ DaemonSet جدید Podهای موجود را adopt می‌کند. اگر نیاز به جایگزینی Podی باشد،‏ DaemonSet آن‌ها را طبق <code>updateStrategy</code> خودش جایگزین می‌کند.</p>
 <p>می‌توانید روی یک DaemonSet rolling update انجام دهید.</p>
   <details class="more">
@@ -3042,9 +3233,9 @@ kubectl -n kube-system get pods -l name=fluentd-elasticsearch -o jsonpath='{.ite
 </div>
   </details>
 
-<h3 id="ch4-b-ds-alternatives">جایگزین‌های DaemonSet <small>(Alternatives to DaemonSet)</small></h3>
+<h3 id="ch4-b-ds-alternatives">اجرای سرویس روی Node یا با DaemonSet <small>(Alternatives to DaemonSet)</small></h3>
 <h4>init script</h4>
-<p>کاملاً ممکن است که processهای daemon را مستقیماً روی یک Node اجرا کنید (مثلاً با استفاده از <code>init</code>،‏ <code>upstartd</code> یا <code>systemd</code>). این کاملاً قابل قبول است. اما چند مزیت برای اجرای چنین processهایی از طریق DaemonSet وجود دارد:</p>
+<p>می‌توانید سرویس گردآوری گزارش را مستقیم روی ماشین، مثلاً با <code>systemd</code>، اجرا کنید. اگر آن را به DaemonSet بسپارید، همان ابزارهایی که برای مشاهده‌ی Podها، خواندن گزارش و انتشار برنامه‌ها دارید، برای این سرویس هم در دسترس‌اند.</p>
 <ul>
   <li>امکان monitoring و مدیریت logهای daemonها به همان شکلی که برای برنامه‌ها انجام می‌شود.</li>
   <li>همان زبان config و همان ابزارها (مثلاً Pod templateها،‏ <code>kubectl</code>) برای daemonها و برنامه‌ها.</li>
@@ -3073,9 +3264,9 @@ kubectl -n kube-system get pods -l name=fluentd-elasticsearch -o jsonpath='{.ite
 </div>
   </details>
 
-<h3 id="ch4-b-job">Job</h3>
-<p>یک Job یک یا چند Pod می‌سازد و اجرای Podها را تا زمانی که تعداد مشخصی از آن‌ها با موفقیت terminate شوند،‏ دوباره امتحان (retry) می‌کند. وقتی Podها با موفقیت کامل می‌شوند،‏ Job تعداد completionهای موفق را دنبال (track) می‌کند. وقتی به تعداد مشخص‌شده‌ی completion موفق رسید،‏ task (یعنی Job) کامل شده است. حذف یک Job،‏ Podهایی را که ساخته پاک می‌کند. suspend کردن یک Job،‏ Podهای فعال آن را حذف می‌کند تا زمانی که Job دوباره resume شود.</p>
-<p>یک حالت ساده این است که یک object از نوع Job بسازید تا یک Pod را به‌طور قابل اطمینان تا پایان (to completion) اجرا کند. object مربوط به Job در صورتی که Pod اول fail شود یا حذف شود (مثلاً به دلیل خرابی سخت‌افزاری Node یا reboot شدن Node) یک Pod جدید راه می‌اندازد.</p>
+<h3 id="ch4-b-job">چه وقت یک کار تمام شده است؟</h3>
+<p>در گام migration می‌خواستید یک کار با موفقیت تمام شود. <b>Job</b> تعداد اجراهای موفق را می‌شمارد و در محدوده‌ی زمان و تلاش‌های مجاز، پس از شکست دوباره تلاش می‌کند. با رسیدن به تعداد موفقیت درخواستی، Job کامل می‌شود. حذف Job معمولاً Podهایش را هم پاک می‌کند و تعلیق آن Podهای فعال را متوقف می‌کند.</p>
+<p>برای کار تک‌مرحله‌ای، یک اجرای موفق کافی است. اگر Pod پیش از ثبت موفقیت از دست برود، Job می‌تواند نمونه‌ی دیگری بسازد. هنگام نوشتن کد migration یا گزارش، احتمال اجرای دوباره را هم در نظر بگیرید.</p>
 <p>همچنین می‌توانید از یک Job برای اجرای چند Pod به‌صورت موازی استفاده کنید.</p>
 <p>اگر می‌خواهید یک Job را (چه یک task تکی،‏ چه چند task موازی) طبق یک schedule اجرا کنید،‏ CronJob را ببینید (پایین‌تر در همین فصل).</p>
   <details class="more">
@@ -3085,8 +3276,8 @@ kubectl -n kube-system get pods -l name=fluentd-elasticsearch -o jsonpath='{.ite
 </div>
   </details>
 
-<h3 id="ch4-b-job-example">اجرای یک Job نمونه <small>(Running an example Job)</small></h3>
-<p>در ادامه یک config نمونه برای Job آمده است. این Job عدد π را تا ۲۰۰۰ رقم محاسبه و چاپ می‌کند. کامل شدن آن حدود ۱۰ ثانیه طول می‌کشد.</p>
+<h3 id="ch4-b-job-example">یک Job را تا پایان دنبال کنید <small>(Running an example Job)</small></h3>
+<p>این Job عدد π را با دقت ۲۰۰۰ رقم محاسبه و چاپ می‌کند. پس از اجرای فایل، دو نتیجه را جدا پیدا کنید. وضعیت Job باید پایان موفق را نشان دهد و خروجی محاسبه باید در گزارش Pod باشد. زمان اجرا به آماده بودن image هم بستگی دارد.</p>
 <div class="code"><div class="lbl"><span>controllers/job.yaml</span><button type="button">کپی</button></div><pre class="yaml">apiVersion: batch/v1
 kind: Job
 metadata:
@@ -3196,7 +3387,7 @@ status:
   uncountedTerminatedPods: {}
 </pre></div>
 <p>برای دیدن Podهای کامل‌شده‌ی یک Job از <code>kubectl get pods</code> استفاده کنید.</p>
-<p>برای فهرست کردن همه‌ی Podهای متعلق به یک Job به شکل قابل خواندن توسط ماشین،‏ می‌توانید از دستوری مثل این استفاده کنید:</p>
+<p>اگر قرار است در یک اسکریپت روی Podهای همین Job کار کنید، ابتدا نامشان را از برچسب Job به دست آورید.</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">pods=$(kubectl get pods --selector=batch.kubernetes.io/job-name=pi --output=jsonpath='{.items[*].metadata.name}')
 echo $pods
 </pre></div>
@@ -3204,7 +3395,7 @@ echo $pods
 <div class="code"><div class="lbl"><span>output</span><button type="button">کپی</button></div><pre class="out">pi-5rwd7
 </pre></div>
 <p>در این‌جا selector همان selector مربوط به Job است. گزینه‌ی <code>--output=jsonpath</code> یک expression مشخص می‌کند که نام هر Pod را از فهرست برگشتی استخراج می‌کند.</p>
-<p>standard output یکی از Podها را ببینید:</p>
+<p>نام Pod را پیدا کردید. حالا عدد محاسبه‌شده را در خروجی همان Pod بخوانید.</p>
 <div class="code"><div class="lbl"><span>shell</span><button type="button">کپی</button></div><pre class="sh">kubectl logs $pods
 </pre></div>
 <p>راه دیگر برای دیدن logهای یک Job:</p>
@@ -3230,8 +3421,8 @@ kubectl get job pi
 </div>
   </details>
 
-<h3 id="ch4-b-job-spec">نوشتن spec برای Job <small>(Writing a Job spec)</small></h3>
-<p>مانند همه‌ی configهای دیگر کوبرنتیز،‏ یک Job به فیلدهای <code>apiVersion</code>،‏ <code>kind</code> و <code>metadata</code> نیاز دارد.</p>
+<h3 id="ch4-b-job-spec">تنظیمات اجرای یک Job <small>(Writing a Job spec)</small></h3>
+<p>برای خواندن فایل Job سه سؤال بپرسید. دستور کار چیست؟ بعد از شکست، کانتینر یا Pod چگونه دوباره اجرا می‌شود؟ چند تلاش مجاز است؟ نام و نوع منبع در <code>metadata</code> و <code>kind</code> می‌آیند. پاسخ این سه پرسش را در <code>spec</code> و الگوی Pod پیدا کنید.</p>
 <p>وقتی control plane برای یک Job Podهای جدید می‌سازد،‏ <code>.metadata.name</code> مربوط به Job بخشی از مبنای نام‌گذاری آن Podها است. نام یک Job باید یک مقدار DNS subdomain معتبر باشد،‏ ولی این می‌تواند برای hostname مربوط به Podها نتایج غیرمنتظره ایجاد کند. برای بهترین سازگاری،‏ نام باید از قواعد محدودکننده‌تر یک DNS label پیروی کند. حتی وقتی نام یک DNS subdomain است،‏ طول نام نباید بیشتر از ۶۳ کاراکتر باشد.</p>
 <p>یک Job همچنین به یک بخش <code>.spec</code> نیاز دارد.</p>
 <h4>پیشوند labelهای Job <small>(Job Labels)</small></h4>
@@ -3256,8 +3447,8 @@ kubectl get job pi
 </div>
   </details>
 
-<h3 id="ch4-b-job-parallel">اجرای موازی Jobها <small>(Parallel execution for Jobs)</small></h3>
-<p>سه نوع اصلی task برای اجرا به‌عنوان Job مناسب‌اند:</p>
+<h3 id="ch4-b-job-parallel">چند کار موفق و چند اجرای هم‌زمان؟ <small>(Parallel execution for Jobs)</small></h3>
+<p>فرض کنید باید ده فایل را پردازش کنید و هم‌زمان فقط برای دو پردازش جا دارید. تعداد کل موفقیت‌ها و تعداد Podهای هم‌زمان دو عدد جدا هستند. در الگوهای زیر ببینید چه وقت <code>completions</code> و چه وقت <code>parallelism</code> را تنظیم می‌کنید.</p>
 <ol>
   <li><b>Non-parallel Jobs</b>
     <ul><li>معمولاً فقط یک Pod راه‌اندازی می‌شود،‏ مگر این‌که آن Pod fail شود.</li>
@@ -3377,9 +3568,9 @@ idx-2-p9bzt   0/1     Completed   0          15s   2
 </div>
   </details>
 
-<h3 id="ch4-b-job-workload">یکپارچگی با Workload API <small>(Integrate with Workload APIs)</small></h3>
+<h3 id="ch4-b-job-workload">زمان‌بندی گروهی برای یک Job <small>(Integrate with Workload APIs)</small></h3>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.36 [alpha]</span> (feature gate: <code>WorkloadWithJob</code>،‏ پیش‌فرض: غیرفعال)</p>
-<p>وقتی feature gate <code>WorkloadWithJob</code> فعال باشد،‏ Job controller پیکربندی <code>.spec.scheduling</code> یک Job را،‏ قبل از ساختن هر Podی،‏ به objectهای Workload و PodGroup (<code>scheduling.k8s.io/v1beta1</code>) کامپایل می‌کند. این به شما اجازه می‌دهد قصد (intent) صریح scheduling را برای یک Job بیان کنید،‏ مانند gang scheduling (همه‌ی Podها با هم schedule شوند یا هیچ‌کدام)،‏ هم‌مکانی topology (topology co-location) و رفتار disruption.</p>
+<p>بعضی محاسبات زمانی مفیدند که چند Pod بتوانند با هم شروع کنند. با فعال بودن قابلیت <code>WorkloadWithJob</code>، کنترلر پیش از ساخت Podها از روی <code>spec.scheduling</code> اشیای Workload و PodGroup را می‌سازد. به این ترتیب می‌توان شرط‌های زمان‌بندی گروهی، محل اجرا و رفتار هنگام وقفه را برای مجموعه بیان کرد.</p>
 <p>وقتی <code>.spec.scheduling</code> را حذف کنید،‏ Job به‌طور پیش‌فرض از scheduling policy <code>Basic</code> استفاده می‌کند،‏ که نتیجه‌ی استاندارد pod-by-pod scheduling یک Job معمولی را حفظ می‌کند. controller همچنان برای هر Job واجد شرایط (از جمله Jobهای <code>Basic</code>) یک <code>Workload</code> و یک <code>PodGroup</code> می‌سازد،‏ تا objectهای قابل مشاهده صرف‌نظر از policy یکسان باشند.</p>
 <h4>پیکربندی scheduling <small>(Scheduling configuration)</small></h4>
 <p>فیلد <code>.spec.scheduling</code> فیلدهای زیر را می‌پذیرد:</p>
@@ -3466,8 +3657,8 @@ spec:
 </div>
   </details>
 
-<h3 id="ch4-b-job-failures">رسیدگی به شکست Pod و container <small>(Handling Pod and container failures)</small></h3>
-<p>یک container در یک Pod ممکن است به دلایل مختلفی fail شود،‏ مثلاً به این دلیل که process درون آن با exit code غیرصفر خارج شده،‏ یا container به دلیل عبور از memory limit کشته شده،‏ و غیره. اگر این اتفاق بیفتد و <code>.spec.template.spec.restartPolicy = "OnFailure"</code> باشد،‏ Pod روی Node باقی می‌ماند ولی container دوباره اجرا می‌شود. بنابراین برنامه‌ی شما باید حالتی را که به‌صورت محلی restart می‌شود مدیریت کند،‏ یا در غیر این صورت <code>.spec.template.spec.restartPolicy = "Never"</code> را مشخص کنید. برای اطلاعات بیشتر درباره‌ی <code>restartPolicy</code>،‏ pod lifecycle را ببینید (فصل ۳).</p>
+<h3 id="ch4-b-job-failures">شکست را در Pod پیدا کنیم یا در کانتینر؟ <small>(Handling Pod and container failures)</small></h3>
+<p>در آزمایش رمز اشتباه، هر Pod خطا داد و Job برای تلاش بعدی Pod تازه‌ای ساخت. علت این رفتار <code>restartPolicy: Never</code> بود. با <code>OnFailure</code>، kubelet می‌تواند همان کانتینر را در همان Pod دوباره اجرا کند. برنامه باید بتواند کار نیمه‌تمام را پس از شروع دوباره مدیریت کند.</p>
 <p>یک Pod کامل هم ممکن است به دلایل مختلفی fail شود،‏ مثلاً وقتی Pod از روی Node بیرون انداخته می‌شود (Node ارتقا داده می‌شود،‏ reboot می‌شود،‏ حذف می‌شود و غیره)،‏ یا اگر یک container از Pod fail شود و <code>.spec.template.spec.restartPolicy = "Never"</code> باشد. وقتی یک Pod fail می‌شود،‏ Job controller یک Pod جدید راه‌اندازی می‌کند. این یعنی برنامه‌ی شما باید حالتی را که در یک Pod جدید restart می‌شود مدیریت کند. به‌ویژه باید فایل‌های موقت،‏ lockها،‏ خروجی ناقص و مواردی از این دست را که از اجراهای قبلی باقی مانده‌اند مدیریت کند.</p>
 <p>به‌طور پیش‌فرض،‏ هر fail شدن Pod در محدودیت <code>.spec.backoffLimit</code> شمرده می‌شود؛‏ بخش Pod backoff failure policy را ببینید. اما می‌توانید نحوه‌ی رسیدگی به failهای Pod را با تنظیم pod failure policy مربوط به Job سفارشی کنید.</p>
 <p>علاوه بر این،‏ می‌توانید با تنظیم فیلد <code>.spec.backoffLimitPerIndex</code>،‏ failهای Pod را به‌طور مستقل برای هر index از یک Job از نوع Indexed بشمارید (بخش Backoff limit per index).</p>
@@ -3682,8 +3873,8 @@ spec:
 <p>ترتیب ruleهای مهم است: اولین rule match شده برنده است. rule آخر در این مثال عملاً رفتار پیش‌فرض است و فقط برای خوانایی آمده. دقت کنید: exit code 137 (SIGKILL،‏ مثلاً OOMKilled) را در FailJob نگذارید مگر مطمئن باشید OOM ناشی از باگ است؛‏ ممکن است فقط memory limit کم باشد.</p>
 </div>
   </details>
-<h3 id="ch4-b-job-success">سیاست موفقیت <small>(Success policy)</small></h3>
-<p>هنگام ساخت یک Indexed Job،‏ می‌توانید با استفاده از <code>.spec.successPolicy</code>،‏ بر اساس Podهای موفق،‏ تعریف کنید که Job چه زمانی می‌تواند succeeded اعلام شود.</p>
+<h3 id="ch4-b-job-success">موفقیت یک Indexed Job چه معنایی دارد؟ <small>(Success policy)</small></h3>
+<p>اگر چند شبیه‌سازی با ورودی‌های مختلف اجرا می‌کنید، شاید موفقیت زیرمجموعه‌ای از آن‌ها برای نتیجه کافی باشد. در یک Indexed Job، فیلد <code>spec.successPolicy</code> تعیین می‌کند کدام ترکیب از اجراهای موفق برای پایان کل کار کافی است.</p>
 <p>به‌طور پیش‌فرض،‏ یک Job وقتی موفق است که تعداد Podهای موفق برابر <code>.spec.completions</code> شود. این‌ها موقعیت‌هایی هستند که ممکن است کنترل بیشتری برای اعلام موفقیت Job بخواهید:</p>
 <ul>
   <li>هنگام اجرای simulationها با پارامترهای مختلف،‏ ممکن است نیازی نباشد همه‌ی simulationها موفق شوند تا کل Job موفق باشد.</li>
@@ -3741,8 +3932,8 @@ spec:
 <p>به محض موفقیت index 0،‏ Job condition <code>SuccessCriteriaMet</code> می‌گیرد،‏ workerها terminate می‌شوند و در نهایت <code>Complete</code> ثبت می‌شود.</p>
 </div>
   </details>
-<h3 id="ch4-b-job-termination">پایان و پاک‌سازی Job <small>(Job termination and cleanup)</small></h3>
-<p>وقتی یک Job کامل می‌شود،‏ دیگر Podی ساخته نمی‌شود،‏ ولی Podها هم معمولاً حذف نمی‌شوند (به استثنای موردی که در Pod backoff failure policy توضیح داده شد). نگه‌داشتن آن‌ها این امکان را می‌دهد که همچنان logهای Podهای کامل‌شده را برای بررسی خطاها،‏ هشدارها یا سایر خروجی‌های تشخیصی ببینید. خود Job object هم پس از کامل شدن باقی می‌ماند تا بتوانید status آن را ببینید. تصمیم حذف Jobهای قدیمی،‏ پس از یادداشت کردن status‌شان،‏ با کاربر است. Job را با <code>kubectl</code> حذف کنید (مثلاً <code>kubectl delete jobs/pi</code> یا <code>kubectl delete -f ./job.yaml</code>). وقتی Job را با <code>kubectl</code> حذف می‌کنید،‏ همه‌ی Podهایی که ساخته هم حذف می‌شوند.</p>
+<h3 id="ch4-b-job-termination">پس از پایان Job چه چیزی باقی می‌ماند؟ <small>(Job termination and cleanup)</small></h3>
+<p>Job پس از تکمیل، Pod تازه‌ای نمی‌سازد. معمولاً هنوز می‌توانید وضعیت Job و خروجی Podهایش را بخوانید. برای مثال، بعد از ثبت نتیجه‌ی محاسبه‌ی π می‌توانید با <code>kubectl delete job pi</code> خود Job و Podهای زیرمجموعه‌اش را پاک کنید.</p>
 <p>به‌طور پیش‌فرض،‏ یک Job بدون وقفه اجرا می‌شود مگر یک Pod fail شود (<code>restartPolicy=Never</code>) یا یک Container با خطا خارج شود (<code>restartPolicy=OnFailure</code>)،‏ که در آن صورت Job به <code>.spec.backoffLimit</code> که پیش‌تر توضیح داده شد رجوع می‌کند. به محض این‌که <code>.spec.backoffLimit</code> رسید،‏ Job failed علامت می‌خورد و هر Pod در حال اجرا terminate می‌شود.</p>
 <p>راه دیگر برای terminate کردن یک Job،‏ تنظیم یک active deadline است. این کار را با تنظیم فیلد <code>.spec.activeDeadlineSeconds</code> Job روی تعدادی ثانیه انجام دهید. <code>activeDeadlineSeconds</code> روی کل مدت Job اعمال می‌شود،‏ مستقل از این‌که چند Pod ساخته شده باشد. به محض این‌که یک Job به <code>activeDeadlineSeconds</code> برسد،‏ همه‌ی Podهای در حال اجرای آن terminate می‌شوند و status Job برابر <code>type: Failed</code> با <code>reason: DeadlineExceeded</code> می‌شود.</p>
 <p>توجه کنید که <code>.spec.activeDeadlineSeconds</code> یک Job بر <code>.spec.backoffLimit</code> آن اولویت دارد. بنابراین Jobی که در حال retry کردن یک یا چند Pod fail‌شده است،‏ Pod اضافه‌ای نمی‌سازد وقتی به محدودیت زمانی مشخص‌شده در <code>activeDeadlineSeconds</code> برسد،‏ حتی اگر <code>backoffLimit</code> هنوز نرسیده باشد.</p>
@@ -3799,8 +3990,8 @@ spec:
 </div>
   </details>
 
-<h3 id="ch4-b-job-cleanup">پاک‌سازی خودکار Jobهای تمام‌شده <small>(Clean up finished jobs automatically)</small></h3>
-<p>Jobهای finished معمولاً دیگر در سیستم لازم نیستند. نگه‌داشتن آن‌ها در سیستم روی apiserver فشار می‌آورد. اگر Jobها مستقیماً توسط یک controller سطح بالاتر مثل CronJobها مدیریت شوند،‏ Jobها می‌توانند توسط CronJobها بر اساس policy پاکسازی مبتنی بر ظرفیت مشخص‌شده پاک شوند.</p>
+<h3 id="ch4-b-job-cleanup">چه کسی Jobهای تمام‌شده را پاک می‌کند؟ <small>(Clean up finished jobs automatically)</small></h3>
+<p>اگر گزارش هر شب یک Job بسازد، پس از چند ماه فهرست بلندی از اجراهای قدیمی خواهید داشت. برای اجراهای زمان‌بندی‌شده، CronJob می‌تواند تعداد معینی از نتیجه‌ها را نگه دارد. برای حذف بر اساس زمان سپری‌شده از پایان هر Job، فیلد TTL را تنظیم کنید.</p>
 <h4>سازوکار TTL برای Jobهای تمام‌شده <small>(TTL mechanism for finished Jobs)</small></h4>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.23 [stable]</span></p>
 <p>راه دیگر برای پاک کردن خودکار Jobهای finished (چه <code>Complete</code> و چه <code>Failed</code>)،‏ استفاده از یک مکانیزم TTL است که توسط یک TTL controller برای منابع finished فراهم می‌شود،‏ با مشخص کردن فیلد <code>.spec.ttlSecondsAfterFinished</code> Job.</p>
@@ -3834,8 +4025,8 @@ kubectl get job pi          # NotFound: Job and its Pods were deleted in cascade
 <p>(خارج از مستندات رسمی) یک الگوی رایج در production این است که همه‌ی Jobهای batch به‌صورت پیش‌فرض با یک <code>ttlSecondsAfterFinished</code> معقول (مثلاً یک تا چند روز،‏ نه دقیقه) ساخته شوند تا هم امکان بررسی logها بعد از fail شدن باقی بماند و هم apiserver با انبوهی از Job objectهای قدیمی سنگین نشود. برای این کار می‌توان یک mutating admission webhook نوشت که این فیلد را روی هر Job تازه‌ساخته‌شده که آن را مشخص نکرده تنظیم کند.</p>
 </div>
 
-<h3 id="ch4-b-job-patterns">الگوهای Job <small>(Job patterns)</small></h3>
-<p>از Job object می‌توان برای پردازش یک مجموعه از <i>work itemهای</i> مستقل ولی مرتبط استفاده کرد. این‌ها می‌توانند ایمیل‌هایی برای ارسال،‏ فریم‌هایی برای render،‏ فایل‌هایی برای transcode،‏ بازه‌هایی از keyها در یک پایگاه‌داده‌ی NoSQL برای scan،‏ و مشابه آن باشند.</p>
+<h3 id="ch4-b-job-patterns">تقسیم یک کار بزرگ بین چند Pod <small>(Job patterns)</small></h3>
+<p>برای پردازش دسته‌ای، ابتدا کوچک‌ترین کار مستقل را مشخص کنید. این واحد می‌تواند یک فایل برای تبدیل، یک فریم برای ساخت تصویر یا یک بازه از کلیدهای پایگاه داده برای خواندن باشد. بعد تصمیم بگیرید هر Pod از کجا بفهمد سهمش کدام واحد است.</p>
 <p>در یک سیستم پیچیده،‏ ممکن است چند مجموعه‌ی متفاوت از work item وجود داشته باشد. این‌جا فقط یک مجموعه از work itemها را در نظر می‌گیریم که کاربر می‌خواهد با هم مدیریت‌شان کند — یک <i>batch job</i>.</p>
 <p>چند الگوی متفاوت برای محاسبات موازی وجود دارد،‏ هرکدام با نقاط قوت و ضعف خودش. trade-offها این‌ها هستند:</p>
 <ul>
@@ -3913,10 +4104,10 @@ spec:
 </ul>
 </div>
   </details>
-<h3 id="ch4-b-job-advanced">کاربرد پیشرفته <small>(Advanced usage)</small></h3>
+<h3 id="ch4-b-job-advanced">مکث و ادامه‌ی کار یک Job <small>(Advanced usage)</small></h3>
 <h4>suspend کردن Job <small>(Suspending a Job)</small></h4>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.24 [stable]</span></p>
-<p>وقتی یک Job ساخته می‌شود،‏ job controller بلافاصله شروع به ساخت Podهایی برای برآوردن نیازهای Job می‌کند و این کار را تا کامل شدن Job ادامه می‌دهد. اما ممکن است بخواهید اجرای یک Job را موقتاً suspend کنید و بعداً دوباره از سر بگیرید،‏ یا Jobها را در state suspended بسازید و یک controller سفارشی بعداً تصمیم بگیرد چه زمانی آن‌ها را شروع کند.</p>
+<p>گاهی می‌خواهید Job را امروز تعریف کنید و وقتی ظرفیت آزاد شد اجرا کنید. یک Job معمولی بلافاصله شروع به ساخت Pod می‌کند. با <code>spec.suspend</code> می‌توانید زمان شروع را جدا تعیین کنید یا اجرای فعال را متوقف کنید و بعداً ادامه دهید.</p>
 <p>برای suspend کردن یک Job،‏ فیلد <code>.spec.suspend</code> آن Job را روی true به‌روزرسانی کنید؛‏ بعداً که خواستید دوباره از سرش بگیرید،‏ آن را روی false به‌روزرسانی کنید. ساخت یک Job با <code>.spec.suspend</code> برابر true،‏ آن را در state suspended می‌سازد.</p>
 <p>در کوبرنتیز 1.35 و بعدتر،‏ فیلد <code>.status.startTime</code> هنگام suspend شدن Job پاک می‌شود،‏ وقتی feature gate مربوط به Mutable Scheduling Directives for suspended Jobs فعال باشد.</p>
 <p>وقتی یک Job از suspend خارج می‌شود،‏ فیلد <code>.status.startTime</code> آن به زمان فعلی بازنشانی می‌شود. یعنی تایمر <code>.spec.activeDeadlineSeconds</code> وقتی Job suspend و resume می‌شود متوقف و بازنشانی می‌شود.</p>
@@ -4079,9 +4270,9 @@ status:
 <div class="note"><b>نکته</b><p>وقتی از این feature استفاده می‌کنید،‏ مطمئن شوید controllerی که این فیلد نشان می‌دهد نصب شده است،‏ در غیر این صورت ممکن است Job اصلاً reconcile نشود.</p></div>
 <div class="note"><b>نکته</b><p>هنگام توسعه‌ی یک Job controller بیرونی،‏ توجه داشته باشید controller شما باید به شکلی conformant با تعاریف API spec و فیلدهای status object Job عمل کند. جزئیات را در Job API مرور کنید. همچنین توصیه می‌کنیم برای بررسی درستی پیاده‌سازی‌تان،‏ testهای e2e conformance برای Job object را اجرا کنید. در نهایت،‏ هنگام توسعه‌ی یک Job controller بیرونی مطمئن شوید از finalizer <code>batch.kubernetes.io/job-tracking</code> که برای controller داخلی رزرو شده استفاده نمی‌کند.</p></div>
 
-<h3 id="ch4-b-job-alternatives">جایگزین‌ها <small>(Alternatives)</small></h3>
+<h3 id="ch4-b-job-alternatives">چه وقت Job برای یک Pod هم لازم است؟ <small>(Alternatives)</small></h3>
 <h4>bare Pod</h4>
-<p>وقتی Nodeای که یک Pod روی آن اجرا می‌شود reboot می‌شود یا fail می‌کند،‏ آن pod terminate می‌شود و دوباره restart نمی‌شود. اما یک Job،‏ Podهای جدیدی برای جایگزینی Podهای terminate‌شده می‌سازد. به همین دلیل،‏ توصیه می‌کنیم به‌جای یک bare Pod از یک Job استفاده کنید،‏ حتی اگر برنامه‌ی شما فقط به یک Pod نیاز داشته باشد.</p>
+<p>فرض کنید پردازش فقط یک فایل مانده و Node میزبان از دست می‌رود. اگر Pod زیر نظر Job باشد، کنترلر می‌تواند برای تمام کردن کار نمونه‌ی تازه‌ای بسازد. همین امکان برای یک کار تک‌مرحله‌ای هم ارزش دارد.</p>
 <h4>ReplicationController</h4>
 <p>Jobها مکمل ReplicationControllerها هستند. یک ReplicationController،‏ Podهایی را مدیریت می‌کند که انتظار نمی‌رود terminate شوند (مثلاً web serverها)،‏ و یک Job،‏ Podهایی را مدیریت می‌کند که انتظار می‌رود terminate شوند (مثلاً batch taskها).</p>
 <p>همان‌طور که در Pod Lifecycle (فصل ۳) بحث شد،‏ <code>Job</code> فقط برای Podهایی با <code>RestartPolicy</code> برابر <code>OnFailure</code> یا <code>Never</code> مناسب است.</p>
@@ -4096,11 +4287,11 @@ status:
 <p>یک سؤال ساده برای تشخیص این‌که کدام workload API مناسب است: «آیا Pod باید همیشه در حال اجرا باشد؟» اگر بله (web server،‏ API،‏ proxy) از Deployment استفاده کنید. اگر Pod یک کار مشخص انجام می‌دهد و بعد باید تمام شود (migration،‏ batch processing،‏ backup،‏ cron task) از Job یا CronJob استفاده کنید. اگر Pod باید روی هر Node اجرا شود (agent مانیتورینگ،‏ log collector) از DaemonSet استفاده کنید. استفاده‌ی اشتباه رایج: اجرای یک batch script به‌صورت bare Pod با <code>restartPolicy: Always</code> — وقتی script با موفقیت تمام شود،‏ kubelet دوباره آن را اجرا می‌کند و یک حلقه‌ی بی‌پایان می‌سازد؛‏ همین‌جاست که Job با <code>restartPolicy: Never</code> یا <code>OnFailure</code> لازم می‌شود.</p>
 </div>
   </details>
-<h3 id="ch4-b-cronjob">CronJob</h3>
+<h3 id="ch4-b-cronjob">اجرای یک Job طبق تقویم</h3>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.21 [stable]</span></p>
-<p>یک <b>CronJob</b> Jobهایی را بر اساس یک schedule تکرارشونده می‌سازد.</p>
+<p>برای گزارش فروش دو تعریف کنار هم لازم است. <code>schedule</code> می‌گوید چه ساعتی نوبت گزارش است و <code>jobTemplate</code> می‌گوید در آن نوبت چه کاری اجرا شود. CronJob در زمان مقرر یک Job می‌سازد و Job اجرای Pod را دنبال می‌کند.</p>
 <p>CronJob برای انجام اقدامات زمان‌بندی‌شده‌ی منظم مثل backupها،‏ تولید گزارش،‏ و مشابه آن طراحی شده است. یک CronJob object مثل یک خط از فایل <i>crontab</i> (جدول cron) در یک سیستم Unix است. این object یک Job را به‌طور دوره‌ای بر اساس یک schedule مشخص،‏ با فرمت Cron،‏ اجرا می‌کند.</p>
-<p>CronJobها محدودیت‌ها و idiosyncrasyهایی دارند. برای مثال،‏ در شرایط خاصی،‏ یک CronJob واحد می‌تواند چند Job هم‌زمان بسازد. به CronJob limitations در پایین مراجعه کنید.</p>
+<p>در شرایطی مانند اختلال کنترلر، یک نوبت ممکن است جا بیفتد یا بیش از یک Job ساخته شود. در <a href="#ch4-b-cronjob-limitations">محدودیت‌های CronJob</a> می‌بینید چرا گزارش باید بتواند اجرای دوباره را هم مدیریت کند.</p>
 <p>وقتی control plane Jobهای جدید و (به‌طور غیرمستقیم) Podها را برای یک CronJob می‌سازد،‏ <code>.metadata.name</code> آن CronJob بخشی از مبنای نام‌گذاری آن Podها است. نام یک CronJob باید یک مقدار DNS subdomain معتبر باشد،‏ ولی این می‌تواند برای hostname آن Podها نتایج غیرمنتظره‌ای ایجاد کند. برای بهترین سازگاری،‏ نام باید از قواعد محدودتر یک DNS label پیروی کند. حتی وقتی نام یک DNS subdomain باشد،‏ نام نباید از ۵۲ کاراکتر بیشتر باشد. این به این دلیل است که CronJob controller به‌طور خودکار ۱۱ کاراکتر به نامی که شما می‌دهید اضافه می‌کند و محدودیتی وجود دارد که طول نام یک Job نباید از ۶۳ کاراکتر بیشتر باشد.</p>
 <h4>مثال <small>(Example)</small></h4>
 <p>این مثال manifest CronJob،‏ زمان فعلی و یک پیام hello را هر دقیقه چاپ می‌کند:</p>
@@ -4187,9 +4378,9 @@ spec:
 <p>می‌توانید یک time zone برای یک CronJob با تنظیم <code>.spec.timeZone</code> روی نام یک time zone معتبر مشخص کنید. برای مثال،‏ تنظیم <code>.spec.timeZone: "Etc/UTC"</code> به کوبرنتیز دستور می‌دهد schedule را نسبت به Coordinated Universal Time تفسیر کند.</p>
 <p>یک پایگاه‌داده‌ی time zone از library استاندارد Go در binaryها گنجانده شده و به‌عنوان fallback در صورتی که یک پایگاه‌داده‌ی بیرونی روی سیستم در دسترس نباشد استفاده می‌شود.</p>
 
-<h3 id="ch4-b-cronjob-limitations">محدودیت‌های CronJob <small>(CronJob limitations)</small></h3>
+<h3 id="ch4-b-cronjob-limitations">اگر یک نوبت گزارش دیر شود چه می‌شود؟ <small>(CronJob limitations)</small></h3>
 <h4>تعیین time zone به شکل پشتیبانی‌نشده <small>(Unsupported TimeZone specification)</small></h4>
-<p>مشخص کردن یک time zone با متغیرهای <code>CRON_TZ</code> یا <code>TZ</code> درون <code>.spec.schedule</code> **به‌صورت رسمی پشتیبانی نمی‌شود** (و هرگز هم نشده است). اگر تلاش کنید یک schedule که شامل مشخصه‌ی time zone <code>TZ</code> یا <code>CRON_TZ</code> است تنظیم کنید،‏ کوبرنتیز ساخت یا به‌روزرسانی آن resource را با یک خطای validation رد می‌کند. باید در عوض از فیلد time zone استفاده کنید.</p>
+<p>ساعت محلی را در <code>spec.timeZone</code> بنویسید. اگر <code>TZ</code> یا <code>CRON_TZ</code> را داخل عبارت <code>spec.schedule</code> بگذارید، کوبرنتیز فایل را در مرحله‌ی اعتبارسنجی رد می‌کند. بعد از تعیین ساعت، تأخیر و هم‌پوشانی اجراها را هم در نظر بگیرید.</p>
 <h4>تغییر CronJob <small>(Modifying a CronJob)</small></h4>
 <p>طبق طراحی،‏ یک CronJob یک template برای Jobهای <i>جدید</i> نگه می‌دارد. اگر یک CronJob موجود را تغییر دهید،‏ تغییراتی که اعمال می‌کنید روی Jobهای جدیدی که بعد از تمام شدن تغییرتان شروع می‌شوند اعمال می‌شود. Jobها (و Podهایشان) که از قبل شروع شده‌اند بدون تغییر ادامه می‌یابند. یعنی CronJob Jobهای موجود را به‌روزرسانی <i>نمی‌کند</i>،‏ حتی اگر آن‌ها همچنان در حال اجرا باشند.</p>
 <h4>ساخت Job <small>(Job creation)</small></h4>
@@ -4237,9 +4428,9 @@ kubectl delete cronjob hello
 <p>توجه کنید در نام هر Pod،‏ بخش <code>‎-27473528‎</code> برابر یک عدد بر مبنای Unix epoch تقسیم‌شده بر ۶۰ است — یعنی «چندمین دقیقه»؛‏ این باعث می‌شود Jobهای متوالی که هر دقیقه ساخته می‌شوند نام یکتا داشته باشند.</p>
 </div>
 
-<h3 id="ch4-b-ttl">پاک‌سازی خودکار Jobها با TTL <small>(TTL-after-finished Controller)</small></h3>
+<h3 id="ch4-b-ttl">مهلت نگه‌داری نتیجه‌ی Job <small>(TTL-after-finished Controller)</small></h3>
 <p><span class="fs">وضعیت قابلیت: Kubernetes v1.23 [stable]</span></p>
-<p>وقتی Job شما تمام شده،‏ مفید است که آن Job را در API نگه دارید (و بلافاصله حذفش نکنید) تا بتوانید بفهمید Job موفق شده یا fail شده. مکانیزم TTL-after-finished در کوبرنتیز یک مکانیزم TTL (time to live) برای محدود کردن طول عمر Job objectهایی که اجرایشان تمام شده فراهم می‌کند.</p>
+<p>برای بررسی شکست migration به گزارش آن نیاز دارید. با <code>ttlSecondsAfterFinished</code> مشخص می‌کنید نتیجه پس از موفقیت یا شکست چه مدت برای بررسی بماند. شمارش زمان از پایان Job آغاز می‌شود.</p>
 <h4>پاک‌سازی Jobهای تمام‌شده <small>(Cleanup for finished Jobs)</small></h4>
 <p>TTL-after-finished controller فقط برای Jobها پشتیبانی می‌شود. می‌توانید از این مکانیزم برای پاک کردن خودکار Jobهای finished (چه <code>Complete</code> و چه <code>Failed</code>) با مشخص کردن فیلد <code>.spec.ttlSecondsAfterFinished</code> یک Job استفاده کنید (همان‌طور که در Clean up finished jobs automatically دیدیم).</p>
 <p>TTL-after-finished controller فرض می‌کند یک Job،‏ TTL ثانیه پس از این‌که Job تمام شده،‏ واجد شرایط پاکسازی است. تایمر از لحظه‌ای شروع می‌شود که status condition Job نشان می‌دهد Job یا <code>Complete</code> یا <code>Failed</code> است؛‏ به محض این‌که TTL منقضی شود،‏ آن Job واجد شرایط حذف cascading می‌شود. وقتی TTL-after-finished controller یک job را پاک می‌کند،‏ آن را به شکل cascading حذف می‌کند،‏ یعنی objectهای وابسته‌اش را همراه با خودش حذف می‌کند.</p>
@@ -4256,9 +4447,9 @@ kubectl delete cronjob hello
 <p><b>تغییر TTL برای Jobهای تمام‌شده.</b> می‌توانید دوره‌ی TTL،‏ مثلاً فیلد <code>.spec.ttlSecondsAfterFinished</code> یک Job،‏ را بعد از ساخته شدن یا تمام شدن Job هم تغییر دهید. اگر دوره‌ی TTL را پس از منقضی شدن دوره‌ی <code>ttlSecondsAfterFinished</code> موجود گسترش دهید،‏ کوبرنتیز تضمین نمی‌کند آن Job را نگه دارد،‏ حتی اگر یک به‌روزرسانی برای گسترش TTL یک پاسخ موفق API برگرداند.</p>
 <p><b>اختلاف ساعت (time skew).</b> چون TTL-after-finished controller از timestampهای ذخیره‌شده در jobهای کوبرنتیز برای تعیین این‌که آیا TTL منقضی شده یا نه استفاده می‌کند،‏ این feature به time skew در cluster شما حساس است،‏ که ممکن است باعث شود control plane،‏ Job objectها را در زمان اشتباه پاک کند. ساعت‌ها همیشه درست نیستند،‏ ولی این تفاوت باید خیلی کوچک باشد. هنگام تنظیم یک TTL غیرصفر،‏ از این ریسک آگاه باشید.</p>
 
-<h3 id="ch4-b-rc">ReplicationController</h3>
+<h3 id="ch4-b-rc">آشنایی با ReplicationController در فایل‌های قدیمی</h3>
 <div class="note"><b>نکته</b><p>یک <code>Deployment</code> که یک <code>ReplicaSet</code> را پیکربندی می‌کند،‏ الان روش توصیه‌شده برای برپا کردن replication است.</p></div>
-<p>یک <b>ReplicationController</b> تضمین می‌کند که یک تعداد مشخص از pod replica در هر لحظه در حال اجرا هستند. به‌عبارت دیگر،‏ یک ReplicationController مطمئن می‌شود یک pod یا یک مجموعه‌ی همگن از podها همیشه بالا و در دسترس است.</p>
+<p>اگر در یک فایل قدیمی به <b>ReplicationController</b> رسیدید، ابتدا تعداد نسخه‌ها و برچسب‌های انتخابی آن را بخوانید. این کنترلر تعداد Podهای هم‌شکل را با عدد درخواستی هماهنگ می‌کند. امروزه در نمونه‌هایی مانند API فروشگاه، Deployment این مسئولیت را به ReplicaSet می‌سپارد.</p>
 <h4>سازوکار ReplicationController <small>(How a ReplicationController works)</small></h4>
 <p>اگر تعداد podها زیاد باشد،‏ ReplicationController podهای اضافی را terminate می‌کند. اگر تعداد کم باشد،‏ ReplicationController podهای بیشتری راه می‌اندازد. برخلاف podهایی که دستی ساخته می‌شوند،‏ podهایی که توسط یک ReplicationController نگه‌داری می‌شوند وقتی fail شوند،‏ حذف شوند یا terminate شوند به‌طور خودکار جایگزین می‌شوند. برای مثال،‏ podهای شما پس از maintenance مخرب مثل یک kernel upgrade،‏ روی یک node دوباره ساخته می‌شوند. به همین دلیل،‏ باید از ReplicationController استفاده کنید حتی اگر برنامه‌ی شما فقط به یک pod نیاز دارد. یک ReplicationController شبیه یک process supervisor است،‏ با این تفاوت که به‌جای نظارت روی processهای مجزا روی یک node واحد،‏ ReplicationController روی چند pod در چند node نظارت می‌کند.</p>
 <p>ReplicationController معمولاً در بحث‌ها و به‌عنوان یک shortcut در دستورات kubectl به «rc» کوتاه می‌شود.</p>
@@ -4391,7 +4582,7 @@ echo $pods
 </div>
   </details>
 <h3 id="ch4-solved">حل مسئله‌ی شاپیفای <small>(Wrap-up)</small></h3>
-  <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>هر بخش شاپیفای حالا controller مناسب خودش را دارد:</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>پایگاه داده‌ای که نام و نشانی ثابت لازم دارد</td><td>StatefulSet با headless Service؛‏ نام <code>postgres-0.postgres</code> با حذف Pod عوض نمی‌شود</td><td>گام‌های ۲ و ۵</td></tr><tr><td>rolloutی که بی‌صدا گیر می‌کند</td><td><code>progressDeadlineSeconds</code> و condition به نام Progressing؛‏ <code>kubectl rollout status</code> با کد خطا خارج می‌شود</td><td>گام ۳</td></tr><tr><td>migration که با هر replica یک بار اجرا می‌شد</td><td>Job یک‌باره پیش از انتشار،‏ با قفل پایگاه داده؛‏ خود migration هم idempotent است</td><td>گام‌های ۳ و ۴</td></tr><tr><td>گزارش فروش شبانه</td><td>CronJob با timeZone و concurrencyPolicy؛‏ آزمودن با <code>kubectl create job --from</code></td><td>گام ۶</td></tr><tr><td>agent مربوط به log روی هر Node</td><td>DaemonSet با hostPath فقط خواندنی</td><td>گام ۷</td></tr><tr><td>تاریخچه‌ی rollout ناخوانا</td><td>annotation به نام <code>kubernetes.io/change-cause</code> و <code>rollout history --revision</code></td><td>گام‌های ۰ و ۱</td></tr></tbody></table></div><p><b>فایل‌های شاپیفای تا این‌جا:</b> کد API نسخه‌ی 1.3 در چهار فایل <code>app.py</code> و <code>db.py</code> و <code>migrate.py</code> و <code>report.py</code>؛‏ فایل Dockerfile؛‏ و این فایل‌های YAML:</p><div class="tbl"><table><thead><tr><th>فایل</th><th>شیء</th><th>نکته‌ی کلیدی</th></tr></thead><tbody><tr><td><code>shop-api.yaml</code></td><td>Deployment و Service مربوط به API</td><td>image نسخه‌ی 1.3؛‏ annotation به نام change-cause؛‏ <code>progressDeadlineSeconds: 120</code>؛‏ بدون init container مربوط به migration</td></tr><tr><td><code>postgres.yaml</code></td><td>headless Service و StatefulSet</td><td><code>clusterIP: None</code> و <code>serviceName</code>؛‏ هنوز بدون volume</td></tr><tr><td><code>shop-migrate.yaml</code></td><td>Job</td><td><code>backoffLimit: 2</code> و <code>restartPolicy: Never</code> و TTL ده‌دقیقه‌ای</td></tr><tr><td><code>shop-report.yaml</code></td><td>CronJob</td><td>ساعت ۲ به وقت تهران؛‏ <code>concurrencyPolicy: Forbid</code></td></tr><tr><td><code>log-agent.yaml</code></td><td>DaemonSet</td><td>hostPath فقط خواندنی و نام Node از Downward API</td></tr><tr><td>(فعلاً بدون فایل)</td><td>Deployment به نام shop-web</td><td>nginx با ۲ replica؛‏ فایلش در فصل ۸</td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> داده‌ی PostgreSQL با هر حذف Pod از بین می‌رود (فصل ۷)؛‏ رمز پایگاه داده هم در <code>postgres.yaml</code> و هم داخل کد و image است (فصل ۶)؛‏ گزارش شبانه سقف مصرف CPU ندارد (فصل ۶)؛‏ و frontend و API فقط از داخل cluster در دسترس‌اند (فصل ۵).</p><p><b>هفته‌ی بعد:</b> مشتری‌ها باید فروشگاه را با نام <code>shopify.local</code> در مرورگر باز کنند.</p></div>
+  <div class="story solved"><b>مشکل‌های این هفته،‏ حالا</b><p>پیش از خواندن جدول، دو تصمیم را با دلیل خودتان توضیح دهید. چرا ساخت جدول‌ها را از شروع هر نسخه‌ی API جدا کردید؟ چرا تعداد گردآورنده‌های لاگ با تعداد Nodeها تغییر می‌کند؟ ستون آخر شما را به گامی برمی‌گرداند که پاسخ را در آن مشاهده کردید.</p><div class="tbl"><table><thead><tr><th>مشکل</th><th>راه‌حل</th><th>کجا دیدید</th></tr></thead><tbody><tr><td>پایگاه داده‌ای که نام و نشانی ثابت لازم دارد</td><td>StatefulSet با headless Service؛‏ نام <code>postgres-0.postgres</code> با حذف Pod عوض نمی‌شود</td><td>گام‌های ۲ و ۵</td></tr><tr><td>rolloutی که بی‌صدا گیر می‌کند</td><td><code>progressDeadlineSeconds</code> و condition به نام Progressing؛‏ <code>kubectl rollout status</code> با کد خطا خارج می‌شود</td><td>گام ۳</td></tr><tr><td>migration که با هر replica یک بار اجرا می‌شد</td><td>Job یک‌باره پیش از انتشار،‏ با قفل پایگاه داده؛‏ خود migration هم idempotent است</td><td>گام‌های ۳ و ۴</td></tr><tr><td>گزارش فروش شبانه</td><td>CronJob با timeZone و concurrencyPolicy؛‏ آزمودن با <code>kubectl create job --from</code></td><td>گام ۶</td></tr><tr><td>agent مربوط به log روی هر Node</td><td>DaemonSet با hostPath فقط خواندنی</td><td>گام ۷</td></tr><tr><td>تاریخچه‌ی rollout ناخوانا</td><td>annotation به نام <code>kubernetes.io/change-cause</code> و <code>rollout history --revision</code></td><td>گام‌های ۰ و ۱</td></tr></tbody></table></div><p><b>فایل‌های شاپیفای تا این‌جا:</b> کد API نسخه‌ی 1.3 در چهار فایل <code>app.py</code> و <code>db.py</code> و <code>migrate.py</code> و <code>report.py</code>؛‏ فایل Dockerfile؛‏ و این فایل‌های YAML:</p><div class="tbl"><table><thead><tr><th>فایل</th><th>شیء</th><th>نکته‌ی کلیدی</th></tr></thead><tbody><tr><td><code>shop-api.yaml</code></td><td>Deployment و Service مربوط به API</td><td>image نسخه‌ی 1.3؛‏ annotation به نام change-cause؛‏ <code>progressDeadlineSeconds: 120</code>؛‏ بدون init container مربوط به migration</td></tr><tr><td><code>postgres.yaml</code></td><td>headless Service و StatefulSet</td><td><code>clusterIP: None</code> و <code>serviceName</code>؛‏ هنوز بدون volume</td></tr><tr><td><code>shop-migrate.yaml</code></td><td>Job</td><td><code>backoffLimit: 2</code> و <code>restartPolicy: Never</code> و TTL ده‌دقیقه‌ای</td></tr><tr><td><code>shop-report.yaml</code></td><td>CronJob</td><td>ساعت ۲ به وقت تهران؛‏ <code>concurrencyPolicy: Forbid</code></td></tr><tr><td><code>log-agent.yaml</code></td><td>DaemonSet</td><td>hostPath فقط خواندنی و نام Node از Downward API</td></tr><tr><td>(فعلاً بدون فایل)</td><td>Deployment به نام shop-web</td><td>nginx با ۲ replica؛‏ فایلش در فصل ۸</td></tr></tbody></table></div><p><b>هنوز حل نشده:</b> داده‌ی PostgreSQL با هر حذف Pod از بین می‌رود (فصل ۷)؛‏ رمز پایگاه داده هم در <code>postgres.yaml</code> و هم داخل کد و image است (فصل ۶)؛‏ گزارش شبانه سقف مصرف CPU ندارد (فصل ۶)؛‏ و frontend و API فقط از داخل cluster در دسترس‌اند (فصل ۵).</p><p><b>هفته‌ی بعد:</b> مشتری‌ها باید فروشگاه را با نام <code>shopify.local</code> در مرورگر باز کنند.</p></div>
 
   <details id="ch4-ex2" class="ex">
   <summary class="ex-h">تمرین‌های فصل ۴،‏ بخش دوم <small>۱۶ تمرین</small></summary>
